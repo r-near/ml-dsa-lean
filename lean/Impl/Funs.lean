@@ -1557,12 +1557,12 @@ def keygen.compute_t
   keygen.compute_t_loop s2 prod t 0#usize
 
 /-- [ml_dsa_verified::field::barrier_u32]:
-    Source: 'src/field.rs', lines 55:0-57:1 -/
+    Source: 'src/field.rs', lines 56:0-58:1 -/
 def field.barrier_u32 (x : Std.U32) : RustM Std.U32 := do
   ok x
 
 /-- [ml_dsa_verified::field::ct_select]:
-    Source: 'src/field.rs', lines 64:0-66:1
+    Source: 'src/field.rs', lines 65:0-67:1
     Visibility: public -/
 def field.ct_select
   (if_false : Std.U32) (if_true : Std.U32) (mask : Std.U32) :
@@ -1574,12 +1574,12 @@ def field.ct_select
   ok (if_false ^^^ i2)
 
 /-- [ml_dsa_verified::field::barrier_u64]:
-    Source: 'src/field.rs', lines 47:0-49:1 -/
+    Source: 'src/field.rs', lines 48:0-50:1 -/
 def field.barrier_u64 (x : Std.U64) : RustM Std.U64 := do
   ok x
 
 /-- [ml_dsa_verified::field::ct_lt_mask]:
-    Source: 'src/field.rs', lines 60:0-62:1
+    Source: 'src/field.rs', lines 61:0-63:1
     Visibility: public -/
 def field.ct_lt_mask (a : Std.U64) (b : Std.U64) : RustM Std.U64 := do
   let i ← lift (core.num.U64.wrapping_sub a b)
@@ -2251,6 +2251,12 @@ def api.keygen_44
   let sk1 := to_slice_mut_back1 s3
   ok (pk1, sk1)
 
+/-- [ml_dsa_verified::field::opaque_u32]:
+    Source: 'src/field.rs', lines 78:0-80:1
+    Visibility: public -/
+def field.opaque_u32 (x : Std.U32) : RustM Std.U32 := do
+  ok x
+
 /-- [ml_dsa_verified::rounding::decompose]:
     Source: 'src/rounding.rs', lines 33:0-40:1
     Visibility: public -/
@@ -2265,15 +2271,16 @@ def rounding.decompose
   let i2 ← lift (UScalar.cast .U64 i1)
   let i3 ← field.ct_lt_mask 0#u64 i2
   let i4 ← lift (~~~ i3)
-  let is_edge ← lift (UScalar.cast .U32 i4)
-  let i5 ← lift (UScalar.cast .U64 diff)
-  let i6 ← i5 * p.two_gamma2_div_mult
-  let i7 ← i6 >>> 48#i32
-  let r1 ← lift (UScalar.cast .U32 i7)
-  let i8 ← field.ct_select r1 0#u32 is_edge
-  let i9 ← field.sub r0 1#u32
-  let i10 ← field.ct_select r0 i9 is_edge
-  ok (i8, i10)
+  let i5 ← lift (UScalar.cast .U32 i4)
+  let is_edge ← field.opaque_u32 i5
+  let i6 ← lift (UScalar.cast .U64 diff)
+  let i7 ← i6 * p.two_gamma2_div_mult
+  let i8 ← i7 >>> 48#i32
+  let r1 ← lift (UScalar.cast .U32 i8)
+  let i9 ← field.ct_select r1 0#u32 is_edge
+  let i10 ← field.sub r0 1#u32
+  let i11 ← field.ct_select r0 i10 is_edge
+  ok (i9, i11)
 
 /-- [ml_dsa_verified::rounding::high_bits]:
     Source: 'src/rounding.rs', lines 43:0-45:1

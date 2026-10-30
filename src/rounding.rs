@@ -1,7 +1,7 @@
 //! FIPS 204 §7.4: Power2Round, Decompose, HighBits, LowBits, MakeHint (Algorithms 35–39),
 //! UseHint (Alg 40), and the infinity norm. Values are canonical in Z_q; a "signed" result r stands for r mod± q.
 
-use crate::field::{Q, ct_lt_mask, ct_select, small_reduce, sub};
+use crate::field::{Q, ct_lt_mask, ct_select, opaque_u32, small_reduce, sub};
 use crate::params::Params;
 
 /// Barrett reduction x mod m for x < q (upstream `BarrettReduce::reduce`).
@@ -34,7 +34,7 @@ pub fn decompose(p: &Params, r: u32) -> (u32, u32) {
     let two_gamma2 = 2 * p.gamma2;
     let r0 = mod_plus_minus(r, two_gamma2, p.two_gamma2_shift, p.two_gamma2_mult);
     let diff = sub(r, r0);
-    let is_edge = !ct_lt_mask(0, (diff ^ (Q - 1)) as u64) as u32; // all-ones iff diff == q - 1
+    let is_edge = opaque_u32(!ct_lt_mask(0, (diff ^ (Q - 1)) as u64) as u32); // all-ones iff diff == q - 1
     let r1 = (((diff as u64) * p.two_gamma2_div_mult) >> 48) as u32;
     (ct_select(r1, 0, is_edge), ct_select(r0, sub(r0, 1), is_edge))
 }

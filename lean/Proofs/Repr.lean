@@ -286,7 +286,10 @@ theorem barrier_u64_spec (x : U64) : field.barrier_u64 x ⦃ y => y = x ⦄ := b
 theorem barrier_u32_spec (x : U32) : field.barrier_u32 x ⦃ y => y = x ⦄ := by
   simp [field.barrier_u32]
 
-attribute [step] barrier_u64_spec barrier_u32_spec
+theorem opaque_u32_spec (x : U32) : field.opaque_u32 x ⦃ y => y = x ⦄ := by
+  simp [field.opaque_u32]
+
+attribute [step] barrier_u64_spec barrier_u32_spec opaque_u32_spec
 
 /-- `ct_lt_mask a b` is all-ones if `a < b` and zero otherwise (for `a, b < 2^63`). -/
 theorem ct_lt_mask_spec (a b : U64) (ha : a.val < 2 ^ 63) (hb : b.val < 2 ^ 63) :

@@ -225,7 +225,7 @@ theorem decompose_44 (sp : Spec.Params) (p : params.Params) (hg : p.gamma2 = 952
   simp only [global_simps, e2, bind_tc_ok]
   step*
   all_goals have hxor := xor_edge diff i1 i (by rw [i_post1]) i1_post1
-  all_goals have hedge := edge_mask i1 i2 i3 i4 is_edge i2_post i3_post1 i3_post2 i4_post is_edge_post
+  all_goals have hedge := edge_mask i1 i2 i3 i4 is_edge i2_post i3_post1 i3_post2 i4_post (by rw [is_edge_post, i5_post])
   · by_cases h : diff.val = 8380416
     · exact Or.inr (hedge.1 (hxor.1 h))
     · exact Or.inl (hedge.2 (fun h' => h (hxor.2 h')))
@@ -239,18 +239,18 @@ theorem decompose_44 (sp : Spec.Params) (p : params.Params) (hg : p.gamma2 = 952
     have hdiff : (diff.val : Int) = r.val - t := by split at r0_post2 <;> omega
     obtain ⟨k, hkd⟩ : ∃ k, diff.val = k * 190464 := ⟨diff.val / 190464, by omega⟩
     have hk44 : k ≤ 44 := by omega
-    have hi5 : i5.val = diff.val := by simp [i5_post]
-    have hi7 : i7.val = k := by
-      rw [i7_post1, Nat.shiftRight_eq_div_pow, i6_post, hi5, hkd]; exact div48_44 k hk44
+    have hi6 : i6.val = diff.val := by simp [i6_post]
+    have hi8 : i8.val = k := by
+      rw [i8_post1, Nat.shiftRight_eq_div_pow, i7_post, hi6, hkd]; exact div48_44 k hk44
     have hr1 : r1.val = k := by
-      rw [r1_post]; simp only [UScalar.cast_val_eq, hi7]
+      rw [r1_post]; simp only [UScalar.cast_val_eq, hi8]
       have h32 : (2 : Nat) ^ UScalarTy.U32.numBits = 4294967296 := by decide
       rw [h32]; exact Nat.mod_eq_of_lt (by omega)
     simp only [Spec.q] at *
     by_cases hE : diff.val = 8380416
     · have he := hedge.1 (hxor.1 hE)
-      have h8 := i8_post2 he
-      have h10 := i10_post2 he
+      have h8 := i9_post2 he
+      have h10 := i11_post2 he
       have hS : (r.val : Int) - t = 8380416 := by omega
       push_cast
       rw [if_pos hS]
@@ -259,8 +259,8 @@ theorem decompose_44 (sp : Spec.Params) (p : params.Params) (hg : p.gamma2 = 952
       have h0 : (0#u32).val = 0 := rfl
       refine ⟨by omega, by omega, by omega, by omega, by omega, by omega⟩
     · have he := hedge.2 (fun h' => hE (hxor.2 h'))
-      have h8 := i8_post1 he
-      have h10 := i10_post1 he
+      have h8 := i9_post1 he
+      have h10 := i11_post1 he
       have hS : ¬ (r.val : Int) - t = 8380416 := by omega
       push_cast
       rw [if_neg hS]
@@ -283,7 +283,7 @@ theorem decompose_65 (sp : Spec.Params) (p : params.Params) (hg : p.gamma2 = 261
   simp only [global_simps, e2, bind_tc_ok]
   step*
   all_goals have hxor := xor_edge diff i1 i (by rw [i_post1]) i1_post1
-  all_goals have hedge := edge_mask i1 i2 i3 i4 is_edge i2_post i3_post1 i3_post2 i4_post is_edge_post
+  all_goals have hedge := edge_mask i1 i2 i3 i4 is_edge i2_post i3_post1 i3_post2 i4_post (by rw [is_edge_post, i5_post])
   · by_cases h : diff.val = 8380416
     · exact Or.inr (hedge.1 (hxor.1 h))
     · exact Or.inl (hedge.2 (fun h' => h (hxor.2 h')))
@@ -297,18 +297,18 @@ theorem decompose_65 (sp : Spec.Params) (p : params.Params) (hg : p.gamma2 = 261
     have hdiff : (diff.val : Int) = r.val - t := by split at r0_post2 <;> omega
     obtain ⟨k, hkd⟩ : ∃ k, diff.val = k * 523776 := ⟨diff.val / 523776, by omega⟩
     have hk16 : k ≤ 16 := by omega
-    have hi5 : i5.val = diff.val := by simp [i5_post]
-    have hi7 : i7.val = k := by
-      rw [i7_post1, Nat.shiftRight_eq_div_pow, i6_post, hi5, hkd]; exact div48_65 k hk16
+    have hi6 : i6.val = diff.val := by simp [i6_post]
+    have hi8 : i8.val = k := by
+      rw [i8_post1, Nat.shiftRight_eq_div_pow, i7_post, hi6, hkd]; exact div48_65 k hk16
     have hr1 : r1.val = k := by
-      rw [r1_post]; simp only [UScalar.cast_val_eq, hi7]
+      rw [r1_post]; simp only [UScalar.cast_val_eq, hi8]
       have h32 : (2 : Nat) ^ UScalarTy.U32.numBits = 4294967296 := by decide
       rw [h32]; exact Nat.mod_eq_of_lt (by omega)
     simp only [Spec.q] at *
     by_cases hE : diff.val = 8380416
     · have he := hedge.1 (hxor.1 hE)
-      have h8 := i8_post2 he
-      have h10 := i10_post2 he
+      have h8 := i9_post2 he
+      have h10 := i11_post2 he
       have hS : (r.val : Int) - t = 8380416 := by omega
       push_cast
       rw [if_pos hS]
@@ -317,8 +317,8 @@ theorem decompose_65 (sp : Spec.Params) (p : params.Params) (hg : p.gamma2 = 261
       have h0 : (0#u32).val = 0 := rfl
       refine ⟨by omega, by omega, by omega, by omega, by omega, by omega⟩
     · have he := hedge.2 (fun h' => hE (hxor.2 h'))
-      have h8 := i8_post1 he
-      have h10 := i10_post1 he
+      have h8 := i9_post1 he
+      have h10 := i11_post1 he
       have hS : ¬ (r.val : Int) - t = 8380416 := by omega
       push_cast
       rw [if_neg hS]
