@@ -35,3 +35,8 @@ root = "SpecTests.ACVP"
 [[lean_exe]]
 name = "spec-wycheproof"
 root = "SpecTests.Wycheproof"
+
+# Differential evaluation of the extracted Impl (compiled), not a default target: see scripts/impl-eval.sh.
+[[lean_exe]]
+name = "impl-eval"
+root = "SpecTests.ImplEval"
