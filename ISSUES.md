@@ -19,9 +19,11 @@ Bugs found, tool problems and errata, newest last. Each entry: ID, date, what, i
   `hint_step_44` with vectorization off, and the whole-Sign census at the same line): LLVM turns the
   `diff == q − 1` mask select in `rounding::decompose` into `cmp; je` around the multiply that computes r1. Decompose
   runs on secret data in Sign (LowBits(w − cs2), MakeHint). Earlier x86_64 runs reported the per-function probes
-  secure; the leak appears only in the inlined signing-step contexts. Fix in progress: an all-target `black_box`
-  barrier on the edge mask (`checkct/decompose-edge-barrier.patch`), identity under `cfg(miri)` so the proved code
-  is unchanged in meaning.
+  secure; the leak appears only in the inlined signing-step contexts. Fixed in 069b439: `field::opaque_u32`
+  (`black_box` on every target, identity under `cfg(miri)`, so the extracted code is `ok x` and the theorems are
+  unchanged) wraps the edge mask. After the fix every x86_64 Decompose/HighBits/LowBits/MakeHint/hint_step/response
+  probe is secure in both the default and nearcore-like profiles; thumbv7em and riscv32imac unchanged. Cost: Sign
+  about +2–3%, Verify and KeyGen unchanged.
 
 ## Tool problems
 
