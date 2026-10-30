@@ -1,0 +1,56 @@
+[package]
+name = "ml-dsa-verified-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[lib]
+name = "fz"
+path = "src/lib.rs"
+
+[dependencies]
+libfuzzer-sys = "0.4"
+ml-dsa-verified = { path = ".." }
+# Oracle: the same upstream revision the main crate's tests use.
+ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e", default-features = false, features = ["alloc"] }
+# Seed generator only (src/bin/gen_seeds.rs).
+flate2 = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Own workspace: not a member of the main crate's workspace.
+[workspace]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "verify_diff"
+path = "fuzz_targets/verify_diff.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sign_diff"
+path = "fuzz_targets/sign_diff.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "decode_roundtrip"
+path = "fuzz_targets/decode_roundtrip.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "gen_seeds"
+path = "src/bin/gen_seeds.rs"
+test = false
+doc = false
+bench = false
