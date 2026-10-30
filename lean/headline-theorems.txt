@@ -265,3 +265,32 @@ Proofs.sk_is_well_formed_87_correct
 Proofs.skWellFormed_keygen
 Proofs.skWellFormed_zero_44
 Proofs.skWellFormed_bad_44
+import Proofs.Partial
+Proofs.loop.dspec_rel
+Proofs.loop.dspec_inv
+Proofs.loop.dspec_ghost
+Proofs.foldlM_fuel_mono
+import Proofs.PartialSample
+Proofs.SampleA.RejNTTPoly_mono
+Proofs.SampleA.ExpandA_mono
+Proofs.rej_ntt_poly_partial
+Proofs.expand_a_partial
+import Proofs.PartialBall
+Proofs.SampleInBall_of_runTo
+Proofs.sample_in_ball_partial
+import Proofs.PartialVerify
+Proofs.verify_of_samplers
+Proofs.verify_internal_partial
+import Proofs.PartialAPI
+Proofs.verify_44_partial
+Proofs.verify_65_partial
+Proofs.verify_87_partial
+Proofs.verify_internal_44_partial
+Proofs.verify_internal_65_partial
+Proofs.verify_internal_87_partial
+Proofs.verify_44_exact
+Proofs.verify_65_exact
+Proofs.verify_87_exact
+Proofs.verify_internal_44_exact
+Proofs.verify_internal_65_exact
+Proofs.verify_internal_87_exact

@@ -29,3 +29,8 @@ import Proofs.CorrNTT
 import Proofs.Correctness
 import Proofs.APIInternal
 import Proofs.SkWellFormed
+import Proofs.Partial
+import Proofs.PartialSample
+import Proofs.PartialBall
+import Proofs.PartialVerify
+import Proofs.PartialAPI
