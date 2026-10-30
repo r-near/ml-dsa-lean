@@ -34,8 +34,10 @@ Everything below is parameterized by a `Params` value `p` (`ML_DSA_44`, `ML_DSA_
 Algorithm 7 is `while (z, h) = ⊥ do ... κ ← κ + ℓ`, which has no bound. `Sign_internal_bounded p B` makes at
 most `B` attempts, with `κ = 0, ℓ, 2ℓ, ..., (B − 1) ℓ`, and returns `none` when none of them is accepted (FIPS 204
 Section 6.2, footnote 10 / Appendix C allow an implementation to bound the number of iterations). If the
-FIPS 204 loop accepts at its attempt number `a ≤ kappaBudget p` (counting from 1), then `Sign_internal_bounded p B`
-returns the same signature for every `B ≥ a`, and `none` for `B < a` (this relation is the reading of the code, not a theorem proved here).
+FIPS 204 loop accepts at its attempt number `a ≤ kappaBudget p` (counting from 1), and no sampler runs out of fuel
+in attempts `1..a` (a `SampleInBall` fuel exhaustion in a rejected attempt also gives `none`), then
+`Sign_internal_bounded p B` returns the same signature for every `B ≥ a`, and `none` for `B < a` (this relation is
+the reading of the code, not a theorem proved here).
 
 `ExpandMask` encodes `κ + r` (for `r < ℓ`) with `IntegerToBytes(·, 2)`, i.e. modulo `2^16`. The standard never
 discusses `κ ≥ 2^16`; the loop here therefore refuses (returns `none`) to start an attempt with `κ + ℓ > 2^16`.
@@ -65,7 +67,7 @@ def KeyGen_internal (p : Params) (ξ : List UInt8) (F : Fuel := {}) : Option (Li
 /-- Algorithm 1: ML-DSA.KeyGen(). Generates a key pair. The random seed `ξ ← 𝔹^32` of step 1 is the argument
 `ξ` (the RBG is the caller's job; step 2-4, the RBG failure check, is not modeled). -/
 def KeyGen (p : Params) (ξ : List UInt8) (F : Fuel := {}) : Option (List UInt8 × List UInt8) :=
-  KeyGen_internal p ξ F                                     -- 5
+  KeyGen_internal p ξ F                                     -- 5: return KeyGen_internal(ξ)
 
 /-- The number of attempts of the signing loop for which `κ + ℓ ≤ 2^16` holds in every attempt:
 `⌊(2^16 − ℓ) / ℓ⌋ + 1` (16384, 13107, 9362 for ML-DSA-44, -65, -87). -/
@@ -143,7 +145,7 @@ def Verify_internal (p : Params) (pk M' σ : List UInt8) (F : Fuel := {}) : Opti
   let t₁2d := (t₁.map RPoly.toZq).map (·.map (· * (2 ^ p.d : Zq)))    -- t₁ ⋅ 2^d
   let w'Approx := NTTInvVec (MatrixVectorNTT Â (NTTVec zq) - ScalarVectorNTT (NTT c.toZq) (NTTVec t₁2d))    -- 9
   let w₁' := UseHintVec p h w'Approx                        -- 10
-  let c_tilde' := H (μ ++ w1Encode p w₁') (p.lam / 4)       -- 12
+  let c_tilde' := H (μ ++ w1Encode p w₁') (p.lam / 4)       -- 12 (w1Encode is step 11's input encoding)
   return some (decide (‖z‖∞ < p.γ₁ - p.β) && c_tilde == c_tilde')    -- 13
 
 /-- Algorithm 3: ML-DSA.Verify(pk, M, σ, ctx). Verifies a signature `σ` for the message `M` (a byte string) and

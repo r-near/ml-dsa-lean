@@ -36,9 +36,11 @@ probability; the later named premise `RejTerm` says it does not happen for the i
 * `ExpandA`, `ExpandS` pass their fuel on to every polynomial they sample.
 
 A result that is `some` for some fuel is the same `some` for every larger fuel (a consequence of the prefix lemma;
-not proved in this file). `Fuel` bundles the three
-numbers, with defaults (`512`) that are far beyond what any input needs (the expected counts are about 256,
-256 to 300, and 70).
+not proved in this file). `Fuel` bundles the three numbers, with defaults of `512`. No fixed fuel suffices for every
+seed: a seed whose XOF output rejects more often needs more. For hash-derived seeds, the defaults run out only with
+negligible probability (expected use: about 256 iterations for RejNTTPoly, about 137 bytes for RejBoundedPoly with
+η = 2 and about 228 with η = 4, and at most about 70 bytes for SampleInBall). Theorems that need the fuel to
+suffice say so through the named premise `RejTerm`; nothing here assumes it.
 -/
 
 namespace Spec
@@ -136,7 +138,8 @@ def SampleInBall (p : Params) (fuel : Nat) (ρ : List UInt8) : Option RPoly := I
       let some (ctx', s₁) := H.Squeeze ctx 1 | return none  -- 9
       ctx := ctx'
       j := (s₁[0]!).toNat
-    if j > i then return none                       -- (unreachable: the stream is empty before 'fuel' passes)
+    if j > i then return none                       -- (not reached: `fuel` bytes follow the 8 sign bytes in the
+                                                    --  stream, so `Squeeze` above runs out first)
     c := c.set! i c[j]!                             -- 11
     c := c.set! j (if h[i + p.τ - 256]! then -1 else 1)    -- 12
   return some c                                     -- 14
@@ -205,7 +208,8 @@ def ExpandS (p : Params) (fuel : Nat) (ρ : List UInt8) : Option (Vector RPoly p
   return some (s₁, s₂)                              -- 7
 
 /-- Algorithm 34: ExpandMask(ρ, μ). Samples a vector `y ∈ R^ℓ` such that each polynomial `y[r]` has
-coefficients between `−γ₁ + 1` and `γ₁`. `ρ` has 64 bytes and `μ` is a nonnegative integer. Note that
+coefficients between `−γ₁ + 1` and `γ₁`. `ρ` has 64 bytes and `μ` is a nonnegative integer (FIPS 204's name for
+this argument; Algorithm 7 passes the counter `κ`, not the message representative μ). Note that
 `IntegerToBytes(μ + r, 2)` reduces `μ + r` modulo `2^16`; the signing loop never lets `μ + r` reach `2^16`
 (see `Sign_internal_bounded`). -/
 def ExpandMask (p : Params) (ρ : List UInt8) (μ : Nat) : Vector RPoly p.ℓ := Id.run do

@@ -13,6 +13,10 @@ Representation notes.
 * The hint `h ∈ R_2^k` is a `Vector (Vector Bool 256) k`.
 * `sigDecode` returns `none` exactly when the hint is malformed (FIPS 204 Algorithm 27 returns `⊥` as the
   result of `HintBitUnpack`; Algorithm 8 step 3 turns that into `false`).
+* Inputs are assumed to have the lengths the standard gives them. On a shorter input the decoders do not fail:
+  `slice` truncates and `BitsToInteger` reads missing bits as 0. `Verify_internal` checks |pk| and |σ| first;
+  `Sign_internal`'s refinement theorem assumes |sk| = skLen. `HintBitPack` likewise assumes at most ω ones
+  (Algorithm 7 step 28 guarantees it); with more, `set!` writes out of place.
 * `HintBitUnpack`'s `while Index < y[ω+i]` runs `y[ω+i] − First` times; it is written as a `for` over that
   range with `Index` still incremented in the body (a Lean `while` is `partial`, so opaque to proofs).
 -/
