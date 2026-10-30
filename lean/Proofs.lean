@@ -36,3 +36,4 @@ import Proofs.PartialVerify
 import Proofs.PartialAPI
 import Proofs.PartialSampleS
 import Proofs.PartialKeyGen
+import Proofs.PartialSign

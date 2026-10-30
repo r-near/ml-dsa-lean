@@ -309,3 +309,23 @@ Proofs.keygen_87_partial
 Proofs.keygen_44_exact
 Proofs.keygen_65_exact
 Proofs.keygen_87_exact
+import Proofs.PartialSign
+Proofs.PartialSign.sampleInBall_fuel_mono
+Proofs.PartialSign.loopRes_fuel_mono
+Proofs.PartialSign.attempt_partial
+Proofs.PartialSign.sign_loop_partial
+Proofs.sign_internal_partial
+Proofs.signInternalAPI_partial
+Proofs.signAPI_partial
+Proofs.sign_internal_44_partial
+Proofs.sign_44_partial
+Proofs.sign_internal_65_partial
+Proofs.sign_65_partial
+Proofs.sign_internal_87_partial
+Proofs.sign_87_partial
+Proofs.sign_internal_44_exact
+Proofs.sign_44_exact
+Proofs.sign_internal_65_exact
+Proofs.sign_65_exact
+Proofs.sign_internal_87_exact
+Proofs.sign_87_exact
