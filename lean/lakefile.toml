@@ -30,8 +30,18 @@ name = "SpecTests"
 name = "spec-acvp"
 root = "SpecTests.ACVP"
 
-# Wycheproof cross-check of the specification (not a default target). Generate the data first:
-# `python3 -I scripts/gen-lean-wycheproof.py`, then `lake build spec-wycheproof && .lake/build/bin/spec-wycheproof`.
+# Differential evaluation of the extracted Impl (compiled): `lake build impl-eval && .lake/build/bin/impl-eval <inputs>`.
+# Not a default target. See scripts/impl-eval.sh.
+[[lean_exe]]
+name = "impl-eval"
+root = "SpecTests.ImplEval"
+
+# Differential check against VCVio (not a default target): `lake build spec-diff-vcvio`, driven by scripts/diff-vcvio.
+[[lean_exe]]
+name = "spec-diff-vcvio"
+root = "SpecTests.DiffVCVio"
+
+# Wycheproof cross-check of the specification: `lake build spec-wycheproof && .lake/build/bin/spec-wycheproof`.
 [[lean_exe]]
 name = "spec-wycheproof"
 root = "SpecTests.Wycheproof"

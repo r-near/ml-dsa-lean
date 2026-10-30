@@ -74,3 +74,10 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   conditioned on the spec's fuel sufficing (`RejTerm`), not stated for every input unconditionally.
 - **E-2 (2026-10-29): upstream's `Signature::decode` also rejects ‖z‖∞ ≥ γ1 − β.** FIPS 204 Alg 27 does not; Alg 8
   does. Same final verdict; this crate follows FIPS (check in `verify_internal`).
+
+- **E-4 (2026-10-30): Wycheproof `InvalidPrivateKey` vectors.** Six sign vectors (two per set) use an expanded
+  secret key whose s1 or s2 has a coefficient outside [−η, η] and expect signing to fail. This crate and the Lean
+  spec both sign with them; RustCrypto panics in its decoder. FIPS 204 Algorithm 25 notes that s1 and s2 "may lie
+  outside [−η, η] if input is malformed", and Section 7.2 says skDecode should run only on trusted input, so this is
+  FIPS-conformant, but it is a hardening gap for callers who load untrusted expanded keys. `tests/wycheproof.rs`
+  counts these as `known`. Closing it would add a range check to Sign and a matching ⊥ to the spec.
