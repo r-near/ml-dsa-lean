@@ -26,7 +26,7 @@ fn run<P: MlDsaParams>(name: &str, fork: impl Fn(&[u8], &[u8], &[u8; 32]) -> boo
 }
 
 fn main() {
-    use ml_dsa_fork_skeleton::api::*;
+    use ml_dsa_verified::api::*;
     run::<MlDsa44>("ML-DSA-44", |sk, m, r| sign_internal_44(sk.try_into().unwrap(), m, r).is_some());
     run::<MlDsa65>("ML-DSA-65", |sk, m, r| sign_internal_65(sk.try_into().unwrap(), m, r).is_some());
     run::<MlDsa87>("ML-DSA-87", |sk, m, r| sign_internal_87(sk.try_into().unwrap(), m, r).is_some());

@@ -103,12 +103,14 @@ fn attempt<const K: usize, const L: usize>(
     Some((c_tilde, z, hint))
 }
 
-/// Algorithm 7 ML-DSA.Sign_internal(sk, M′, rnd). Writes σ to `sig` and returns true, or
-/// returns false when the κ budget (all complete ExpandMask batches below 2^16) is exhausted.
+/// Algorithm 7 ML-DSA.Sign_internal(sk, M′, rnd) with M′ = `m_prefix` ‖ `m` (the external API passes
+/// 0 ‖ |ctx| ‖ ctx as the prefix; the internal interface passes an empty prefix). Writes σ to `sig` and
+/// returns true, or returns false when the κ budget (all complete ExpandMask batches below 2^16) is exhausted.
 pub fn sign_internal<const K: usize, const L: usize>(
     p: &Params,
     sk: &[u8],
-    m_prime: &[u8],
+    m_prefix: &[u8],
+    m: &[u8],
     rnd: &[u8; 32],
     sig: &mut [u8],
 ) -> bool {
@@ -124,7 +126,8 @@ pub fn sign_internal<const K: usize, const L: usize>(
     let mut mu = [0u8; 64];
     let mut h = Shake::shake256();
     h.absorb(&key.tr);
-    h.absorb(m_prime);
+    h.absorb(m_prefix);
+    h.absorb(m);
     h.finalize();
     h.squeeze(&mut mu);
     // 7: ρ″ ← H(K || rnd || μ, 64)

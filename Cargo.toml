@@ -1,9 +1,9 @@
 [package]
-name = "ml-dsa-fork-skeleton"
+name = "ml-dsa-verified"
 version = "0.0.0"
 edition = "2024"
 publish = false
-description = "Proof-first ML-DSA fork sketch: one Rust function per FIPS 204 algorithm, plain arrays and loops"
+description = "Proof-first ML-DSA (FIPS 204): one Rust function per algorithm, plain arrays and loops, extracted to Lean"
 
 [dependencies]
 

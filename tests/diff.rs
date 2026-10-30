@@ -27,7 +27,7 @@ fn check<P: MlDsaParams>(n: usize, fork: impl Fn(&[u8], &[u8], &[u8; 32]) -> Opt
 
 #[test]
 fn sign_internal_matches_upstream() {
-    use ml_dsa_fork_skeleton::api::*;
+    use ml_dsa_verified::api::*;
     check::<MlDsa44>(25, |sk, m, r| sign_internal_44(sk.try_into().unwrap(), m, r).map(|s| s.to_vec()));
     check::<MlDsa65>(25, |sk, m, r| sign_internal_65(sk.try_into().unwrap(), m, r).map(|s| s.to_vec()));
     check::<MlDsa87>(25, |sk, m, r| sign_internal_87(sk.try_into().unwrap(), m, r).map(|s| s.to_vec()));
