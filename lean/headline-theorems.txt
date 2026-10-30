@@ -71,3 +71,42 @@ Proofs.pk_encode_spec
 Proofs.pk_decode_spec
 Proofs.sk_encode_spec
 Proofs.sk_decode_spec
+import Proofs.SigCodec
+Proofs.sig_encode_spec
+Proofs.sig_encode_signed_spec
+Proofs.sig_decode_spec
+Proofs.sigcodec_hypotheses_ML_DSA_44
+Proofs.sigcodec_hypotheses_ML_DSA_65
+Proofs.sigcodec_hypotheses_ML_DSA_87
+import Proofs.SampleA
+Proofs.rej_ntt_poly_spec
+Proofs.expand_a_spec
+Proofs.expand_a_spec_valid
+Proofs.rej_ntt_poly_satisfiable
+Proofs.rej_ntt_poly_premise_satisfiable
+import Proofs.SampleBall
+Proofs.sample_in_ball_spec
+Proofs.SampleInBall_ternary
+Proofs.SampleInBall_eq
+import Proofs.ExpandMask
+Proofs.expand_mask_spec
+Proofs.expand_mask_exists
+Proofs.expand_mask_range
+import Proofs.Steps
+Proofs.scale_by_2d_spec
+Proofs.scale_vec_by_2d_spec
+Proofs.prefix_eq_spec
+Proofs.ctx_prefix_spec
+Proofs.response_spec
+Proofs.hint_step_spec
+Proofs.vec_power2round_spec
+Proofs.power2roundVec_range
+Proofs.compute_t_spec
+import Proofs.SampleS
+Proofs.rej_bounded_poly_spec
+Proofs.expand_s_spec
+Proofs.rej_bounded_poly_satisfiable
+Proofs.rej_bounded_poly_premise_satisfiable
+Proofs.expand_s_satisfiable
+Proofs.expand_s_premise_satisfiable
+Proofs.RejBoundedPoly_bounded

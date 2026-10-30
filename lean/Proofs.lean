@@ -8,3 +8,9 @@ import Proofs.Rounding
 import Proofs.Keccak
 import Proofs.Hint
 import Proofs.EncodeKeys
+import Proofs.SigCodec
+import Proofs.SampleA
+import Proofs.SampleBall
+import Proofs.ExpandMask
+import Proofs.Steps
+import Proofs.SampleS
