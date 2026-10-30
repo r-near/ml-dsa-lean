@@ -4707,7 +4707,7 @@ def encode.sk_is_well_formed
     true 0#usize
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_44]:
-    Source: 'src/api.rs', lines 101:0-103:1
+    Source: 'src/api.rs', lines 104:0-106:1
     Visibility: public -/
 def api.sk_is_well_formed_44 (sk : Array Std.U8 2560#usize) : RustM Bool := do
   let p ← params.ML_DSA_44
@@ -4740,7 +4740,7 @@ def params.ML_DSA_65 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_65]:
-    Source: 'src/api.rs', lines 111:0-116:1
+    Source: 'src/api.rs', lines 114:0-119:1
     Visibility: public -/
 def api.keygen_65
   (xi : Array Std.U8 32#usize) :
@@ -4757,7 +4757,7 @@ def api.keygen_65
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_65]:
-    Source: 'src/api.rs', lines 120:0-131:1
+    Source: 'src/api.rs', lines 123:0-134:1
     Visibility: public -/
 def api.sign_65
   (sk : Array Std.U8 4032#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4785,7 +4785,7 @@ def api.sign_65
     else ok none
 
 /-- [ml_dsa_verified::api::verify_65]:
-    Source: 'src/api.rs', lines 134:0-140:1
+    Source: 'src/api.rs', lines 137:0-143:1
     Visibility: public -/
 def api.verify_65
   (pk : Array Std.U8 1952#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4808,7 +4808,7 @@ def api.verify_65
     verify.verify_internal 6#usize 5#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_65]:
-    Source: 'src/api.rs', lines 143:0-150:1
+    Source: 'src/api.rs', lines 146:0-153:1
     Visibility: public -/
 def api.sign_internal_65
   (sk : Array Std.U8 4032#usize) (m_prime : Slice Std.U8)
@@ -4827,7 +4827,7 @@ def api.sign_internal_65
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_65]:
-    Source: 'src/api.rs', lines 153:0-155:1
+    Source: 'src/api.rs', lines 156:0-158:1
     Visibility: public -/
 def api.verify_internal_65
   (pk : Array Std.U8 1952#usize) (m_prime : Slice Std.U8)
@@ -4841,7 +4841,7 @@ def api.verify_internal_65
   verify.verify_internal 6#usize 5#usize p s s1 m_prime s2
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_65]:
-    Source: 'src/api.rs', lines 164:0-166:1
+    Source: 'src/api.rs', lines 170:0-172:1
     Visibility: public -/
 def api.sk_is_well_formed_65 (sk : Array Std.U8 4032#usize) : RustM Bool := do
   let p ← params.ML_DSA_65
@@ -4874,7 +4874,7 @@ def params.ML_DSA_87 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_87]:
-    Source: 'src/api.rs', lines 174:0-179:1
+    Source: 'src/api.rs', lines 180:0-185:1
     Visibility: public -/
 def api.keygen_87
   (xi : Array Std.U8 32#usize) :
@@ -4891,7 +4891,7 @@ def api.keygen_87
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_87]:
-    Source: 'src/api.rs', lines 183:0-194:1
+    Source: 'src/api.rs', lines 189:0-200:1
     Visibility: public -/
 def api.sign_87
   (sk : Array Std.U8 4896#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4919,7 +4919,7 @@ def api.sign_87
     else ok none
 
 /-- [ml_dsa_verified::api::verify_87]:
-    Source: 'src/api.rs', lines 197:0-203:1
+    Source: 'src/api.rs', lines 203:0-209:1
     Visibility: public -/
 def api.verify_87
   (pk : Array Std.U8 2592#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4942,7 +4942,7 @@ def api.verify_87
     verify.verify_internal 8#usize 7#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_87]:
-    Source: 'src/api.rs', lines 206:0-213:1
+    Source: 'src/api.rs', lines 212:0-219:1
     Visibility: public -/
 def api.sign_internal_87
   (sk : Array Std.U8 4896#usize) (m_prime : Slice Std.U8)
@@ -4961,7 +4961,7 @@ def api.sign_internal_87
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_87]:
-    Source: 'src/api.rs', lines 216:0-218:1
+    Source: 'src/api.rs', lines 222:0-224:1
     Visibility: public -/
 def api.verify_internal_87
   (pk : Array Std.U8 2592#usize) (m_prime : Slice Std.U8)
@@ -4975,7 +4975,7 @@ def api.verify_internal_87
   verify.verify_internal 8#usize 7#usize p s s1 m_prime s2
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_87]:
-    Source: 'src/api.rs', lines 227:0-229:1
+    Source: 'src/api.rs', lines 236:0-238:1
     Visibility: public -/
 def api.sk_is_well_formed_87 (sk : Array Std.U8 4896#usize) : RustM Bool := do
   let p ← params.ML_DSA_87

@@ -9,7 +9,7 @@
 
 // Only `api` is public. The other modules hold panicking internals (`sign::sign_internal` and
 // `keygen::keygen_internal` index slices of the wrong length, `verify::verify_internal` indexes by K/L), so
-// they are crate-private unless the `internals` feature (tests, fuzzing, checkct) is on.
+// they are crate-private unless the `internals` feature (tests, fuzzing) is on.
 pub mod api;
 
 #[cfg(feature = "internals")]

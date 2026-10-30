@@ -237,9 +237,9 @@ theorem _root_.Proofs.verify_internal_44_correct (pk : Array U8 1312#usize) (m :
   rw [verify_internal_44_eq, hip]
   exact verifyInternalAPI_spec hp _ _ pk m sig F b hs
 
-/-- **Algorithm 2 (`Sign`), ML-DSA-44, `none` only if the spec fails.** If `|ctx| ≤ 255` and the Rust `sign_44`
-returns `none` (`= ok none`), then for every fuel `F` the spec's `Sign` is `none` too, and it is one of the
-spec's failure cases for `M′ = 0 ‖ |ctx| ‖ ctx ‖ M`: `ExpandA` ran out of fuel, some `SampleInBall` did, or the κ
+/-- **Algorithm 2 (`Sign`), ML-DSA-44, `none` only if the spec fails.** If the Rust `sign_44` returns `none`
+(`= ok none`), then for every fuel `F` the spec's `Sign` is `none` too, and either `|ctx| > 255` or it is one
+of the spec's failure cases for `M′ = 0 ‖ |ctx| ‖ ctx ‖ M`: `ExpandA` ran out of fuel, some `SampleInBall` did, or the κ
 budget was exhausted (`Sign.sign_none_cases`). Together with `sign_44_correct_ctx_long` (`|ctx| > 255` gives
 `none` on both sides) this is the contrapositive of `sign_44_correct_some`: the Rust only returns `none` where
 the spec does. What is not provable: that the fuel-failure cases make the Rust return `none` (it may
@@ -308,9 +308,9 @@ theorem _root_.Proofs.verify_internal_65_correct (pk : Array U8 1952#usize) (m :
   rw [verify_internal_65_eq, hip]
   exact verifyInternalAPI_spec hp _ _ pk m sig F b hs
 
-/-- **Algorithm 2 (`Sign`), ML-DSA-65, `none` only if the spec fails.** If `|ctx| ≤ 255` and the Rust `sign_65`
-returns `none` (`= ok none`), then for every fuel `F` the spec's `Sign` is `none` too, and it is one of the
-spec's failure cases for `M′ = 0 ‖ |ctx| ‖ ctx ‖ M`: `ExpandA` ran out of fuel, some `SampleInBall` did, or the κ
+/-- **Algorithm 2 (`Sign`), ML-DSA-65, `none` only if the spec fails.** If the Rust `sign_65` returns `none`
+(`= ok none`), then for every fuel `F` the spec's `Sign` is `none` too, and either `|ctx| > 255` or it is one
+of the spec's failure cases for `M′ = 0 ‖ |ctx| ‖ ctx ‖ M`: `ExpandA` ran out of fuel, some `SampleInBall` did, or the κ
 budget was exhausted (`Sign.sign_none_cases`). Together with `sign_65_correct_ctx_long` (`|ctx| > 255` gives
 `none` on both sides) this is the contrapositive of `sign_65_correct_some`: the Rust only returns `none` where
 the spec does. What is not provable: that the fuel-failure cases make the Rust return `none` (it may
@@ -379,9 +379,9 @@ theorem _root_.Proofs.verify_internal_87_correct (pk : Array U8 2592#usize) (m :
   rw [verify_internal_87_eq, hip]
   exact verifyInternalAPI_spec hp _ _ pk m sig F b hs
 
-/-- **Algorithm 2 (`Sign`), ML-DSA-87, `none` only if the spec fails.** If `|ctx| ≤ 255` and the Rust `sign_87`
-returns `none` (`= ok none`), then for every fuel `F` the spec's `Sign` is `none` too, and it is one of the
-spec's failure cases for `M′ = 0 ‖ |ctx| ‖ ctx ‖ M`: `ExpandA` ran out of fuel, some `SampleInBall` did, or the κ
+/-- **Algorithm 2 (`Sign`), ML-DSA-87, `none` only if the spec fails.** If the Rust `sign_87` returns `none`
+(`= ok none`), then for every fuel `F` the spec's `Sign` is `none` too, and either `|ctx| > 255` or it is one
+of the spec's failure cases for `M′ = 0 ‖ |ctx| ‖ ctx ‖ M`: `ExpandA` ran out of fuel, some `SampleInBall` did, or the κ
 budget was exhausted (`Sign.sign_none_cases`). Together with `sign_87_correct_ctx_long` (`|ctx| > 255` gives
 `none` on both sides) this is the contrapositive of `sign_87_correct_some`: the Rust only returns `none` where
 the spec does. What is not provable: that the fuel-failure cases make the Rust return `none` (it may

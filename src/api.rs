@@ -98,6 +98,9 @@ pub fn verify_internal_44(pk: &[u8; 1312], m_prime: &[u8], sig: &[u8; 2420]) -> 
 /// FIPS 204 Algorithm 25 notes that s₁ and s₂ "may lie outside [−η, η] if input is malformed" and leaves
 /// Sign's behavior there undefined. `sign_44` does not call this and follows the algorithm literally (it signs
 /// with such a key); callers that load untrusted keys can call this first. Keys from `keygen_44` pass.
+///
+/// Not covered by the constant-time checks: the source branches on whether each coefficient is negative (a
+/// release x86_64 build compiles it branchless). Run it where timing is not observable, e.g. once at key load.
 pub fn sk_is_well_formed_44(sk: &[u8; 2560]) -> bool {
     sk_is_well_formed::<4, 4>(&ML_DSA_44, sk)
 }
@@ -161,6 +164,9 @@ pub fn verify_internal_65(pk: &[u8; 1952], m_prime: &[u8], sig: &[u8; 3309]) -> 
 /// FIPS 204 Algorithm 25 notes that s₁ and s₂ "may lie outside [−η, η] if input is malformed" and leaves
 /// Sign's behavior there undefined. `sign_65` does not call this and follows the algorithm literally (it signs
 /// with such a key); callers that load untrusted keys can call this first. Keys from `keygen_65` pass.
+///
+/// Not covered by the constant-time checks: the source branches on whether each coefficient is negative (a
+/// release x86_64 build compiles it branchless). Run it where timing is not observable, e.g. once at key load.
 pub fn sk_is_well_formed_65(sk: &[u8; 4032]) -> bool {
     sk_is_well_formed::<6, 5>(&ML_DSA_65, sk)
 }
@@ -224,6 +230,9 @@ pub fn verify_internal_87(pk: &[u8; 2592], m_prime: &[u8], sig: &[u8; 4627]) -> 
 /// FIPS 204 Algorithm 25 notes that s₁ and s₂ "may lie outside [−η, η] if input is malformed" and leaves
 /// Sign's behavior there undefined. `sign_87` does not call this and follows the algorithm literally (it signs
 /// with such a key); callers that load untrusted keys can call this first. Keys from `keygen_87` pass.
+///
+/// Not covered by the constant-time checks: the source branches on whether each coefficient is negative (a
+/// release x86_64 build compiles it branchless). Run it where timing is not observable, e.g. once at key load.
 pub fn sk_is_well_formed_87(sk: &[u8; 4896]) -> bool {
     sk_is_well_formed::<8, 7>(&ML_DSA_87, sk)
 }

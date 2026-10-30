@@ -69,7 +69,8 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   the inputs by length, and the project spec's step 0 returns false), valid when `p` agrees with `K`/`L`, and `verify_internal_spec` has no length hypotheses. `sign_internal` and `keygen_internal` still panic on
   wrong-length slices and their theorems keep the length hypotheses; the API's fixed-size arrays discharge them.
   Since 5d151a6 every module except `api` is crate-private (public only under the `internals` feature for tests and
-  fuzzing), so none of these panicking entry points is reachable by a downstream user.
+  fuzzing), so none of these panicking entry points is reachable by a downstream user unless something in its
+  dependency graph turns that feature on (Cargo unifies features).
   The guard needs `ω ≤ 255` in `StdParams` (checked `usize` arithmetic in `sig_len`; 80/55/75 for 44/65/87).
 - **E-3 (2026-10-29): rejection loops have no provable bound.** Verify runs RejNTTPoly (on ρ from pk) and
   SampleInBall (on c̃ from σ) on attacker-chosen seeds; their termination is probabilistic. The Verify theorem is
