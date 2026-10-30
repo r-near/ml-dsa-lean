@@ -1,4 +1,4 @@
-import Proofs.Field
+import Proofs.Repr
 import Spec.NTT
 
 /-!
@@ -11,58 +11,6 @@ set_option maxRecDepth 8192
 
 namespace Proofs
 open Impl
-
-/-! ## Representation: `Array U32 256` as a polynomial over Z_q -/
-
-/-- All coefficients are canonical representatives. -/
-def Canonical (w : Array U32 256#usize) : Prop := ∀ x ∈ w.val, x.val < Spec.q
-
-/-- The polynomial of Z_q represented by a coefficient array. -/
-noncomputable def toZq (w : Array U32 256#usize) : Poly :=
-  Vector.ofFn fun i : Fin 256 => (((w[i.val]!).val : Nat) : Zq)
-
-theorem canon_get {w : Array U32 256#usize} (hc : Canonical w) {k : Nat} (h : k < w.val.length) :
-    (w.val[k]).val < 8380417 :=
-  hc _ (List.getElem_mem h)
-
-theorem canonical_set (w : Array U32 256#usize) (i : Usize) (x : U32) (hw : Canonical w)
-    (hx : x.val < Spec.q) : Canonical (w.set i x) := by
-  intro y hy
-  rw [Array.set_val_eq] at hy
-  rcases List.mem_or_eq_of_mem_set hy with h | h
-  · exact hw y h
-  · subst h; exact hx
-
-theorem set!_eq (xs : Vector Zq 256) (i : Nat) (x : Zq) : xs.set! i x = xs.setIfInBounds i x := rfl
-
-theorem toZq_getElem! (w : Array U32 256#usize) (k : Nat) (hk : k < 256) :
-    (toZq w)[k]! = (((w[k]!).val : Nat) : Zq) := by
-  simp [toZq, getElem!_pos, hk]
-
-theorem len256 (w : Array U32 256#usize) : w.val.length = 256 := by
-  exact w.property
-
-theorem toZq_getElem (w : Array U32 256#usize) (k : Nat) (hk : k < w.val.length) :
-    (toZq w)[k]! = (((w.val[k]).val : Nat) : Zq) := by
-  have hk' : k < 256 := by have := len256 w; omega
-  rw [toZq_getElem! w k hk']
-  simp [Array.getElem!_Nat_eq, List.getElem!_eq_getElem?_getD, List.getElem?_eq_getElem hk]
-
-theorem toZq_set (w : Array U32 256#usize) (i : Usize) (x : U32) (hi : i.val < 256) :
-    toZq (w.set i x) = (toZq w).set! i.val (x.val : Zq) := by
-  apply Vector.ext
-  intro k hk
-  rw [set!_eq, Vector.getElem_setIfInBounds hk]
-  simp only [toZq, Vector.getElem_ofFn]
-  by_cases h : i.val = k
-  · subst h
-    simp [Array.getElem!_Nat_set_eq, hi, Array.length]
-  · simp [h]
-
-theorem vec_getElem!_set!_ne (xs : Vector Zq 256) {i j : Nat} (x : Zq) (hj : j < 256) (h : i ≠ j) :
-    (xs.set! i x)[j]! = xs[j]! := by
-  rw [set!_eq, getElem!_pos _ _ (by simpa using hj), getElem!_pos _ _ (by simpa using hj)]
-  exact Vector.getElem_setIfInBounds_ne hj h
 
 /-! ## The inner loop (Algorithm 41, steps 9-12) -/
 
