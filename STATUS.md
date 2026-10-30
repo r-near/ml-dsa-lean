@@ -59,10 +59,15 @@ One end-to-end Lean proof, readable top-down:
 - `sign_correct`: `Impl.api.sign_*` = Algorithm 2 / 7 (bounded κ budget, `none` on exhaustion).
 - `verify_correct`: `Impl.api.verify_*` = Algorithm 3 / 8, for **all** byte strings pk, σ. The core
   `verify_internal` takes slices and starts with a length guard (`pk.len != pk_len p` or `σ.len != sig_len p` returns
-  false, as in FIPS 204), so `verify_internal_spec` has no length hypotheses. The one other premise is `RejTerm` on attacker-chosen seeds:
-  the spec's ExpandA(ρ) (ρ from pk) and SampleInBall(c̃) (c̃ from σ) return `some` at the stated fuel. Finding a seed
-  that exhausts the fuel is believed infeasible (SHAKE output would have to reject hundreds of times in a row), but
-  the proof does not show it, so this is an assumption about SHAKE, not about honest randomness (ISSUES E-3).
+  false; input validation consistent with FIPS 204), so `verify_internal_spec` has no length hypotheses.
+  **No premises at all since c9f6663** (`Proofs/PartialAPI.lean`, `verify_NN_exact`, `verify_internal_NN_exact`):
+  for every `pk`, `m`, `ctx`, `σ` of the API types, (a) the extracted Rust never returns `fail` (no panic, overflow
+  or out-of-bounds in the Aeneas model); (b) if it returns `ok b`, then `Spec.Verify … F = some b` for some fuel `F`;
+  and (c) if `Spec.Verify … F = some b` for any `F`, it returns `ok b`. Hence `b` is unique across fuels, and the
+  Rust diverges exactly when the spec returns `none` at every fuel, i.e. when FIPS 204's unbounded ExpandA or
+  SampleInBall would never terminate (this follows from (a)–(c); it is not a separate theorem). The proof uses
+  generic loop lemmas proved by fixpoint induction (`Proofs/Partial.lean`) and fuel monotonicity of the samplers.
+  Not modeled: stack exhaustion and out-of-memory.
 - Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`. **Done** (`Proofs/Correctness.lean`).
 
 Named premises (the only ones allowed; each needs a satisfiability witness):
@@ -70,7 +75,8 @@ Named premises (the only ones allowed; each needs a satisfiability witness):
 - `RejTerm`: the rejection samplers (RejNTTPoly in ExpandA, RejBoundedPoly in ExpandS, SampleInBall's draw) receive
   enough accepted samples from SHAKE. Probabilistic, not provable. Concretely: the spec samplers are fuel-bounded and
   return `Option`; theorems take "the spec returns `some` at fuel F" as the hypothesis. The Rust loops are unbounded
-  (Aeneas `loop`), so without it they can diverge, and no theorem can claim totality for every seed.
+  (Aeneas `loop`). For Verify this premise is gone (partial correctness plus panic-freedom for every input, above);
+  KeyGen and Sign still carry it.
 - κ budget: Sign is compared with `Sign_internal_bounded B`, B = ⌊(2¹⁶ − ℓ)/ℓ⌋ + 1.
 
 Witness status of the premises:
@@ -86,9 +92,9 @@ Witness status of the premises:
 
 Not covered by any theorem:
 
-- Inputs where a spec sampler runs out of fuel. The Rust squeezes without bound there, so it most likely returns the
-  true FIPS result, but nothing proves it. In Sign this includes a SampleInBall fuel failure in any earlier rejected
-  attempt. For Verify and KeyGen the seeds come from pk/σ/ξ, so this is a premise on attacker-chosen inputs.
+- KeyGen and Sign on inputs where a spec sampler runs out of fuel. The Rust squeezes without bound there, so it most
+  likely returns the true FIPS result, but nothing proves it yet. In Sign this includes a SampleInBall fuel failure
+  in any earlier rejected attempt. (Verify is covered for every input since c9f6663.)
 - Sign's `none` when a spec sampler runs out of fuel: `sign_NN_none_only_if` shows that a Rust `none` means the spec
   fails at every fuel (|ctx| > 255, a fuel failure, or exhaustion), but the converse for fuel failures is unproved,
   since the Rust may diverge there.

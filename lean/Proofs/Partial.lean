@@ -13,9 +13,10 @@ suffices. This development proves the converse direction for every input:
 * (a) the Rust never returns `fail` (it never panics), and
 * (b) if the Rust returns `ok r`, then `r` represents the spec's answer at some fuel `F`.
 
-Together with the old theorems the Rust agrees exactly with the unbounded FIPS 204 algorithm: the same answer
-whenever either side terminates, and divergence exactly when FIPS diverges. FIPS 204's own sampling loops are
-unbounded, so this is the strongest possible statement.
+For Verify (`PartialAPI.lean`, `verify_NN_exact`, `verify_internal_NN_exact`), together with the old theorems,
+the Rust agrees with the fuel-bounded spec taken as the limit over fuel: the same answer whenever either side
+terminates, and divergence exactly when the spec returns `none` at every fuel (this last part follows from the
+three conjuncts of `_exact`; it is not a separate theorem). KeyGen and Sign are not covered by this file.
 
 ## The notation
 
@@ -43,15 +44,15 @@ with the `div`-versions of the loop lemmas at the loops.
 3. **The fuel**. The existing total proofs fix one fuel. Here the invariant carries `∃ F`, and each step needs
    fuel *monotonicity* of the spec (`some` at `F` gives the same `some` at `F' ≥ F`), so that the fuel of the
    previous iterations and the fuel needed by the new one can be combined with `max`. The per-sampler
-   monotonicity lemmas are in `PartialSample.lean` (`RejNTTPoly`, `ExpandA`) and `PartialBall.lean`
-   (`SampleInBall`).
+   monotonicity lemmas are in `PartialSample.lean` (`RejNTTPoly_mono`, `ExpandA_mono`) and `PartialBall.lean`
+   (sampler-level: `sibFind_mono`, `sibStep_mono`, `runTo_mono`).
 4. **Composition.** Callers prove `f … ⦃ r => ∃ F, spec … F = some (abs r) ⦄div` by the same `step*` script as the
    total theorem, using the `div` versions of the sampler theorems; at the end the fuels of the (independent)
    samplers are combined into the fields of `Spec.Fuel`.
 
-For KeyGen and Sign the same recipe applies: `RejBoundedPoly`/`ExpandS` follow `RejNTTPoly`/`ExpandA`
-(a one-byte window instead of three), `SampleInBall` inside Sign is `sample_in_ball_partial`, and Sign's rejection
-loop is bounded by the κ budget, so it needs no new loop lemma: only the samplers it calls.
+For KeyGen and Sign the recipe is expected to apply (not yet done here): `RejBoundedPoly`/`ExpandS` would follow
+`RejNTTPoly`/`ExpandA` (a one-byte window instead of three; their monotonicity lemmas do not exist yet),
+`SampleInBall` inside Sign is `sample_in_ball_partial`, and Sign's rejection loop is bounded by the κ budget.
 -/
 
 open Aeneas Aeneas.Std RustM

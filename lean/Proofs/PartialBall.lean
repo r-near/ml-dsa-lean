@@ -10,7 +10,7 @@ never panics, and if it returns `r` then `r` represents the spec's answer at som
 * Spec side: the stream of `SHAKE256 M N` is a prefix of the stream for every larger `N`
   (`shake256_take`, `shake256_prefix`), so `sibFind`/`sibStep`/`sibRun` are monotone in the budget and the stream
   (`sibFind_mono`, `sibStep_mono`), and a run of the outer loop at fuel `F` stays valid at every `F' ≥ F`
-  (`SampleInBall_mono`).
+  (`runTo_mono`; there is no separate Spec-level `SampleInBall_mono`).
 * Inner loop (`while j > i`): ghost `(pos, j)`; the result relates to `sibFind` at *some* stream length and budget
   (`inner_loop_partial`, `loop.dspec_ghost`).
 * Outer loop: the invariant carries the spec's run so far at some fuel `F`; one more iteration needs the fuel
