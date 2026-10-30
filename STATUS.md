@@ -3,13 +3,13 @@
 What is proved, under which premises, and what is trusted. Updated as work lands.
 
 **Proved so far** (standard axioms only; `scripts/check-axioms.sh` checks every extracted def and every name in
-`lean/headline-theorems.txt`, 486 declarations at 8eb6429). Each is a `@[step]` refinement spec of an extracted function
+`lean/headline-theorems.txt`, 525 declarations at 4adba1e). Each is a `@[step]` refinement spec of an extracted function
 against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`.
 
 Done-gate: a module counts as proved only after `scripts/lean-check.sh` passes: a pipefail-safe `lake build` exits 0,
 the full log has no `error:` or `sorry` warning, and the axiom gate passes. Each agent reuses one stable `rx submit` name for its gates, which keeps
 that name's `.lake/build` warm (ISSUES T-7). Earlier rx jobs could report success on
-failed builds (ISSUES T-6). Every row below passed this gate at 8eb6429 (job `gate-main`, `LEAN CHECK OK`, 486 declarations).
+failed builds (ISSUES T-6). Every row below passed this gate at 4adba1e (job `gate-main`, `LEAN CHECK OK`, 525 declarations).
 The phase 1–4a rows were also re-verified by a cold rebuild of ffc445c (job `verify-head`).
 
 | Module | What is proved | Extra hypotheses (parameter facts witnessed for 44/65/87; sampler premises: leaf witnesses, see below) |
