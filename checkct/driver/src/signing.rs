@@ -59,3 +59,11 @@ probe!(response_87, response::<8, 7>(&params::ML_DSA_87));
 probe!(hint_step_44, hint_step::<4>(&params::ML_DSA_44));
 probe!(hint_step_65, hint_step::<6>(&params::ML_DSA_65));
 probe!(hint_step_87, hint_step::<8>(&params::ML_DSA_87));
+
+// Split probes for the riscv32imac signing steps whose full-size versions exceed the BINSEC timeout.
+// K = L = 1: the per-coefficient code is identical, only the loop counts differ (the generics are
+// parameterized by const K and L). Both gamma2 sets are covered (44: (q-1)/88, 65/87: (q-1)/32).
+probe!(response_1x1_44, response::<1, 1>(&params::ML_DSA_44));
+probe!(response_1x1_65, response::<1, 1>(&params::ML_DSA_65));
+probe!(hint_step_1_44, hint_step::<1>(&params::ML_DSA_44));
+probe!(hint_step_1_65, hint_step::<1>(&params::ML_DSA_65));

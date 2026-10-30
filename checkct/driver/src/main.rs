@@ -27,7 +27,18 @@ mod sampling;
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/sign.rs"]
 mod sign;
+#[allow(dead_code, unexpected_cfgs)]
+#[path = "../../../src/keygen.rs"]
+mod keygen;
+#[allow(dead_code, unexpected_cfgs)]
+#[path = "../../../src/verify.rs"]
+mod verify;
+// The public API, so that the probes enter through the same functions callers use.
+#[allow(dead_code)]
+#[path = "../../../src/api.rs"]
+mod api;
 
+mod extra;
 mod probes;
 mod rng;
 mod signing;
