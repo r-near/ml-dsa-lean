@@ -120,11 +120,17 @@ else:
            '-dest', str(work / 'lean'), '-subdir', NS]
     with (work / 'aeneas.log').open('w') as log:
         ar = subprocess.run(cmd, stdout=log, stderr=subprocess.STDOUT, timeout=1800)
-    alog = (work / 'aeneas.log').read_text()
+    # Aeneas colors its log levels ("[\x1b[91mError\x1b[39m ]"); strip ANSI escapes before matching.
+    alog = re.sub(r'\x1b\[[0-9;]*m', '', (work / 'aeneas.log').read_text())
+    alines = alog.splitlines()
     if ar.returncode != 0:
         fail(f'aeneas exited {ar.returncode}')
-    errs = [l for l in alog.splitlines() if '[Error]' in l or 'Internal error' in l]
-    warns = [l for l in alog.splitlines() if '[Warning]' in l or 'may be incorrect' in l]
+    errs = [l for l in alines if re.search(r'\[\s*Error\s*\]', l) or 'Internal error' in l or 'Uncaught exception' in l]
+    warns = [l for l in alines if re.search(r'\[\s*Warning\s*\]', l) or 'may be incorrect' in l]
+    for i, l in enumerate(alines):
+        if l in errs or l in warns:
+            print('\n'.join(alines[i:i + 12]))
+            break
     clashes = [l for l in alog.splitlines() if 'name clash' in l.lower()]
     for kind, lines in [('[Error]', errs), ('[Warning]/may be incorrect', warns), ('Name clash', clashes)]:
         if lines:
