@@ -140,7 +140,7 @@ LLVM see the multiply feeding the select. The leaked bit is `w - cs2 + ct0` bein
 (`diff == q - 1`), i.e. a function of secret data, so this is a real object-code finding for that toolchain and
 inlining context, not a tool artifact.
 
-Proposed fix (`checkct/decompose-edge-barrier.patch`, not applied; `src/` untouched): add an
+Fix (applied in 069b439, ISSUES CT-2): add an
 `opaque_u32` barrier (`core::hint::black_box`, identity under `cfg(miri)`) and apply it to the edge mask in
 `rounding::decompose`:
 
