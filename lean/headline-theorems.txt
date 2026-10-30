@@ -191,3 +191,40 @@ Proofs.sign_87_correct_some
 Proofs.sign_87_correct_ctx_long
 Proofs.sign_87_correct_exhausted
 Proofs.API.sign_exhausted_spec_none
+import Proofs.CorrBall
+Proofs.Corr.SampleInBall_weight
+Proofs.Corr.SampleInBall_ball
+import Proofs.CorrRound
+Proofs.Corr.power2Round_spec
+Proofs.Corr.power2RoundVec_spec
+Proofs.Corr.highBits_add_small
+Proofs.Corr.highBitsVec_add_small
+Proofs.Corr.highBitsVec_sub_add
+Proofs.Corr.useHint_makeHint
+Proofs.Corr.useHintVec_makeHintVec
+Proofs.Corr.useHintVec_makeHintVec_sign
+Proofs.Corr.sign_verify_w1
+import Proofs.CorrCodec
+Proofs.Corr.BitsToInteger_IntegerToBits
+Proofs.Corr.SimpleBitUnpack_SimpleBitPack
+Proofs.Corr.BitUnpack_BitPack
+Proofs.Corr.HintBitUnpack_HintBitPack
+Proofs.Corr.pkDecode_pkEncode
+Proofs.Corr.skDecode_skEncode
+Proofs.Corr.sigDecode_sigEncode
+Proofs.Corr.sigDecode_sigEncode_modPM
+Proofs.Corr.pkEncode_length
+Proofs.Corr.skEncode_length
+Proofs.Corr.sigEncode_length
+Proofs.Corr.Power2Round_t0_range
+Proofs.Corr.Power2Round_t1_range
+import Proofs.CorrNTT
+Proofs.Corr.NTTInv_NTT
+Proofs.Corr.NTT_NTTInv
+Proofs.Corr.NTT_add
+Proofs.Corr.NTT_smul
+Proofs.Corr.NTTInv_add
+Proofs.Corr.NTTInv_smul
+Proofs.Corr.NTTInv_MultiplyNTT
+Proofs.Corr.cs_norm_bound
+Proofs.Corr.cs_norm_bound_params

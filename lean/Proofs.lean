@@ -22,3 +22,7 @@ import Proofs.KeyGen
 import Proofs.Verify
 import Proofs.Sign
 import Proofs.API
+import Proofs.CorrBall
+import Proofs.CorrRound
+import Proofs.CorrCodec
+import Proofs.CorrNTT
