@@ -49,6 +49,9 @@ structure StdParams (sp : Spec.Params) : Prop where
   k_le_8 : sp.k ≤ 8
   /-- `ℓ ≥ 1`: Sign's κ loop tests `κ + ℓ − 1 ≤ 2¹⁶ − 1` and must advance (Sign). -/
   ell_pos : 1 ≤ sp.ℓ
+  /-- `ω ≤ 255`: Verify's length guard computes `sig_len = λ/4 + ℓ·32·(1 + bitlen(γ₁ − 1)) + ω + k` with checked
+  `usize` arithmetic (Verify, `sig_len_spec`). -/
+  omega_le : sp.ω ≤ 255
 
 namespace StdParams
 variable {sp : Spec.Params}
@@ -95,15 +98,18 @@ end StdParams
 
 theorem stdParams_44 : StdParams Spec.ML_DSA_44 :=
   ⟨by decide +kernel, Or.inl (by decide +kernel), Or.inl (by decide +kernel), by decide +kernel,
-    Or.inl (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
+    Or.inl (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+    by decide +kernel⟩
 
 theorem stdParams_65 : StdParams Spec.ML_DSA_65 :=
   ⟨by decide +kernel, Or.inr (by decide +kernel), Or.inr (by decide +kernel), by decide +kernel,
-    Or.inr (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
+    Or.inr (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+    by decide +kernel⟩
 
 theorem stdParams_87 : StdParams Spec.ML_DSA_87 :=
   ⟨by decide +kernel, Or.inr (by decide +kernel), Or.inr (by decide +kernel), by decide +kernel,
-    Or.inl (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
+    Or.inl (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel,
+    by decide +kernel⟩
 
 /-! ## The canonical bundle -/
 

@@ -166,3 +166,38 @@ fn no_panic_random_bytes() {
     no_panic(&ML_DSA_65, 2);
     no_panic(&ML_DSA_87, 3);
 }
+
+/// Wrong-length pk or σ (one byte shorter or longer) must return false without panicking, even when the
+/// extra byte is appended to an otherwise valid input.
+fn wrong_length<P: MlDsaParams>(p: &Params, tag: u64) {
+    let mut rng = Rng(0x2545_F491_4F6C_DD1D ^ tag);
+    let esk = ExpandedSigningKey::<P>::from_seed(&seed(&mut rng));
+    let pk = esk.verifying_key().encode().as_slice().to_vec();
+    let m = rng.bytes(40);
+    let mut rnd = [0u8; 32];
+    rnd.copy_from_slice(&rng.bytes(32));
+    let sig = esk.sign_internal(&[&m], &ml_dsa::B32::from(rnd)).encode().as_slice().to_vec();
+    assert!(ours(p, &pk, &[], &m, &sig), "valid signature rejected");
+    let variants = |v: &[u8]| -> Vec<Vec<u8>> {
+        let mut out = vec![v[..v.len() - 1].to_vec(), Vec::new()];
+        for extra in [0u8, 0xFF] {
+            let mut longer = v.to_vec();
+            longer.push(extra);
+            out.push(longer);
+        }
+        out
+    };
+    for bad_pk in variants(&pk) {
+        assert!(!ours(p, &bad_pk, &[], &m, &sig), "wrong-length pk ({}) accepted", bad_pk.len());
+    }
+    for bad_sig in variants(&sig) {
+        assert!(!ours(p, &pk, &[], &m, &bad_sig), "wrong-length sig ({}) accepted", bad_sig.len());
+    }
+}
+
+#[test]
+fn wrong_length_pk_and_sig_return_false() {
+    wrong_length::<MlDsa44>(&ML_DSA_44, 1);
+    wrong_length::<MlDsa65>(&ML_DSA_65, 2);
+    wrong_length::<MlDsa87>(&ML_DSA_87, 3);
+}

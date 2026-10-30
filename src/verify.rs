@@ -3,7 +3,7 @@
 use crate::encode::{pk_decode, sig_decode, w1_encode};
 use crate::keccak::Shake;
 use crate::ntt::{matrix_vector_ntt, multiply_ntt, ntt, ntt_inverse, ntt_vec, sub_poly};
-use crate::params::Params;
+use crate::params::{pk_len, sig_len, Params};
 use crate::rounding::{poly_use_hint, vec_infinity_norm};
 use crate::sampling::{expand_a, sample_in_ball};
 
@@ -41,8 +41,8 @@ fn prefix_eq(a: &[u8; 64], b: &[u8; 64], len: usize) -> bool {
     diff == 0
 }
 
-/// Algorithm 8 ML-DSA.Verify_internal(pk, M′, σ) with M′ = `m_prefix` ‖ `m`. `pk` has 32 + 320·K bytes and
-/// `sig` has `sig_len(p)` bytes.
+/// Algorithm 8 ML-DSA.Verify_internal(pk, M′, σ) with M′ = `m_prefix` ‖ `m`. A `pk` whose length is not
+/// `pk_len(p)` or a `sig` whose length is not `sig_len(p)` is rejected (returns false), as in FIPS 204 Verify.
 pub fn verify_internal<const K: usize, const L: usize>(
     p: &Params,
     pk: &[u8],
@@ -50,6 +50,10 @@ pub fn verify_internal<const K: usize, const L: usize>(
     m: &[u8],
     sig: &[u8],
 ) -> bool {
+    // Length guard: wrong-length inputs are invalid, never indexed.
+    if pk.len() != pk_len(p) || sig.len() != sig_len(p) {
+        return false;
+    }
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
     // 2: (c̃, z, h) ← sigDecode(σ)

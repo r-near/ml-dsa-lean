@@ -307,26 +307,112 @@ theorem verify_loop_spec {K L : Usize} {k : Nat} {ip : Impl.params.Params} {sp :
       exact hw2
   · exact ⟨hi, h1, h2⟩
 
+/-- The length guard's comparison `s.len() != n`. -/
+theorem len_bne_iff (s : Slice U8) (i : Usize) : (Slice.len s != i) = true ↔ s.val.length ≠ i.val := by
+  simp only [bne_iff_ne, ne_eq]
+  constructor
+  · intro h e
+    apply h
+    exact UScalar.eq_of_val_eq (by simpa using e)
+  · intro h e
+    apply h
+    have := congrArg UScalar.val e
+    simpa using this
+
+/-- The Rust `pk_len` computes `32 + 320·k`, which is the spec's `pkLen` (no `usize` overflow for `k ≤ 8`). -/
+theorem pk_len_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) :
+    params.pk_len ip ⦃ r => r.val = sp.pkLen ⦄ := by
+  obtain ⟨hv, hstd⟩ := hp
+  have hk8 : sp.k ≤ 8 := hstd.k_le_8
+  have hkv : ip.k.val = sp.k := hv.k_eq
+  have hpl := KeyGen.pkLen_eq sp hstd.d_eq
+  unfold params.pk_len
+  step as ⟨i, hi⟩
+  step as ⟨r, hr⟩
+  rw [hpl]; omega
+
+/-- The Rust `sig_len` computes `λ/4 + ℓ·32·(1 + bitlen(γ₁ − 1)) + ω + k`, which is the spec's `sigLen` (no `usize`
+overflow: `ℓ < 256`, `1 + bitlen(γ₁ − 1) ≤ 20`, `λ/4 ≤ 64`, `ω ≤ 255`, `k ≤ 8`). -/
+theorem sig_len_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) :
+    params.sig_len ip ⦃ r => r.val = sp.sigLen ⦄ := by
+  obtain ⟨hv, hstd⟩ := hp
+  obtain ⟨hbl, hlt, hc2, hpow⟩ := hstd.stdSig.bitlen_eq
+  have hkl := hstd.kl_lt
+  have hk8 : sp.k ≤ 8 := hstd.k_le_8
+  have hl : ip.l.val = sp.ℓ := hv.l_eq
+  have hkv : ip.k.val = sp.k := hv.k_eq
+  have hgb : ip.gamma1_bits.val = 1 + bitlen (sp.γ₁ - 1) := hv.gamma1_bits
+  have hgb20 : ip.gamma1_bits.val ≤ 20 := by omega
+  have hct : ip.c_tilde_len.val = sp.lam / 4 := hv.c_tilde_len
+  have hct64 : ip.c_tilde_len.val ≤ 64 := by rw [hct]; exact hstd.lam_le
+  have hom : ip.omega.val = sp.ω := hv.omega
+  have hom255 : ip.omega.val ≤ 255 := by rw [hom]; exact hstd.omega_le
+  unfold params.sig_len
+  step as ⟨i, hi⟩
+  have hprod : i.val * ip.gamma1_bits.val ≤ 8160 * 20 := Nat.mul_le_mul (by omega) hgb20
+  step as ⟨i1, hi1⟩
+  step as ⟨i2, hi2⟩
+  step as ⟨i3, hi3⟩
+  step as ⟨r, hr⟩
+  have e : r.val = sp.lam / 4 + sp.ℓ * (32 * (1 + bitlen (sp.γ₁ - 1))) + (sp.ω + sp.k) := by
+    have h1 : i1.val = sp.ℓ * (32 * (1 + bitlen (sp.γ₁ - 1))) := by
+      rw [hi1, hi, hl, hgb]; ring
+    omega
+  rw [e]; unfold Spec.Params.sigLen; ring
+
 end Verify
 
 open Verify
 
 theorem verify_internal_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (pk σ m_prefix m : Slice U8)
-    (hpk : pk.length = sp.pkLen) (hσ : σ.length = sp.sigLen)
     (F : Spec.Fuel) (b : Bool)
     (hs : Spec.Verify_internal sp (bytes pk) (bytes m_prefix ++ bytes m) (bytes σ) F = some b) :
     verify.verify_internal K L ip pk m_prefix m σ ⦃ r => r = b ⦄ := by
+  have hpkS := pk_len_spec hp
+  have hsgS := sig_len_spec hp
   obtain ⟨hv, hstd⟩ := hp
   have hk8 : sp.k ≤ 8 := hstd.k_le_8
   have hK : K.val = sp.k := hv.K_eq
   have hL : L.val = sp.ℓ := hv.L_eq
   have hd := hstd.d_eq
   have hg := hstd.stdGamma2
+  unfold verify.verify_internal
+  dsimp only
+  -- Length guard (Rust: `pk.len() != pk_len(p) || sig.len() != sig_len(p)` returns false, as in FIPS 204 Verify)
+  refine WP.spec_bind hpkS ?_
+  intro gk hgk
+  by_cases hpk : pk.length = sp.pkLen
+  swap
+  · rw [if_pos ((len_bne_iff pk gk).2 (fun e => hpk (by show pk.val.length = _; omega)))]
+    have hl : (bytes pk).length ≠ sp.pkLen ∨ (bytes σ).length ≠ sp.sigLen :=
+      Or.inl (by rw [bytes_length]; exact hpk)
+    rw [verify_of_length_ne sp F _ _ _ hl] at hs
+    have hbf : b = false := (Option.some.inj hs).symm
+    subst hbf
+    exact (WP.spec_ok _).mpr rfl
+  rw [if_neg (fun h => ((len_bne_iff pk gk).1 h) (by
+    have : pk.val.length = sp.pkLen := hpk
+    omega))]
+  refine WP.spec_bind hsgS ?_
+  intro gs hgs
+  by_cases hσ : σ.length = sp.sigLen
+  swap
+  · rw [if_pos ((len_bne_iff σ gs).2 (fun e => hσ (by show σ.val.length = _; omega)))]
+    have hl : (bytes pk).length ≠ sp.pkLen ∨ (bytes σ).length ≠ sp.sigLen :=
+      Or.inr (by rw [bytes_length]; exact hσ)
+    rw [verify_of_length_ne sp F _ _ _ hl] at hs
+    have hbf : b = false := (Option.some.inj hs).symm
+    subst hbf
+    exact (WP.spec_ok _).mpr rfl
+  rw [if_neg (fun h => ((len_bne_iff σ gs).1 h) (by
+    have : σ.val.length = sp.sigLen := hσ
+    omega))]
   have hpkLen : pk.val.length = 32 + 320 * sp.k := by
     have : pk.val.length = sp.pkLen := hpk
     rw [this, KeyGen.pkLen_eq sp hd]
-  unfold verify.verify_internal
   refine WP.spec_bind (pk_decode_spec_range ip sp hv pk hpkLen) ?_
   rintro ⟨rho, t1⟩ ⟨hrho, ht1, ht1rng⟩
   refine WP.spec_bind (sig_decode_spec ip sp hv hstd.stdSig σ hσ) ?_
@@ -431,24 +517,24 @@ theorem verify_internal_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.
       obtain ⟨hs7a, hs7len⟩ := hs7
       step*
       case h_fail =>
-        have h1 : i.val ≤ 256 := by scalar_tac
-        have h2 : i.val * ip.w1_bits.val ≤ 256 * 6 := Nat.mul_le_mul h1 hw1b
+        have h1 : i4.val ≤ 256 := by scalar_tac
+        have h2 : i4.val * ip.w1_bits.val ≤ 256 * 6 := Nat.mul_le_mul h1 hw1b
         scalar_tac
       case h =>
-        show i1.val ≤ (to_slice_mut_back2 s7).to_slice.length
-        have h1 : i.val ≤ 256 := by scalar_tac
-        have h2 : i1.val = i.val * ip.w1_bits.val := i1_post
-        have h3 : i.val * ip.w1_bits.val ≤ 256 * 6 := Nat.mul_le_mul h1 hw1b
+        show i5.val ≤ (to_slice_mut_back2 s7).to_slice.length
+        have h1 : i4.val ≤ 256 := by scalar_tac
+        have h2 : i5.val = i4.val * ip.w1_bits.val := i5_post
+        have h3 : i4.val * ip.w1_bits.val ≤ 256 * 6 := Nat.mul_le_mul h1 hw1b
         have h4 : (to_slice_mut_back2 s7).to_slice.length = 1536 := by simp [Array.to_slice, Slice.length]
         omega
       have hs8b : bytes s8 = H (H (bytes pk) 64 ++ (bytes m_prefix ++ bytes m)) 64 := by
         rw [s8_post, bytes_to_slice, s3_post2, bytesA_from_slice _ _ hs4l, hmu]
       have hwb : ip.w1_bits.val = bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) := hv.w1_bits
-      have hi1v : i1.val = 32 * sp.k * bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) := by
-        rw [i1_post, i_post, hK, hwb]; ring
+      have hi1v : i5.val = 32 * sp.k * bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) := by
+        rw [i5_post, i4_post, hK, hwb]; ring
       have he7 : bytesA (to_slice_mut_back2 s7) = bytes s7 := by
         rw [s6_post2, bytesA_from_slice _ _ (by simp [hs7len, hs6len])]
-      have hs9b : bytes s9 = (bytes s7).take i1.val := by
+      have hs9b : bytes s9 = (bytes s7).take i5.val := by
         rw [← he7]
         simp [bytes, bytesA, s9_post1, List.slice, Array.to_slice, List.map_take]
       have hs9 : bytes s9 = w1Encode sp (UseHintVec sp h' (wApprox sp A z' (pkDecode sp (bytes pk)).2 c)) := by
@@ -516,22 +602,21 @@ theorem verify_internal_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.
 /-- Headline form: the extracted `verify_internal` returns `ok` of the spec's verdict. -/
 theorem verify_internal_correct {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (pk σ m_prefix m : Slice U8)
-    (hpk : pk.length = sp.pkLen) (hσ : σ.length = sp.sigLen)
     (F : Spec.Fuel) (b : Bool)
     (hs : Spec.Verify_internal sp (bytes pk) (bytes m_prefix ++ bytes m) (bytes σ) F = some b) :
     ∃ r, verify.verify_internal K L ip pk m_prefix m σ = ok r ∧ r = b :=
-  WP.spec_imp_exists (verify_internal_spec hp pk σ m_prefix m hpk hσ F b hs)
+  WP.spec_imp_exists (verify_internal_spec hp pk σ m_prefix m F b hs)
 
 /-- The premise in terms of `isSome` (what `RejTerm` is about): if the spec returns `some`, the Rust code returns
 its verdict. -/
 theorem verify_internal_correct_of_isSome {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (pk σ m_prefix m : Slice U8)
-    (hpk : pk.length = sp.pkLen) (hσ : σ.length = sp.sigLen) (F : Spec.Fuel)
+    (F : Spec.Fuel)
     (hs : (Spec.Verify_internal sp (bytes pk) (bytes m_prefix ++ bytes m) (bytes σ) F).isSome = true) :
     ∃ b r, Spec.Verify_internal sp (bytes pk) (bytes m_prefix ++ bytes m) (bytes σ) F = some b ∧
       verify.verify_internal K L ip pk m_prefix m σ = ok r ∧ r = b := by
   obtain ⟨b, hb⟩ := Option.isSome_iff_exists.mp hs
-  obtain ⟨r, hr, hrb⟩ := verify_internal_correct hp pk σ m_prefix m hpk hσ F b hb
+  obtain ⟨r, hr, hrb⟩ := verify_internal_correct hp pk σ m_prefix m F b hb
   exact ⟨b, r, hb, hr, hrb⟩
 
 /-- Satisfiability of the `k ≤ 8` premise: ML-DSA-44/65/87 have `k = 4, 6, 8`. -/

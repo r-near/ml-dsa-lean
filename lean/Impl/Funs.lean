@@ -4011,6 +4011,23 @@ def rounding.poly_use_hint
   let out := Array.repeat 256#usize 0#u32
   rounding.poly_use_hint_loop p h r out 0#usize
 
+/-- [ml_dsa_verified::params::sig_len]:
+    Source: 'src/params.rs', lines 87:0-89:1
+    Visibility: public -/
+def params.sig_len (p : params.Params) : RustM Std.Usize := do
+  let i ← p.l * 32#usize
+  let i1 ← i * p.gamma1_bits
+  let i2 ← p.c_tilde_len + i1
+  let i3 ← i2 + p.omega
+  i3 + p.k
+
+/-- [ml_dsa_verified::params::pk_len]:
+    Source: 'src/params.rs', lines 81:0-83:1
+    Visibility: public -/
+def params.pk_len (p : params.Params) : RustM Std.Usize := do
+  let i ← 320#usize * p.k
+  32#usize + i
+
 /-- [ml_dsa_verified::encode::hint_bit_unpack_padding]: loop body 0:
     Source: 'src/encode.rs', lines 308:4-315:1 -/
 @[rust_loop_body]
@@ -4347,7 +4364,7 @@ def encode.pk_decode
   ok (rho1, t11)
 
 /-- [ml_dsa_verified::verify::verify_internal]: loop body 0:
-    Source: 'src/verify.rs', lines 86:4-92:5
+    Source: 'src/verify.rs', lines 90:4-96:5
     Visibility: public -/
 @[rust_loop_body]
 def verify.verify_internal_loop.body
@@ -4399,7 +4416,7 @@ def verify.verify_internal_loop.body
   else ok (done w1)
 
 /-- [ml_dsa_verified::verify::verify_internal]: loop 0:
-    Source: 'src/verify.rs', lines 86:4-92:5
+    Source: 'src/verify.rs', lines 90:4-96:5
     Visibility: public -/
 @[rust_loop]
 def verify.verify_internal_loop
@@ -4422,82 +4439,92 @@ def verify.verify_internal_loop
     (w_approx, w1, i15)
 
 /-- [ml_dsa_verified::verify::verify_internal]:
-    Source: 'src/verify.rs', lines 46:0-106:1
+    Source: 'src/verify.rs', lines 46:0-110:1
     Visibility: public -/
 def verify.verify_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
   (m_prefix : Slice Std.U8) (m : Slice Std.U8) (sig : Slice Std.U8) :
   RustM Bool
   := do
-  let (rho, t1) ← encode.pk_decode K pk
-  let o ← encode.sig_decode K L p sig
-  match o with
-  | none => ok false
-  | some parts =>
-    let (c_tilde, z, h) := parts
-    let a_hat ← sampling.expand_a K L rho
-    let tr := Array.repeat 64#usize 0#u8
-    let hash ← keccak.Shake.shake256
-    let hash1 ← keccak.Shake.absorb hash pk
-    let hash2 ← keccak.Shake.finalize hash1
-    let (s, to_slice_mut_back) ← lift (Array.to_slice_mut tr)
-    let (_, s1) ← keccak.Shake.squeeze hash2 s
-    let mu := Array.repeat 64#usize 0#u8
-    let tr1 := to_slice_mut_back s1
-    let s2 ← lift (Array.to_slice tr1)
-    let hash3 ← keccak.Shake.absorb hash s2
-    let hash4 ← keccak.Shake.absorb hash3 m_prefix
-    let hash5 ← keccak.Shake.absorb hash4 m
-    let hash6 ← keccak.Shake.finalize hash5
-    let (s3, to_slice_mut_back1) ← lift (Array.to_slice_mut mu)
-    let (_, s4) ← keccak.Shake.squeeze hash6 s3
-    let s5 ←
-      core.array.Array.index (core.ops.index.IndexSlice
-        (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde
-        { «end» := p.c_tilde_len }
-    let c ← sampling.sample_in_ball p s5
-    let a ← ntt.ntt_vec z
-    let az_hat ← ntt.matrix_vector_ntt a_hat a
-    let c_hat ← ntt.ntt c
-    let a1 ← verify.scale_vec_by_2d t1
-    let t1_2d_hat ← ntt.ntt_vec a1
-    let a2 := Array.repeat 256#usize 0#u32
-    let w_approx := Array.repeat K a2
-    let a3 := Array.repeat 256#usize 0#u32
-    let w1 := Array.repeat K a3
-    let mu1 := to_slice_mut_back1 s4
-    let w11 ←
-      verify.verify_internal_loop p.k p.l p.eta p.eta_bits p.tau p.beta
-        p.gamma1 p.gamma1_bits p.gamma2 p.w1_bits p.omega p.c_tilde_len
-        p.two_gamma2_shift p.two_gamma2_mult p.two_gamma2_div_mult h az_hat
-        c_hat t1_2d_hat w_approx w1 0#usize
-    let w1_enc := Array.repeat 1536#usize 0#u8
-    let (s6, to_slice_mut_back2) ← lift (Array.to_slice_mut w1_enc)
-    let s7 ← encode.w1_encode p w11 s6
-    let c_tilde_prime := Array.repeat 64#usize 0#u8
-    let s8 ← lift (Array.to_slice mu1)
-    let hash7 ← keccak.Shake.absorb hash s8
-    let w1_enc1 := to_slice_mut_back2 s7
-    let i ← K * 32#usize
-    let i1 ← i * p.w1_bits
-    let s9 ←
-      core.array.Array.index (core.ops.index.IndexSlice
-        (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) w1_enc1
-        { «end» := i1 }
-    let hash8 ← keccak.Shake.absorb hash7 s9
-    let hash9 ← keccak.Shake.finalize hash8
-    let (s10, index_mut_back) ←
-      core.array.Array.index_mut (core.ops.index.IndexMutSlice
-        (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde_prime
-        { «end» := p.c_tilde_len }
-    let (_, s11) ← keccak.Shake.squeeze hash9 s10
-    let i2 ← rounding.vec_infinity_norm z
-    let i3 ← p.gamma1 - p.beta
-    let c_tilde_prime1 := index_mut_back s11
-    let hash_ok ← verify.prefix_eq c_tilde c_tilde_prime1 p.c_tilde_len
-    if i2 < i3
-    then ok hash_ok
-    else ok false
+  let i := Slice.len pk
+  let i1 ← params.pk_len p
+  if i != i1
+  then ok false
+  else
+    let i2 := Slice.len sig
+    let i3 ← params.sig_len p
+    if i2 != i3
+    then ok false
+    else
+      let (rho, t1) ← encode.pk_decode K pk
+      let o ← encode.sig_decode K L p sig
+      match o with
+      | none => ok false
+      | some parts =>
+        let (c_tilde, z, h) := parts
+        let a_hat ← sampling.expand_a K L rho
+        let tr := Array.repeat 64#usize 0#u8
+        let hash ← keccak.Shake.shake256
+        let hash1 ← keccak.Shake.absorb hash pk
+        let hash2 ← keccak.Shake.finalize hash1
+        let (s, to_slice_mut_back) ← lift (Array.to_slice_mut tr)
+        let (_, s1) ← keccak.Shake.squeeze hash2 s
+        let mu := Array.repeat 64#usize 0#u8
+        let tr1 := to_slice_mut_back s1
+        let s2 ← lift (Array.to_slice tr1)
+        let hash3 ← keccak.Shake.absorb hash s2
+        let hash4 ← keccak.Shake.absorb hash3 m_prefix
+        let hash5 ← keccak.Shake.absorb hash4 m
+        let hash6 ← keccak.Shake.finalize hash5
+        let (s3, to_slice_mut_back1) ← lift (Array.to_slice_mut mu)
+        let (_, s4) ← keccak.Shake.squeeze hash6 s3
+        let s5 ←
+          core.array.Array.index (core.ops.index.IndexSlice
+            (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde
+            { «end» := p.c_tilde_len }
+        let c ← sampling.sample_in_ball p s5
+        let a ← ntt.ntt_vec z
+        let az_hat ← ntt.matrix_vector_ntt a_hat a
+        let c_hat ← ntt.ntt c
+        let a1 ← verify.scale_vec_by_2d t1
+        let t1_2d_hat ← ntt.ntt_vec a1
+        let a2 := Array.repeat 256#usize 0#u32
+        let w_approx := Array.repeat K a2
+        let a3 := Array.repeat 256#usize 0#u32
+        let w1 := Array.repeat K a3
+        let mu1 := to_slice_mut_back1 s4
+        let w11 ←
+          verify.verify_internal_loop p.k p.l p.eta p.eta_bits p.tau 
+            p.beta p.gamma1 p.gamma1_bits p.gamma2 p.w1_bits p.omega
+            p.c_tilde_len p.two_gamma2_shift p.two_gamma2_mult
+            p.two_gamma2_div_mult h az_hat c_hat t1_2d_hat w_approx w1 0#usize
+        let w1_enc := Array.repeat 1536#usize 0#u8
+        let (s6, to_slice_mut_back2) ← lift (Array.to_slice_mut w1_enc)
+        let s7 ← encode.w1_encode p w11 s6
+        let c_tilde_prime := Array.repeat 64#usize 0#u8
+        let s8 ← lift (Array.to_slice mu1)
+        let hash7 ← keccak.Shake.absorb hash s8
+        let w1_enc1 := to_slice_mut_back2 s7
+        let i4 ← K * 32#usize
+        let i5 ← i4 * p.w1_bits
+        let s9 ←
+          core.array.Array.index (core.ops.index.IndexSlice
+            (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) w1_enc1
+            { «end» := i5 }
+        let hash8 ← keccak.Shake.absorb hash7 s9
+        let hash9 ← keccak.Shake.finalize hash8
+        let (s10, index_mut_back) ←
+          core.array.Array.index_mut (core.ops.index.IndexMutSlice
+            (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8))
+            c_tilde_prime { «end» := p.c_tilde_len }
+        let (_, s11) ← keccak.Shake.squeeze hash9 s10
+        let i6 ← rounding.vec_infinity_norm z
+        let i7 ← p.gamma1 - p.beta
+        let c_tilde_prime1 := index_mut_back s11
+        let hash_ok ← verify.prefix_eq c_tilde c_tilde_prime1 p.c_tilde_len
+        if i6 < i7
+        then ok hash_ok
+        else ok false
 
 /-- [ml_dsa_verified::api::verify_44]:
     Source: 'src/api.rs', lines 69:0-75:1

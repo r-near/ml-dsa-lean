@@ -297,7 +297,7 @@ theorem sign_len (sp : Spec.Params) (hs : StdSig sp) (B : Nat) (F : Spec.Fuel) (
 /-! ## Algorithm 3 -/
 
 theorem verifyAPI_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
-    (hp : Params.Std ip K L sp) (n N : Usize) (hn : n.val = sp.pkLen) (hN : N.val = sp.sigLen)
+    (hp : Params.Std ip K L sp) (n N : Usize)
     (pk : Array U8 n) (m ctx : Slice U8) (sig : Array U8 N) (F : Spec.Fuel) (b : Bool)
     (hs : Spec.Verify sp (bytesA pk) (bytes m) (bytesA sig) (bytes ctx) F = some b) :
     verifyAPI n N K L (ok ip) pk m ctx sig ⦃ r => r = b ⦄ := by
@@ -317,17 +317,7 @@ theorem verifyAPI_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params
       prefix_bytes ctx b' i1 s1 (by rw [i1_post, hlen]) s1_post1 htake
     have hbs : bytes s = bytesA pk := by rw [s_post, bytes_to_slice]
     have hbs2 : bytes s2 = bytesA sig := by rw [s2_post, bytes_to_slice]
-    have hls : s.length = sp.pkLen := by
-      have := congrArg List.length hbs
-      simp only [bytes_length, bytesA_length] at this
-      show s.val.length = _
-      omega
-    have hls2 : s2.length = sp.sigLen := by
-      have := congrArg List.length hbs2
-      simp only [bytes_length, bytesA_length] at this
-      show s2.val.length = _
-      omega
-    refine verify_internal_spec hp s s2 s1 m hls hls2 F b ?_
+    refine verify_internal_spec hp s s2 s1 m F b ?_
     rw [Verify_short sp _ _ _ _ F (by simpa using hl)] at hs
     rw [hbs, hbs2, hs1]
     simpa [List.append_assoc] using hs
@@ -338,8 +328,7 @@ theorem _root_.Proofs.verify_44_correct (pk : Array U8 1312#usize) (m ctx : Slic
     api.verify_44 pk m ctx sig ⦃ r => r = b ⦄ := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_44_std
   rw [verify_44_eq, hip]
-  exact verifyAPI_spec hp _ _ (by rw [show Spec.ML_DSA_44.pkLen = 1312 by decide +kernel]; rfl)
-    (by rw [show Spec.ML_DSA_44.sigLen = 2420 by decide +kernel]; rfl) pk m ctx sig F b hs
+  exact verifyAPI_spec hp _ _ pk m ctx sig F b hs
 
 
 theorem _root_.Proofs.verify_65_correct (pk : Array U8 1952#usize) (m ctx : Slice U8) (sig : Array U8 3309#usize)
@@ -348,8 +337,7 @@ theorem _root_.Proofs.verify_65_correct (pk : Array U8 1952#usize) (m ctx : Slic
     api.verify_65 pk m ctx sig ⦃ r => r = b ⦄ := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_65_std
   rw [verify_65_eq, hip]
-  exact verifyAPI_spec hp _ _ (by rw [show Spec.ML_DSA_65.pkLen = 1952 by decide +kernel]; rfl)
-    (by rw [show Spec.ML_DSA_65.sigLen = 3309 by decide +kernel]; rfl) pk m ctx sig F b hs
+  exact verifyAPI_spec hp _ _ pk m ctx sig F b hs
 
 theorem _root_.Proofs.verify_87_correct (pk : Array U8 2592#usize) (m ctx : Slice U8) (sig : Array U8 4627#usize)
     (F : Spec.Fuel) (b : Bool)
@@ -357,8 +345,7 @@ theorem _root_.Proofs.verify_87_correct (pk : Array U8 2592#usize) (m ctx : Slic
     api.verify_87 pk m ctx sig ⦃ r => r = b ⦄ := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_87_std
   rw [verify_87_eq, hip]
-  exact verifyAPI_spec hp _ _ (by rw [show Spec.ML_DSA_87.pkLen = 2592 by decide +kernel]; rfl)
-    (by rw [show Spec.ML_DSA_87.sigLen = 4627 by decide +kernel]; rfl) pk m ctx sig F b hs
+  exact verifyAPI_spec hp _ _ pk m ctx sig F b hs
 
 /-- For `|ctx| > 255` the spec's `Verify` is `false` and so is the Rust. -/
 theorem verifyAPI_ctx_long (n N K L : Usize) (P : RustM params.Params) (pk : Array U8 n) (m ctx : Slice U8)
@@ -474,7 +461,7 @@ theorem signAPI_exhausted {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Par
       rw [hbs, hs1]; exact hex
     refine WP.spec_bind (Proofs.Sign.sign_internal_spec_none hp s s1 m rnd s2 hls hls2 F hex') ?_
     rintro ⟨b1, s3⟩ hb1
-    have hb1' : b1 = false := hb1
+    have hb1' : b1 = false := hb1.1
     subst hb1'
     exact (WP.spec_ok _).mpr rfl
 
