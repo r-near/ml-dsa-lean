@@ -171,6 +171,8 @@ Spec-level `Verify(pk, M, Sign(sk, M)) = true`, transferred through the three to
 | Third spec review (FIPS 204/202 PDFs) | every `lean/Spec` def checked step by step against the PDFs and NIST's potential-updates list; whole-domain rounding check against a FIPS-literal Python reference; SHAKE vs hashlib around the rate; no transcription errors | review notes (not committed) |
 | Lean spec (phase 3) | `lean/Spec/`: FIPS 202 SHAKE and FIPS 204 Alg 1–3, 6–48, ~1,200 lines; evaluates: `spec-acvp` 63/63 ACVP cases, 38 SHAKE KATs shared with the Rust tests; two independent fidelity reviews: no spec bugs (comment overclaims fixed) | `lean/Spec/`, `lean/SpecTests/` |
 
-Out of scope, by decision: HashML-DSA (Alg 4/5) and external μ. Upstream does not implement them, and ACVP preHash
-cases need SHA-2/SHA-3 variants beyond SHAKE, so partial coverage buys little. ACVP preHash and externalMu groups are
-skipped and counted in the test output.
+Out of scope, by decision: HashML-DSA (Alg 4/5) and external μ. HashML-DSA: upstream does not implement it (no
+differential oracle), and ACVP preHash cases need SHA-2/SHA-3 hash functions beyond SHAKE, each another primitive to
+implement and prove. External μ: upstream does implement it (`sign_mu_*`, `verify_mu`), so it is cheaper, but FIPS
+204 describes it only as an allowed variant of Alg 7/8, so it would need its own spec entry and theorems; it was
+deferred, not ruled out. ACVP preHash/externalMu groups and Wycheproof μ-only vectors are skipped and counted.
