@@ -34,11 +34,33 @@ pub fn mul(a: u32, b: u32) -> u32 {
     barrett_reduce((a as u64) * (b as u64))
 }
 
+/// Optimization barrier: the identity, but opaque to LLVM, so that the mask idioms below are not turned back
+/// into branches on targets without a conditional move (checkct found this on riscv32imac; ISSUES.md CT-1).
+/// Only RISC-V gets the barrier: x86_64 and thumbv7em check clean without it, and `black_box` costs about 25%
+/// in signing there. Extraction runs with `--cfg miri`, so the extracted (proved) code is the plain identity;
+/// the compiled code differs from it only by `core::hint::black_box`, which is the identity on values.
+#[cfg(all(not(miri), any(target_arch = "riscv32", target_arch = "riscv64")))]
+fn barrier_u64(x: u64) -> u64 {
+    core::hint::black_box(x)
+}
+#[cfg(any(miri, not(any(target_arch = "riscv32", target_arch = "riscv64"))))]
+fn barrier_u64(x: u64) -> u64 {
+    x
+}
+#[cfg(all(not(miri), any(target_arch = "riscv32", target_arch = "riscv64")))]
+fn barrier_u32(x: u32) -> u32 {
+    core::hint::black_box(x)
+}
+#[cfg(any(miri, not(any(target_arch = "riscv32", target_arch = "riscv64"))))]
+fn barrier_u32(x: u32) -> u32 {
+    x
+}
+
 /// All-ones if `a < b`, else zero. Requires a, b < 2^63.
 pub fn ct_lt_mask(a: u64, b: u64) -> u64 {
-    0u64.wrapping_sub(a.wrapping_sub(b) >> 63)
+    0u64.wrapping_sub(barrier_u64(a.wrapping_sub(b) >> 63))
 }
 /// `if_true` where `mask` is all-ones, `if_false` where it is zero.
 pub fn ct_select(if_false: u32, if_true: u32, mask: u32) -> u32 {
-    if_false ^ ((if_false ^ if_true) & mask)
+    if_false ^ ((if_false ^ if_true) & barrier_u32(mask))
 }
