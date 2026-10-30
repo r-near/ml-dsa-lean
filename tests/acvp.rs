@@ -241,23 +241,18 @@ fn vectors_parse() {
     assert_eq!(accepts, 12);
 }
 
-/// TODO(wave 2): wire `keygen::keygen_internal`. Assumed signature (adjust the call below if it differs):
-/// `keygen_internal::<K, L>(p: &Params, xi: &[u8; 32], pk: &mut [u8], sk: &mut [u8])`.
 fn keygen_for(p: &Params, xi: &[u8; 32]) -> (Vec<u8>, Vec<u8>) {
-    let (mut _pk, mut _sk) = (vec![0u8; pk_len(p)], vec![0u8; params::sk_len(p)]);
-    let _ = xi;
-    // match p.k {
-    //     4 => ml_dsa_verified::keygen::keygen_internal::<4, 4>(p, xi, &mut _pk, &mut _sk),
-    //     6 => ml_dsa_verified::keygen::keygen_internal::<6, 5>(p, xi, &mut _pk, &mut _sk),
-    //     8 => ml_dsa_verified::keygen::keygen_internal::<8, 7>(p, xi, &mut _pk, &mut _sk),
-    //     _ => unreachable!(),
-    // }
-    // (_pk, _sk)
-    unimplemented!("TODO: keygen::keygen_internal (Algorithm 6) does not exist yet")
+    let (mut pk, mut sk) = (vec![0u8; pk_len(p)], vec![0u8; params::sk_len(p)]);
+    match p.k {
+        4 => ml_dsa_verified::keygen::keygen_internal::<4, 4>(p, xi, &mut pk, &mut sk),
+        6 => ml_dsa_verified::keygen::keygen_internal::<6, 5>(p, xi, &mut pk, &mut sk),
+        8 => ml_dsa_verified::keygen::keygen_internal::<8, 7>(p, xi, &mut pk, &mut sk),
+        _ => unreachable!(),
+    }
+    (pk, sk)
 }
 
 #[test]
-#[ignore = "TODO: needs keygen::keygen_internal; wire it in keygen_for"]
 fn key_gen() {
     let file = load("keyGen");
     let mut n = 0;
@@ -275,21 +270,17 @@ fn key_gen() {
     assert_eq!(n, 75);
 }
 
-/// TODO(wave 2): wire `verify::verify_internal`. Assumed signature (adjust the call below if it differs):
-/// `verify_internal::<K, L>(p: &Params, pk: &[u8], m_prefix: &[u8], m: &[u8], sig: &[u8]) -> bool`.
+/// Algorithm 8 via `verify::verify_internal`.
 fn verify_for(p: &Params, pk: &[u8], prefix: &[u8], m: &[u8], sig: &[u8]) -> bool {
-    let _ = (p, pk, prefix, m, sig);
-    // match p.k {
-    //     4 => ml_dsa_verified::verify::verify_internal::<4, 4>(p, pk, prefix, m, sig),
-    //     6 => ml_dsa_verified::verify::verify_internal::<6, 5>(p, pk, prefix, m, sig),
-    //     8 => ml_dsa_verified::verify::verify_internal::<8, 7>(p, pk, prefix, m, sig),
-    //     _ => unreachable!(),
-    // }
-    unimplemented!("TODO: verify::verify_internal (Algorithm 8) does not exist yet")
+    match p.k {
+        4 => ml_dsa_verified::verify::verify_internal::<4, 4>(p, pk, prefix, m, sig),
+        6 => ml_dsa_verified::verify::verify_internal::<6, 5>(p, pk, prefix, m, sig),
+        8 => ml_dsa_verified::verify::verify_internal::<8, 7>(p, pk, prefix, m, sig),
+        _ => unreachable!(),
+    }
 }
 
 #[test]
-#[ignore = "TODO: needs verify::verify_internal; wire it in verify_for"]
 fn sig_ver() {
     let file = load("sigVer");
     // key: (set, interface); value: (passed, skipped)
