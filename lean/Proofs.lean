@@ -16,3 +16,6 @@ import Proofs.Steps
 import Proofs.SampleS
 import Proofs.StdParams
 import Proofs.SampleBallWitness
+import Proofs.Bridge
+import Proofs.Witnesses
+import Proofs.KeyGen

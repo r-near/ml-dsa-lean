@@ -123,3 +123,21 @@ Proofs.ML_DSA_87_std
 import Proofs.SampleBallWitness
 Proofs.sample_in_ball_satisfiable
 Proofs.sample_in_ball_premise_satisfiable
+import Proofs.Bridge
+Proofs.vec_infinity_norm_spec_zq
+Proofs.vec_infinity_norm_lowbits_spec
+Proofs.LowBits_bounds
+Proofs.LowBitsVec_infNorm_le
+Proofs.pkDecode_t1_range
+Proofs.pk_decode_spec_range
+Proofs.scale_vec_by_2d_pk_decode
+import Proofs.Witnesses
+Proofs.expand_a_satisfiable
+Proofs.expand_a_premise_satisfiable
+Proofs.expand_s_satisfiable_65
+Proofs.expand_s_premise_satisfiable_65
+import Proofs.KeyGen
+Proofs.keygen_internal_spec
+Proofs.keygen_internal_correct
+Proofs.KeyGen.keygen_some
+Proofs.KeyGen.keygen_isSome_iff
