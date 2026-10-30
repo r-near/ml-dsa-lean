@@ -15,3 +15,15 @@ ml_dsa_verified::rounding::poly_use_hint
 ml_dsa_verified::rounding::poly_power2round
 ml_dsa_verified::keygen::keygen_internal
 ml_dsa_verified::verify::verify_internal
+ml_dsa_verified::api::keygen_44
+ml_dsa_verified::api::sign_44
+ml_dsa_verified::api::verify_44
+ml_dsa_verified::api::verify_internal_44
+ml_dsa_verified::api::keygen_65
+ml_dsa_verified::api::sign_65
+ml_dsa_verified::api::verify_65
+ml_dsa_verified::api::verify_internal_65
+ml_dsa_verified::api::keygen_87
+ml_dsa_verified::api::sign_87
+ml_dsa_verified::api::verify_87
+ml_dsa_verified::api::verify_internal_87
