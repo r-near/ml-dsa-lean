@@ -250,3 +250,18 @@ Proofs.sign_internal_87_correct_exhausted
 Proofs.sign_internal_87_none_only_if
 Proofs.verify_internal_87_correct
 Proofs.sign_87_none_only_if
+import Proofs.SkWellFormed
+Proofs.skWellFormed_eq_true_iff
+Proofs.SkWF_iff_blocks
+Proofs.okAt_iff
+Proofs.poly_in_eta_loop_spec
+Proofs.eta_block_in_range_spec
+Proofs.sk_is_well_formed_loop_spec
+Proofs.sk_is_well_formed_spec
+Proofs.skWellFormedAPI_spec
+Proofs.sk_is_well_formed_44_correct
+Proofs.sk_is_well_formed_65_correct
+Proofs.sk_is_well_formed_87_correct
+Proofs.skWellFormed_keygen
+Proofs.skWellFormed_zero_44
+Proofs.skWellFormed_bad_44

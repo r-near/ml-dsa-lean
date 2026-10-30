@@ -28,9 +28,12 @@
   "ml_dsa_verified::api::keygen_87",
   "ml_dsa_verified::api::sign_87",
   "ml_dsa_verified::api::verify_87",
-  "ml_dsa_verified::api::verify_internal_87"
+  "ml_dsa_verified::api::verify_internal_87",
+  "ml_dsa_verified::api::sk_is_well_formed_44",
+  "ml_dsa_verified::api::sk_is_well_formed_65",
+  "ml_dsa_verified::api::sk_is_well_formed_87"
  ],
- "src_sha256": "74ec26a39aedac1c342b825dd0a2d0f6d15461e6a843e008a363b94877ac31b9",
+ "src_sha256": "ed918928a08ccbe2b1c20c01e3b58cf2503ed322305719df79337c4b33b840d7",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -39,7 +42,7 @@
   "lean": "v4.31.0"
  },
  "rename_changes": 0,
- "llbc_fun_decls": 139,
+ "llbc_fun_decls": 145,
  "llbc_opaque_funs": [
   "core::array::{impl}::index",
   "core::array::{impl}::index_mut",
@@ -69,10 +72,5 @@
  "aeneas_name_clashes": 0,
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
- "lean_defs": 278,
- "lake_build": "ok",
- "axiom_gate": "ok",
- "axioms_summary": [
-  "checked: 459  reported: 459  axioms used: ['Classical.choice', 'Quot.sound', 'propext']"
- ]
+ "lean_defs": 288
 }

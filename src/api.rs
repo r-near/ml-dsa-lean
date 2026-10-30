@@ -12,8 +12,10 @@
 //!   zero bytes for the deterministic variant of Algorithm 2.
 //!
 //! `sign_internal_*` and `verify_internal_*` expose Algorithms 7 and 8 (M′ supplied by the caller).
-//! HashML-DSA (Algorithms 4 and 5) and external μ are out of scope.
+//! `sk_is_well_formed_*` is an optional range check on a stored secret key (s₁, s₂ within [−η, η]); `sign_*` does
+//! not call it. HashML-DSA (Algorithms 4 and 5) and external μ are out of scope.
 
+use crate::encode::sk_is_well_formed;
 use crate::keygen::keygen_internal;
 use crate::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
 use crate::sign::sign_internal;
@@ -89,6 +91,17 @@ pub fn verify_internal_44(pk: &[u8; 1312], m_prime: &[u8], sig: &[u8; 2420]) -> 
     verify_internal::<4, 4>(&ML_DSA_44, pk, &[], m_prime, sig)
 }
 
+/// Optional check for secret keys loaded from untrusted storage (ML-DSA-44). True iff every coefficient of s₁
+/// and s₂, as decoded by skDecode (FIPS 204 Algorithm 25: BitUnpack with a = b = η), lies in [−η, η]. t₀ needs no
+/// check: its 13-bit field decodes to 4096 − z with z < 2¹³, always within [−4095, 4096].
+///
+/// FIPS 204 Algorithm 25 notes that s₁ and s₂ "may lie outside [−η, η] if input is malformed" and leaves
+/// Sign's behavior there undefined. `sign_44` does not call this and follows the algorithm literally (it signs
+/// with such a key); callers that load untrusted keys can call this first. Keys from `keygen_44` pass.
+pub fn sk_is_well_formed_44(sk: &[u8; 2560]) -> bool {
+    sk_is_well_formed::<4, 4>(&ML_DSA_44, sk)
+}
+
 // ---------------------------------------------------------------------------------------------
 // ML-DSA-65 (K = 6, L = 5)
 // ---------------------------------------------------------------------------------------------
@@ -141,6 +154,17 @@ pub fn verify_internal_65(pk: &[u8; 1952], m_prime: &[u8], sig: &[u8; 3309]) -> 
     verify_internal::<6, 5>(&ML_DSA_65, pk, &[], m_prime, sig)
 }
 
+/// Optional check for secret keys loaded from untrusted storage (ML-DSA-65). True iff every coefficient of s₁
+/// and s₂, as decoded by skDecode (FIPS 204 Algorithm 25: BitUnpack with a = b = η), lies in [−η, η]. t₀ needs no
+/// check: its 13-bit field decodes to 4096 − z with z < 2¹³, always within [−4095, 4096].
+///
+/// FIPS 204 Algorithm 25 notes that s₁ and s₂ "may lie outside [−η, η] if input is malformed" and leaves
+/// Sign's behavior there undefined. `sign_65` does not call this and follows the algorithm literally (it signs
+/// with such a key); callers that load untrusted keys can call this first. Keys from `keygen_65` pass.
+pub fn sk_is_well_formed_65(sk: &[u8; 4032]) -> bool {
+    sk_is_well_formed::<6, 5>(&ML_DSA_65, sk)
+}
+
 // ---------------------------------------------------------------------------------------------
 // ML-DSA-87 (K = 8, L = 7)
 // ---------------------------------------------------------------------------------------------
@@ -191,4 +215,15 @@ pub fn sign_internal_87(sk: &[u8; 4896], m_prime: &[u8], rnd: &[u8; 32]) -> Opti
 /// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-87: M′ is supplied by the caller.
 pub fn verify_internal_87(pk: &[u8; 2592], m_prime: &[u8], sig: &[u8; 4627]) -> bool {
     verify_internal::<8, 7>(&ML_DSA_87, pk, &[], m_prime, sig)
+}
+
+/// Optional check for secret keys loaded from untrusted storage (ML-DSA-87). True iff every coefficient of s₁
+/// and s₂, as decoded by skDecode (FIPS 204 Algorithm 25: BitUnpack with a = b = η), lies in [−η, η]. t₀ needs no
+/// check: its 13-bit field decodes to 4096 − z with z < 2¹³, always within [−4095, 4096].
+///
+/// FIPS 204 Algorithm 25 notes that s₁ and s₂ "may lie outside [−η, η] if input is malformed" and leaves
+/// Sign's behavior there undefined. `sign_87` does not call this and follows the algorithm literally (it signs
+/// with such a key); callers that load untrusted keys can call this first. Keys from `keygen_87` pass.
+pub fn sk_is_well_formed_87(sk: &[u8; 4896]) -> bool {
+    sk_is_well_formed::<8, 7>(&ML_DSA_87, sk)
 }

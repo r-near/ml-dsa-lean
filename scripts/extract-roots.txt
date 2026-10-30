@@ -27,3 +27,6 @@ ml_dsa_verified::api::keygen_87
 ml_dsa_verified::api::sign_87
 ml_dsa_verified::api::verify_87
 ml_dsa_verified::api::verify_internal_87
+ml_dsa_verified::api::sk_is_well_formed_44
+ml_dsa_verified::api::sk_is_well_formed_65
+ml_dsa_verified::api::sk_is_well_formed_87

@@ -23,7 +23,7 @@ noncomputable section
 namespace Impl
 
 /-- [ml_dsa_verified::api::ctx_prefix]: loop body 0:
-    Source: 'src/api.rs', lines 33:4-36:5 -/
+    Source: 'src/api.rs', lines 35:4-38:5 -/
 @[rust_loop_body]
 def api.ctx_prefix_loop.body
   (ctx : Slice Std.U8) («prefix» : Array Std.U8 257#usize) (i : Std.Usize) :
@@ -41,7 +41,7 @@ def api.ctx_prefix_loop.body
   else ok (done «prefix»)
 
 /-- [ml_dsa_verified::api::ctx_prefix]: loop 0:
-    Source: 'src/api.rs', lines 33:4-36:5 -/
+    Source: 'src/api.rs', lines 35:4-38:5 -/
 @[rust_loop]
 def api.ctx_prefix_loop
   (ctx : Slice Std.U8) («prefix» : Array Std.U8 257#usize) (i : Std.Usize) :
@@ -52,7 +52,7 @@ def api.ctx_prefix_loop
     («prefix», i)
 
 /-- [ml_dsa_verified::api::ctx_prefix]:
-    Source: 'src/api.rs', lines 25:0-38:1 -/
+    Source: 'src/api.rs', lines 27:0-40:1 -/
 def api.ctx_prefix
   (ctx : Slice Std.U8) : RustM (Option (Array Std.U8 257#usize)) := do
   let i := Slice.len ctx
@@ -1847,7 +1847,7 @@ def encode.pack_signed
   encode.bit_pack t1 c out
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop body 0:
-    Source: 'src/encode.rs', lines 226:4-230:5
+    Source: 'src/encode.rs', lines 263:4-267:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop0.body
@@ -1867,7 +1867,7 @@ def encode.sk_encode_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop 0:
-    Source: 'src/encode.rs', lines 226:4-230:5
+    Source: 'src/encode.rs', lines 263:4-267:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop0
@@ -1880,7 +1880,7 @@ def encode.sk_encode_loop0
     (out, i)
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop body 1:
-    Source: 'src/encode.rs', lines 232:4-235:5
+    Source: 'src/encode.rs', lines 269:4-272:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop1.body
@@ -1897,7 +1897,7 @@ def encode.sk_encode_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop 1:
-    Source: 'src/encode.rs', lines 232:4-235:5
+    Source: 'src/encode.rs', lines 269:4-272:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop1
@@ -1909,7 +1909,7 @@ def encode.sk_encode_loop1
     (out, i)
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop body 2:
-    Source: 'src/encode.rs', lines 240:4-244:5
+    Source: 'src/encode.rs', lines 277:4-281:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop2.body
@@ -1934,7 +1934,7 @@ def encode.sk_encode_loop2.body
   else ok (done (out, o))
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop 2:
-    Source: 'src/encode.rs', lines 240:4-244:5
+    Source: 'src/encode.rs', lines 277:4-281:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop2
@@ -1948,7 +1948,7 @@ def encode.sk_encode_loop2
     (out, o, i2)
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop body 3:
-    Source: 'src/encode.rs', lines 247:4-251:5
+    Source: 'src/encode.rs', lines 284:4-288:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop3.body
@@ -1973,7 +1973,7 @@ def encode.sk_encode_loop3.body
   else ok (done (out, o))
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop 3:
-    Source: 'src/encode.rs', lines 247:4-251:5
+    Source: 'src/encode.rs', lines 284:4-288:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop3
@@ -1987,7 +1987,7 @@ def encode.sk_encode_loop3
     (out, o, i2)
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop body 4:
-    Source: 'src/encode.rs', lines 254:4-258:5
+    Source: 'src/encode.rs', lines 291:4-295:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop4.body
@@ -2011,7 +2011,7 @@ def encode.sk_encode_loop4.body
   else ok (done out)
 
 /-- [ml_dsa_verified::encode::sk_encode]: loop 4:
-    Source: 'src/encode.rs', lines 254:4-258:5
+    Source: 'src/encode.rs', lines 291:4-295:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop4
@@ -2024,7 +2024,7 @@ def encode.sk_encode_loop4
     (out, o, i)
 
 /-- [ml_dsa_verified::encode::sk_encode]:
-    Source: 'src/encode.rs', lines 214:0-259:1
+    Source: 'src/encode.rs', lines 251:0-296:1
     Visibility: public -/
 def encode.sk_encode
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -2044,7 +2044,7 @@ def encode.sk_encode
   encode.sk_encode_loop4 t0 out4 o1 0#usize
 
 /-- [ml_dsa_verified::encode::pk_encode]: loop body 0:
-    Source: 'src/encode.rs', lines 184:4-187:5
+    Source: 'src/encode.rs', lines 221:4-224:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.pk_encode_loop0.body
@@ -2060,7 +2060,7 @@ def encode.pk_encode_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_verified::encode::pk_encode]: loop 0:
-    Source: 'src/encode.rs', lines 184:4-187:5
+    Source: 'src/encode.rs', lines 221:4-224:5
     Visibility: public -/
 @[rust_loop]
 def encode.pk_encode_loop0
@@ -2072,7 +2072,7 @@ def encode.pk_encode_loop0
     (out, i)
 
 /-- [ml_dsa_verified::encode::pk_encode]: loop body 1:
-    Source: 'src/encode.rs', lines 190:4-193:5
+    Source: 'src/encode.rs', lines 227:4-230:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.pk_encode_loop1.body
@@ -2098,7 +2098,7 @@ def encode.pk_encode_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_verified::encode::pk_encode]: loop 1:
-    Source: 'src/encode.rs', lines 190:4-193:5
+    Source: 'src/encode.rs', lines 227:4-230:5
     Visibility: public -/
 @[rust_loop]
 def encode.pk_encode_loop1
@@ -2111,7 +2111,7 @@ def encode.pk_encode_loop1
     (out, i)
 
 /-- [ml_dsa_verified::encode::pk_encode]:
-    Source: 'src/encode.rs', lines 181:0-194:1
+    Source: 'src/encode.rs', lines 218:0-231:1
     Visibility: public -/
 def encode.pk_encode
   {K : Std.Usize} (rho : Array Std.U8 32#usize)
@@ -2235,7 +2235,7 @@ def keygen.keygen_internal
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::keygen_44]:
-    Source: 'src/api.rs', lines 46:0-51:1
+    Source: 'src/api.rs', lines 48:0-53:1
     Visibility: public -/
 def api.keygen_44
   (xi : Array Std.U8 32#usize) :
@@ -3378,7 +3378,7 @@ def encode.hint_bit_pack
   encode.hint_bit_pack_loop1 i h out1 0#usize 0#usize
 
 /-- [ml_dsa_verified::encode::sig_encode]: loop body 0:
-    Source: 'src/encode.rs', lines 167:4-170:5
+    Source: 'src/encode.rs', lines 204:4-207:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sig_encode_loop0.body
@@ -3395,7 +3395,7 @@ def encode.sig_encode_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_verified::encode::sig_encode]: loop 0:
-    Source: 'src/encode.rs', lines 167:4-170:5
+    Source: 'src/encode.rs', lines 204:4-207:5
     Visibility: public -/
 @[rust_loop]
 def encode.sig_encode_loop0
@@ -3408,7 +3408,7 @@ def encode.sig_encode_loop0
     (out, i)
 
 /-- [ml_dsa_verified::encode::sig_encode]: loop body 1:
-    Source: 'src/encode.rs', lines 173:4-176:5
+    Source: 'src/encode.rs', lines 210:4-213:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sig_encode_loop1.body
@@ -3435,7 +3435,7 @@ def encode.sig_encode_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_verified::encode::sig_encode]: loop 1:
-    Source: 'src/encode.rs', lines 173:4-176:5
+    Source: 'src/encode.rs', lines 210:4-213:5
     Visibility: public -/
 @[rust_loop]
 def encode.sig_encode_loop1
@@ -3449,7 +3449,7 @@ def encode.sig_encode_loop1
     (out, i2)
 
 /-- [ml_dsa_verified::encode::sig_encode]:
-    Source: 'src/encode.rs', lines 158:0-178:1
+    Source: 'src/encode.rs', lines 195:0-215:1
     Visibility: public -/
 def encode.sig_encode
   {K : Std.Usize} {L : Std.Usize} (p : params.Params) (c_tilde : Slice Std.U8)
@@ -3799,7 +3799,7 @@ def sign.sign_internal
   sign.sign_internal_loop p sig s1_hat s2_hat t0_hat a_hat mu1 rho_pp1 0#u32
 
 /-- [ml_dsa_verified::api::sign_44]:
-    Source: 'src/api.rs', lines 55:0-66:1
+    Source: 'src/api.rs', lines 57:0-68:1
     Visibility: public -/
 def api.sign_44
   (sk : Array Std.U8 2560#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4029,7 +4029,7 @@ def params.pk_len (p : params.Params) : RustM Std.Usize := do
   32#usize + i
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack_padding]: loop body 0:
-    Source: 'src/encode.rs', lines 308:4-315:1 -/
+    Source: 'src/encode.rs', lines 345:4-352:1 -/
 @[rust_loop_body]
 def encode.hint_bit_unpack_padding_loop.body
   (p : params.Params) (y : Slice Std.U8) (j : Std.Usize) :
@@ -4045,7 +4045,7 @@ def encode.hint_bit_unpack_padding_loop.body
   else ok (done true)
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack_padding]: loop 0:
-    Source: 'src/encode.rs', lines 308:4-315:1 -/
+    Source: 'src/encode.rs', lines 345:4-352:1 -/
 @[rust_loop]
 def encode.hint_bit_unpack_padding_loop
   (p : params.Params) (y : Slice Std.U8) (j : Std.Usize) : RustM Bool := do
@@ -4054,14 +4054,14 @@ def encode.hint_bit_unpack_padding_loop
     j
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack_padding]:
-    Source: 'src/encode.rs', lines 306:0-315:1 -/
+    Source: 'src/encode.rs', lines 343:0-352:1 -/
 @[reducible]
 def encode.hint_bit_unpack_padding
   (p : params.Params) (y : Slice Std.U8) (index : Std.Usize) : RustM Bool := do
   encode.hint_bit_unpack_padding_loop p y index
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack_row]: loop body 0:
-    Source: 'src/encode.rs', lines 268:4-278:1 -/
+    Source: 'src/encode.rs', lines 305:4-315:1 -/
 @[rust_loop_body]
 def encode.hint_bit_unpack_row_loop.body
   (y : Slice Std.U8) (first : Std.Usize) («end» : Std.Usize)
@@ -4092,7 +4092,7 @@ def encode.hint_bit_unpack_row_loop.body
   else ok (done (true, row))
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack_row]: loop 0:
-    Source: 'src/encode.rs', lines 268:4-278:1 -/
+    Source: 'src/encode.rs', lines 305:4-315:1 -/
 @[rust_loop]
 def encode.hint_bit_unpack_row_loop
   (y : Slice Std.U8) (first : Std.Usize) («end» : Std.Usize)
@@ -4105,7 +4105,7 @@ def encode.hint_bit_unpack_row_loop
     (row, index)
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack_row]:
-    Source: 'src/encode.rs', lines 264:0-278:1 -/
+    Source: 'src/encode.rs', lines 301:0-315:1 -/
 @[reducible]
 def encode.hint_bit_unpack_row
   (y : Slice Std.U8) (first : Std.Usize) («end» : Std.Usize)
@@ -4115,7 +4115,7 @@ def encode.hint_bit_unpack_row
   encode.hint_bit_unpack_row_loop y first «end» row first
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack_rows]: loop body 0:
-    Source: 'src/encode.rs', lines 289:4-303:1 -/
+    Source: 'src/encode.rs', lines 326:4-340:1 -/
 @[rust_loop_body]
 def encode.hint_bit_unpack_rows_loop.body
   {K : Std.Usize} (p : params.Params) (y : Slice Std.U8)
@@ -4146,7 +4146,7 @@ def encode.hint_bit_unpack_rows_loop.body
   else ok (done (some index, h))
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack_rows]: loop 0:
-    Source: 'src/encode.rs', lines 289:4-303:1 -/
+    Source: 'src/encode.rs', lines 326:4-340:1 -/
 @[rust_loop]
 def encode.hint_bit_unpack_rows_loop
   {K : Std.Usize} (p : params.Params) (y : Slice Std.U8)
@@ -4159,7 +4159,7 @@ def encode.hint_bit_unpack_rows_loop
     (h, index, i)
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack_rows]:
-    Source: 'src/encode.rs', lines 283:0-303:1 -/
+    Source: 'src/encode.rs', lines 320:0-340:1 -/
 @[reducible]
 def encode.hint_bit_unpack_rows
   {K : Std.Usize} (p : params.Params) (y : Slice Std.U8)
@@ -4169,7 +4169,7 @@ def encode.hint_bit_unpack_rows
   encode.hint_bit_unpack_rows_loop p y h 0#usize 0#usize
 
 /-- [ml_dsa_verified::encode::hint_bit_unpack]:
-    Source: 'src/encode.rs', lines 320:0-333:1
+    Source: 'src/encode.rs', lines 357:0-370:1
     Visibility: public -/
 def encode.hint_bit_unpack
   (K : Std.Usize) (p : params.Params) (y : Slice Std.U8) :
@@ -4187,7 +4187,7 @@ def encode.hint_bit_unpack
     else ok none
 
 /-- [ml_dsa_verified::encode::sig_decode]: loop body 0:
-    Source: 'src/encode.rs', lines 345:4-348:5
+    Source: 'src/encode.rs', lines 382:4-385:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sig_decode_loop0.body
@@ -4205,7 +4205,7 @@ def encode.sig_decode_loop0.body
   else ok (done c_tilde)
 
 /-- [ml_dsa_verified::encode::sig_decode]: loop 0:
-    Source: 'src/encode.rs', lines 345:4-348:5
+    Source: 'src/encode.rs', lines 382:4-385:5
     Visibility: public -/
 @[rust_loop]
 def encode.sig_decode_loop0
@@ -4218,7 +4218,7 @@ def encode.sig_decode_loop0
     (c_tilde, i)
 
 /-- [ml_dsa_verified::encode::sig_decode]: loop body 1:
-    Source: 'src/encode.rs', lines 352:4-355:5
+    Source: 'src/encode.rs', lines 389:4-392:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sig_decode_loop1.body
@@ -4244,7 +4244,7 @@ def encode.sig_decode_loop1.body
   else ok (done z)
 
 /-- [ml_dsa_verified::encode::sig_decode]: loop 1:
-    Source: 'src/encode.rs', lines 352:4-355:5
+    Source: 'src/encode.rs', lines 389:4-392:5
     Visibility: public -/
 @[rust_loop]
 def encode.sig_decode_loop1
@@ -4258,7 +4258,7 @@ def encode.sig_decode_loop1
     (z, i2)
 
 /-- [ml_dsa_verified::encode::sig_decode]:
-    Source: 'src/encode.rs', lines 338:0-360:1
+    Source: 'src/encode.rs', lines 375:0-397:1
     Visibility: public -/
 def encode.sig_decode
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (sig : Slice Std.U8) :
@@ -4283,7 +4283,7 @@ def encode.sig_decode
   | some h => ok (some (c_tilde1, z1, h))
 
 /-- [ml_dsa_verified::encode::pk_decode]: loop body 0:
-    Source: 'src/encode.rs', lines 200:4-203:5
+    Source: 'src/encode.rs', lines 237:4-240:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.pk_decode_loop0.body
@@ -4300,7 +4300,7 @@ def encode.pk_decode_loop0.body
   else ok (done rho)
 
 /-- [ml_dsa_verified::encode::pk_decode]: loop 0:
-    Source: 'src/encode.rs', lines 200:4-203:5
+    Source: 'src/encode.rs', lines 237:4-240:5
     Visibility: public -/
 @[rust_loop]
 def encode.pk_decode_loop0
@@ -4312,7 +4312,7 @@ def encode.pk_decode_loop0
     (rho, i)
 
 /-- [ml_dsa_verified::encode::pk_decode]: loop body 1:
-    Source: 'src/encode.rs', lines 206:4-209:5
+    Source: 'src/encode.rs', lines 243:4-246:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.pk_decode_loop1.body
@@ -4337,7 +4337,7 @@ def encode.pk_decode_loop1.body
   else ok (done t1)
 
 /-- [ml_dsa_verified::encode::pk_decode]: loop 1:
-    Source: 'src/encode.rs', lines 206:4-209:5
+    Source: 'src/encode.rs', lines 243:4-246:5
     Visibility: public -/
 @[rust_loop]
 def encode.pk_decode_loop1
@@ -4350,7 +4350,7 @@ def encode.pk_decode_loop1
     (t1, i)
 
 /-- [ml_dsa_verified::encode::pk_decode]:
-    Source: 'src/encode.rs', lines 197:0-211:1
+    Source: 'src/encode.rs', lines 234:0-248:1
     Visibility: public -/
 def encode.pk_decode
   (K : Std.Usize) (pk : Slice Std.U8) :
@@ -4364,7 +4364,7 @@ def encode.pk_decode
   ok (rho1, t11)
 
 /-- [ml_dsa_verified::verify::verify_internal]: loop body 0:
-    Source: 'src/verify.rs', lines 90:4-96:5
+    Source: 'src/verify.rs', lines 94:4-100:5
     Visibility: public -/
 @[rust_loop_body]
 def verify.verify_internal_loop.body
@@ -4416,7 +4416,7 @@ def verify.verify_internal_loop.body
   else ok (done w1)
 
 /-- [ml_dsa_verified::verify::verify_internal]: loop 0:
-    Source: 'src/verify.rs', lines 90:4-96:5
+    Source: 'src/verify.rs', lines 94:4-100:5
     Visibility: public -/
 @[rust_loop]
 def verify.verify_internal_loop
@@ -4439,7 +4439,7 @@ def verify.verify_internal_loop
     (w_approx, w1, i15)
 
 /-- [ml_dsa_verified::verify::verify_internal]:
-    Source: 'src/verify.rs', lines 46:0-110:1
+    Source: 'src/verify.rs', lines 50:0-114:1
     Visibility: public -/
 def verify.verify_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
@@ -4527,7 +4527,7 @@ def verify.verify_internal
         else ok false
 
 /-- [ml_dsa_verified::api::verify_44]:
-    Source: 'src/api.rs', lines 69:0-75:1
+    Source: 'src/api.rs', lines 71:0-77:1
     Visibility: public -/
 def api.verify_44
   (pk : Array Std.U8 1312#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4550,7 +4550,7 @@ def api.verify_44
     verify.verify_internal 4#usize 4#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_44]:
-    Source: 'src/api.rs', lines 78:0-85:1
+    Source: 'src/api.rs', lines 80:0-87:1
     Visibility: public -/
 def api.sign_internal_44
   (sk : Array Std.U8 2560#usize) (m_prime : Slice Std.U8)
@@ -4569,7 +4569,7 @@ def api.sign_internal_44
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_44]:
-    Source: 'src/api.rs', lines 88:0-90:1
+    Source: 'src/api.rs', lines 90:0-92:1
     Visibility: public -/
 def api.verify_internal_44
   (pk : Array Std.U8 1312#usize) (m_prime : Slice Std.U8)
@@ -4581,6 +4581,138 @@ def api.verify_internal_44
   let s1 ← lift (Array.to_slice (Std.Array.empty Std.U8))
   let s2 ← lift (Array.to_slice sig)
   verify.verify_internal 4#usize 4#usize p s s1 m_prime s2
+
+/-- [ml_dsa_verified::encode::poly_in_eta]: loop body 0:
+    Source: 'src/encode.rs', lines 161:4-166:5 -/
+@[rust_loop_body]
+def encode.poly_in_eta_loop.body
+  (w : Array Std.U32 256#usize) (eta : Std.U32) (ok1 : Bool) (i : Std.Usize) :
+  RustM (ControlFlow (Bool × Std.Usize) Bool)
+  := do
+  if i < 256#usize
+  then
+    let i1 ← Array.index_usize w i
+    let ok2 ←
+      if i1 > eta
+      then do
+           let i2 ← i1 + eta
+           if i2 < field.Q
+           then ok false
+           else ok ok1
+      else ok ok1
+    let i2 ← i + 1#usize
+    ok (cont (ok2, i2))
+  else ok (done ok1)
+
+/-- [ml_dsa_verified::encode::poly_in_eta]: loop 0:
+    Source: 'src/encode.rs', lines 161:4-166:5 -/
+@[rust_loop]
+def encode.poly_in_eta_loop
+  (w : Array Std.U32 256#usize) (eta : Std.U32) (ok1 : Bool) (i : Std.Usize) :
+  RustM Bool
+  := do
+  loop
+    (fun (ok2, i1) => encode.poly_in_eta_loop.body w eta ok2 i1)
+    (ok1, i)
+
+/-- [ml_dsa_verified::encode::poly_in_eta]:
+    Source: 'src/encode.rs', lines 158:0-168:1 -/
+@[reducible]
+def encode.poly_in_eta
+  (w : Array Std.U32 256#usize) (eta : Std.U32) : RustM Bool := do
+  encode.poly_in_eta_loop w eta true 0#usize
+
+/-- [ml_dsa_verified::encode::eta_block_in_range]:
+    Source: 'src/encode.rs', lines 172:0-174:1 -/
+def encode.eta_block_in_range
+  (p : params.Params) (v : Slice Std.U8) : RustM Bool := do
+  let a ← encode.unpack_signed v p.eta p.eta_bits
+  encode.poly_in_eta a p.eta
+
+/-- [ml_dsa_verified::encode::sk_is_well_formed]: loop body 0:
+    Source: 'src/encode.rs', lines 184:4-190:5
+    Visibility: public -/
+@[rust_loop_body]
+def encode.sk_is_well_formed_loop.body
+  (K : Std.Usize) (L : Std.Usize) (i : Std.Usize) (i1 : Std.Usize)
+  (i2 : Std.U32) (i3 : Std.Usize) (i4 : Std.Usize) (i5 : Std.U32)
+  (i6 : Std.U32) (i7 : Std.Usize) (i8 : Std.U32) (i9 : Std.Usize)
+  (i10 : Std.Usize) (i11 : Std.Usize) (i12 : Std.U32) (i13 : Std.U64)
+  (i14 : Std.U64) (sk : Slice Std.U8) (n : Std.Usize) (o : Std.Usize)
+  (ok1 : Bool) (i15 : Std.Usize) :
+  RustM (ControlFlow (Std.Usize × Bool × Std.Usize) Bool)
+  := do
+  let i16 ← L + K
+  if i15 < i16
+  then
+    let i17 ← o + n
+    let s ←
+      core.slice.index.Slice.index (core.slice.index.SliceIndexRangeUsizeSlice
+        Std.U8) sk { start := o, «end» := i17 }
+    let b ←
+      encode.eta_block_in_range
+        {
+          k := i,
+          l := i1,
+          eta := i2,
+          eta_bits := i3,
+          tau := i4,
+          beta := i5,
+          gamma1 := i6,
+          gamma1_bits := i7,
+          gamma2 := i8,
+          w1_bits := i9,
+          omega := i10,
+          c_tilde_len := i11,
+          two_gamma2_shift := i12,
+          two_gamma2_mult := i13,
+          two_gamma2_div_mult := i14
+        } s
+    let ok2 ← if b
+                then ok ok1
+                else ok false
+    let i18 ← i15 + 1#usize
+    ok (cont (i17, ok2, i18))
+  else ok (done ok1)
+
+/-- [ml_dsa_verified::encode::sk_is_well_formed]: loop 0:
+    Source: 'src/encode.rs', lines 184:4-190:5
+    Visibility: public -/
+@[rust_loop]
+def encode.sk_is_well_formed_loop
+  (K : Std.Usize) (L : Std.Usize) (i : Std.Usize) (i1 : Std.Usize)
+  (i2 : Std.U32) (i3 : Std.Usize) (i4 : Std.Usize) (i5 : Std.U32)
+  (i6 : Std.U32) (i7 : Std.Usize) (i8 : Std.U32) (i9 : Std.Usize)
+  (i10 : Std.Usize) (i11 : Std.Usize) (i12 : Std.U32) (i13 : Std.U64)
+  (i14 : Std.U64) (sk : Slice Std.U8) (n : Std.Usize) (o : Std.Usize)
+  (ok1 : Bool) (i15 : Std.Usize) :
+  RustM Bool
+  := do
+  loop
+    (fun (o1, ok2, i16) => encode.sk_is_well_formed_loop.body K L i i1 i2 i3 i4
+      i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 sk n o1 ok2 i16)
+    (o, ok1, i15)
+
+/-- [ml_dsa_verified::encode::sk_is_well_formed]:
+    Source: 'src/encode.rs', lines 179:0-192:1
+    Visibility: public -/
+def encode.sk_is_well_formed
+  (K : Std.Usize) (L : Std.Usize) (p : params.Params) (sk : Slice Std.U8) :
+  RustM Bool
+  := do
+  let n ← 32#usize * p.eta_bits
+  encode.sk_is_well_formed_loop K L p.k p.l p.eta p.eta_bits p.tau p.beta
+    p.gamma1 p.gamma1_bits p.gamma2 p.w1_bits p.omega p.c_tilde_len
+    p.two_gamma2_shift p.two_gamma2_mult p.two_gamma2_div_mult sk n 128#usize
+    true 0#usize
+
+/-- [ml_dsa_verified::api::sk_is_well_formed_44]:
+    Source: 'src/api.rs', lines 101:0-103:1
+    Visibility: public -/
+def api.sk_is_well_formed_44 (sk : Array Std.U8 2560#usize) : RustM Bool := do
+  let p ← params.ML_DSA_44
+  let s ← lift (Array.to_slice sk)
+  encode.sk_is_well_formed 4#usize 4#usize p s
 
 /-- [ml_dsa_verified::params::ML_DSA_65]
     Source: 'src/params.rs', lines 46:0-62:2
@@ -4608,7 +4740,7 @@ def params.ML_DSA_65 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_65]:
-    Source: 'src/api.rs', lines 98:0-103:1
+    Source: 'src/api.rs', lines 111:0-116:1
     Visibility: public -/
 def api.keygen_65
   (xi : Array Std.U8 32#usize) :
@@ -4625,7 +4757,7 @@ def api.keygen_65
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_65]:
-    Source: 'src/api.rs', lines 107:0-118:1
+    Source: 'src/api.rs', lines 120:0-131:1
     Visibility: public -/
 def api.sign_65
   (sk : Array Std.U8 4032#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4653,7 +4785,7 @@ def api.sign_65
     else ok none
 
 /-- [ml_dsa_verified::api::verify_65]:
-    Source: 'src/api.rs', lines 121:0-127:1
+    Source: 'src/api.rs', lines 134:0-140:1
     Visibility: public -/
 def api.verify_65
   (pk : Array Std.U8 1952#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4676,7 +4808,7 @@ def api.verify_65
     verify.verify_internal 6#usize 5#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_65]:
-    Source: 'src/api.rs', lines 130:0-137:1
+    Source: 'src/api.rs', lines 143:0-150:1
     Visibility: public -/
 def api.sign_internal_65
   (sk : Array Std.U8 4032#usize) (m_prime : Slice Std.U8)
@@ -4695,7 +4827,7 @@ def api.sign_internal_65
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_65]:
-    Source: 'src/api.rs', lines 140:0-142:1
+    Source: 'src/api.rs', lines 153:0-155:1
     Visibility: public -/
 def api.verify_internal_65
   (pk : Array Std.U8 1952#usize) (m_prime : Slice Std.U8)
@@ -4707,6 +4839,14 @@ def api.verify_internal_65
   let s1 ← lift (Array.to_slice (Std.Array.empty Std.U8))
   let s2 ← lift (Array.to_slice sig)
   verify.verify_internal 6#usize 5#usize p s s1 m_prime s2
+
+/-- [ml_dsa_verified::api::sk_is_well_formed_65]:
+    Source: 'src/api.rs', lines 164:0-166:1
+    Visibility: public -/
+def api.sk_is_well_formed_65 (sk : Array Std.U8 4032#usize) : RustM Bool := do
+  let p ← params.ML_DSA_65
+  let s ← lift (Array.to_slice sk)
+  encode.sk_is_well_formed 6#usize 5#usize p s
 
 /-- [ml_dsa_verified::params::ML_DSA_87]
     Source: 'src/params.rs', lines 63:0-79:2
@@ -4734,7 +4874,7 @@ def params.ML_DSA_87 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_87]:
-    Source: 'src/api.rs', lines 150:0-155:1
+    Source: 'src/api.rs', lines 174:0-179:1
     Visibility: public -/
 def api.keygen_87
   (xi : Array Std.U8 32#usize) :
@@ -4751,7 +4891,7 @@ def api.keygen_87
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_87]:
-    Source: 'src/api.rs', lines 159:0-170:1
+    Source: 'src/api.rs', lines 183:0-194:1
     Visibility: public -/
 def api.sign_87
   (sk : Array Std.U8 4896#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4779,7 +4919,7 @@ def api.sign_87
     else ok none
 
 /-- [ml_dsa_verified::api::verify_87]:
-    Source: 'src/api.rs', lines 173:0-179:1
+    Source: 'src/api.rs', lines 197:0-203:1
     Visibility: public -/
 def api.verify_87
   (pk : Array Std.U8 2592#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4802,7 +4942,7 @@ def api.verify_87
     verify.verify_internal 8#usize 7#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_87]:
-    Source: 'src/api.rs', lines 182:0-189:1
+    Source: 'src/api.rs', lines 206:0-213:1
     Visibility: public -/
 def api.sign_internal_87
   (sk : Array Std.U8 4896#usize) (m_prime : Slice Std.U8)
@@ -4821,7 +4961,7 @@ def api.sign_internal_87
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_87]:
-    Source: 'src/api.rs', lines 192:0-194:1
+    Source: 'src/api.rs', lines 216:0-218:1
     Visibility: public -/
 def api.verify_internal_87
   (pk : Array Std.U8 2592#usize) (m_prime : Slice Std.U8)
@@ -4833,5 +4973,13 @@ def api.verify_internal_87
   let s1 ← lift (Array.to_slice (Std.Array.empty Std.U8))
   let s2 ← lift (Array.to_slice sig)
   verify.verify_internal 8#usize 7#usize p s s1 m_prime s2
+
+/-- [ml_dsa_verified::api::sk_is_well_formed_87]:
+    Source: 'src/api.rs', lines 227:0-229:1
+    Visibility: public -/
+def api.sk_is_well_formed_87 (sk : Array Std.U8 4896#usize) : RustM Bool := do
+  let p ← params.ML_DSA_87
+  let s ← lift (Array.to_slice sk)
+  encode.sk_is_well_formed 8#usize 7#usize p s
 
 end Impl

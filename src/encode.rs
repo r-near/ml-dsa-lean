@@ -2,7 +2,7 @@
 //! skDecode (Alg 25), sigEncode (Alg 26), w1Encode (Alg 28),
 //! pkEncode/pkDecode (Alg 22/23), skEncode (Alg 24), HintBitUnpack (Alg 21), sigDecode (Alg 27). Bit order is little-endian.
 
-use crate::field::sub;
+use crate::field::{Q, sub};
 use crate::params::Params;
 
 /// Pack 256 values of `c` bits each (each value < 2^c) into 32·c bytes.
@@ -152,6 +152,43 @@ pub fn sk_decode<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> Secre
         i += 1;
     }
     out
+}
+
+/// True iff every coefficient of `w` (canonical mod q) is in [−η, η], i.e. `w ≤ η` or `w ≥ q − η`.
+fn poly_in_eta(w: &[u32; 256], eta: u32) -> bool {
+    let mut ok = true;
+    let mut i = 0;
+    while i < 256 {
+        if w[i] > eta && w[i] + eta < Q {
+            ok = false;
+        }
+        i += 1;
+    }
+    ok
+}
+
+/// True iff the η-block `v` (32·bitlen(2η) bytes) decodes, as in skDecode (BitUnpack with a = b = η), to
+/// coefficients all in [−η, η].
+fn eta_block_in_range(p: &Params, v: &[u8]) -> bool {
+    poly_in_eta(&unpack_signed(v, p.eta, p.eta_bits), p.eta)
+}
+
+/// True iff every coefficient of s₁ and s₂ as decoded by `sk_decode` (Algorithm 25) lies in [−η, η]. The L + K
+/// η-blocks of `sk` are contiguous from byte 128. (t₀ is a 13-bit field decoded as 4096 − z for z < 2¹³, so
+/// it is always in [−4095, 4096] and needs no check.) Requires `sk.len() == sk_len(p)`.
+pub fn sk_is_well_formed<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> bool {
+    let n = 32 * p.eta_bits;
+    let mut o = 128;
+    let mut ok = true;
+    let mut i = 0;
+    while i < L + K {
+        if !eta_block_in_range(p, &sk[o..o + n]) {
+            ok = false;
+        }
+        o += n;
+        i += 1;
+    }
+    ok
 }
 
 /// Algorithm 26 sigEncode(c̃, z, h).
