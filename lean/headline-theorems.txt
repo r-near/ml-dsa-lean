@@ -294,3 +294,18 @@ Proofs.verify_87_exact
 Proofs.verify_internal_44_exact
 Proofs.verify_internal_65_exact
 Proofs.verify_internal_87_exact
+import Proofs.PartialSampleS
+Proofs.PartialSampleS.RejBoundedPoly_mono
+Proofs.PartialSampleS.ExpandS_of_samplers
+Proofs.PartialSampleS.ExpandS_mono
+Proofs.rej_bounded_poly_partial
+Proofs.expand_s_partial
+import Proofs.PartialKeyGen
+Proofs.keygen_of_samplers
+Proofs.keygen_internal_partial
+Proofs.keygen_44_partial
+Proofs.keygen_65_partial
+Proofs.keygen_87_partial
+Proofs.keygen_44_exact
+Proofs.keygen_65_exact
+Proofs.keygen_87_exact
