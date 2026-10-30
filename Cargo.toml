@@ -6,6 +6,12 @@ publish = false
 description = "Proof-first ML-DSA (FIPS 204): one Rust function per algorithm, plain arrays and loops, extracted to Lean"
 
 [dependencies]
+# Optional: wipes secret temporaries at the end of sign_internal/keygen_internal. Not part of the Lean proof.
+zeroize = { version = "1", default-features = false, optional = true }
+
+[features]
+default = []
+zeroize = ["dep:zeroize"]
 
 [dev-dependencies]
 # Differential oracle: upstream RustCrypto master a3690c4, deprecated expanded-key API for skEncode bytes.

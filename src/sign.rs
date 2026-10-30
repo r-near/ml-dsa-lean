@@ -1,5 +1,7 @@
 //! Algorithm 7 ML-DSA.Sign_internal(sk, M′, rnd). Step numbers refer to FIPS 204.
 
+#[cfg(feature = "zeroize")]
+use crate::encode::SecretKey;
 use crate::encode::{sig_encode, sk_decode, w1_encode};
 use crate::field::{add, neg};
 use crate::keccak::Shake;
@@ -93,6 +95,30 @@ fn attempt<const K: usize, const L: usize>(
     Some((c_tilde, z, hint))
 }
 
+/// Zeroizes the secret temporaries of `sign_internal`: ρ″, the decoded key's K/s1/s2/t0 and the NTT
+/// forms ŝ1, ŝ2, t̂0. Only compiled with the `zeroize` feature. This is outside the Lean proof (Aeneas
+/// models neither `Drop` nor volatile writes); the feature-on build differs from the proved code only by
+/// the calls to this function, which run after σ is written. Not wiped: the per-attempt vectors y, cs1,
+/// cs2, ct0 (locals of `attempt`), and any copies the compiler makes of the above.
+#[cfg(feature = "zeroize")]
+fn wipe_sign<const K: usize, const L: usize>(
+    key: &mut SecretKey<K, L>,
+    s1_hat: &mut [[u32; 256]; L],
+    s2_hat: &mut [[u32; 256]; K],
+    t0_hat: &mut [[u32; 256]; K],
+    rho_pp: &mut [u8; 64],
+) {
+    use zeroize::Zeroize;
+    key.key.zeroize();
+    key.s1.zeroize();
+    key.s2.zeroize();
+    key.t0.zeroize();
+    s1_hat.zeroize();
+    s2_hat.zeroize();
+    t0_hat.zeroize();
+    rho_pp.zeroize();
+}
+
 /// Algorithm 7 ML-DSA.Sign_internal(sk, M′, rnd) with M′ = `m_prefix` ‖ `m` (the external API passes
 /// 0 ‖ |ctx| ‖ ctx as the prefix; the internal interface passes an empty prefix). Writes σ to `sig` and
 /// returns true, or returns false when the κ budget (all complete ExpandMask batches below 2^16) is exhausted.
@@ -105,11 +131,15 @@ pub fn sign_internal<const K: usize, const L: usize>(
     sig: &mut [u8],
 ) -> bool {
     // 1: (ρ, K, tr, s1, s2, t0) ← skDecode(sk)
-    let key = sk_decode::<K, L>(p, sk);
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+    let mut key = sk_decode::<K, L>(p, sk);
     // 2–4: ŝ1, ŝ2, t̂0
-    let s1_hat = ntt_vec(&key.s1);
-    let s2_hat = ntt_vec(&key.s2);
-    let t0_hat = ntt_vec(&key.t0);
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+    let mut s1_hat = ntt_vec(&key.s1);
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+    let mut s2_hat = ntt_vec(&key.s2);
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+    let mut t0_hat = ntt_vec(&key.t0);
     // 5: Â ← ExpandA(ρ)
     let a_hat = expand_a::<K, L>(&key.rho);
     // 6: μ ← H(tr || M′, 64)
@@ -121,6 +151,7 @@ pub fn sign_internal<const K: usize, const L: usize>(
     h.finalize();
     h.squeeze(&mut mu);
     // 7: ρ″ ← H(K || rnd || μ, 64)
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
     let mut rho_pp = [0u8; 64];
     let mut h = Shake::shake256();
     h.absorb(&key.key);
@@ -136,9 +167,13 @@ pub fn sign_internal<const K: usize, const L: usize>(
         {
             // 33: σ ← sigEncode(c̃, z mod± q, h); z is already the canonical Z_q representative
             sig_encode::<K, L>(p, &c_tilde, &z, &hint, sig);
+            #[cfg(feature = "zeroize")]
+            wipe_sign::<K, L>(&mut key, &mut s1_hat, &mut s2_hat, &mut t0_hat, &mut rho_pp);
             return true;
         }
         kappa += L as u32;
     }
+    #[cfg(feature = "zeroize")]
+    wipe_sign::<K, L>(&mut key, &mut s1_hat, &mut s2_hat, &mut t0_hat, &mut rho_pp);
     false
 }
