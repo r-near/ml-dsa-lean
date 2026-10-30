@@ -2,14 +2,22 @@
 
 What is proved, under which premises, and what is trusted. Updated as work lands.
 
-**Proved so far** (standard axioms only, checked by `scripts/check-axioms.sh`):
+**Proved so far** (standard axioms only; `scripts/check-axioms.sh` checks every extracted def and every name in
+`lean/headline-theorems.txt`, 340 declarations). Each is a `@[step]` refinement spec of an extracted function
+against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`:
 
-| Theorem | Statement | Premises |
+| Module | What is proved | Extra hypotheses (all satisfiable; witnesses in the files) |
 |---|---|---|
-| `Proofs.ntt_correct` | `∃ r, Impl.ntt.ntt w = ok r ∧ Canonical r ∧ toZq r = Spec.NTT (toZq w)` (FIPS 204 Alg 41) | `Canonical w` (all coefficients < q) |
-| `Proofs.ntt_inverse_correct` | same for `Impl.ntt.ntt_inverse` and `Spec.NTTInv` (Alg 42) | `Canonical w` |
+| `Proofs/Field.lean`, `Repr.lean` | field ops, masks, infinity norm vs ‖·‖∞, `Params.Valid` for 44/65/87 | canonical inputs |
+| `Proofs/NTT*.lean` | NTT, NTT⁻¹ (Alg 41/42); zeta table by `decide +kernel` | canonical inputs |
+| `Proofs/NTTOps.lean`, `Coeff.lean` | Alg 44–48, vector NTT, CoeffFromThreeBytes/HalfByte (Alg 14/15) | η ∈ {2, 4} |
+| `Proofs/Rounding*.lean` | Power2Round, Decompose, HighBits, LowBits, MakeHint, UseHint (Alg 35–40) and polynomial maps | γ2 ∈ {95232, 261888} |
+| `Proofs/Encode*.lean` | bit accumulator = SimpleBitPack/BitPack and unpack (Alg 16–19), w1Encode, pk/sk encode/decode (Alg 22–25); decoders for every byte string of the right length | coefficient ranges for the encoders |
+| `Proofs/Hint.lean` | HintBitUnpack for every byte string incl. all ⊥ cases; HintBitPack (Alg 20/21) | weight ≤ ω for packing |
+| `Proofs/Keccak*.lean` | Keccak-f[1600]; SHAKE128/256 absorb, finalize, squeeze vs `Spec.SHAKE*`; absorbing a then b = absorbing a ‖ b | none |
 
-Not yet independently reviewed. Field-op lemmas (`Proofs/Field.lean`) back them.
+Not yet proved: samplers (Alg 29–34), sigEncode/sigDecode, KeyGen_internal, Sign_internal, Verify_internal, API.
+The per-module premises (η, γ2 values) will be folded into one parameter predicate before the top theorems.
 
 ## Target
 
@@ -25,7 +33,9 @@ One end-to-end Lean proof, readable top-down:
 Named premises (the only ones allowed; each needs a satisfiability witness):
 
 - `RejTerm`: the rejection samplers (RejNTTPoly in ExpandA, RejBoundedPoly in ExpandS, SampleInBall's draw) receive
-  enough accepted samples from SHAKE. Probabilistic, not provable.
+  enough accepted samples from SHAKE. Probabilistic, not provable. Concretely: the spec samplers are fuel-bounded and
+  return `Option`; theorems take "the spec returns `some` at fuel F" as the hypothesis. The Rust loops are unbounded
+  (Aeneas `loop`), so without it they can diverge, and no theorem can claim totality for every seed.
 - κ budget: Sign is compared with `Sign_internal_bounded B`, B = ⌊(2¹⁶ − ℓ)/ℓ⌋ + 1.
 
 Trusted base: spec fidelity of `lean/Spec` (one independent review plus ACVP cross-check), Charon/Aeneas translation
@@ -93,7 +103,13 @@ Spec-level `Verify(pk, M, Sign(sk, M)) = true`, transferred through the three to
 | Leaf algorithms (15, 21–24, 27, 31, 33, 40) | round trips on upstream bytes, naive references, every HintBitUnpack ⊥ case; reviewed (no bugs; test gaps queued for wave 3) | `tests/leaf.rs` |
 | Extraction | 257 defs, Aeneas 0 errors / 0 warnings, no local opaque, no external axioms, standard axioms on all defs | `lean/Impl/extract-report.json` |
 | NTT refinement prototype | both directions proved; ~10 s per proof file in `lake build`, ~3 GB, default heartbeats; Rust NTT shape unchanged. Main performance risk retired | `lean/Proofs/NTT*.lean` |
-| Wave 3 in progress | API (Alg 1/2/3), zeroize feature, checkct, tests, bench; Lean spec started in parallel | |
+| Public API (Alg 1/2/3) | stateless fixed-array functions per set; ctx prefix on the stack; matches upstream's external interface (72 cases incl. \|ctx\| = 0, 255, 256) | `tests/api.rs` |
+| Randomized differential | 200 keygen + 200 sign/verify (M′ up to 10 kB, random prefix split) + 2,000 sign per set; hint-region differential 30k per set | `tests/random_diff.rs`, `tests/leaf.rs` |
+| zeroize | optional, off by default and during extraction; wipes sign/keygen secrets | `src/{sign,keygen}.rs` |
+| Extraction (current) | 274 defs, gate clean, 278 declarations on standard axioms | `lean/Impl/extract-report.json` |
+| Constant time (BINSEC) | 39 probes × 3 targets, signing steps on production code: x86_64 and thumbv7em all secure; riscv32imac 32 secure, 6 unknown (signing-step timeouts), 1 probe artifact; mask-select leak fixed with a RISC-V-only barrier (ISSUES CT-1) | `checkct/` |
+| Bench (box, release) | keygen 0.57–0.62×, sign 1.10–1.21×, verify 2.2–2.9× upstream. Verify re-runs ExpandA per call; upstream's `VerifyingKey` caches Â | `examples/bench.rs` |
+| Lean spec (phase 3) | `lean/Spec/`: FIPS 202 SHAKE and FIPS 204 Alg 1–3, 6–48, ~1,200 lines; evaluates: `spec-acvp` 63/63 ACVP cases, 38 SHAKE KATs shared with the Rust tests; two independent fidelity reviews: no spec bugs (comment overclaims fixed) | `lean/Spec/`, `lean/SpecTests/` |
 
 Out of scope, by decision: HashML-DSA (Alg 4/5) and external μ. Upstream does not implement them, and ACVP preHash
 cases need SHA-2/SHA-3 variants beyond SHAKE, so partial coverage buys little. ACVP preHash and externalMu groups are
