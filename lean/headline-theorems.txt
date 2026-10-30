@@ -228,3 +228,9 @@ Proofs.Corr.NTTInv_smul
 Proofs.Corr.NTTInv_MultiplyNTT
 Proofs.Corr.cs_norm_bound
 Proofs.Corr.cs_norm_bound_params
+import Proofs.Correctness
+Proofs.correct_internal
+Proofs.correct_external
+Proofs.correct_44
+Proofs.correct_65
+Proofs.correct_87
