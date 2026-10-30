@@ -20,7 +20,7 @@ Each is a corollary of the internal refinement theorems (`keygen_internal_spec`,
 * `sign_NN_correct_exhausted`: if the κ budget is exhausted (`Sign.Exhausted`), the Rust returns `none`.
 
 The only premises are the spec's `some` / `Exhausted` hypotheses. The fixed-size arrays discharge the length
-facts and `ML_DSA_NN_std` the parameter facts. Each function is stated once generically (`keygenAPI`,
+facts of keygen and sign (Verify needs none) and `ML_DSA_NN_std` the parameter facts. Each function is stated once generically (`keygenAPI`,
 `signAPI`, `verifyAPI` are the shared bodies, `rfl`-equal to the three extracted functions) and instantiated.
 -/
 

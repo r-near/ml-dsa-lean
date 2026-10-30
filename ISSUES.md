@@ -65,8 +65,8 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
 ## Errata (docs, spec, upstream)
 
 - **E-1 (2026-10-29): "Verify for all byte strings" needs length hypotheses.** The core decoders index slices
-  directly. `verify_internal` now starts with a length guard (wrong `pk`/`σ` length returns false, as FIPS 204
-  Verify), and `verify_internal_spec` has no length hypotheses. `sign_internal` and `keygen_internal` still panic on
+  directly. `verify_internal` now starts with a length guard (wrong `pk`/`σ` length returns false; FIPS 204 types
+  the inputs by length, and the project spec's step 0 returns false), valid when `p` agrees with `K`/`L`, and `verify_internal_spec` has no length hypotheses. `sign_internal` and `keygen_internal` still panic on
   wrong-length slices and their theorems keep the length hypotheses; the API's fixed-size arrays discharge them.
   The guard needs `ω ≤ 255` in `StdParams` (checked `usize` arithmetic in `sig_len`; 80/55/75 for 44/65/87).
 - **E-3 (2026-10-29): rejection loops have no provable bound.** Verify runs RejNTTPoly (on ρ from pk) and

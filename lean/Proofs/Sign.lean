@@ -1181,9 +1181,9 @@ theorem sign_none_cases (sp : Spec.Params) (B : Nat) (F : Spec.Fuel) (sk M' rnd 
   · rcases hl : loopRes sp F P B 0 with _ | _ | x <;> simp [hl, encodeRes]
 
 /-- **`Sign_internal` refinement, exhaustion case.** If the spec's `ExpandA` and every `SampleInBall` had enough
-fuel and all `kappaBudget sp` attempts were rejected, the Rust `sign_internal` returns `false` and leaves the output buffer untouched (it writes `sig` only after an
-accepted attempt). (The spec's plain
-`none` is not enough: it also covers fuel failures, see `sign_none_cases`.) -/
+fuel and all `kappaBudget sp` attempts were rejected, the Rust `sign_internal` returns `false` and leaves the
+output buffer untouched (it writes `sig` only after an accepted attempt). The spec's plain `none` is not enough:
+it also covers fuel failures, see `sign_none_cases`. -/
 theorem sign_internal_spec_none {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp)
     (sk m_prefix m : Slice U8) (rnd : Array U8 32#usize) (sig : Slice U8)

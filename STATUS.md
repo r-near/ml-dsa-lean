@@ -3,14 +3,14 @@
 What is proved, under which premises, and what is trusted. Updated as work lands.
 
 **Proved so far** (standard axioms only; `scripts/check-axioms.sh` checks every extracted def and every name in
-`lean/headline-theorems.txt`, 446 declarations). Each is a `@[step]` refinement spec of an extracted function
+`lean/headline-theorems.txt`, 481 declarations at 02e6820). Each is a `@[step]` refinement spec of an extracted function
 against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`.
 
 Done-gate: a module counts as proved only after `scripts/lean-check.sh` passes: a pipefail-safe `lake build` exits 0,
 the full log has no `error:` or `sorry` warning, and the axiom gate passes. Each agent reuses one stable `rx submit` name for its gates, which keeps
 that name's `.lake/build` warm (ISSUES T-7). Earlier rx jobs could report success on
-failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a cold rebuild of ffc445c (job
-`verify-head`).
+failed builds (ISSUES T-6). Every row below passed this gate at 02e6820 (job `gate-main`, `LEAN CHECK OK`, 481 declarations).
+The phase 1–4a rows were also re-verified by a cold rebuild of ffc445c (job `verify-head`).
 
 | Module | What is proved | Extra hypotheses (parameter facts witnessed for 44/65/87; sampler premises: leaf witnesses, see below) |
 |---|---|---|
@@ -41,9 +41,9 @@ k ≤ 8, ℓ ≥ 1, ω ≤ 255, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`)
 
 | `Proofs/API.lean` | **Public API (Alg 1/2/3)** for 44/65/87: `keygen_NN`, `verify_NN` (incl. \|ctx\| > 255 → false), `sign_NN` (σ on success; `none` for \|ctx\| > 255 and on exhaustion); M′ = 0 ‖ \|ctx\| ‖ ctx ‖ M matches the spec | the spec returns `some` (or `Exhausted`); nothing on the contents of pk, sk, σ, M, ctx |
 
-The three internal top theorems were independently reviewed (no blockers; findings folded into the sections below). The per-module premises (η, γ1, γ2, τ, d and size
-bounds) will be folded into one parameter predicate, proved for 44/65/87, before the top theorems. Wave-4b proofs are
-not yet independently reviewed.
+Reviews: the leaf proofs (phase 4a/4b) and the three internal top theorems were independently reviewed, and so were
+the API theorems, the `verify_internal` length guard (7bb0dbe) and the Sign exhaustion change (4d86309); no
+blockers, findings folded into the sections below.
 
 ## Target
 
@@ -83,6 +83,13 @@ Not covered by any theorem:
 - Inputs where a spec sampler runs out of fuel. The Rust squeezes without bound there, so it most likely returns the
   true FIPS result, but nothing proves it. In Sign this includes a SampleInBall fuel failure in any earlier rejected
   attempt. For Verify and KeyGen the seeds come from pk/σ/ξ, so this is a premise on attacker-chosen inputs.
+- The public `api::sign_internal_NN` and `verify_internal_NN` wrappers (Alg 7/8 without ctx) have no API-level
+  theorem; the internal theorems cover the functions they call.
+- No "only if" for Sign's `none` at the API level: the theorems give `none` for spec exhaustion and \|ctx\| > 255
+  but do not state that these are the only cases (`sign_none_cases` exists internally, not lifted).
+- Calling `verify_internal` with a `Params` value inconsistent with its `K`/`L` generics: the length guard checks
+  lengths derived from `p`, but the decoders index by `K`/`L`, so it can still panic. The theorems assume
+  `Params.Std ip K L sp`, which ties them together; the `api` functions always pass consistent values.
 - Calls to `sign_internal` and `keygen_internal` with wrong-length slices: they panic (E-1). The fixed-array `api`
   functions never do this, and `verify_internal` now rejects wrong lengths (guard proved).
 - The `zeroize` build (the proved code is extracted with it off; the wipes come after the outputs are written) and
@@ -156,7 +163,7 @@ Spec-level `Verify(pk, M, Sign(sk, M)) = true`, transferred through the three to
 | Public API (Alg 1/2/3) | stateless fixed-array functions per set; ctx prefix on the stack; matches upstream's external interface (72 cases incl. \|ctx\| = 0, 255, 256) | `tests/api.rs` |
 | Randomized differential | 200 keygen + 200 sign/verify (M′ up to 10 kB, random prefix split) + 2,000 sign per set; hint-region differential 30k per set | `tests/random_diff.rs`, `tests/leaf.rs` |
 | zeroize | optional, off by default and during extraction; wipes sign/keygen secrets | `src/{sign,keygen}.rs` |
-| Extraction (current) | 274 defs, gate clean, 278 declarations on standard axioms | `lean/Impl/extract-report.json` |
+| Extraction (current) | 278 defs, gate clean, standard axioms on all defs | `lean/Impl/extract-report.json` |
 | Constant time (BINSEC) | 39 probes × 3 targets, signing steps on production code: x86_64 and thumbv7em all secure; riscv32imac 32 secure, 6 unknown (signing-step timeouts), 1 probe artifact; mask-select leak fixed with a RISC-V-only barrier (ISSUES CT-1) | `checkct/` |
 | Bench (box, release) | keygen 0.57–0.62×, sign 1.10–1.21×, verify 2.2–2.9× upstream. Verify re-runs ExpandA per call; upstream's `VerifyingKey` caches Â | `examples/bench.rs` |
 | Lean spec (phase 3) | `lean/Spec/`: FIPS 202 SHAKE and FIPS 204 Alg 1–3, 6–48, ~1,200 lines; evaluates: `spec-acvp` 63/63 ACVP cases, 38 SHAKE KATs shared with the Rust tests; two independent fidelity reviews: no spec bugs (comment overclaims fixed) | `lean/Spec/`, `lean/SpecTests/` |
