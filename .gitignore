@@ -5,3 +5,4 @@ Cargo.lock.bak
 lean/.lake/
 .extract/
 lean/SpecTests/WycheproofData.lean
+__pycache__/

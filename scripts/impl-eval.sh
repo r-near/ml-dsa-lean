@@ -4,13 +4,13 @@
 #   rx submit impl-eval    -- 'set -o pipefail; bash scripts/impl-eval.sh lean [SCALE]'
 #   rx submit impl-eval-rs -- 'set -o pipefail; bash scripts/impl-eval.sh rs [SCALE]'
 #   (after both finish)  rx submit impl-eval -- 'set -o pipefail; bash scripts/impl-eval.sh compare'
-# Inputs come from scripts/gen-impl-eval-inputs.py (deterministic), data lives in $HOME/impl-eval-data/{lean,rs}.
+# Inputs come from scripts/gen-impl-eval-inputs.py (deterministic), data lives in $HOME/rx/scratch/impl-eval-data/{lean,rs}.
 # SCALE multiplies the random-case counts (default 1.0 = 1000 per polynomial-level op, 10000 per scalar op).
 set -euo pipefail
 side="${1:?usage: impl-eval.sh lean|rs|compare [SCALE]}"
 scale="${2:-1.0}"
 cd "$(dirname "$0")/.."
-base="$HOME/impl-eval-data"
+base="$HOME/rx/scratch/impl-eval-data"
 if [ "$side" = compare ]; then
   python3 -I scripts/impl-eval-compare.py "$base/lean" "$base/rs" | tee "$base/report.txt"
   exit 0
