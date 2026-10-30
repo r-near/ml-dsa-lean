@@ -18,7 +18,7 @@ if [ ! -d .lake/packages ] && [ -d "$SEED" ]; then
   echo "seeding .lake/packages from $SEED"; mkdir -p .lake && cp -a "$SEED" .lake/packages
 fi
 lake exe cache get 2>&1 | tail -3 || echo "warning: lake exe cache get failed (Mathlib may build from source)" >&2
-timeout 3000 lake build Impl 2>&1 | tee .lake/build.log | tail -20
+timeout 3000 lake build 2>timeout 3000 lake build Impl 2>&11 | tee .lake/build.log | tail -20
 [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "LAKE BUILD FAILED" >&2; exit 1; }
 cd ..
 t2=$(date +%s)

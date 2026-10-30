@@ -60,7 +60,7 @@ hax-lean-lib = "v0.3.30"
 [scenario.generic]
 backend = "lean"
 include = [{include}]
-no-default-features = false
+no-default-features = true
 charon-args = []
 env = {{ RUSTFLAGS = "--cfg miri" }}
 ''')

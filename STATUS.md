@@ -2,7 +2,14 @@
 
 What is proved, under which premises, and what is trusted. Updated as work lands.
 
-**Proved so far: nothing.** The Rust skeleton covers Sign_internal and matches upstream; no Lean theorem about it exists yet.
+**Proved so far** (standard axioms only, checked by `scripts/check-axioms.sh`):
+
+| Theorem | Statement | Premises |
+|---|---|---|
+| `Proofs.ntt_correct` | `∃ r, Impl.ntt.ntt w = ok r ∧ Canonical r ∧ toZq r = Spec.NTT (toZq w)` (FIPS 204 Alg 41) | `Canonical w` (all coefficients < q) |
+| `Proofs.ntt_inverse_correct` | same for `Impl.ntt.ntt_inverse` and `Spec.NTTInv` (Alg 42) | `Canonical w` |
+
+Not yet independently reviewed. Field-op lemmas (`Proofs/Field.lean`) back them.
 
 ## Target
 
@@ -10,7 +17,9 @@ One end-to-end Lean proof, readable top-down:
 
 - `keygen_correct`: `Impl.api.keygen_*` = FIPS 204 Algorithm 1 / 6.
 - `sign_correct`: `Impl.api.sign_*` = Algorithm 2 / 7 (bounded κ budget, `none` on exhaustion).
-- `verify_correct`: `Impl.api.verify_*` = Algorithm 3 / 8, for **all** byte strings pk, σ.
+- `verify_correct`: `Impl.api.verify_*` = Algorithm 3 / 8, for **all** byte strings pk, σ of the encoded lengths. The
+  core `verify_internal` takes slices and needs `pk.len = pk_len p` and `σ.len = sig_len p` as explicit hypotheses
+  (it indexes them directly); the API's fixed-size arrays discharge them. No other premise on pk or σ.
 - Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`.
 
 Named premises (the only ones allowed; each needs a satisfiability witness):
@@ -78,5 +87,14 @@ Spec-level `Verify(pk, M, Sign(sk, M)) = true`, transferred through the three to
 
 | Item | State | Evidence |
 |---|---|---|
-| Skeleton Sign_internal 44/65/87 | matches upstream, 25 cases per set | `tests/diff.rs` |
-| Skeleton extraction | 180 defs, standard axioms (campaign run; to be reproduced in-repo by wave 1 A) | `extracted-lean/` |
+| Sign_internal (Alg 7) 44/65/87 | matches upstream, 25 cases per set; ACVP sigGen pure internal + external, deterministic + hedged: 60/60 | `tests/diff.rs`, `tests/acvp.rs` |
+| KeyGen_internal (Alg 6) | pk and sk match upstream on 30 seeds per set; ACVP keyGen 75/75 | `tests/keygen.rs`, `tests/acvp.rs` |
+| Verify_internal (Alg 8) | agrees with upstream on 1,260 cases per set (valid, bit flips in c̃/z/h, wrong M, wrong pk); no panic on random pk/σ (debug build); ACVP sigVer pure 30/30 | `tests/verify.rs`, `tests/acvp.rs` |
+| Leaf algorithms (15, 21–24, 27, 31, 33, 40) | round trips on upstream bytes, naive references, every HintBitUnpack ⊥ case; reviewed (no bugs; test gaps queued for wave 3) | `tests/leaf.rs` |
+| Extraction | 257 defs, Aeneas 0 errors / 0 warnings, no local opaque, no external axioms, standard axioms on all defs | `lean/Impl/extract-report.json` |
+| NTT refinement prototype | both directions proved; ~10 s per proof file in `lake build`, ~3 GB, default heartbeats; Rust NTT shape unchanged. Main performance risk retired | `lean/Proofs/NTT*.lean` |
+| Wave 3 in progress | API (Alg 1/2/3), zeroize feature, checkct, tests, bench; Lean spec started in parallel | |
+
+Out of scope, by decision: HashML-DSA (Alg 4/5) and external μ. Upstream does not implement them, and ACVP preHash
+cases need SHA-2/SHA-3 variants beyond SHAKE, so partial coverage buys little. ACVP preHash and externalMu groups are
+skipped and counted in the test output.
