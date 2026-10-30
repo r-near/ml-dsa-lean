@@ -772,12 +772,14 @@ theorem attempt_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
 
 /-! ## Part 5: the rejection loop -/
 
-/-- What the loop returns, given the spec's loop result `T`. -/
+/-- What the loop returns, given the spec's loop result `T` and the input buffer `sig`: on acceptance the encoded
+signature is written into the buffer; otherwise the buffer is returned untouched. -/
 def LoopPost (sp : Spec.Params)
-    (T : Option (List UInt8 × Vector Poly sp.ℓ × Vector HintPoly sp.k)) (r : Bool × Slice U8) : Prop :=
+    (T : Option (List UInt8 × Vector Poly sp.ℓ × Vector HintPoly sp.k)) (sig : Slice U8) (r : Bool × Slice U8) :
+    Prop :=
   match T with
   | some (ct, z, h) => r.1 = true ∧ bytes r.2 = sigEncode sp ct (z.map Poly.modPM) h
-  | none => r.1 = false
+  | none => r.1 = false ∧ r.2 = sig
 
 theorem sign_loop_spec {ip K L sp} (hp : Params.Std ip K L sp) (hb : SignBuf sp) (F : Spec.Fuel) (P : Pre sp)
     (a_hat : Array (Array (Array U32 256#usize) L) K) (hA : ReprMat a_hat P.Â)
@@ -790,7 +792,7 @@ theorem sign_loop_spec {ip K L sp} (hp : Params.Std ip K L sp) (hb : SignBuf sp)
     (T : Option (List UInt8 × Vector Poly sp.ℓ × Vector HintPoly sp.k))
     (kappa : U32) (hk : kappa.val ≤ 2 ^ 16) (n : Nat) (hn : 2 ^ 16 ≤ n + kappa.val)
     (hT : loopRes sp F P n kappa.val = some T) :
-    sign.sign_internal_loop ip sig s1_hat s2_hat t0_hat a_hat mu rho_pp kappa ⦃ r => LoopPost sp T r ⦄ := by
+    sign.sign_internal_loop ip sig s1_hat s2_hat t0_hat a_hat mu rho_pp kappa ⦃ r => LoopPost sp T sig r ⦄ := by
   obtain ⟨hv, hstd⟩ := hp
   have hp : Params.Std ip K L sp := ⟨hv, hstd⟩
   have hL : L.val = sp.ℓ := hv.L_eq
@@ -877,7 +879,7 @@ theorem sign_loop_spec {ip K L sp} (hp : Params.Std ip K L sp) (hb : SignBuf sp)
           rw [if_pos hc'] at hT
           simp at hT; exact hT.symm
       subst hTn
-      rfl
+      exact ⟨rfl, rfl⟩
   · exact ⟨hk, n, hn, hT⟩
 
 /-! ## Part 6: spec-side lemmas about `pre` and `loopRes` -/
@@ -1068,7 +1070,7 @@ theorem sign_internal_core {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Pa
     (P : Pre sp) (hP : pre sp F (bytes sk) (bytes m_prefix ++ bytes m) (bytesA rnd) = some P)
     (T : Option (List UInt8 × Vector Poly sp.ℓ × Vector HintPoly sp.k)) (n : Nat) (hn : 2 ^ 16 ≤ n)
     (hT : loopRes sp F P n 0 = some T) :
-    sign.sign_internal K L ip sk m_prefix m rnd sig ⦃ r => LoopPost sp T r ⦄ := by
+    sign.sign_internal K L ip sk m_prefix m rnd sig ⦃ r => LoopPost sp T sig r ⦄ := by
   have hp' := hp
   obtain ⟨hv, hstd⟩ := hp
   have hK : K.val = sp.k := hv.K_eq
@@ -1179,14 +1181,15 @@ theorem sign_none_cases (sp : Spec.Params) (B : Nat) (F : Spec.Fuel) (sk M' rnd 
   · rcases hl : loopRes sp F P B 0 with _ | _ | x <;> simp [hl, encodeRes]
 
 /-- **`Sign_internal` refinement, exhaustion case.** If the spec's `ExpandA` and every `SampleInBall` had enough
-fuel and all `kappaBudget sp` attempts were rejected, the Rust `sign_internal` returns `false`. (The spec's plain
+fuel and all `kappaBudget sp` attempts were rejected, the Rust `sign_internal` returns `false` and leaves the output buffer untouched (it writes `sig` only after an
+accepted attempt). (The spec's plain
 `none` is not enough: it also covers fuel failures, see `sign_none_cases`.) -/
 theorem sign_internal_spec_none {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp)
     (sk m_prefix m : Slice U8) (rnd : Array U8 32#usize) (sig : Slice U8)
     (hsk : sk.length = sp.skLen) (hsig : sig.length = sp.sigLen) (F : Spec.Fuel)
     (hex : Exhausted sp F (bytes sk) (bytes m_prefix ++ bytes m) (bytesA rnd)) :
-    sign.sign_internal K L ip sk m_prefix m rnd sig ⦃ r => r.1 = false ⦄ := by
+    sign.sign_internal K L ip sk m_prefix m rnd sig ⦃ r => r.1 = false ∧ r.2 = sig ⦄ := by
   have hb : SignBuf sp := StdParams.signBuf (Params.Std.params hp)
   obtain ⟨P, hP, hl⟩ := hex
   have hcap := loopRes_cap sp F P (kappaBudget sp) 0 (2 ^ 16) (kappaBudget_cap sp hb.ell_pos)
