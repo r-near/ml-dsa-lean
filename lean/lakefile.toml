@@ -20,3 +20,12 @@ name = "Spec"
 
 [[lean_lib]]
 name = "Proofs"
+
+# Executable checks (#guard known-answer tests); not a default target.
+[[lean_lib]]
+name = "SpecTests"
+
+# ACVP cross-check of the specification: `lake build spec-acvp && .lake/build/bin/spec-acvp`.
+[[lean_exe]]
+name = "spec-acvp"
+root = "SpecTests.ACVP"
