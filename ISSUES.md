@@ -35,6 +35,21 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   extraction closure.
 - **T-5 (2026-10-29): lake default targets.** The pipeline built only `Impl` while the axiom check imports `Proofs`;
   it passed only on a warm box dir. Now `defaultTargets` includes `Spec` and `Proofs` and the script runs `lake build`.
+- **T-6 (2026-10-30): rx job exit codes hid build failures.** Ad hoc `rx submit` jobs ran `lake build … 2>&1 | tail -30`
+  (or `| grep`) without `pipefail`, so the job exited with the filter's status, not lake's. An audit found 10 of 68
+  exit-0 jobs with build errors in their logs. Rechecking the logs that are still retained: `pf-keccak-perm` (lake
+  "build failed"), `pf-keccak-full` (a missing-olean error before its real build) and `extract`, `kg-extract`,
+  `vf-extract` (extraction gate failures during the hint-unpack fix, T-2). `pf-encode3` had been overwritten by a
+  later run of the same name. All were intermediate runs that were superseded, but no result counts on exit code
+  alone. Recheck: a fresh worktree of ffc445c (job `verify-head`, cold box dir) ran the full pipeline with pipefail:
+  extraction gate clean and `lean/Impl` byte-identical to the committed files, `lake build` succeeded (1736 jobs;
+  every `Proofs/*.lean` is in the import closure), and the axiom gate passed on 340 declarations. A source scan found
+  no `sorry`/`admit`/`native_decide`/`axiom`/`opaque` in `Proofs/`. Every module listed as proved in STATUS.md stands.
+  Rust suites rerun with pipefail on the same tree (job `verify-head-rs`): 28 tests pass with and without `zeroize`. Fixes: `scripts/lean-check.sh [Module…]` is
+  now the done-gate (pipefail; fails on a nonzero lake exit, any `error:` or `declaration uses 'sorry'` in the full
+  log, or the axiom gate). `scripts/extract-and-build.sh` also greps its build log. Every rx shell string starts
+  with `set -o pipefail;`, and output is read afterward with `rx logs <job> 30` rather than filtered in the job.
+  (`scripts/check-axioms.sh` was already safe: it fails on any `error` in the Lean output.)
 
 ## Errata (docs, spec, upstream)
 

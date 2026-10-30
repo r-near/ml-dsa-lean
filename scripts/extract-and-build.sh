@@ -20,6 +20,9 @@ fi
 lake exe cache get 2>&1 | tail -3 || echo "warning: lake exe cache get failed (Mathlib may build from source)" >&2
 timeout 3000 lake build 2>&1 | tee .lake/build.log | tail -20
 [ "${PIPESTATUS[0]}" -eq 0 ] || { echo "LAKE BUILD FAILED" >&2; exit 1; }
+if grep -nE "(^|[^a-z])error:|declaration uses 'sorry'" .lake/build.log; then
+  echo "LAKE BUILD FAILED: errors or sorry in the build log" >&2; exit 1
+fi
 cd ..
 t2=$(date +%s)
 echo "== axioms"

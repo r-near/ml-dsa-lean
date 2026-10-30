@@ -4,7 +4,12 @@ What is proved, under which premises, and what is trusted. Updated as work lands
 
 **Proved so far** (standard axioms only; `scripts/check-axioms.sh` checks every extracted def and every name in
 `lean/headline-theorems.txt`, 340 declarations). Each is a `@[step]` refinement spec of an extracted function
-against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`:
+against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`.
+
+Done-gate: a module counts as proved only after `scripts/lean-check.sh` passes: a pipefail-safe `lake build` exits 0,
+the full log has no `error:` or `sorry` warning, and the axiom gate passes. Earlier rx jobs could report success on
+failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a cold rebuild of ffc445c (job
+`verify-head`).
 
 | Module | What is proved | Extra hypotheses (all satisfiable; witnesses in the files) |
 |---|---|---|
