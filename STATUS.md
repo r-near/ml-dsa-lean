@@ -3,13 +3,13 @@
 What is proved, under which premises, and what is trusted. Updated as work lands.
 
 **Proved so far** (standard axioms only; `scripts/check-axioms.sh` checks every extracted def and every name in
-`lean/headline-theorems.txt`, 481 declarations at 02e6820). Each is a `@[step]` refinement spec of an extracted function
+`lean/headline-theorems.txt`, 486 declarations at 8eb6429). Each is a `@[step]` refinement spec of an extracted function
 against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`.
 
 Done-gate: a module counts as proved only after `scripts/lean-check.sh` passes: a pipefail-safe `lake build` exits 0,
 the full log has no `error:` or `sorry` warning, and the axiom gate passes. Each agent reuses one stable `rx submit` name for its gates, which keeps
 that name's `.lake/build` warm (ISSUES T-7). Earlier rx jobs could report success on
-failed builds (ISSUES T-6). Every row below passed this gate at 02e6820 (job `gate-main`, `LEAN CHECK OK`, 481 declarations).
+failed builds (ISSUES T-6). Every row below passed this gate at 8eb6429 (job `gate-main`, `LEAN CHECK OK`, 486 declarations).
 The phase 1–4a rows were also re-verified by a cold rebuild of ffc445c (job `verify-head`).
 
 | Module | What is proved | Extra hypotheses (parameter facts witnessed for 44/65/87; sampler premises: leaf witnesses, see below) |
@@ -40,6 +40,7 @@ The phase 1–4a rows were also re-verified by a cold rebuild of ffc445c (job `v
 k ≤ 8, ℓ ≥ 1, ω ≤ 255, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`).
 
 | `Proofs/API.lean` | **Public API (Alg 1/2/3)** for 44/65/87: `keygen_NN`, `verify_NN` (incl. \|ctx\| > 255 → false), `sign_NN` (σ on success; `none` for \|ctx\| > 255 and on exhaustion); M′ = 0 ‖ \|ctx\| ‖ ctx ‖ M matches the spec | the spec returns `some` (or `Exhausted`); nothing on the contents of pk, sk, σ, M, ctx |
+| `Proofs/Corr*.lean`, `Correctness.lean` | **Correctness (phase 5)**: for honest keys, Verify accepts Sign's output. Spec level, internal (`correct_internal`) and external with ctx (`correct_external`); Rust: `api.keygen_NN` → `api.sign_NN` → `api.verify_NN` returns true (`correct_44/65/87`). Building blocks: NTT algebra and convolution, ‖c·s‖∞ ≤ β, Power2Round/HighBits/UseHint lemmas, codec round trips, SampleInBall weight = τ | `StdParams`; KeyGen and Sign return `some` (RejTerm, κ budget), same fuel for all three |
 
 Reviews: the leaf proofs (phase 4a/4b) and the three internal top theorems were independently reviewed, and so were
 the API theorems, the `verify_internal` length guard (7bb0dbe) and the Sign exhaustion change (4d86309); no
@@ -57,7 +58,7 @@ One end-to-end Lean proof, readable top-down:
   the spec's ExpandA(ρ) (ρ from pk) and SampleInBall(c̃) (c̃ from σ) return `some` at the stated fuel. Finding a seed
   that exhausts the fuel is believed infeasible (SHAKE output would have to reject hundreds of times in a row), but
   the proof does not show it, so this is an assumption about SHAKE, not about honest randomness (ISSUES E-3).
-- Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`.
+- Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`. **Done** (`Proofs/Correctness.lean`).
 
 Named premises (the only ones allowed; each needs a satisfiability witness):
 
