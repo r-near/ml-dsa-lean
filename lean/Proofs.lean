@@ -19,3 +19,5 @@ import Proofs.SampleBallWitness
 import Proofs.Bridge
 import Proofs.Witnesses
 import Proofs.KeyGen
+import Proofs.Verify
+import Proofs.Sign

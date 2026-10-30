@@ -141,3 +141,33 @@ Proofs.keygen_internal_spec
 Proofs.keygen_internal_correct
 Proofs.KeyGen.keygen_some
 Proofs.KeyGen.keygen_isSome_iff
+import Proofs.Verify
+Proofs.verify_internal_spec
+Proofs.verify_internal_correct
+Proofs.verify_internal_correct_of_isSome
+Proofs.Verify.verify_some
+Proofs.Verify.verify_isSome_iff
+Proofs.Verify.verify_of_sigDecode_none
+Proofs.Verify.verify_of_length_ne
+Proofs.Verify.verify_loop_spec
+Proofs.Verify.w1_encode_spec_long
+Proofs.k_le_8_44
+Proofs.k_le_8_65
+Proofs.k_le_8_87
+import Proofs.Sign
+Proofs.Sign.sign_internal_spec_some
+Proofs.StdParams.signBuf
+Proofs.Sign.sign_internal_spec_none
+Proofs.Sign.sign_internal_core
+Proofs.Sign.attempt_spec
+Proofs.Sign.sign_loop_spec
+Proofs.Sign.Sign_internal_bounded_eq
+Proofs.Sign.sign_isSome_iff
+Proofs.Sign.sign_none_cases
+Proofs.Sign.exhausted_spec_none
+Proofs.Sign.exhausted_of_rejects
+Proofs.Sign.pre_isSome_iff
+Proofs.Sign.attemptAt_isSome_iff
+Proofs.Sign.signBuf_44
+Proofs.Sign.signBuf_65
+Proofs.Sign.signBuf_87
