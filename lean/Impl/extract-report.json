@@ -33,7 +33,7 @@
   "ml_dsa_verified::api::sk_is_well_formed_65",
   "ml_dsa_verified::api::sk_is_well_formed_87"
  ],
- "src_sha256": "f75beb137162817245e6810ccddff390040db552bdeee56ed7c826e97527bae4",
+ "src_sha256": "379b843faf7c64e20683b06fc1c1cf9e4aec24e94253e0e98e39029ce916531c",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
