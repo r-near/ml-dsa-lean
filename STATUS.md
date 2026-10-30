@@ -96,7 +96,8 @@ Not covered by any theorem:
 - The `zeroize` build (the proved code is extracted with it off; the wipes come after the outputs are written) and
   stack use (Sign for ML-DSA-87 keeps roughly 60 KB of arrays on the stack).
 
-Trusted base: spec fidelity of `lean/Spec` (one independent review plus ACVP cross-check), Charon/Aeneas translation
+Trusted base: spec fidelity of `lean/Spec` (three independent reviews, ACVP and Wycheproof cross-checks, and a component
+differential against VCVio's independent formalization), Charon/Aeneas translation
 (pins below; differentially tested, see Progress), rustc/LLVM, the Lean kernel with `propext`, `Classical.choice`, `Quot.sound`. Zeroize and anything above
 `api` are outside the proof.
 
@@ -170,6 +171,7 @@ Spec-level `Verify(pk, M, Sign(sk, M)) = true`, transferred through the three to
 | Aeneas translation (differential) | the extracted `Impl` compiled and run against the native Rust on the same inputs: 345,360 cases, 100% agreement (Keccak, field, NTT, rounding, samplers, codecs, and the full public API incl. 225 ACVP-derived cases); 4 injected bugs all detected | `scripts/impl-eval.sh`, `lean/SpecTests/ImplEval.lean`, `examples/impl_eval.rs` |
 | Wycheproof (C2SP, d17cc89) | Rust: 1063 vectors pass, 0 fail, 6 known (E-4: out-of-range secret keys), 69 skipped (external-μ only, out of scope); Lean spec: 928/928 agree (631 verify, 236 sign, 61 keygen) | `tests/wycheproof.rs`, `lean/SpecTests/Wycheproof.lean` |
 | Third spec review (FIPS 204/202 PDFs) | every `lean/Spec` def checked step by step against the PDFs and NIST's potential-updates list; whole-domain rounding check against a FIPS-literal Python reference; SHAKE vs hashlib around the rate; no transcription errors | review notes (not committed) |
+| VCVio component differential (aae1c9c) | `lean/Spec` vs VCVio's independent `MLDSA.Concrete`, both compiled: 1,345,635 in-precondition cases agree, 0 mismatches (Power2Round, Decompose/HighBits/LowBits, UseHint exhaustive over Z_q for each set; MakeHint, NTT/NTTInv/MultiplyNTT, all bit packers and key/sig codecs, HintBitPack/Unpack sampled with edges); both also match a FIPS-literal Python reference. Only difference: HintBitPack with more than ω ones (outside Alg 20's precondition; the two sides handle overflow differently). VCVio's compiled NTT runs its loop kernels; those were checked against its structural definitions on 600 vectors | `scripts/diff-vcvio/`, `lean/SpecTests/DiffVCVio.lean` |
 | Lean spec (phase 3) | `lean/Spec/`: FIPS 202 SHAKE and FIPS 204 Alg 1–3, 6–48, ~1,200 lines; evaluates: `spec-acvp` 63/63 ACVP cases, 38 SHAKE KATs shared with the Rust tests; two independent fidelity reviews: no spec bugs (comment overclaims fixed) | `lean/Spec/`, `lean/SpecTests/` |
 
 Out of scope, by decision: HashML-DSA (Alg 4/5) and external μ. HashML-DSA: upstream does not implement it (no
