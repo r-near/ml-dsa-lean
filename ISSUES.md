@@ -58,13 +58,17 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   from a temporary worktree, and it ran for another 10 minutes. Fix: after each passing gate, the orchestrator (or one
   designated agent) runs `rx run -- 'set -o pipefail; cd lean && lake build'` once to refresh the box copy. Subagents
   never run it, so they don't race on the copy. Before removing a temporary worktree, `rx kill` its jobs from inside
-  it.
+  it. Superseded on 2026-10-30 by an rx update: reusing an `rx submit` name now syncs changes into
+  that name's snapshot, so its `.lake/build` stays warm. The extra `rx run` is dropped; each agent keeps one
+  stable job name (the orchestrator's full gate is `gate-main`). A new name still starts cold.
 
 ## Errata (docs, spec, upstream)
 
 - **E-1 (2026-10-29): "Verify for all byte strings" needs length hypotheses.** The core decoders index slices
-  directly, so `verify_internal` panics on wrong-length slices. The theorem is stated for `pk.len = pk_len p` and
-  `σ.len = sig_len p`; the API's fixed-size arrays discharge this. (FORK-DESIGN §4 wording predates this.)
+  directly. `verify_internal` now starts with a length guard (wrong `pk`/`σ` length returns false, as FIPS 204
+  Verify), and `verify_internal_spec` has no length hypotheses. `sign_internal` and `keygen_internal` still panic on
+  wrong-length slices and their theorems keep the length hypotheses; the API's fixed-size arrays discharge them.
+  The guard needs `ω ≤ 255` in `StdParams` (checked `usize` arithmetic in `sig_len`; 80/55/75 for 44/65/87).
 - **E-3 (2026-10-29): rejection loops have no provable bound.** Verify runs RejNTTPoly (on ρ from pk) and
   SampleInBall (on c̃ from σ) on attacker-chosen seeds; their termination is probabilistic. The Verify theorem is
   conditioned on the spec's fuel sufficing (`RejTerm`), not stated for every input unconditionally.
