@@ -7,8 +7,8 @@ What is proved, under which premises, and what is trusted. Updated as work lands
 against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`.
 
 Done-gate: a module counts as proved only after `scripts/lean-check.sh` passes: a pipefail-safe `lake build` exits 0,
-the full log has no `error:` or `sorry` warning, and the axiom gate passes. After a passing gate, one `rx run` of `lake build` refreshes
-the box copy so later gates start warm (ISSUES T-7). Earlier rx jobs could report success on
+the full log has no `error:` or `sorry` warning, and the axiom gate passes. Each agent reuses one stable `rx submit` name for its gates, which keeps
+that name's `.lake/build` warm (ISSUES T-7). Earlier rx jobs could report success on
 failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a cold rebuild of ffc445c (job
 `verify-head`).
 
@@ -33,11 +33,11 @@ failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a c
 | `Proofs/Witnesses.lean`, `SampleBallWitness.lean` | kernel witnesses: ExpandA (44, zero seed), ExpandS (65, bundled with `Params.Std`), SampleInBall (44, zero c̃) | none (~16 min of kernel evaluation on a cold build) |
 | `Proofs/KeyGen.lean` | **KeyGen_internal (Alg 6)**: Rust pk and sk bytes = spec's, for every ξ on which the spec returns `some` | `Params.Std`; buffer lengths; `RejTerm` (= ExpandA and ExpandS return `some` on the derived seeds, `keygen_isSome_iff`) |
 
-| `Proofs/Verify.lean` | **Verify_internal (Alg 8)**: Rust verdict = spec's, for every pk and σ of the encoded lengths and every M′ = m_prefix ‖ m | `Params.Std`; the two lengths; `RejTerm` (`verify_isSome_iff`: if sigDecode succeeds, ExpandA(ρ) and SampleInBall(c̃) return `some`; malformed hints and wrong lengths always give `some false`) |
-| `Proofs/Sign.lean` | **Sign_internal (Alg 7, bounded)**: spec `some σ` (any budget B) ⇒ Rust returns true and writes σ; all `kappaBudget` attempts rejected with enough sampler fuel (`Exhausted`) ⇒ Rust returns false. For every sk byte string of length skLen | `Params.Std`; buffer lengths; `RejTerm` (`sign_isSome_iff`, `sign_none_cases`: the spec's `none` splits into fuel failure vs budget exhaustion) |
+| `Proofs/Verify.lean` | **Verify_internal (Alg 8)**: Rust verdict = spec's, for every pk and σ (any length: a wrong length returns false on both sides) and every M′ = m_prefix ‖ m | `Params.Std`; `RejTerm` (`verify_isSome_iff`: if sigDecode succeeds, ExpandA(ρ) and SampleInBall(c̃) return `some`; malformed hints and wrong lengths always give `some false`) |
+| `Proofs/Sign.lean` | **Sign_internal (Alg 7, bounded)**: spec `some σ` (any budget B) ⇒ Rust returns true and writes σ; all `kappaBudget` attempts rejected with enough sampler fuel (`Exhausted`) ⇒ Rust returns false and leaves the output buffer untouched (`r.2 = sig`). For every sk byte string of length skLen | `Params.Std`; buffer lengths; `RejTerm` (`sign_isSome_iff`, `sign_none_cases`: the spec's `none` splits into fuel failure vs budget exhaustion) |
 
 `Params.Std` = `Params.Valid` ∧ `StdParams`; `StdParams` (d = 13, γ1/γ2/η of the standard sets, τ ≤ 64, k + ℓ < 256,
-k ≤ 8, ℓ ≥ 1, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`).
+k ≤ 8, ℓ ≥ 1, ω ≤ 255, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`).
 
 | `Proofs/API.lean` | **Public API (Alg 1/2/3)** for 44/65/87: `keygen_NN`, `verify_NN` (incl. \|ctx\| > 255 → false), `sign_NN` (σ on success; `none` for \|ctx\| > 255 and on exhaustion); M′ = 0 ‖ \|ctx\| ‖ ctx ‖ M matches the spec | the spec returns `some` (or `Exhausted`); nothing on the contents of pk, sk, σ, M, ctx |
 
@@ -51,9 +51,9 @@ One end-to-end Lean proof, readable top-down:
 
 - `keygen_correct`: `Impl.api.keygen_*` = FIPS 204 Algorithm 1 / 6.
 - `sign_correct`: `Impl.api.sign_*` = Algorithm 2 / 7 (bounded κ budget, `none` on exhaustion).
-- `verify_correct`: `Impl.api.verify_*` = Algorithm 3 / 8, for **all** byte strings pk, σ of the encoded lengths. The
-  core `verify_internal` takes slices and needs `pk.len = pk_len p` and `σ.len = sig_len p` as explicit hypotheses
-  (it indexes them directly); the API's fixed-size arrays discharge them. The one other premise is `RejTerm` on attacker-chosen seeds:
+- `verify_correct`: `Impl.api.verify_*` = Algorithm 3 / 8, for **all** byte strings pk, σ. The core
+  `verify_internal` takes slices and starts with a length guard (`pk.len != pk_len p` or `σ.len != sig_len p` returns
+  false, as in FIPS 204), so `verify_internal_spec` has no length hypotheses. The one other premise is `RejTerm` on attacker-chosen seeds:
   the spec's ExpandA(ρ) (ρ from pk) and SampleInBall(c̃) (c̃ from σ) return `some` at the stated fuel. Finding a seed
   that exhausts the fuel is believed infeasible (SHAKE output would have to reject hundreds of times in a row), but
   the proof does not show it, so this is an assumption about SHAKE, not about honest randomness (ISSUES E-3).
@@ -83,10 +83,8 @@ Not covered by any theorem:
 - Inputs where a spec sampler runs out of fuel. The Rust squeezes without bound there, so it most likely returns the
   true FIPS result, but nothing proves it. In Sign this includes a SampleInBall fuel failure in any earlier rejected
   attempt. For Verify and KeyGen the seeds come from pk/σ/ξ, so this is a premise on attacker-chosen inputs.
-- Calls to the `pub` internals (`verify_internal`, `sign_internal`, `keygen_internal`) with wrong-length slices: they
-  panic (E-1), where FIPS Verify returns false. The fixed-array `api` functions never do this. (Queued: a length
-  guard in `verify_internal`.)
-- Sign's output buffer in the `false` case (not stated; the code writes it only after an accepted attempt).
+- Calls to `sign_internal` and `keygen_internal` with wrong-length slices: they panic (E-1). The fixed-array `api`
+  functions never do this, and `verify_internal` now rejects wrong lengths (guard proved).
 - The `zeroize` build (the proved code is extracted with it off; the wipes come after the outputs are written) and
   stack use (Sign for ML-DSA-87 keeps roughly 60 KB of arrays on the stack).
 
