@@ -62,6 +62,7 @@ fn per_set<P: MlDsaParams, const K: usize, const L: usize>(p: &Params) {
         let sig = sig.as_slice();
         assert_eq!(sig.len(), sig_len(p));
         let (ct, z, h) = sig_decode::<K, L>(p, sig).expect("valid signature must decode");
+        assert!(ct[p.c_tilde_len..].iter().all(|&b| b == 0), "c̃ buffer must be zero beyond c_tilde_len, seed {i}");
         let mut sout = vec![0u8; sig_len(p)];
         sig_encode::<K, L>(p, &ct[..p.c_tilde_len], &z, &h, &mut sout);
         assert_eq!(sout.as_slice(), sig, "sigEncode round trip, seed {i}");
@@ -102,8 +103,8 @@ fn encode_decode_roundtrips_and_expand_s() {
 
 #[test]
 fn power2round_naive() {
-    let mut x = 0u32;
-    while x < Q {
+    // Exhaustive over 0..q.
+    for x in 0..Q {
         let (r1, r0) = power2round(x);
         // r0 = x mod± 2^13 in (−2^12, 2^12]
         let mut m = (x % 8192) as i64;
@@ -111,9 +112,8 @@ fn power2round_naive() {
             m -= 8192;
         }
         let r0c = if m < 0 { (m + Q as i64) as u32 } else { m as u32 };
-        assert_eq!(r0, r0c);
-        assert_eq!(r1 as i64 * 8192 + m, x as i64);
-        x += 7;
+        assert_eq!(r0, r0c, "x={x}");
+        assert_eq!(r1 as i64 * 8192 + m, x as i64, "x={x}");
     }
 }
 
@@ -228,29 +228,20 @@ fn naive_use_hint(h: bool, r: i64, g2: i64) -> i64 {
 }
 
 #[test]
-fn use_hint_exhaustive() {
-    for p in [&ML_DSA_44, &ML_DSA_65] {
+fn decompose_and_use_hint_exhaustive() {
+    // Exhaustive over 0..q, both h values, for γ2 = 95232 (ML-DSA-44) and 261888 (ML-DSA-65 and -87).
+    for p in [&ML_DSA_44, &ML_DSA_65, &ML_DSA_87] {
         let g2 = p.gamma2 as i64;
+        assert!(g2 == 95_232 || g2 == 261_888);
         for r in 0..Q {
+            let (r1, r0) = decompose(p, r);
+            let (n1, n0) = naive_decompose(r as i64, g2);
+            assert_eq!(r1 as i64, n1, "decompose r1, r={r} g2={g2}");
+            assert_eq!(r0 as i64, n0.rem_euclid(Q as i64), "decompose r0, r={r} g2={g2}");
             for h in [false, true] {
-                assert_eq!(
-                    use_hint(p, h, r) as i64,
-                    naive_use_hint(h, r as i64, g2),
-                    "r={r} h={h} g2={g2}"
-                );
-            }
-            if r % 1_000_003 == 0 {
-                let (r1, r0) = decompose(p, r);
-                let (n1, n0) = naive_decompose(r as i64, g2);
-                assert_eq!(r1 as i64, n1);
-                assert_eq!(r0 as i64, n0.rem_euclid(Q as i64));
+                assert_eq!(use_hint(p, h, r) as i64, naive_use_hint(h, r as i64, g2), "r={r} h={h} g2={g2}");
             }
         }
-    }
-    // ML-DSA-87 shares γ2 with ML-DSA-65 but check the params anyway on a stride
-    let g2 = ML_DSA_87.gamma2 as i64;
-    for r in (0..Q).step_by(97) {
-        assert_eq!(use_hint(&ML_DSA_87, true, r) as i64, naive_use_hint(true, r as i64, g2));
     }
 }
 
@@ -321,4 +312,298 @@ fn sig_decode_no_panic() {
     go::<4, 4>(&ML_DSA_44, &valid::<MlDsa44>());
     go::<6, 5>(&ML_DSA_65, &valid::<MlDsa65>());
     go::<8, 7>(&ML_DSA_87, &valid::<MlDsa87>());
+}
+
+// ---- HintBitUnpack, FIPS 204 Algorithm 21 corner cases ----
+//
+// Alg 21: Index ← 0; for each poly i: ⊥ if y[ω+i] < Index or y[ω+i] > ω; for Index in [First, y[ω+i]):
+// ⊥ if Index > First and y[Index−1] ≥ y[Index]; set h_i[y[Index]]. Then ⊥ if any y[Index..ω) ≠ 0.
+// So a count of ω is legal, but it consumes every index byte, which must then be strictly increasing within
+// each polynomial; there is no padding left to check. A count < ω leaves y[count..ω) which must be zero.
+
+/// All set positions (poly, coefficient) of the decoded hint, or None for ⊥.
+fn unpack_bits(p: &Params, y: &[u8]) -> Option<Vec<(usize, usize)>> {
+    fn flat<const K: usize>(h: [[bool; 256]; K]) -> Vec<(usize, usize)> {
+        let mut v = Vec::new();
+        for i in 0..K {
+            for j in 0..256 {
+                if h[i][j] {
+                    v.push((i, j));
+                }
+            }
+        }
+        v
+    }
+    match p.k {
+        4 => hint_bit_unpack::<4>(p, y).map(flat),
+        6 => hint_bit_unpack::<6>(p, y).map(flat),
+        _ => hint_bit_unpack::<8>(p, y).map(flat),
+    }
+}
+
+/// Build y from per-polynomial index lists (counts are cumulative; trailing polys get the final count).
+fn build_y(p: &Params, polys: &[&[u8]]) -> Vec<u8> {
+    let mut y = vec![0u8; p.omega + p.k];
+    let mut n = 0;
+    for i in 0..p.k {
+        if let Some(l) = polys.get(i) {
+            for &b in *l {
+                y[n] = b;
+                n += 1;
+            }
+        }
+        y[p.omega + i] = n as u8;
+    }
+    y
+}
+
+#[test]
+fn hint_unpack_alg21_corner_cases() {
+    for (p, k) in pack_unpack_params() {
+        let w = p.omega;
+        // count == ω with all-zero index bytes: ω indices of which only the first is "valid"; strictness fails (⊥)
+        let mut y = vec![0u8; w + k];
+        for i in 0..k {
+            y[w + i] = w as u8;
+        }
+        assert!(unpack_bits(p, &y).is_none(), "ω zero indices in poly 0");
+        // count == ω, all ω indices strictly increasing: accepted, no padding to check
+        let inc: Vec<u8> = (0..w as u8).map(|i| i * 3).collect();
+        let y = build_y(p, &[&inc]);
+        assert_eq!(y[w], w as u8);
+        let got = unpack_bits(p, &y).expect("ω increasing indices");
+        assert_eq!(got.len(), w);
+        assert!(got.iter().enumerate().all(|(n, &(i, j))| i == 0 && j == n * 3));
+        // ... with the very last index byte repeated: ⊥
+        let mut dup = inc.clone();
+        dup[w - 1] = dup[w - 2];
+        assert!(unpack_bits(p, &build_y(p, &[&dup])).is_none());
+        // count == ω - 1: the final index byte is padding and must be zero
+        let part: Vec<u8> = (1..w as u8).collect(); // ω - 1 indices
+        let mut y = build_y(p, &[&part]);
+        assert_eq!(y[w], (w - 1) as u8);
+        assert!(unpack_bits(p, &y).is_some());
+        y[w - 1] = 1;
+        assert!(unpack_bits(p, &y).is_none(), "nonzero last padding byte");
+        // ω indices that all lie in the first polynomial, count in later polynomials is the same ω: accepted
+        // (later polynomials are empty); a later count below ω is decreasing: ⊥
+        let mut y = build_y(p, &[&inc]);
+        assert!(unpack_bits(p, &y).is_some());
+        y[w + k - 1] = (w - 1) as u8;
+        assert!(unpack_bits(p, &y).is_none(), "count decreases after reaching ω");
+        // count == ω reached only in the last polynomial
+        let half: Vec<u8> = (0..(w / 2) as u8).collect();
+        let rest: Vec<u8> = (0..(w - w / 2) as u8).collect();
+        let mut polys: Vec<&[u8]> = vec![&[]; k - 1];
+        polys[0] = &half;
+        polys.push(&rest);
+        let y = build_y(p, &polys);
+        assert_eq!(y[w + k - 1], w as u8);
+        let got = unpack_bits(p, &y).expect("indices restart at each polynomial boundary");
+        assert_eq!(got.len(), w);
+        assert!(got.iter().take(w / 2).all(|&(i, _)| i == 0));
+        assert!(got.iter().skip(w / 2).all(|&(i, _)| i == k - 1));
+
+        // index 0 repeated at the start of one polynomial: [0, 0] is not strictly increasing
+        assert!(unpack_bits(p, &build_y(p, &[&[0, 0]])).is_none());
+        assert!(unpack_bits(p, &build_y(p, &[&[5], &[0, 0]])).is_none());
+        assert!(unpack_bits(p, &build_y(p, &[&[], &[0, 0, 1]])).is_none());
+        assert!(unpack_bits(p, &build_y(p, &[&[0, 1, 1]])).is_none());
+        // ... but [0] in each of two (or three) adjacent polynomials is fine
+        assert_eq!(unpack_bits(p, &build_y(p, &[&[0], &[0]])), Some(vec![(0, 0), (1, 0)]));
+        assert_eq!(unpack_bits(p, &build_y(p, &[&[5], &[0], &[0]])), Some(vec![(0, 5), (1, 0), (2, 0)]));
+        // indices restart (decrease) at a polynomial boundary: valid, and decoded into the right rows
+        assert_eq!(
+            unpack_bits(p, &build_y(p, &[&[10, 20, 30], &[1, 2], &[], &[0, 255]])),
+            Some(vec![(0, 10), (0, 20), (0, 30), (1, 1), (1, 2), (3, 0), (3, 255)])
+        );
+        // 255 followed by a smaller index inside one polynomial is ⊥
+        assert!(unpack_bits(p, &build_y(p, &[&[255, 3]])).is_none());
+        // the same bytes cut into two polynomials are fine
+        assert!(unpack_bits(p, &build_y(p, &[&[255], &[3]])).is_some());
+        // a zero where padding is expected, then a nonzero after it
+        let mut y = build_y(p, &[&[4]]);
+        y[3] = 9;
+        assert!(unpack_bits(p, &y).is_none());
+    }
+}
+
+// ---- Hint region differential vs upstream (permanent) ----
+
+#[test]
+fn hint_region_differential_vs_upstream() {
+    fn go<P: MlDsaParams, const K: usize, const L: usize>(p: &Params, tag: u64) {
+        let mut rng = XorShift(0xD1B5_4A32_D192_ED03 ^ tag);
+        let len = sig_len(p);
+        let hs = len - p.omega - K;
+        let w = p.omega;
+        let bases: Vec<Vec<u8>> = (0..8u8)
+            .map(|i| {
+                let esk = ExpandedSigningKey::<P>::from_seed(&seed(40 + i));
+                let msg = [i; 17];
+                esk.sign_internal(&[&msg], &ml_dsa::B32::from([i ^ 0x5a; 32])).encode().as_slice().to_vec()
+            })
+            .collect();
+        let (mut both_ok, mut both_bad, mut total) = (0u64, 0u64, 0u64);
+        let n_iter = 30_000;
+        for n in 0..n_iter {
+            let mut s = bases[(rng.next() % bases.len() as u64) as usize].clone();
+            match n % 5 {
+                // 0: whole hint region random bytes
+                0 => {
+                    for b in &mut s[hs..] {
+                        *b = rng.next() as u8;
+                    }
+                }
+                // 1: single-byte edit anywhere in the region
+                1 => {
+                    let pos = hs + (rng.next() as usize) % (w + K);
+                    s[pos] = rng.next() as u8;
+                }
+                // 2: count byte edit: boundary-ish values or random
+                2 => {
+                    let i = (rng.next() as usize) % K;
+                    let cur = s[hs + w + i];
+                    s[hs + w + i] = match rng.next() % 8 {
+                        0 => w as u8,
+                        1 => (w + 1) as u8,
+                        2 => cur.wrapping_add(1),
+                        3 => cur.wrapping_sub(1),
+                        4 => 0,
+                        5 => 255,
+                        _ => rng.next() as u8,
+                    };
+                }
+                // 3: index byte edit: random, neighbor +-1, or duplicate of a neighbor
+                3 => {
+                    let j = (rng.next() as usize) % w;
+                    let cur = s[hs + j];
+                    s[hs + j] = match rng.next() % 6 {
+                        0 => cur.wrapping_add(1),
+                        1 => cur.wrapping_sub(1),
+                        2 if j > 0 => s[hs + j - 1],
+                        3 if j + 1 < w => s[hs + j + 1],
+                        4 => 0,
+                        _ => rng.next() as u8,
+                    };
+                }
+                // 4: structured plausible region (sorted runs per polynomial), sometimes with one more edit
+                _ => {
+                    let mut cnt = 0usize;
+                    let mut idx = 0usize;
+                    for i in 0..K {
+                        let take = (rng.next() as usize) % (w / K + 3);
+                        let end = (cnt + take).min(w);
+                        let mut prev: i32 = -1;
+                        while cnt < end {
+                            prev += 1 + (rng.next() % 40) as i32;
+                            s[hs + idx] = prev.min(255) as u8; // clamp may produce a duplicate on purpose
+                            idx += 1;
+                            cnt += 1;
+                        }
+                        s[hs + w + i] = cnt as u8;
+                    }
+                    for b in &mut s[hs + idx..hs + w] {
+                        *b = 0;
+                    }
+                    if rng.next() % 2 == 0 {
+                        let pos = hs + (rng.next() as usize) % (w + K);
+                        s[pos] = rng.next() as u8;
+                    }
+                }
+            }
+            total += 1;
+            let ours = sig_decode::<K, L>(p, &s);
+            let up = ml_dsa::Signature::<P>::try_from(&s[..]);
+            assert_eq!(ours.is_some(), up.is_ok(), "accept/reject mismatch (n={n}); hint region {:?}", &s[hs..]);
+            match (ours, up) {
+                (Some((_, _, h)), Ok(sig)) => {
+                    both_ok += 1;
+                    // hints agree: ours re-encodes to the hint bytes, and upstream re-encodes to the whole input
+                    let mut hb = vec![0u8; w + K];
+                    hint_bit_pack::<K>(p, &h, &mut hb);
+                    assert_eq!(&hb[..], &s[hs..], "ours hint re-encode (n={n})");
+                    assert_eq!(sig.encode().as_slice(), &s[..], "upstream re-encode (n={n})");
+                }
+                _ => both_bad += 1,
+            }
+        }
+        eprintln!("hint differential K={K}: {total} mutations, {both_ok} accepted by both, {both_bad} rejected by both");
+        assert!(both_ok > 500 && both_bad > 500);
+    }
+    go::<MlDsa44, 4, 4>(&ML_DSA_44, 44);
+    go::<MlDsa65, 6, 5>(&ML_DSA_65, 65);
+    go::<MlDsa87, 8, 7>(&ML_DSA_87, 87);
+}
+
+// ---- RejBoundedPoly discard path ----
+
+/// Naive Algorithm 31, one byte at a time, with its own CoeffFromHalfByte. Also returns the byte that was
+/// consumed when j was already 255, z0 was valid and z1 was also valid (so z1 was discarded), if any.
+fn naive_rej_bounded_poly(eta: i64, rho: &[u8; 66]) -> ([u32; 256], Option<u8>) {
+    let half = |b: u8| -> Option<i64> {
+        let b = b as i64;
+        if eta == 2 && b < 15 {
+            Some(2 - b % 5)
+        } else if eta == 4 && b < 9 {
+            Some(4 - b)
+        } else {
+            None
+        }
+    };
+    let to_zq = |v: i64| v.rem_euclid(Q as i64) as u32;
+    let mut ctx = Shake::shake256();
+    ctx.absorb(rho);
+    ctx.finalize();
+    let mut a = [0u32; 256];
+    let mut j = 0usize;
+    let mut discarded = None;
+    while j < 256 {
+        let mut z = [0u8; 1];
+        ctx.squeeze(&mut z);
+        let z0 = half(z[0] % 16);
+        let z1 = half(z[0] / 16);
+        if let Some(v) = z0 {
+            a[j] = to_zq(v);
+            j += 1;
+        }
+        if let Some(v) = z1 {
+            if j < 256 {
+                a[j] = to_zq(v);
+                j += 1;
+            } else if z0.is_some() {
+                discarded = Some(z[0]);
+            }
+        }
+    }
+    (a, discarded)
+}
+
+#[test]
+fn rej_bounded_poly_discard_path() {
+    let mut rng = XorShift(0x0123_4567_89ab_cdef);
+    for p in [&ML_DSA_44, &ML_DSA_65, &ML_DSA_87] {
+        let (mut found, mut tried, mut other) = (0, 0, 0);
+        // bounded search over seeds for one where z0 fills a[255] and z1 would also have been valid
+        while found < 8 && tried < 20_000 {
+            tried += 1;
+            let mut rho = [0u8; 66];
+            for b in rho.iter_mut() {
+                *b = rng.next() as u8;
+            }
+            let (naive, discarded) = naive_rej_bounded_poly(p.eta as i64, &rho);
+            let got = rej_bounded_poly(p, &rho);
+            assert!(got == naive, "RejBoundedPoly vs naive, eta={}, rho={:02x?}", p.eta, rho);
+            if let Some(b) = discarded {
+                found += 1;
+                // a[255] is z0 of the discarding byte; z1 was dropped
+                let z0 = coeff_from_half_byte(p, b & 15).unwrap();
+                assert_eq!(got[255], z0);
+                assert!(coeff_from_half_byte(p, b >> 4).is_some());
+            } else {
+                other += 1;
+            }
+        }
+        assert!(found >= 8, "eta={}: discard path found only {found}x in {tried} seeds ({other} other)", p.eta);
+    }
 }
