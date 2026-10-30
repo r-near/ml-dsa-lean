@@ -68,6 +68,8 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   directly. `verify_internal` now starts with a length guard (wrong `pk`/`σ` length returns false; FIPS 204 types
   the inputs by length, and the project spec's step 0 returns false), valid when `p` agrees with `K`/`L`, and `verify_internal_spec` has no length hypotheses. `sign_internal` and `keygen_internal` still panic on
   wrong-length slices and their theorems keep the length hypotheses; the API's fixed-size arrays discharge them.
+  Since 5d151a6 every module except `api` is crate-private (public only under the `internals` feature for tests and
+  fuzzing), so none of these panicking entry points is reachable by a downstream user.
   The guard needs `ω ≤ 255` in `StdParams` (checked `usize` arithmetic in `sig_len`; 80/55/75 for 44/65/87).
 - **E-3 (2026-10-29): rejection loops have no provable bound.** Verify runs RejNTTPoly (on ρ from pk) and
   SampleInBall (on c̃ from σ) on attacker-chosen seeds; their termination is probabilistic. The Verify theorem is
@@ -80,4 +82,6 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   spec both sign with them; RustCrypto panics in its decoder. FIPS 204 Algorithm 25 notes that s1 and s2 "may lie
   outside [−η, η] if input is malformed", and Section 7.2 says skDecode should run only on trusted input, so this is
   FIPS-conformant, but it is a hardening gap for callers who load untrusted expanded keys. `tests/wycheproof.rs`
-  counts these as `known`. Closing it would add a range check to Sign and a matching ⊥ to the spec.
+  counts these as `known`. Closing it would add a range check to Sign and a matching ⊥ to the spec. Instead (1e43b4d)
+  Sign stays FIPS-literal and `api::sk_is_well_formed_NN` is a separate, proved check callers can run on untrusted
+  keys; it agrees with upstream's panic on 200 random mutations per set (`tests/sk_well_formed.rs`).

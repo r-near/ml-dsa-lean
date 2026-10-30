@@ -41,6 +41,7 @@ k ≤ 8, ℓ ≥ 1, ω ≤ 255, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`)
 
 | `Proofs/API.lean` | **Public API (Alg 1/2/3)** for 44/65/87: `keygen_NN`, `verify_NN` (incl. \|ctx\| > 255 → false), `sign_NN` (σ on success; `none` for \|ctx\| > 255 and on exhaustion); M′ = 0 ‖ \|ctx\| ‖ ctx ‖ M matches the spec | the spec returns `some` (or `Exhausted`); nothing on the contents of pk, sk, σ, M, ctx |
 | `Proofs/APIInternal.lean` | **Internal API (Alg 7/8 without ctx)** for 44/65/87: `sign_internal_NN` (σ on success, `none` on exhaustion), `verify_internal_NN`; and the "only if" for `none`: `sign_NN`/`sign_internal_NN` return `none` only when the spec fails at every fuel, with the cases spelled out (\|ctx\| > 255, pre-loop failure, loop failure or exhaustion) | as for `API.lean` |
+| `Proofs/SkWellFormed.lean` | **Optional key check (not a FIPS step)**: `api.sk_is_well_formed_NN sk` returns `skWellFormed`, i.e. every s1/s2 coefficient skDecode yields lies in [−η, η] (t0 is always in range); keys from KeyGen are well-formed (`skWellFormed_keygen`); kernel witnesses for both outcomes. Sign does not call it (E-4) | none for the per-set theorems; KeyGen returns `some` for `skWellFormed_keygen` |
 | `Proofs/Corr*.lean`, `Correctness.lean` | **Correctness (phase 5)**: for honest keys, Verify accepts Sign's output. Spec level, internal (`correct_internal`) and external with ctx (`correct_external`); Rust: `api.keygen_NN` → `api.sign_NN` → `api.verify_NN` returns true (`correct_44/65/87`). Building blocks: NTT algebra and convolution, ‖c·s‖∞ ≤ β, Power2Round/HighBits/UseHint lemmas, codec round trips, SampleInBall weight = τ | `StdParams`; KeyGen and Sign return `some` (RejTerm, κ budget), same fuel for all three |
 
 Reviews: the leaf proofs (phase 4a/4b) and the three internal top theorems were independently reviewed, and so were
@@ -88,11 +89,10 @@ Not covered by any theorem:
 - Sign's `none` when a spec sampler runs out of fuel: `sign_NN_none_only_if` shows that a Rust `none` means the spec
   fails at every fuel (|ctx| > 255, a fuel failure, or exhaustion), but the converse for fuel failures is unproved,
   since the Rust may diverge there.
-- Calling `verify_internal` with a `Params` value inconsistent with its `K`/`L` generics: the length guard checks
-  lengths derived from `p`, but the decoders index by `K`/`L`, so it can still panic. The theorems assume
-  `Params.Std ip K L sp`, which ties them together; the `api` functions always pass consistent values.
-- Calls to `sign_internal` and `keygen_internal` with wrong-length slices: they panic (E-1). The fixed-array `api`
-  functions never do this, and `verify_internal` now rejects wrong lengths (guard proved).
+- The crate-private internals, public only under the `internals` feature (tests, fuzzing): `verify_internal` with a
+  `Params` inconsistent with its `K`/`L` (the decoders index by `K`/`L`, so it can panic), and `sign_internal` /
+  `keygen_internal` with wrong-length slices (E-1). Without the feature the public surface is `api` only, and every
+  `api` function has a theorem; they pass fixed-size arrays and consistent parameters.
 - The `zeroize` build (the proved code is extracted with it off; the wipes come after the outputs are written) and
   stack use (Sign for ML-DSA-87 keeps roughly 60 KB of arrays on the stack).
 
