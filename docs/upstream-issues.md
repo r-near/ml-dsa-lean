@@ -80,3 +80,13 @@ disclosure only.
 - **U-33 (2026-10-30): libcrux-ml-dsa CI runs F* with `--admit`; the full-proof job is commented out.** This is an
   observation from their public repo, not something we found with our tools. Evidence:
   `docs/verified-ml-dsa-landscape.md`. Status: informational only, not ours to file.
+
+## BINSEC and cargo-checkct
+
+- **U-40 (2026-10-30): BINSEC 0.11.3 can't lift some AArch64 NEON and x86_64 SSE instructions.** AArch64 `umax`
+  and `umin` (vector) stop 11 of our probes at the first such instruction, and x86_64 `movmskpd` stops
+  `sk_is_well_formed` under fat LTO with vectorization on. The result is `unknown`, not a wrong verdict. Impact: the
+  production NEON build can't be checked. Workaround: build without NEON (`NONEON=1`) or vectorization for analysis.
+  Evidence: `checkct/README.md`, `checkct/aarch64.sh`. Status: open; check BINSEC's issue tracker first.
+- **U-41 (2026-10-30): cargo-checkct does not support aarch64 targets.** We call BINSEC directly with
+  `-isa aarch64` (`checkct/aarch64.sh`). Status: open (feature request).
