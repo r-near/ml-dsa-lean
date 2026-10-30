@@ -21,9 +21,9 @@ failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a c
 | `Proofs/Hint.lean` | HintBitUnpack for every byte string incl. all ⊥ cases; HintBitPack (Alg 20/21) | weight ≤ ω for packing |
 | `Proofs/Keccak*.lean` | Keccak-f[1600]; SHAKE128/256 absorb, finalize, squeeze vs `Spec.SHAKE*`; absorbing a then b = absorbing a ‖ b | none |
 
-| `Proofs/SampleA.lean` | RejNTTPoly, ExpandA (Alg 30/32): spec `some` at fuel F ⇒ Rust terminates and agrees | `RejTerm`; witness: RejNTTPoly on a zero seed by `decide +kernel` |
+| `Proofs/SampleA.lean` | RejNTTPoly, ExpandA (Alg 30/32): spec `some` at fuel F ⇒ Rust terminates and agrees | `RejTerm`; witness: RejNTTPoly on a zero seed by `decide +kernel` (ExpandA itself: `#eval` only, kernel witness pending) |
 | `Proofs/SampleS.lean` | RejBoundedPoly, ExpandS (Alg 31/33), coefficients within ±η | `RejTerm`; η ∈ {2, 4}; k + ℓ < 256; witnesses by `decide +kernel` |
-| `Proofs/SampleBall.lean` | SampleInBall (Alg 29) for every c̃, coefficients in {−1, 0, 1} | `RejTerm`; τ ≤ 64 (no kernel witness yet) |
+| `Proofs/SampleBall.lean` | SampleInBall (Alg 29) for every c̃ on which the spec returns `some`, coefficients in {−1, 0, 1} | `RejTerm`; τ ≤ 64; witness: zero c̃ by `decide +kernel` (`SampleBallWitness.lean`) |
 | `Proofs/ExpandMask.lean` | ExpandMask (Alg 34) and the range −γ1 < y ≤ γ1 | κ + ℓ ≤ 2¹⁶ (the κ budget); γ1 ∈ {2¹⁷, 2¹⁹} |
 | `Proofs/SigCodec.lean` | sigDecode for every byte string of length sigLen; sigEncode, incl. the z mod± q form Sign uses | γ1 ∈ {2¹⁷, 2¹⁹}, λ/4 ≤ 64; weight ≤ ω and z ranges for encoding |
 | `Proofs/Steps.lean` | Sign steps 18–21 and 25–26, KeyGen t and Power2Round, Verify t1·2^d and c̃ compare, API ctx prefix | γ2 ∈ {95232, 261888}; d = 13; k ≤ 2²⁰ |
@@ -40,7 +40,10 @@ One end-to-end Lean proof, readable top-down:
 - `sign_correct`: `Impl.api.sign_*` = Algorithm 2 / 7 (bounded κ budget, `none` on exhaustion).
 - `verify_correct`: `Impl.api.verify_*` = Algorithm 3 / 8, for **all** byte strings pk, σ of the encoded lengths. The
   core `verify_internal` takes slices and needs `pk.len = pk_len p` and `σ.len = sig_len p` as explicit hypotheses
-  (it indexes them directly); the API's fixed-size arrays discharge them. No other premise on pk or σ.
+  (it indexes them directly); the API's fixed-size arrays discharge them. The one other premise is `RejTerm` on attacker-chosen seeds:
+  the spec's ExpandA(ρ) (ρ from pk) and SampleInBall(c̃) (c̃ from σ) return `some` at the stated fuel. Finding a seed
+  that exhausts the fuel is believed infeasible (SHAKE output would have to reject hundreds of times in a row), but
+  the proof does not show it, so this is an assumption about SHAKE, not about honest randomness (ISSUES E-3).
 - Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`.
 
 Named premises (the only ones allowed; each needs a satisfiability witness):
