@@ -1,0 +1,57 @@
+{
+ "crate": "ml_dsa_verified",
+ "namespace": "Impl",
+ "variant": "generic (no --monomorphize, no charon args)",
+ "roots": [
+  "ml_dsa_verified::api::sign_internal_44",
+  "ml_dsa_verified::api::sign_internal_65",
+  "ml_dsa_verified::api::sign_internal_87",
+  "ml_dsa_verified::rounding::power2round",
+  "ml_dsa_verified::sampling::rej_ntt_poly"
+ ],
+ "src_sha256": "7f8810168ed313c7067181c6dd060ccb86b47e38d0f12754b3f4dfedcdc4a0b4",
+ "tools": {
+  "aeneas": "build-183e4f0",
+  "charon": "nightly-2026.09.02",
+  "cargo_hax": "0.4.2",
+  "rust": "nightly-2026-08-18",
+  "lean": "v4.31.0"
+ },
+ "rename_changes": 0,
+ "llbc_fun_decls": 99,
+ "llbc_opaque_funs": [
+  "core::array::{impl}::index",
+  "core::array::{impl}::index_mut",
+  "core::clone::Clone::clone_from",
+  "core::cmp::PartialEq::ne",
+  "core::cmp::PartialOrd::ge",
+  "core::cmp::PartialOrd::gt",
+  "core::cmp::PartialOrd::le",
+  "core::cmp::PartialOrd::lt",
+  "core::iter::range::Step::backward",
+  "core::iter::range::Step::backward_unchecked",
+  "core::iter::range::Step::forward",
+  "core::iter::range::Step::forward_unchecked",
+  "core::num::{impl}::wrapping_sub",
+  "core::slice::index::{impl}::get",
+  "core::slice::index::{impl}::get_mut",
+  "core::slice::index::{impl}::get_unchecked",
+  "core::slice::index::{impl}::get_unchecked_mut",
+  "core::slice::index::{impl}::index",
+  "core::slice::index::{impl}::index_mut",
+  "core::slice::{impl}::len"
+ ],
+ "local_opaque_funs": [],
+ "aeneas_exit_code": 0,
+ "aeneas_errors": 0,
+ "aeneas_warnings": 0,
+ "aeneas_name_clashes": 0,
+ "external_axioms_declared": 4,
+ "external_axioms_referenced": 0,
+ "lean_defs": 180,
+ "lake_build": "ok",
+ "axiom_gate": "ok",
+ "axioms_summary": [
+  "checked: 180  reported: 180  axioms used: ['Classical.choice', 'Quot.sound', 'propext']"
+ ]
+}

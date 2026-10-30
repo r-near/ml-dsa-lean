@@ -1,0 +1,8 @@
+# Extraction roots (one fully qualified Rust path per line). Charon keeps the transitive closure of these.
+# Every `pub fn` in src/api.rs must be listed here; scripts/extract.py enforces that.
+# Later waves add keygen_internal, verify_internal and the FIPS 204 API functions by editing this file.
+ml_dsa_verified::api::sign_internal_44
+ml_dsa_verified::api::sign_internal_65
+ml_dsa_verified::api::sign_internal_87
+ml_dsa_verified::rounding::power2round
+ml_dsa_verified::sampling::rej_ntt_poly

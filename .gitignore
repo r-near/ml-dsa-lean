@@ -2,3 +2,5 @@ target/
 .lake/
 .rx-out/
 Cargo.lock.bak
+lean/.lake/
+.extract/
