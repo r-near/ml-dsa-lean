@@ -234,3 +234,19 @@ Proofs.correct_external
 Proofs.correct_44
 Proofs.correct_65
 Proofs.correct_87
+import Proofs.APIInternal
+Proofs.sign_internal_44_correct_some
+Proofs.sign_internal_44_correct_exhausted
+Proofs.sign_internal_44_none_only_if
+Proofs.verify_internal_44_correct
+Proofs.sign_44_none_only_if
+Proofs.sign_internal_65_correct_some
+Proofs.sign_internal_65_correct_exhausted
+Proofs.sign_internal_65_none_only_if
+Proofs.verify_internal_65_correct
+Proofs.sign_65_none_only_if
+Proofs.sign_internal_87_correct_some
+Proofs.sign_internal_87_correct_exhausted
+Proofs.sign_internal_87_none_only_if
+Proofs.verify_internal_87_correct
+Proofs.sign_87_none_only_if
