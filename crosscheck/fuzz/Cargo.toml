@@ -1,0 +1,36 @@
+[package]
+name = "ml-dsa-crosscheck-fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[lib]
+name = "xfz"
+path = "src/lib.rs"
+
+[dependencies]
+libfuzzer-sys = "0.4"
+ml-dsa-crosscheck = { path = ".." }
+
+# Own workspace: not a member of the crosscheck or main crate's workspace.
+[workspace]
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "verify_xdiff"
+path = "fuzz_targets/verify_xdiff.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sign_xdiff"
+path = "fuzz_targets/sign_xdiff.rs"
+test = false
+doc = false
+bench = false

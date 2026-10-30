@@ -1,0 +1,37 @@
+[package]
+name = "ml-dsa-crosscheck"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "Cross-implementation differential testing of ml-dsa-verified: libcrux-ml-dsa, mldsa-native, RustCrypto ml-dsa"
+
+[lib]
+name = "xc"
+path = "src/lib.rs"
+
+[[bin]]
+name = "xcheck"
+path = "src/bin/xcheck.rs"
+
+[dependencies]
+# The crate under test: public `api` only.
+ml-dsa-verified = { path = ".." }
+
+# Oracle: libcrux ML-DSA (Cryspen). `acvp` exposes Sign_internal and Verify_internal. Portable backend everywhere;
+# the AVX2 backend (feature `simd256`) is added on x86_64 below and selected by the harness after an AVX2 check.
+libcrux-ml-dsa = { version = "=0.0.11", default-features = false, features = ["std", "mldsa44", "mldsa65", "mldsa87", "acvp"] }
+
+# Oracle: the RustCrypto revision the main crate's tests and fuzz/ use (deprecated expanded-key API for skEncode bytes).
+ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e", default-features = false, features = ["alloc"] }
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+libcrux-ml-dsa = { version = "=0.0.11", default-features = false, features = ["simd256"] }
+
+[build-dependencies]
+cc = "1"
+
+# Own workspace: not a member of the main crate's workspace.
+[workspace]
+
+[profile.release]
+debug = 1
