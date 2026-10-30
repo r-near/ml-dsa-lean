@@ -11,7 +11,7 @@ the full log has no `error:` or `sorry` warning, and the axiom gate passes. Earl
 failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a cold rebuild of ffc445c (job
 `verify-head`).
 
-| Module | What is proved | Extra hypotheses (all satisfiable; witnesses in the files) |
+| Module | What is proved | Extra hypotheses (parameter facts witnessed for 44/65/87; sampler premises: leaf witnesses, see below) |
 |---|---|---|
 | `Proofs/Field.lean`, `Repr.lean` | field ops, masks, infinity norm vs ‖·‖∞, `Params.Valid` for 44/65/87 | canonical inputs |
 | `Proofs/NTT*.lean` | NTT, NTT⁻¹ (Alg 41/42); zeta table by `decide +kernel` | canonical inputs |
@@ -63,6 +63,29 @@ Named premises (the only ones allowed; each needs a satisfiability witness):
   return `Option`; theorems take "the spec returns `some` at fuel F" as the hypothesis. The Rust loops are unbounded
   (Aeneas `loop`), so without it they can diverge, and no theorem can claim totality for every seed.
 - κ budget: Sign is compared with `Sign_internal_bounded B`, B = ⌊(2¹⁶ − ℓ)/ℓ⌋ + 1.
+
+Witness status of the premises:
+
+- Parameter premises (`Params.Std`): kernel-checked for 44/65/87.
+- Sampler premises at the leaves: kernel witnesses on zero seeds (RejNTTPoly, ExpandA for 44, RejBoundedPoly and
+  ExpandS for 44 and 65, SampleInBall for 44).
+- Top-level `some` premises of KeyGen/Sign/Verify: **no kernel witness** for any concrete input (the derived seeds
+  would need SHAKE on ξ/pk/σ plus the full samplers). The `*_isSome_iff` lemmas reduce them to sampler facts; the
+  evidence they hold is the spec's ACVP run (`spec-acvp`, 63/63), which is outside the kernel.
+- `Exhausted` (Sign's `false` case, all κ attempts rejected): satisfiable only by a counting argument; no witness,
+  probability about 2^-thousands per input, untestable in practice.
+
+Not covered by any theorem:
+
+- Inputs where a spec sampler runs out of fuel. The Rust squeezes without bound there, so it most likely returns the
+  true FIPS result, but nothing proves it. In Sign this includes a SampleInBall fuel failure in any earlier rejected
+  attempt. For Verify and KeyGen the seeds come from pk/σ/ξ, so this is a premise on attacker-chosen inputs.
+- Calls to the `pub` internals (`verify_internal`, `sign_internal`, `keygen_internal`) with wrong-length slices: they
+  panic (E-1), where FIPS Verify returns false. The fixed-array `api` functions never do this. (Queued: a length
+  guard in `verify_internal`.)
+- Sign's output buffer in the `false` case (not stated; the code writes it only after an accepted attempt).
+- The `zeroize` build (the proved code is extracted with it off; the wipes come after the outputs are written) and
+  stack use (Sign for ML-DSA-87 keeps roughly 60 KB of arrays on the stack).
 
 Trusted base: spec fidelity of `lean/Spec` (one independent review plus ACVP cross-check), Charon/Aeneas translation
 (pins below), rustc/LLVM, the Lean kernel with `propext`, `Classical.choice`, `Quot.sound`. Zeroize and anything above
