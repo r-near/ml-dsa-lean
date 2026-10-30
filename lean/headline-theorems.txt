@@ -171,3 +171,23 @@ Proofs.Sign.attemptAt_isSome_iff
 Proofs.Sign.signBuf_44
 Proofs.Sign.signBuf_65
 Proofs.Sign.signBuf_87
+import Proofs.API
+Proofs.keygen_44_correct
+Proofs.verify_44_correct
+Proofs.verify_44_ctx_long
+Proofs.sign_44_correct_some
+Proofs.sign_44_correct_ctx_long
+Proofs.sign_44_correct_exhausted
+Proofs.keygen_65_correct
+Proofs.verify_65_correct
+Proofs.verify_65_ctx_long
+Proofs.sign_65_correct_some
+Proofs.sign_65_correct_ctx_long
+Proofs.sign_65_correct_exhausted
+Proofs.keygen_87_correct
+Proofs.verify_87_correct
+Proofs.verify_87_ctx_long
+Proofs.sign_87_correct_some
+Proofs.sign_87_correct_ctx_long
+Proofs.sign_87_correct_exhausted
+Proofs.API.sign_exhausted_spec_none

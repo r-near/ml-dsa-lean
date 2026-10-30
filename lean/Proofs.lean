@@ -21,3 +21,4 @@ import Proofs.Witnesses
 import Proofs.KeyGen
 import Proofs.Verify
 import Proofs.Sign
+import Proofs.API
