@@ -1,0 +1,17 @@
+[package]
+name = "ml-dsa-fork-skeleton"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "Proof-first ML-DSA fork sketch: one Rust function per FIPS 204 algorithm, plain arrays and loops"
+
+[dependencies]
+
+[dev-dependencies]
+# Differential oracle: upstream RustCrypto master a3690c4, deprecated expanded-key API for skEncode bytes.
+ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e", default-features = false, features = ["alloc"] }
+
+[profile.release]
+debug = false
+
+[workspace]
