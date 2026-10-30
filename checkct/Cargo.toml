@@ -1,0 +1,11 @@
+# Standalone workspace: deliberately NOT a member of the main crate's workspace.
+[workspace]
+members = ["driver", "checkct_macros"]
+resolver = "2"
+
+[profile.release]
+debug = true
+panic = "abort"
+
+[profile.dev]
+panic = "abort"

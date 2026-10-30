@@ -1,0 +1,8 @@
+[package]
+name = "driver"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[dependencies]
+checkct_macros = { path = "../checkct_macros" }
