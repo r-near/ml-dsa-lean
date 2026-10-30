@@ -29,3 +29,9 @@ name = "SpecTests"
 [[lean_exe]]
 name = "spec-acvp"
 root = "SpecTests.ACVP"
+
+# Wycheproof cross-check of the specification (not a default target). Generate the data first:
+# `python3 -I scripts/gen-lean-wycheproof.py`, then `lake build spec-wycheproof && .lake/build/bin/spec-wycheproof`.
+[[lean_exe]]
+name = "spec-wycheproof"
+root = "SpecTests.Wycheproof"
