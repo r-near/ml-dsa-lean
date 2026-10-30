@@ -157,3 +157,14 @@ pub fn matrix_vector_ntt<const K: usize, const L: usize>(
     }
     w
 }
+
+/// NTT applied to every entry of a vector.
+pub fn ntt_vec<const N: usize>(v: &[[u32; 256]; N]) -> [[u32; 256]; N] {
+    let mut out = [[0u32; 256]; N];
+    let mut i = 0;
+    while i < N {
+        out[i] = ntt(&v[i]);
+        i += 1;
+    }
+    out
+}

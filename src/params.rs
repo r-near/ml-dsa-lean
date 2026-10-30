@@ -78,6 +78,9 @@ pub const ML_DSA_87: Params = Params {
     two_gamma2_div_mult: 537_395_713,
 };
 
+pub const fn pk_len(p: &Params) -> usize {
+    32 + 320 * p.k
+}
 pub const fn sk_len(p: &Params) -> usize {
     128 + 32 * ((p.k + p.l) * p.eta_bits + 13 * p.k)
 }

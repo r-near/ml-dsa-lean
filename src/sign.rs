@@ -3,20 +3,10 @@
 use crate::encode::{sig_encode, sk_decode, w1_encode};
 use crate::field::{add, neg};
 use crate::keccak::Shake;
-use crate::ntt::{matrix_vector_ntt, ntt, ntt_inverse, scalar_vector_ntt_inverse, sub_poly};
+use crate::ntt::{matrix_vector_ntt, ntt, ntt_inverse, ntt_vec, scalar_vector_ntt_inverse, sub_poly};
 use crate::params::Params;
 use crate::rounding::{make_hint, poly_high_bits, poly_low_bits, vec_infinity_norm};
 use crate::sampling::{expand_a, expand_mask, sample_in_ball};
-
-fn ntt_vec<const N: usize>(v: &[[u32; 256]; N]) -> [[u32; 256]; N] {
-    let mut out = [[0u32; 256]; N];
-    let mut i = 0;
-    while i < N {
-        out[i] = ntt(&v[i]);
-        i += 1;
-    }
-    out
-}
 
 /// One iteration of the loop body, steps 11–29. `None` is the ⊥ outcome.
 #[allow(clippy::type_complexity)]
