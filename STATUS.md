@@ -3,7 +3,7 @@
 What is proved, under which premises, and what is trusted. Updated as work lands.
 
 **Proved so far** (standard axioms only; `scripts/check-axioms.sh` checks every extracted def and every name in
-`lean/headline-theorems.txt`, 373 declarations). Each is a `@[step]` refinement spec of an extracted function
+`lean/headline-theorems.txt`, 399 declarations). Each is a `@[step]` refinement spec of an extracted function
 against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`.
 
 Done-gate: a module counts as proved only after `scripts/lean-check.sh` passes: a pipefail-safe `lake build` exits 0,
@@ -21,14 +21,18 @@ failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a c
 | `Proofs/Hint.lean` | HintBitUnpack for every byte string incl. all ⊥ cases; HintBitPack (Alg 20/21) | weight ≤ ω for packing |
 | `Proofs/Keccak*.lean` | Keccak-f[1600]; SHAKE128/256 absorb, finalize, squeeze vs `Spec.SHAKE*`; absorbing a then b = absorbing a ‖ b | none |
 
-| `Proofs/SampleA.lean` | RejNTTPoly, ExpandA (Alg 30/32): spec `some` at fuel F ⇒ Rust terminates and agrees | `RejTerm`; witness: RejNTTPoly on a zero seed by `decide +kernel` (ExpandA itself: `#eval` only, kernel witness pending) |
+| `Proofs/SampleA.lean` | RejNTTPoly, ExpandA (Alg 30/32): spec `some` at fuel F ⇒ Rust terminates and agrees | `RejTerm`; witness: RejNTTPoly on a zero seed by `decide +kernel` (ExpandA: `Witnesses.lean`) |
 | `Proofs/SampleS.lean` | RejBoundedPoly, ExpandS (Alg 31/33), coefficients within ±η | `RejTerm`; η ∈ {2, 4}; k + ℓ < 256; witnesses by `decide +kernel` |
 | `Proofs/SampleBall.lean` | SampleInBall (Alg 29) for every c̃ on which the spec returns `some`, coefficients in {−1, 0, 1} | `RejTerm`; τ ≤ 64; witness: zero c̃ by `decide +kernel` (`SampleBallWitness.lean`) |
 | `Proofs/ExpandMask.lean` | ExpandMask (Alg 34) and the range −γ1 < y ≤ γ1 | κ + ℓ ≤ 2¹⁶ (the κ budget); γ1 ∈ {2¹⁷, 2¹⁹} |
 | `Proofs/SigCodec.lean` | sigDecode for every byte string of length sigLen; sigEncode, incl. the z mod± q form Sign uses | γ1 ∈ {2¹⁷, 2¹⁹}, λ/4 ≤ 64; weight ≤ ω and z ranges for encoding |
 | `Proofs/Steps.lean` | Sign steps 18–21 and 25–26, KeyGen t and Power2Round, Verify t1·2^d and c̃ compare, API ctx prefix | γ2 ∈ {95232, 261888}; d = 13; k ≤ 2²⁰ |
 
-Not yet proved: KeyGen_internal, Sign_internal, Verify_internal, API. The per-module premises (η, γ1, γ2, τ, d and size
+| `Proofs/Bridge.lean` | Z_q infinity norm of a `ReprVec`, ‖LowBits‖∞ ≤ γ2, t1 ∈ [0, 1024) after pkDecode | γ2 ∈ {95232, 261888}; d = 13 |
+| `Proofs/Witnesses.lean`, `SampleBallWitness.lean` | kernel witnesses: ExpandA (44, zero seed), ExpandS (65, bundled with `Params.Std`), SampleInBall (44, zero c̃) | none (~16 min of kernel evaluation on a cold build) |
+| `Proofs/KeyGen.lean` | **KeyGen_internal (Alg 6)**: Rust pk and sk bytes = spec's, for every ξ on which the spec returns `some` | `Params.Std`; buffer lengths; `RejTerm` (= ExpandA and ExpandS return `some` on the derived seeds, `keygen_isSome_iff`) |
+
+Not yet proved: Sign_internal, Verify_internal (in progress), API. The per-module premises (η, γ1, γ2, τ, d and size
 bounds) will be folded into one parameter predicate, proved for 44/65/87, before the top theorems. Wave-4b proofs are
 not yet independently reviewed.
 
