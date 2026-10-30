@@ -19,7 +19,7 @@ Evidence labels used throughout:
 **Our end-to-end claim is not unique in kind.** At least three other efforts target (or claim) end-to-end functional
 correctness of a whole ML-DSA implementation against a mechanized FIPS 204 specification:
 
-1. **Apple corecrypto** (released May 2026): production C and ARM64 assembly; KeyGen/Sign/Verify refine an Isabelle
+1. **Apple corecrypto** (released May 2026): production C (the README's ARM64-equivalence claim is stated for ML-KEM only); KeyGen/Sign/Verify refine an Isabelle
    transcription of FIPS 204 for all three parameter sets. Coverage of Sign/Verify is bounded to specific message sizes.
 2. **Microsoft SymCrypt Rust ML-DSA** (arXiv, September 2026): same toolchain as ours (Charon, Aeneas, Lean). **Claimed**;
    the ML-DSA Rust code and proofs are not in the public branch.
@@ -54,12 +54,13 @@ Proposed wording and wording to avoid are in section 5.
 
 ## 3. Project by project
 
-### 3.1 Apple corecrypto (C + ARM64; Cryptol/SAW + Isabelle)
+### 3.1 Apple corecrypto (C; Cryptol/SAW + Isabelle)
 
 - **Toolchain.** C routines are modeled in Cryptol and checked with SAW (bounded model checking with SMT solvers). The
   Cryptol models are machine-translated to Isabelle (`cryptol-to-isabelle`) and proved to refine an Isabelle
-  transcription of FIPS 204. Each hand-optimized ARM64 routine is proved equivalent (Isabelle, AutoCorres2, a custom
-  `refine_arm64`) to the C routine it replaces.
+  transcription of FIPS 204. ARM64 routines are proved equivalent (Isabelle, AutoCorres2, a custom `refine_arm64`) to
+  the C they replace, but the README states this for ML-KEM: "We also prove that our ML-KEM ARM64 assembly subroutines are
+  behaviorally equivalent to their corresponding C subroutines." No ML-DSA ARM64 proof is claimed there.
 - **What is covered.** "key generation, signature generation, and signature verification for ML-DSA" (blog). The top-level
   theorems are in `ccmldsa_MT_refines_FIPS.thy`: `keygen_refine`, `sign_internal_refine` (for valid sk, `IsValidSk`) and
   `comp_verify_internal_refine`, against `FIPS204_ML_DSA_KeyGen`, `FIPS204_ML_DSA_Sign` and `FIPS204_ML_DSA_Verify`.
@@ -275,7 +276,7 @@ whole implementation, not leaves. All cells are about ML-DSA only.
 | Project | Tool | Scope (code) | E2E FC? | Memory / panic safety | Constant time | Optimized backends | Security proof | Trusted base (main items) |
 |---|---|---|---|---|---|---|---|---|
 | **This project** | Charon/Aeneas to Lean 4 | Rust `no_std`, public `api` for 44/65/87 (portable code only) | **proved**: KeyGen, Sign, Verify = FIPS-literal Lean spec (all message/ctx lengths, all pk/sk/sig byte strings), plus Verify(Sign) = true; premises: `RejTerm` (sampler termination), Sign's kappa budget, parameter facts | Panic freedom: Aeneas `step` specs for the extracted `api` functions (inferred from the spec style; STATUS.md does not use the words); Rust type safety | **tested** (BINSEC probes on x86_64, thumbv7em, riscv32, 6 unknown), not proved | None | None | Spec fidelity (reviews, ACVP, Wycheproof, VCVio differential), Charon/Aeneas, rustc/LLVM, Lean kernel; zeroize and anything above `api` outside proof |
-| Apple corecrypto | SAW/Cryptol, Isabelle, AutoCorres2 | Production C + ARM64 asm; 44/65/87 | **proved, bounded**: entry points refine Isabelle FIPS 204; Sign/Verify checked at specific message/ctx sizes; no Verify(Sign) theorem found | SAW checks (with caveats) | not formally verified (DIT, review, testing) | ARM64 asm proved equivalent to C | None | Isabelle, SAW + SMT solvers, Clang, hand-kept SAW contracts, uninterpreted RNG, manual termination arguments |
+| Apple corecrypto | SAW/Cryptol, Isabelle, AutoCorres2 | Production C; 44/65/87 (ARM64 equivalence claimed for ML-KEM only) | **proved, bounded**: entry points refine Isabelle FIPS 204; Sign/Verify checked at specific message/ctx sizes; no Verify(Sign) theorem found | SAW checks (with caveats) | not formally verified (DIT, review, testing) | ARM64 asm proved equivalent to C (ML-KEM) | None | Isabelle, SAW + SMT solvers, Clang, hand-kept SAW contracts, uninterpreted RNG, manual termination arguments |
 | SymCrypt Rust (experimental) | Aeneas/Lean | Rust (portable + SHAKE x4 AVX2) | **claimed** (paper); code not public | **claimed** (safety, panic-freedom) | not claimed ("defensive constant-time style") | AVX2 4-way SHAKE for sampling (claimed) | None | per the SymCrypt list: rustc, Charon/Aeneas, Lean kernel, intrinsic models |
 | ocaml-pq | Lean 4 + Mathlib, TLA+ | OCaml `mldsa_engine.ml`; 44/65/87 | **proved** against models: KeyGen, Sign, Verify, sign_verify; sign loop bounded at 821 | bounds / no-overflow lemmas on the models | not claimed | None | None | **hand-transcribed** OCaml models, OCaml semantics/compiler, FIPS transcription, Lean kernel |
 | libcrux-ml-dsa | hax to F* | Rust; portable + AVX2 (NEON not in proof set) | **No** (leaf modules only; top level admitted) | partial: verified modules, some lax/panic_free | enforced by types, **not** proved for binaries | portable, AVX2, NEON | None | hax, F*, Z3, rustc; CI shows only `prove --admit` |
@@ -314,7 +315,7 @@ hold; the paper just does not say.
   artifacts are public and say they do, within the stated bounds; SymCrypt claims it for Rust with the same toolchain.
 - That we are first. Apple released in May 2026 and ocaml-pq in September 2026; the SymCrypt paper is dated 14 September 2026.
   I do not know our own public release date relative to these; only claim "first" if that can be shown.
-- That our result covers things the others do better: Apple (production C, ARM64 refinement, shipped hardware), mldsa-native
+- That our result covers things the others do better: Apple (production C, shipped hardware; ARM64 refinement for ML-KEM), mldsa-native
   (assembly proofs at object-code level including timing), libcrux (verified AVX2 leaves).
 - Anything about constant time, compilers, or hardware beyond what STATUS.md says.
 
@@ -333,7 +334,7 @@ Comparative form (only with a date and "to our knowledge"):
 > To our knowledge, as of 2026-10-30 this is the only publicly released proof that combines (i) a Rust implementation,
 > (ii) an implementation model extracted mechanically from its source, (iii) end-to-end theorems for KeyGen, Sign and Verify
 > against a FIPS 204 transcription for all three parameter sets and all message lengths, and (iv) Verify(Sign) = true.
-> Related work with overlapping goals: Apple corecrypto (C/ARM64, Isabelle/SAW, bounded message sizes), SymCrypt's
+> Related work with overlapping goals: Apple corecrypto (C, Isabelle/SAW, bounded message sizes), SymCrypt's
 > experimental Rust ML-DSA (Aeneas/Lean, not released), and ocaml-pq (Lean, hand-written models).
 
 The comparative form is a conjunction of four ingredients. If any one is dropped, another project matches the remainder, so
