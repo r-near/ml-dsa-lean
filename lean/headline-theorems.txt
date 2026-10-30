@@ -11,3 +11,63 @@ Proofs.ML_DSA_65_valid
 Proofs.ML_DSA_87_valid
 Proofs.infinity_norm_repr
 Proofs.vec_infinity_norm_spec
+import Proofs.NTTOps
+import Proofs.Coeff
+Proofs.add_poly_spec
+Proofs.sub_poly_spec
+Proofs.multiply_ntt_spec
+Proofs.ntt_vec_spec
+Proofs.scalar_vector_ntt_inverse_spec
+Proofs.matrix_vector_ntt_spec
+Proofs.neg_zmod
+Proofs.coeff_from_three_bytes_spec
+Proofs.coeff_from_half_byte_spec
+import Proofs.Rounding
+Proofs.power2round_spec
+Proofs.decompose_spec
+Proofs.high_bits_spec
+Proofs.low_bits_spec
+Proofs.make_hint_spec
+Proofs.use_hint_spec
+Proofs.poly_high_bits_spec
+Proofs.poly_low_bits_spec
+Proofs.poly_use_hint_spec
+Proofs.poly_power2round_spec
+Proofs.rounding_hypotheses_ML_DSA_44
+Proofs.rounding_hypotheses_ML_DSA_65
+Proofs.rounding_hypotheses_ML_DSA_87
+import Proofs.Keccak
+Proofs.keccak_f1600_spec
+Proofs.shake128_spec
+Proofs.shake256_spec
+Proofs.absorb_spec
+Proofs.finalize_spec
+Proofs.squeeze_spec
+Proofs.squeeze_G_spec
+Proofs.squeeze_H_spec
+Proofs.squeeze_twice_spec
+Proofs.absorb_two_spec
+Proofs.absorb_append_eq
+Proofs.ShakeAbs.unique
+Proofs.shake128_abs
+Proofs.shake256_abs
+Proofs.finalize_exists
+Proofs.shake256_correct
+import Proofs.Hint
+Proofs.hint_bit_unpack_spec
+Proofs.hint_bit_pack_spec
+Proofs.hint_bit_unpack_row_spec
+Proofs.hint_bit_unpack_rows_spec
+Proofs.hint_bit_unpack_padding_spec
+import Proofs.EncodeKeys
+Proofs.bit_pack_spec
+Proofs.bit_pack_spec_repr
+Proofs.bit_unpack_spec
+Proofs.bit_unpack_spec_repr
+Proofs.pack_signed_spec
+Proofs.unpack_signed_spec
+Proofs.w1_encode_spec
+Proofs.pk_encode_spec
+Proofs.pk_decode_spec
+Proofs.sk_encode_spec
+Proofs.sk_decode_spec

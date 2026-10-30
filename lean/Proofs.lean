@@ -2,3 +2,9 @@ import Proofs.Field
 import Proofs.Repr
 import Proofs.NTT
 import Proofs.NTTInverse
+import Proofs.NTTOps
+import Proofs.Coeff
+import Proofs.Rounding
+import Proofs.Keccak
+import Proofs.Hint
+import Proofs.EncodeKeys
