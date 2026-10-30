@@ -46,7 +46,7 @@ structure keccak.Shake where
   rate : Std.Usize
 
 /-- [ml_dsa_verified::encode::SecretKey]
-    Source: 'src/encode.rs', lines 103:0-110:1
+    Source: 'src/encode.rs', lines 104:0-111:1
     Visibility: public -/
 structure encode.SecretKey (K : Std.Usize) (L : Std.Usize) where
   rho : Array Std.U8 32#usize

@@ -6,3 +6,12 @@ ml_dsa_verified::api::sign_internal_65
 ml_dsa_verified::api::sign_internal_87
 ml_dsa_verified::rounding::power2round
 ml_dsa_verified::sampling::rej_ntt_poly
+ml_dsa_verified::encode::pk_encode
+ml_dsa_verified::encode::pk_decode
+ml_dsa_verified::encode::sk_encode
+ml_dsa_verified::encode::sig_decode
+ml_dsa_verified::sampling::expand_s
+ml_dsa_verified::rounding::poly_use_hint
+ml_dsa_verified::rounding::poly_power2round
+ml_dsa_verified::keygen::keygen_internal
+ml_dsa_verified::verify::verify_internal

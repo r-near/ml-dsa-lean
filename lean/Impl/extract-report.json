@@ -7,9 +7,18 @@
   "ml_dsa_verified::api::sign_internal_65",
   "ml_dsa_verified::api::sign_internal_87",
   "ml_dsa_verified::rounding::power2round",
-  "ml_dsa_verified::sampling::rej_ntt_poly"
+  "ml_dsa_verified::sampling::rej_ntt_poly",
+  "ml_dsa_verified::encode::pk_encode",
+  "ml_dsa_verified::encode::pk_decode",
+  "ml_dsa_verified::encode::sk_encode",
+  "ml_dsa_verified::encode::sig_decode",
+  "ml_dsa_verified::sampling::expand_s",
+  "ml_dsa_verified::rounding::poly_use_hint",
+  "ml_dsa_verified::rounding::poly_power2round",
+  "ml_dsa_verified::keygen::keygen_internal",
+  "ml_dsa_verified::verify::verify_internal"
  ],
- "src_sha256": "7f8810168ed313c7067181c6dd060ccb86b47e38d0f12754b3f4dfedcdc4a0b4",
+ "src_sha256": "36723941822381faf2042692ed0ee35bf4fb8be8f8809ed0150ed579a80bf4ea",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -18,7 +27,7 @@
   "lean": "v4.31.0"
  },
  "rename_changes": 0,
- "llbc_fun_decls": 99,
+ "llbc_fun_decls": 120,
  "llbc_opaque_funs": [
   "core::array::{impl}::index",
   "core::array::{impl}::index_mut",
@@ -48,10 +57,5 @@
  "aeneas_name_clashes": 0,
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
- "lean_defs": 180,
- "lake_build": "ok",
- "axiom_gate": "ok",
- "axioms_summary": [
-  "checked: 180  reported: 180  axioms used: ['Classical.choice', 'Quot.sound', 'propext']"
- ]
+ "lean_defs": 257
 }
