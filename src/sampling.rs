@@ -1,5 +1,6 @@
 //! FIPS 204 §7.3: CoeffFromThreeBytes (Alg 14), SampleInBall (Alg 29), RejNTTPoly (Alg 30),
-//! ExpandA (Alg 32), ExpandMask (Alg 34).
+//! ExpandA (Alg 32), ExpandMask (Alg 34), plus CoeffFromHalfByte (Alg 15), RejBoundedPoly (Alg 31),
+//! ExpandS (Alg 33).
 
 use crate::encode::bit_unpack;
 use crate::field::{Q, sub};
@@ -106,4 +107,81 @@ pub fn expand_mask<const L: usize>(p: &Params, rho: &[u8; 64], mu: u16) -> [[u32
         r += 1;
     }
     y
+}
+
+/// Algorithm 15 CoeffFromHalfByte(b): an element of [−η, η] as a canonical Z_q value, or ⊥.
+pub fn coeff_from_half_byte(p: &Params, b: u8) -> Option<u32> {
+    if p.eta == 2 {
+        // 1: if η = 2 and b < 15 then return 2 − (b mod 5)
+        if b < 15 { Some(sub(2, (b % 5) as u32)) } else { None }
+    } else {
+        // 2: if η = 4 and b < 9 then return 4 − b
+        if b < 9 { Some(sub(4, b as u32)) } else { None }
+    }
+}
+
+/// Algorithm 31 RejBoundedPoly(ρ), ρ a 66-byte seed.
+pub fn rej_bounded_poly(p: &Params, rho: &[u8; 66]) -> [u32; 256] {
+    let mut a = [0u32; 256];
+    // 1: ctx ← H.Init(); 2: H.Absorb(ctx, ρ)
+    let mut ctx = Shake::shake256();
+    ctx.absorb(rho);
+    ctx.finalize();
+    // 3: j ← 0
+    let mut j = 0;
+    // 4: while j < 256
+    while j < 256 {
+        // 5: z ← H.Squeeze(ctx, 1)
+        let mut zb = [0u8; 1];
+        ctx.squeeze(&mut zb);
+        // 6–7: z0 ← CoeffFromHalfByte(z mod 16); z1 ← CoeffFromHalfByte(⌊z/16⌋)
+        let z0 = coeff_from_half_byte(p, zb[0] & 15);
+        let z1 = coeff_from_half_byte(p, zb[0] >> 4);
+        // 8–11: if z0 ≠ ⊥ then a_j ← z0; j ← j + 1
+        if let Some(x) = z0 {
+            a[j] = x;
+            j += 1;
+        }
+        // 12–15: if z1 ≠ ⊥ and j < 256 then a_j ← z1; j ← j + 1
+        if let Some(y) = z1 {
+            if j < 256 {
+                a[j] = y;
+                j += 1;
+            }
+        }
+    }
+    a
+}
+
+/// Algorithm 33 ExpandS(ρ): returns (s1, s2). Nonces r (for s1) and r + L (for s2) are
+/// IntegerToBytes(·, 2), little-endian; r + L < 256 so the high byte is 0.
+pub fn expand_s<const K: usize, const L: usize>(
+    p: &Params,
+    rho: &[u8; 64],
+) -> ([[u32; 256]; L], [[u32; 256]; K]) {
+    let mut s1 = [[0u32; 256]; L];
+    let mut s2 = [[0u32; 256]; K];
+    let mut seed = [0u8; 66];
+    let mut b = 0;
+    while b < 64 {
+        seed[b] = rho[b];
+        b += 1;
+    }
+    // 1–3: s1_r ← RejBoundedPoly(ρ || IntegerToBytes(r, 2))
+    let mut r = 0;
+    while r < L {
+        seed[64] = r as u8;
+        seed[65] = 0;
+        s1[r] = rej_bounded_poly(p, &seed);
+        r += 1;
+    }
+    // 4–6: s2_r ← RejBoundedPoly(ρ || IntegerToBytes(r + L, 2))
+    let mut r = 0;
+    while r < K {
+        seed[64] = (r + L) as u8;
+        seed[65] = 0;
+        s2[r] = rej_bounded_poly(p, &seed);
+        r += 1;
+    }
+    (s1, s2)
 }

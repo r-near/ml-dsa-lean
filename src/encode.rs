@@ -1,5 +1,6 @@
 //! FIPS 204 §7.1–7.2: SimpleBitPack/BitPack/BitUnpack (Alg 16–19), HintBitPack (Alg 20),
-//! skDecode (Alg 25), sigEncode (Alg 26), w1Encode (Alg 28). Bit order is little-endian.
+//! skDecode (Alg 25), sigEncode (Alg 26), w1Encode (Alg 28),
+//! pkEncode/pkDecode (Alg 22/23), skEncode (Alg 24), HintBitUnpack (Alg 21), sigDecode (Alg 27). Bit order is little-endian.
 
 use crate::field::sub;
 use crate::params::Params;
@@ -174,4 +175,186 @@ pub fn sig_encode<const K: usize, const L: usize>(
         i += 1;
     }
     hint_bit_pack(p, h, &mut out[ct + L * n..]);
+}
+
+/// Algorithm 22 pkEncode(ρ, t1). `out` has 32 + 320·K bytes; each t1 coefficient is < 2^10.
+pub fn pk_encode<const K: usize>(rho: &[u8; 32], t1: &[[u32; 256]; K], out: &mut [u8]) {
+    // 1: pk ← ρ
+    let mut i = 0;
+    while i < 32 {
+        out[i] = rho[i];
+        i += 1;
+    }
+    // 2–4: pk ← pk || SimpleBitPack(t1_i, 2^10 − 1)
+    let mut i = 0;
+    while i < K {
+        bit_pack(&t1[i], 10, &mut out[32 + i * 320..32 + (i + 1) * 320]);
+        i += 1;
+    }
+}
+
+/// Algorithm 23 pkDecode(pk). `pk` has 32 + 320·K bytes. Total: every byte string decodes.
+pub fn pk_decode<const K: usize>(pk: &[u8]) -> ([u8; 32], [[u32; 256]; K]) {
+    let mut rho = [0u8; 32];
+    let mut i = 0;
+    while i < 32 {
+        rho[i] = pk[i];
+        i += 1;
+    }
+    let mut t1 = [[0u32; 256]; K];
+    let mut i = 0;
+    while i < K {
+        t1[i] = bit_unpack(&pk[32 + i * 320..32 + (i + 1) * 320], 10);
+        i += 1;
+    }
+    (rho, t1)
+}
+
+/// Algorithm 24 skEncode(ρ, K, tr, s1, s2, t0). `out` has sk_len bytes.
+pub fn sk_encode<const K: usize, const L: usize>(
+    p: &Params,
+    rho: &[u8; 32],
+    key: &[u8; 32],
+    tr: &[u8; 64],
+    s1: &[[u32; 256]; L],
+    s2: &[[u32; 256]; K],
+    t0: &[[u32; 256]; K],
+    out: &mut [u8],
+) {
+    // 1: sk ← ρ || K || tr
+    let mut i = 0;
+    while i < 32 {
+        out[i] = rho[i];
+        out[32 + i] = key[i];
+        i += 1;
+    }
+    let mut i = 0;
+    while i < 64 {
+        out[64 + i] = tr[i];
+        i += 1;
+    }
+    let n = 32 * p.eta_bits;
+    let mut o = 128;
+    // 2–4: sk ← sk || BitPack(s1_i, η, η)
+    let mut i = 0;
+    while i < L {
+        pack_signed(&s1[i], p.eta, p.eta_bits, &mut out[o..o + n]);
+        o += n;
+        i += 1;
+    }
+    // 5–7: sk ← sk || BitPack(s2_i, η, η)
+    let mut i = 0;
+    while i < K {
+        pack_signed(&s2[i], p.eta, p.eta_bits, &mut out[o..o + n]);
+        o += n;
+        i += 1;
+    }
+    // 8–10: sk ← sk || BitPack(t0_i, 2^12 − 1, 2^12)
+    let mut i = 0;
+    while i < K {
+        pack_signed(&t0[i], 1 << 12, 13, &mut out[o..o + 416]);
+        o += 416;
+        i += 1;
+    }
+}
+
+/// Steps 7–14 of Algorithm 21 for polynomial i: sets h_i[y[Index]] for Index from `first` to `end` − 1,
+/// returning false (⊥) if the positions are not strictly increasing. Requires `end` ≤ ω < y.len().
+/// Lifted out of `hint_bit_unpack` because Aeneas cannot extract a return from a nested loop.
+fn hint_bit_unpack_row(y: &[u8], first: usize, end: usize, row: &mut [bool; 256]) -> bool {
+    // 7: First ← Index
+    let mut index = first;
+    // 8: while Index < y[ω + i]
+    while index < end {
+        // 9–11: if Index > First and y[Index − 1] ≥ y[Index] then return ⊥
+        if index > first && y[index - 1] >= y[index] {
+            return false;
+        }
+        // 12: h_i[y[Index]] ← 1; 13: Index ← Index + 1
+        row[y[index] as usize] = true;
+        index += 1;
+    }
+    true
+}
+
+/// Steps 2–15 of Algorithm 21: fills `h` and returns the final Index, or `None` (⊥).
+/// Each loop that can return ⊥ lives in its own function: Aeneas cannot extract a return out of a
+/// loop that is followed by further loops in the same body.
+fn hint_bit_unpack_rows<const K: usize>(p: &Params, y: &[u8], h: &mut [[bool; 256]; K]) -> Option<usize> {
+    let omega = p.omega;
+    // 2: Index ← 0
+    let mut index: usize = 0;
+    // 3: for i from 0 to k − 1
+    let mut i = 0;
+    while i < K {
+        let end = y[omega + i] as usize;
+        // 4–6: if y[ω + i] < Index or y[ω + i] > ω then return ⊥
+        if end < index || end > omega {
+            return None;
+        }
+        // 7–14 (after the loop, Index = y[ω + i])
+        if !hint_bit_unpack_row(y, index, end, &mut h[i]) {
+            return None;
+        }
+        index = end;
+        i += 1;
+    }
+    Some(index)
+}
+
+/// Steps 16–20 of Algorithm 21: true iff y[Index..ω] are all zero.
+fn hint_bit_unpack_padding(p: &Params, y: &[u8], index: usize) -> bool {
+    let mut j = index;
+    while j < p.omega {
+        if y[j] != 0 {
+            return false;
+        }
+        j += 1;
+    }
+    true
+}
+
+/// Algorithm 21 HintBitUnpack(y). `y` has ω + K bytes. `None` is ⊥ (malformed encoding).
+/// Safety of indexing: y[ω + i] ≤ ω is checked before use, so `index` ≤ ω and `index` < ω
+/// whenever y[index] is read; y[index] < 256 indexes h[i].
+pub fn hint_bit_unpack<const K: usize>(p: &Params, y: &[u8]) -> Option<[[bool; 256]; K]> {
+    // 1: h ← 0^{k × 256}
+    let mut h = [[false; 256]; K];
+    match hint_bit_unpack_rows(p, y, &mut h) {
+        None => None,
+        Some(index) => {
+            if hint_bit_unpack_padding(p, y, index) {
+                Some(h)
+            } else {
+                None
+            }
+        }
+    }
+}
+
+/// Algorithm 27 sigDecode(σ). `sig` has sig_len bytes. Returns (c̃ in the first λ/4 bytes, z, h),
+/// or `None` iff HintBitUnpack returns ⊥. (No ‖z‖∞ check here; that is Verify's step.)
+#[allow(clippy::type_complexity)]
+pub fn sig_decode<const K: usize, const L: usize>(
+    p: &Params,
+    sig: &[u8],
+) -> Option<([u8; 64], [[u32; 256]; L], [[bool; 256]; K])> {
+    let ct = p.c_tilde_len;
+    let mut c_tilde = [0u8; 64];
+    let mut i = 0;
+    while i < ct {
+        c_tilde[i] = sig[i];
+        i += 1;
+    }
+    let n = 32 * p.gamma1_bits;
+    let mut z = [[0u32; 256]; L];
+    let mut i = 0;
+    while i < L {
+        z[i] = unpack_signed(&sig[ct + i * n..ct + (i + 1) * n], p.gamma1, p.gamma1_bits);
+        i += 1;
+    }
+    match hint_bit_unpack::<K>(p, &sig[ct + L * n..]) {
+        Some(h) => Some((c_tilde, z, h)),
+        None => None,
+    }
 }

@@ -1,5 +1,5 @@
 //! FIPS 204 §7.4: Power2Round, Decompose, HighBits, LowBits, MakeHint (Algorithms 35–39),
-//! and the infinity norm. Values are canonical in Z_q; a "signed" result r stands for r mod± q.
+//! UseHint (Alg 40), and the infinity norm. Values are canonical in Z_q; a "signed" result r stands for r mod± q.
 
 use crate::field::{Q, ct_lt_mask, ct_select, small_reduce, sub};
 use crate::params::Params;
@@ -98,4 +98,49 @@ pub fn vec_infinity_norm<const N: usize>(w: &[[u32; 256]; N]) -> u32 {
         i += 1;
     }
     acc
+}
+
+/// Algorithm 40 UseHint(h, r). Public data (Verify): branches are fine.
+pub fn use_hint(p: &Params, h: bool, r: u32) -> u32 {
+    // 1: m ← (q − 1)/(2γ2)
+    let m = (Q - 1) / (2 * p.gamma2);
+    // 2: (r1, r0) ← Decompose(r)
+    let (r1, r0) = decompose(p, r);
+    if h {
+        // r0 > 0 as a signed value: canonical r0 in (0, (q−1)/2]
+        if r0 != 0 && r0 <= (Q >> 1) {
+            // 4: (r1 + 1) mod m
+            (r1 + 1) % m
+        } else {
+            // 5: (r1 − 1) mod m
+            (r1 + m - 1) % m
+        }
+    } else {
+        r1
+    }
+}
+
+/// UseHint applied coefficient-wise.
+pub fn poly_use_hint(p: &Params, h: &[bool; 256], r: &[u32; 256]) -> [u32; 256] {
+    let mut out = [0u32; 256];
+    let mut j = 0;
+    while j < 256 {
+        out[j] = use_hint(p, h[j], r[j]);
+        j += 1;
+    }
+    out
+}
+
+/// Power2Round applied coefficient-wise: returns (t1, t0).
+pub fn poly_power2round(t: &[u32; 256]) -> ([u32; 256], [u32; 256]) {
+    let mut t1 = [0u32; 256];
+    let mut t0 = [0u32; 256];
+    let mut j = 0;
+    while j < 256 {
+        let (a, b) = power2round(t[j]);
+        t1[j] = a;
+        t0[j] = b;
+        j += 1;
+    }
+    (t1, t0)
 }
