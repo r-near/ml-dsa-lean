@@ -10,7 +10,7 @@ F=.lake/axioms-check.lean
 {
   echo 'import Impl.Funs'
   [ -f headline-theorems.txt ] && grep -E '^import ' headline-theorems.txt || true
-  grep -oE '^(divergent )?def [A-Za-z0-9_.]+' Impl/Funs.lean | awk '{print "#print axioms Impl."$NF}'
+  grep -oE '^(@\[[^]]*\] *)?(divergent )?def [A-Za-z0-9_.]+' Impl/Funs.lean | awk '{print "#print axioms Impl."$NF}'
   [ -f headline-theorems.txt ] && grep -vE '^(import |#|[[:space:]]*$)' headline-theorems.txt | awk '{print "#print axioms "$1}' || true
 } > "$F"
 echo "defs/theorems to check: $(grep -c '^#print' "$F")"
