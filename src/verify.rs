@@ -42,7 +42,11 @@ fn prefix_eq(a: &[u8; 64], b: &[u8; 64], len: usize) -> bool {
 }
 
 /// Algorithm 8 ML-DSA.Verify_internal(pk, M′, σ) with M′ = `m_prefix` ‖ `m`. A `pk` whose length is not
-/// `pk_len(p)` or a `sig` whose length is not `sig_len(p)` is rejected (returns false), as in FIPS 204 Verify.
+/// `pk_len(p)` or a `sig` whose length is not `sig_len(p)` returns false. This is input validation consistent
+/// with FIPS 204 (its pk and σ are byte strings of those lengths), not a numbered step.
+///
+/// Precondition: `p` is the parameter set matching `K` and `L` (`p.k == K`, `p.l == L`). The decoders index by
+/// `K`/`L`, so an inconsistent `p` can panic. The `api` functions always pass a consistent `p`.
 pub fn verify_internal<const K: usize, const L: usize>(
     p: &Params,
     pk: &[u8],
@@ -50,7 +54,7 @@ pub fn verify_internal<const K: usize, const L: usize>(
     m: &[u8],
     sig: &[u8],
 ) -> bool {
-    // Length guard: wrong-length inputs are invalid, never indexed.
+    // Length guard: wrong-length pk/sig return false before any decoding.
     if pk.len() != pk_len(p) || sig.len() != sig_len(p) {
         return false;
     }
@@ -107,4 +111,38 @@ pub fn verify_internal<const K: usize, const L: usize>(
     let norm_ok = vec_infinity_norm(&z) < p.gamma1 - p.beta;
     let hash_ok = prefix_eq(&c_tilde, &c_tilde_prime, p.c_tilde_len);
     norm_ok && hash_ok
+}
+
+#[cfg(test)]
+mod tests {
+    use super::prefix_eq;
+
+    #[test]
+    fn prefix_eq_compares_exactly_len_bytes() {
+        let mut a = [0u8; 64];
+        for (i, b) in a.iter_mut().enumerate() {
+            *b = i as u8 ^ 0x5a;
+        }
+        // Identical buffers are equal for every len.
+        for len in [0, 32, 48, 64] {
+            assert!(prefix_eq(&a, &a, len));
+        }
+        // λ/4 = 32, 48, 64 for ML-DSA-44/65/87.
+        for len in [32usize, 48, 64] {
+            // Differing only at index len - 1: unequal.
+            let mut b = a;
+            b[len - 1] ^= 1;
+            assert!(!prefix_eq(&a, &b, len), "len {len}: last compared byte ignored");
+            // Differing at the first byte: unequal.
+            let mut c = a;
+            c[0] ^= 0x80;
+            assert!(!prefix_eq(&a, &c, len));
+            // Differing only at indices >= len: equal.
+            let mut d = a;
+            for x in &mut d[len..] {
+                *x ^= 0xff;
+            }
+            assert!(prefix_eq(&a, &d, len), "len {len}: bytes past len were compared");
+        }
+    }
 }

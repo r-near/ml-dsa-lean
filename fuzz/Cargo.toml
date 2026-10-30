@@ -13,7 +13,7 @@ path = "src/lib.rs"
 
 [dependencies]
 libfuzzer-sys = "0.4"
-ml-dsa-verified = { path = ".." }
+ml-dsa-verified = { path = "..", features = ["internals"] }
 # Oracle: the same upstream revision the main crate's tests use.
 ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e", default-features = false, features = ["alloc"] }
 # Seed generator only (src/bin/gen_seeds.rs).

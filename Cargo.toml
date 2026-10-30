@@ -12,8 +12,15 @@ zeroize = { version = "1", default-features = false, optional = true }
 [features]
 default = []
 zeroize = ["dep:zeroize"]
+# test/fuzz/checkct only; exposes unproved internals.
+# Makes every module public (keygen::keygen_internal, sign::sign_internal and verify::verify_internal
+# panic on wrong-length slices or a Params inconsistent with K/L). The default public surface is `api` only.
+# Enabled for this crate's own tests and examples by the self dev-dependency below.
+internals = []
 
 [dev-dependencies]
+# Self dev-dependency: turns on `internals` for tests, examples and benches (not for downstream users).
+ml-dsa-verified = { path = ".", features = ["internals"] }
 # Differential oracle: upstream RustCrypto master a3690c4, deprecated expanded-key API for skEncode bytes.
 ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e", default-features = false, features = ["alloc"] }
 
