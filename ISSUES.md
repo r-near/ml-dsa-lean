@@ -50,6 +50,15 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   log, or the axiom gate). `scripts/extract-and-build.sh` also greps its build log. Every rx shell string starts
   with `set -o pipefail;`, and output is read afterward with `rx logs <job> 30` rather than filtered in the job.
   (`scripts/check-axioms.sh` was already safe: it fails on any `error` in the Lean output.)
+- **T-7 (2026-10-30): Lean gates ran cold, about 10× slower.** Reusing an `rx submit` name keeps only cargo targets
+  warm. A job's Lean `.lake/build` comes from this worktree's box copy, and only `rx run` updates that copy. It
+  was last refreshed at 10:26Z, so every later gate rebuilt everything changed since then: full gates took 930–1010 s
+  instead of about 100–150 s, mostly `Proofs.Witnesses` (about 800 s), and a 2.5 s module took 150–175 s per job.
+  Also, rx jobs belong to the worktree that started them: a `rx kill` from the main worktree missed a gate submitted
+  from a temporary worktree, and it ran for another 10 minutes. Fix: after each passing gate, the orchestrator (or one
+  designated agent) runs `rx run -- 'set -o pipefail; cd lean && lake build'` once to refresh the box copy. Subagents
+  never run it, so they don't race on the copy. Before removing a temporary worktree, `rx kill` its jobs from inside
+  it.
 
 ## Errata (docs, spec, upstream)
 

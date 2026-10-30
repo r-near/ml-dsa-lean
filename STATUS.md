@@ -3,11 +3,12 @@
 What is proved, under which premises, and what is trusted. Updated as work lands.
 
 **Proved so far** (standard axioms only; `scripts/check-axioms.sh` checks every extracted def and every name in
-`lean/headline-theorems.txt`, 427 declarations). Each is a `@[step]` refinement spec of an extracted function
+`lean/headline-theorems.txt`, 446 declarations). Each is a `@[step]` refinement spec of an extracted function
 against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`.
 
 Done-gate: a module counts as proved only after `scripts/lean-check.sh` passes: a pipefail-safe `lake build` exits 0,
-the full log has no `error:` or `sorry` warning, and the axiom gate passes. Earlier rx jobs could report success on
+the full log has no `error:` or `sorry` warning, and the axiom gate passes. After a passing gate, one `rx run` of `lake build` refreshes
+the box copy so later gates start warm (ISSUES T-7). Earlier rx jobs could report success on
 failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a cold rebuild of ffc445c (job
 `verify-head`).
 
@@ -38,7 +39,9 @@ failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a c
 `Params.Std` = `Params.Valid` ∧ `StdParams`; `StdParams` (d = 13, γ1/γ2/η of the standard sets, τ ≤ 64, k + ℓ < 256,
 k ≤ 8, ℓ ≥ 1, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`).
 
-Not yet proved: API (Alg 1/2/3 with ctx). The three top theorems are not yet independently reviewed. The per-module premises (η, γ1, γ2, τ, d and size
+| `Proofs/API.lean` | **Public API (Alg 1/2/3)** for 44/65/87: `keygen_NN`, `verify_NN` (incl. \|ctx\| > 255 → false), `sign_NN` (σ on success; `none` for \|ctx\| > 255 and on exhaustion); M′ = 0 ‖ \|ctx\| ‖ ctx ‖ M matches the spec | the spec returns `some` (or `Exhausted`); nothing on the contents of pk, sk, σ, M, ctx |
+
+The three internal top theorems were independently reviewed (no blockers; findings folded into the sections below). The per-module premises (η, γ1, γ2, τ, d and size
 bounds) will be folded into one parameter predicate, proved for 44/65/87, before the top theorems. Wave-4b proofs are
 not yet independently reviewed.
 
