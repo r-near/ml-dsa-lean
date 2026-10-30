@@ -3,7 +3,7 @@
 What is proved, under which premises, and what is trusted. Updated as work lands.
 
 **Proved so far** (standard axioms only; `scripts/check-axioms.sh` checks every extracted def and every name in
-`lean/headline-theorems.txt`, 399 declarations). Each is a `@[step]` refinement spec of an extracted function
+`lean/headline-theorems.txt`, 427 declarations). Each is a `@[step]` refinement spec of an extracted function
 against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`.
 
 Done-gate: a module counts as proved only after `scripts/lean-check.sh` passes: a pipefail-safe `lake build` exits 0,
@@ -32,7 +32,13 @@ failed builds (ISSUES T-6). Every row below was re-verified on 2026-10-30 by a c
 | `Proofs/Witnesses.lean`, `SampleBallWitness.lean` | kernel witnesses: ExpandA (44, zero seed), ExpandS (65, bundled with `Params.Std`), SampleInBall (44, zero c̃) | none (~16 min of kernel evaluation on a cold build) |
 | `Proofs/KeyGen.lean` | **KeyGen_internal (Alg 6)**: Rust pk and sk bytes = spec's, for every ξ on which the spec returns `some` | `Params.Std`; buffer lengths; `RejTerm` (= ExpandA and ExpandS return `some` on the derived seeds, `keygen_isSome_iff`) |
 
-Not yet proved: Sign_internal, Verify_internal (in progress), API. The per-module premises (η, γ1, γ2, τ, d and size
+| `Proofs/Verify.lean` | **Verify_internal (Alg 8)**: Rust verdict = spec's, for every pk and σ of the encoded lengths and every M′ = m_prefix ‖ m | `Params.Std`; the two lengths; `RejTerm` (`verify_isSome_iff`: if sigDecode succeeds, ExpandA(ρ) and SampleInBall(c̃) return `some`; malformed hints and wrong lengths always give `some false`) |
+| `Proofs/Sign.lean` | **Sign_internal (Alg 7, bounded)**: spec `some σ` (any budget B) ⇒ Rust returns true and writes σ; all `kappaBudget` attempts rejected with enough sampler fuel (`Exhausted`) ⇒ Rust returns false. For every sk byte string of length skLen | `Params.Std`; buffer lengths; `RejTerm` (`sign_isSome_iff`, `sign_none_cases`: the spec's `none` splits into fuel failure vs budget exhaustion) |
+
+`Params.Std` = `Params.Valid` ∧ `StdParams`; `StdParams` (d = 13, γ1/γ2/η of the standard sets, τ ≤ 64, k + ℓ < 256,
+k ≤ 8, ℓ ≥ 1, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`).
+
+Not yet proved: API (Alg 1/2/3 with ctx). The three top theorems are not yet independently reviewed. The per-module premises (η, γ1, γ2, τ, d and size
 bounds) will be folded into one parameter predicate, proved for 44/65/87, before the top theorems. Wave-4b proofs are
 not yet independently reviewed.
 
