@@ -40,6 +40,7 @@ The phase 1–4a rows were also re-verified by a cold rebuild of ffc445c (job `v
 k ≤ 8, ℓ ≥ 1, ω ≤ 255, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`).
 
 | `Proofs/API.lean` | **Public API (Alg 1/2/3)** for 44/65/87: `keygen_NN`, `verify_NN` (incl. \|ctx\| > 255 → false), `sign_NN` (σ on success; `none` for \|ctx\| > 255 and on exhaustion); M′ = 0 ‖ \|ctx\| ‖ ctx ‖ M matches the spec | the spec returns `some` (or `Exhausted`); nothing on the contents of pk, sk, σ, M, ctx |
+| `Proofs/APIInternal.lean` | **Internal API (Alg 7/8 without ctx)** for 44/65/87: `sign_internal_NN` (σ on success, `none` on exhaustion), `verify_internal_NN`; and the "only if" for `none`: `sign_NN`/`sign_internal_NN` return `none` only when the spec fails at every fuel, with the cases spelled out (\|ctx\| > 255, pre-loop failure, loop failure or exhaustion) | as for `API.lean` |
 | `Proofs/Corr*.lean`, `Correctness.lean` | **Correctness (phase 5)**: for honest keys, Verify accepts Sign's output. Spec level, internal (`correct_internal`) and external with ctx (`correct_external`); Rust: `api.keygen_NN` → `api.sign_NN` → `api.verify_NN` returns true (`correct_44/65/87`). Building blocks: NTT algebra and convolution, ‖c·s‖∞ ≤ β, Power2Round/HighBits/UseHint lemmas, codec round trips, SampleInBall weight = τ | `StdParams`; KeyGen and Sign return `some` (RejTerm, κ budget), same fuel for all three |
 
 Reviews: the leaf proofs (phase 4a/4b) and the three internal top theorems were independently reviewed, and so were
@@ -84,10 +85,9 @@ Not covered by any theorem:
 - Inputs where a spec sampler runs out of fuel. The Rust squeezes without bound there, so it most likely returns the
   true FIPS result, but nothing proves it. In Sign this includes a SampleInBall fuel failure in any earlier rejected
   attempt. For Verify and KeyGen the seeds come from pk/σ/ξ, so this is a premise on attacker-chosen inputs.
-- The public `api::sign_internal_NN` and `verify_internal_NN` wrappers (Alg 7/8 without ctx) have no API-level
-  theorem; the internal theorems cover the functions they call.
-- No "only if" for Sign's `none` at the API level: the theorems give `none` for spec exhaustion and \|ctx\| > 255
-  but do not state that these are the only cases (`sign_none_cases` exists internally, not lifted).
+- Sign's `none` when a spec sampler runs out of fuel: `sign_NN_none_only_if` shows that a Rust `none` means the spec
+  fails at every fuel (|ctx| > 255, a fuel failure, or exhaustion), but the converse for fuel failures is unproved,
+  since the Rust may diverge there.
 - Calling `verify_internal` with a `Params` value inconsistent with its `K`/`L` generics: the length guard checks
   lengths derived from `p`, but the decoders index by `K`/`L`, so it can still panic. The theorems assume
   `Params.Std ip K L sp`, which ties them together; the `api` functions always pass consistent values.
