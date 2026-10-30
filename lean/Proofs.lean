@@ -14,3 +14,5 @@ import Proofs.SampleBall
 import Proofs.ExpandMask
 import Proofs.Steps
 import Proofs.SampleS
+import Proofs.StdParams
+import Proofs.SampleBallWitness
