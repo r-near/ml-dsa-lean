@@ -21,6 +21,12 @@ mod keccak;
 #[allow(dead_code)]
 #[path = "../../../src/encode.rs"]
 mod encode;
+#[allow(dead_code)]
+#[path = "../../../src/sampling.rs"]
+mod sampling;
+#[allow(dead_code, unexpected_cfgs)]
+#[path = "../../../src/sign.rs"]
+mod sign;
 
 mod probes;
 mod rng;

@@ -37,7 +37,8 @@ toolchain: `cd checkct && cargo build --release -p driver --target x86_64-unknow
   public rho and tr), `sk_decode_{44,65,87}` on a secret sk.
 - `signing.rs`: `response_{44,65,87}` (z = y + cs1, cs2, r0 = LowBits(w - cs2), both vector norms) and
   `hint_step_{44,65,87}` (ct0, MakeHint(-ct0, w - cs2 + ct0), hamming weight, ct0 norm). c-hat is public.
-  These are compositions of the public building blocks mirroring `sign::attempt`, not the production code.
+  These call the production `sign::response` and `sign::hint_step` (`pub(crate)`, included via `#[path]`);
+  the norms are taken on the returned vectors, as `attempt` does before its rejection `if`s.
 
 Not probed on purpose: rejection samplers' accept/reject branching, `sample_in_ball` on public c-tilde, and
 the two rejection `if`s of `attempt` (public-outcome branches).
@@ -80,11 +81,8 @@ Cosmetic: `field_add` and `field_small_reduce` compile to identical bodies, so L
 - Only the listed straight-line steps, on the target/opt-level above (release, debug info). Other compilers,
   versions, opt-levels and inlining contexts (the real `sign_internal` build) can differ. The riscv result in
   particular depends on LLVM's select lowering, so re-run after toolchain bumps.
-- `sign::attempt` is private and its response/hint steps are inline; the probes re-compose public functions.
-  Recommended `pub(crate)` splits (FORK-DESIGN section 3): `response` (steps 18-21, returning z, w - cs2, r0)
-  and `hint_step` (steps 25-26, returning h, ct0 and the hamming weight), with the two rejection `if`s staying
-  in `attempt`. The probes then call these directly via a `#[path]` include of `sign.rs` (which would also pull
-  in `sampling.rs` and `api`-free dependencies only if `sign.rs` is split so that `attempt` lives elsewhere).
+- `sign::attempt` itself (the two rejection `if`s, `expand_mask`, the commitment hash) is not probed; the probes
+  call the `response` and `hint_step` pieces it is built from, so the analyzed code is the production code.
 - Not probed: `expand_mask` (bit-unpack of secret y from XOF output; recommended once `Shake` is probed as a
   whole, since the squeeze path takes a secret rho'), `sk_decode` consumers, Shake absorb/squeeze with secret
   input (only `keccak_f1600` is probed), `use_hint`/verify (public data), zeroization (outside this tool).

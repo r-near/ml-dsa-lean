@@ -10,6 +10,69 @@ use crate::params::Params;
 use crate::rounding::{make_hint, poly_high_bits, poly_low_bits, vec_infinity_norm};
 use crate::sampling::{expand_a, expand_mask, sample_in_ball};
 
+/// Steps 18–21: ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩, z, w − ⟨⟨cs2⟩⟩ and r0. Returns (z, w − ⟨⟨cs2⟩⟩, r0).
+#[allow(clippy::type_complexity)]
+pub(crate) fn response<const K: usize, const L: usize>(
+    p: &Params,
+    y: &[[u32; 256]; L],
+    c_hat: &[u32; 256],
+    s1_hat: &[[u32; 256]; L],
+    s2_hat: &[[u32; 256]; K],
+    w: &[[u32; 256]; K],
+) -> ([[u32; 256]; L], [[u32; 256]; K], [[u32; 256]; K]) {
+    // 18–19: ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩
+    let cs1 = scalar_vector_ntt_inverse::<L>(c_hat, s1_hat);
+    let cs2 = scalar_vector_ntt_inverse::<K>(c_hat, s2_hat);
+    // 20: z ← y + ⟨⟨cs1⟩⟩
+    let mut z = [[0u32; 256]; L];
+    let mut i = 0;
+    while i < L {
+        let mut j = 0;
+        while j < 256 {
+            z[i][j] = add(y[i][j], cs1[i][j]);
+            j += 1;
+        }
+        i += 1;
+    }
+    // 21: r0 ← LowBits(w − ⟨⟨cs2⟩⟩)
+    let mut w_cs2 = [[0u32; 256]; K];
+    let mut r0 = [[0u32; 256]; K];
+    let mut i = 0;
+    while i < K {
+        w_cs2[i] = sub_poly(&w[i], &cs2[i]);
+        r0[i] = poly_low_bits(p, &w_cs2[i]);
+        i += 1;
+    }
+    (z, w_cs2, r0)
+}
+
+/// Steps 25–26: ⟨⟨ct0⟩⟩, h = MakeHint(−⟨⟨ct0⟩⟩, w − ⟨⟨cs2⟩⟩ + ⟨⟨ct0⟩⟩) and the number of ones in h.
+/// Returns (h, ⟨⟨ct0⟩⟩, ones).
+#[allow(clippy::type_complexity)]
+pub(crate) fn hint_step<const K: usize>(
+    p: &Params,
+    c_hat: &[u32; 256],
+    t0_hat: &[[u32; 256]; K],
+    w_cs2: &[[u32; 256]; K],
+) -> ([[bool; 256]; K], [[u32; 256]; K], usize) {
+    // 25: ⟨⟨ct0⟩⟩ ← NTT⁻¹(ĉ ∘ t̂0)
+    let ct0 = scalar_vector_ntt_inverse::<K>(c_hat, t0_hat);
+    // 26: h ← MakeHint(−⟨⟨ct0⟩⟩, w − ⟨⟨cs2⟩⟩ + ⟨⟨ct0⟩⟩)
+    let mut hint = [[false; 256]; K];
+    let mut ones = 0;
+    let mut i = 0;
+    while i < K {
+        let mut j = 0;
+        while j < 256 {
+            hint[i][j] = make_hint(p, neg(ct0[i][j]), add(w_cs2[i][j], ct0[i][j]));
+            ones += hint[i][j] as usize;
+            j += 1;
+        }
+        i += 1;
+    }
+    (hint, ct0, ones)
+}
+
 /// One iteration of the loop body, steps 11–29. `None` is the ⊥ outcome.
 #[allow(clippy::type_complexity)]
 fn attempt<const K: usize, const L: usize>(
@@ -46,48 +109,14 @@ fn attempt<const K: usize, const L: usize>(
     h.squeeze(&mut c_tilde[..p.c_tilde_len]);
     // 16–17: c ← SampleInBall(c̃); ĉ ← NTT(c)
     let c_hat = ntt(&sample_in_ball(p, &c_tilde[..p.c_tilde_len]));
-    // 18–19: ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩
-    let cs1 = scalar_vector_ntt_inverse::<L>(&c_hat, s1_hat);
-    let cs2 = scalar_vector_ntt_inverse::<K>(&c_hat, s2_hat);
-    // 20: z ← y + ⟨⟨cs1⟩⟩
-    let mut z = [[0u32; 256]; L];
-    let mut i = 0;
-    while i < L {
-        let mut j = 0;
-        while j < 256 {
-            z[i][j] = add(y[i][j], cs1[i][j]);
-            j += 1;
-        }
-        i += 1;
-    }
-    // 21: r0 ← LowBits(w − ⟨⟨cs2⟩⟩)
-    let mut w_cs2 = [[0u32; 256]; K];
-    let mut r0 = [[0u32; 256]; K];
-    let mut i = 0;
-    while i < K {
-        w_cs2[i] = sub_poly(&w[i], &cs2[i]);
-        r0[i] = poly_low_bits(p, &w_cs2[i]);
-        i += 1;
-    }
+    // 18–21: z, w − ⟨⟨cs2⟩⟩, r0
+    let (z, w_cs2, r0) = response::<K, L>(p, &y, &c_hat, s1_hat, s2_hat, &w);
     // 23: reject on ‖z‖∞ ≥ γ1 − β or ‖r0‖∞ ≥ γ2 − β
     if vec_infinity_norm(&z) >= p.gamma1 - p.beta || vec_infinity_norm(&r0) >= p.gamma2 - p.beta {
         return None;
     }
-    // 25: ⟨⟨ct0⟩⟩ ← NTT⁻¹(ĉ ∘ t̂0)
-    let ct0 = scalar_vector_ntt_inverse::<K>(&c_hat, t0_hat);
-    // 26: h ← MakeHint(−⟨⟨ct0⟩⟩, w − ⟨⟨cs2⟩⟩ + ⟨⟨ct0⟩⟩)
-    let mut hint = [[false; 256]; K];
-    let mut ones = 0;
-    let mut i = 0;
-    while i < K {
-        let mut j = 0;
-        while j < 256 {
-            hint[i][j] = make_hint(p, neg(ct0[i][j]), add(w_cs2[i][j], ct0[i][j]));
-            ones += hint[i][j] as usize;
-            j += 1;
-        }
-        i += 1;
-    }
+    // 25–26: ct0, h, number of ones
+    let (hint, ct0, ones) = hint_step::<K>(p, &c_hat, t0_hat, &w_cs2);
     // 28: reject on ‖ct0‖∞ ≥ γ2 or more than ω ones in h
     if vec_infinity_norm(&ct0) >= p.gamma2 || ones > p.omega {
         return None;

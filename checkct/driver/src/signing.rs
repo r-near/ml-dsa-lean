@@ -1,18 +1,17 @@
-//! Signing-stage probes, composed from the public building blocks exactly as `sign::attempt` does
-//! (FIPS 204 Algorithm 7 steps 18-21, 23, 25-26, 28). `attempt` itself is private, so these are
-//! re-compositions, not the production code path; see README for the recommended `response` /
-//! `hint_step` split. The two rejection branches are not probed: they are accepted public-outcome
-//! branches. Only the norms feeding them are.
+//! Signing-stage probes. They call the production `sign::response` (FIPS 204 Algorithm 7 steps 18-21)
+//! and `sign::hint_step` (steps 25-26) directly; the norms that feed the rejection branches (steps 23 and
+//! 28) are computed here on the returned vectors with the production `vec_infinity_norm`. The two
+//! rejection branches themselves are not probed: they are accepted public-outcome branches.
 use crate::probes::secret_vec;
 use crate::rng::PublicRng;
-use crate::{field, ntt, params, rounding};
+use crate::{field, params, rounding, sign};
 use checkct_macros::checkct;
 use core::hint::black_box;
 use params::Params;
 
 type Vecn<const N: usize> = [[u32; 256]; N];
 
-/// Steps 18-21: cs1, cs2, z = y + cs1, r0 = LowBits(w - cs2), plus both norms.
+/// Steps 18-21 plus both norms.
 fn response<const K: usize, const L: usize>(p: &Params) {
     let y: Vecn<L> = secret_vec();
     let w: Vecn<K> = secret_vec();
@@ -20,47 +19,16 @@ fn response<const K: usize, const L: usize>(p: &Params) {
     let s2_hat: Vecn<K> = secret_vec();
     // c is public (derived from the public challenge hash), so c_hat is public.
     let c_hat = secret_public_poly();
-    let cs1 = ntt::scalar_vector_ntt_inverse::<L>(&c_hat, &s1_hat);
-    let cs2 = ntt::scalar_vector_ntt_inverse::<K>(&c_hat, &s2_hat);
-    let mut z = [[0u32; 256]; L];
-    let mut i = 0;
-    while i < L {
-        let mut j = 0;
-        while j < 256 {
-            z[i][j] = field::add(y[i][j], cs1[i][j]);
-            j += 1;
-        }
-        i += 1;
-    }
-    let mut w_cs2 = [[0u32; 256]; K];
-    let mut r0 = [[0u32; 256]; K];
-    let mut i = 0;
-    while i < K {
-        w_cs2[i] = ntt::sub_poly(&w[i], &cs2[i]);
-        r0[i] = rounding::poly_low_bits(p, &w_cs2[i]);
-        i += 1;
-    }
+    let (z, w_cs2, r0) = sign::response::<K, L>(p, &y, &c_hat, &s1_hat, &s2_hat, &w);
     black_box((rounding::vec_infinity_norm(&z), rounding::vec_infinity_norm(&r0), z, w_cs2));
 }
 
-/// Steps 25-26 and the ct0 norm: ct0, h = MakeHint(-ct0, w - cs2 + ct0), hamming weight.
+/// Steps 25-26 plus the ct0 norm.
 fn hint_step<const K: usize>(p: &Params) {
     let w_cs2: Vecn<K> = secret_vec();
     let t0_hat: Vecn<K> = secret_vec();
     let c_hat = secret_public_poly();
-    let ct0 = ntt::scalar_vector_ntt_inverse::<K>(&c_hat, &t0_hat);
-    let mut ones = 0usize;
-    let mut hint = [[false; 256]; K];
-    let mut i = 0;
-    while i < K {
-        let mut j = 0;
-        while j < 256 {
-            hint[i][j] = rounding::make_hint(p, field::neg(ct0[i][j]), field::add(w_cs2[i][j], ct0[i][j]));
-            ones += hint[i][j] as usize;
-            j += 1;
-        }
-        i += 1;
-    }
+    let (hint, ct0, ones) = sign::hint_step::<K>(p, &c_hat, &t0_hat, &w_cs2);
     black_box((rounding::vec_infinity_norm(&ct0), ones, hint));
 }
 

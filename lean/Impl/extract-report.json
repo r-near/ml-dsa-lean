@@ -30,7 +30,7 @@
   "ml_dsa_verified::api::verify_87",
   "ml_dsa_verified::api::verify_internal_87"
  ],
- "src_sha256": "2c443b4d2d48b4b4381a4c10ca5cf647fac7fae9fc99db3287af1407836be1be",
+ "src_sha256": "2ca529503743125acf85a8610a0d7d9e4f7beaa6b54b8332b1d295f2547d0bd2",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -39,7 +39,7 @@
   "lean": "v4.31.0"
  },
  "rename_changes": 0,
- "llbc_fun_decls": 133,
+ "llbc_fun_decls": 137,
  "llbc_opaque_funs": [
   "core::array::{impl}::index",
   "core::array::{impl}::index_mut",
@@ -69,10 +69,10 @@
  "aeneas_name_clashes": 0,
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
- "lean_defs": 272,
+ "lean_defs": 276,
  "lake_build": "ok",
  "axiom_gate": "ok",
  "axioms_summary": [
-  "checked: 276  reported: 276  axioms used: ['Classical.choice', 'Quot.sound', 'propext']"
+  "checked: 280  reported: 280  axioms used: ['Classical.choice', 'Quot.sound', 'propext']"
  ]
 }
