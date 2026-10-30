@@ -45,6 +45,10 @@ structure StdParams (sp : Spec.Params) : Prop where
   kl_lt : sp.k + sp.ℓ < 256
   /-- `k ≤ 2^20`: the loop counters of the `Steps` module (compute `t`, `w`, hint steps). -/
   k_le : sp.k ≤ 2 ^ 20
+  /-- `k ≤ 8`: Verify keeps `w1Encode(w′₁)` in a fixed `8 · 192`-byte buffer (Verify). -/
+  k_le_8 : sp.k ≤ 8
+  /-- `ℓ ≥ 1`: Sign's κ loop tests `κ + ℓ − 1 ≤ 2¹⁶ − 1` and must advance (Sign). -/
+  ell_pos : 1 ≤ sp.ℓ
 
 namespace StdParams
 variable {sp : Spec.Params}
@@ -91,15 +95,15 @@ end StdParams
 
 theorem stdParams_44 : StdParams Spec.ML_DSA_44 :=
   ⟨by decide +kernel, Or.inl (by decide +kernel), Or.inl (by decide +kernel), by decide +kernel,
-    Or.inl (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel⟩
+    Or.inl (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
 
 theorem stdParams_65 : StdParams Spec.ML_DSA_65 :=
   ⟨by decide +kernel, Or.inr (by decide +kernel), Or.inr (by decide +kernel), by decide +kernel,
-    Or.inr (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel⟩
+    Or.inr (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
 
 theorem stdParams_87 : StdParams Spec.ML_DSA_87 :=
   ⟨by decide +kernel, Or.inr (by decide +kernel), Or.inr (by decide +kernel), by decide +kernel,
-    Or.inl (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel⟩
+    Or.inl (by decide +kernel), by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel, by decide +kernel⟩
 
 /-! ## The canonical bundle -/
 
