@@ -103,7 +103,8 @@ Not covered by any theorem:
   `keygen_internal` with wrong-length slices (E-1). Without the feature the public surface is `api` only, and every
   `api` function has a theorem; they pass fixed-size arrays and consistent parameters.
 - The `zeroize` build (the proved code is extracted with it off; the wipes come after the outputs are written) and
-  stack use (Sign for ML-DSA-87 keeps roughly 60 KB of arrays on the stack).
+  stack use. Measured worst case (`tools/stack/`, release, statically and by stack painting): Sign 115/167/239 KB,
+  Verify 59/87/131 KB, KeyGen 58/90/134 KB for 44/65/87 on x86_64; other targets within 4%. The earlier "60 KB" was wrong.
 
 Trusted base: spec fidelity of `lean/Spec` (three independent reviews, ACVP and Wycheproof cross-checks, and a component
 differential against VCVio's independent formalization), Charon/Aeneas translation
@@ -175,7 +176,7 @@ Spec-level `Verify(pk, M, Sign(sk, M)) = true`, transferred through the three to
 | Randomized differential | 200 keygen + 200 sign/verify (M′ up to 10 kB, random prefix split) + 2,000 sign per set; hint-region differential 30k per set | `tests/random_diff.rs`, `tests/leaf.rs` |
 | zeroize | optional, off by default and during extraction; wipes sign/keygen secrets | `src/{sign,keygen}.rs` |
 | Extraction (current) | 278 defs, gate clean, standard axioms on all defs | `lean/Impl/extract-report.json` |
-| Constant time (BINSEC) | 39 probes × 3 targets, signing steps on production code: x86_64 and thumbv7em all secure; riscv32imac 32 secure, 6 unknown (signing-step timeouts), 1 probe artifact; mask-select leak fixed with a RISC-V-only barrier (ISSUES CT-1) | `checkct/` |
+| Constant time (BINSEC) | 74 probes per target, release builds: every function that touches secret data in KeyGen and Sign, including `sk_is_well_formed`, ExpandS, NTT of s1, t, Power2Round, skEncode/Decode, the Sign steps, plus a whole-`sign_internal` census and a positive control (insecure everywhere, as it should be). "Secure" means BINSEC explored the compiled probe to completion and found no secret-dependent branch, memory address or division operand, for all secret values; the lifter and constant instruction latency are trusted. Results at HEAD: x86_64 64 secure / 3 insecure / 4 unknown, thumbv7em 69/2/0, riscv32imac 66/3/2; the expected insecure ones are RejBoundedPoly (branches on its public accept pattern) and the standalone riscv `ct_lt_mask`. **One real leak: CT-2** (Decompose edge select on x86_64), fix in progress. AArch64 (own script, BINSEC 0.11.3): scalar build all secure; the NEON build's vectorized probes can't be lifted (`umax`/`umin`). The whole-Sign census never completes (it reaches public sampler branches) | `checkct/` |
 | Bench (box, release) | keygen 0.57–0.62×, sign 1.10–1.21×, verify 2.2–2.9× upstream. Verify re-runs ExpandA per call; upstream's `VerifyingKey` caches Â | `examples/bench.rs` |
 | Aeneas translation (differential) | the extracted `Impl` compiled and run against the native Rust on the same inputs: 345,360 cases, 100% agreement (Keccak, field, NTT, rounding, samplers, codecs, and the full public API incl. 225 ACVP-derived cases); 4 injected bugs all detected | `scripts/impl-eval.sh`, `lean/SpecTests/ImplEval.lean`, `examples/impl_eval.rs` |
 | Wycheproof (C2SP, d17cc89) | Rust: 1063 vectors pass, 0 fail, 6 known (E-4: out-of-range secret keys), 69 skipped (external-μ only, out of scope); Lean spec: 928/928 agree (631 verify, 236 sign, 61 keygen) | `tests/wycheproof.rs`, `lean/SpecTests/Wycheproof.lean` |

@@ -15,6 +15,14 @@ Bugs found, tool problems and errata, newest last. Each entry: ID, date, what, i
   standalone `ct_lt_mask` probe, whose inputs the probe masks below 2^63 so LLVM folds the compare. Every
   in-crate caller (Decompose, HighBits, LowBits, MakeHint, the norms) is secure on riscv32imac.
 
+- **CT-2 (2026-10-30): Decompose's edge select branches on x86_64.** BINSEC found `hint_step_65` insecure (and
+  `hint_step_44` with vectorization off, and the whole-Sign census at the same line): LLVM turns the
+  `diff == q − 1` mask select in `rounding::decompose` into `cmp; je` around the multiply that computes r1. Decompose
+  runs on secret data in Sign (LowBits(w − cs2), MakeHint). Earlier x86_64 runs reported the per-function probes
+  secure; the leak appears only in the inlined signing-step contexts. Fix in progress: an all-target `black_box`
+  barrier on the edge mask (`checkct/decompose-edge-barrier.patch`), identity under `cfg(miri)` so the proved code
+  is unchanged in meaning.
+
 ## Tool problems
 
 Known from the campaign (see docs/BLOCKERS.md and docs/SURVEY.md): B-F1 (nested loop reading freshly written outer
