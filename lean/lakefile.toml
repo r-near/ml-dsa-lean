@@ -13,3 +13,10 @@ subDir = "backends/lean"
 name = "Impl"
 
 # Spec and Proofs libs are added here when their first file lands.
+
+# FIPS 204 specification (readable transcription) and refinement proofs.
+[[lean_lib]]
+name = "Spec"
+
+[[lean_lib]]
+name = "Proofs"

@@ -1,0 +1,6 @@
+# Headline theorems, one fully qualified name per line (read by scripts/check-axioms.sh).
+# Each must depend only on propext, Classical.choice, Quot.sound.
+import Proofs.NTT
+import Proofs.NTTInverse
+Proofs.ntt_correct
+Proofs.ntt_inverse_correct
