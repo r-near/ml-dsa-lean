@@ -1,0 +1,14 @@
+[package]
+name = "x5_bench"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+x4_ntt = { path = "../x4_ntt" }
+x5_shim = { path = "../x5_shim", features = ["real"] }
+
+[profile.release]
+debug = false
+
+[workspace]

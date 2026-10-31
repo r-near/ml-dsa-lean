@@ -1,0 +1,87 @@
+== real crate (x86-64-v3): statistics for the NTT/field functions
+function                                              insns   ymm   xmm vpmuludq vpmuldq vpmulld mulq/mulx  imul shuf/perm
+_RINvNtCshG41ZLd2CCQ_15ml_dsa_verified3ntt17matrix_v   1500  1120    84        8       0       0        32    32        24
+_RINvNtCshG41ZLd2CCQ_15ml_dsa_verified3ntt17matrix_v   1862  1398   105       10       0       0        40    40        30
+_RINvNtCshG41ZLd2CCQ_15ml_dsa_verified3ntt17matrix_v   2588  1954   147       14       0       0        56    56        42
+_RINvNtCshG41ZLd2CCQ_15ml_dsa_verified3ntt25scalar_v    479    82    84        8       0       0        32    32        24
+_RINvNtCshG41ZLd2CCQ_15ml_dsa_verified3ntt25scalar_v    708   122   126       12       0       0        48    48        36
+_RINvNtCshG41ZLd2CCQ_15ml_dsa_verified3ntt25scalar_v    936   162   168       16       0       0        64    64        48
+_RNvNtCshG41ZLd2CCQ_15ml_dsa_verified3ntt11ntt_inver   4420  1388  1133       74       0       0       296   296       461
+_RNvNtCshG41ZLd2CCQ_15ml_dsa_verified3ntt3ntt          5588  1679  1415      100       0       0       400   400       530
+_RNvNtCshG41ZLd2CCQ_15ml_dsa_verified8sampling12rej_    165     7     1        0       0       0         0     0         0
+== x4_ntt (x86-64-v3): statistics
+function                                              insns   ymm   xmm vpmuludq vpmuldq vpmulld mulq/mulx  imul shuf/perm
+_RNvCsf890bpL23UH_6x4_ntt12ntt_dispatch                2394  1929   378      128       0     128         0     0       428
+_RNvCsf890bpL23UH_6x4_ntt8has_avx2                       36     0     0        0       0       0         0     0         0
+_RNvNtCsf890bpL23UH_6x4_ntt3ntt11ntt_inverse           4420  1388  1133       74       0       0       296   296       461
+_RNvNtCsf890bpL23UH_6x4_ntt3ntt3ntt                    5588  1679  1415      100       0       0       400   400       530
+_RNvNtCsf890bpL23UH_6x4_ntt4fold11ntt_inverse          2105  1636   387       60       0       0         0     0       247
+_RNvNtCsf890bpL23UH_6x4_ntt4fold12multiply_ntt           87    64     0       14       0       0         0     0         0
+_RNvNtCsf890bpL23UH_6x4_ntt4fold16ntt_inverse_avx2     2105  1636   387       60       0       0         0     0       247
+_RNvNtCsf890bpL23UH_6x4_ntt4fold17multiply_ntt_avx2      87    64     0       14       0       0         0     0         0
+_RNvNtCsf890bpL23UH_6x4_ntt4fold3ntt                   2319  1855   395      314       4       0         0     0       230
+_RNvNtCsf890bpL23UH_6x4_ntt4fold6layer4                 507   424    74       56       0       0         0     0        86
+_RNvNtCsf890bpL23UH_6x4_ntt4fold7layer16                157   146     1       28       0       0         0     0         0
+_RNvNtCsf890bpL23UH_6x4_ntt4fold8layer128                75    70     0       12       0       0         0     0         0
+_RNvNtCsf890bpL23UH_6x4_ntt4fold8ntt_avx2              2319  1855   395      314       4       0         0     0       230
+_RNvNtCsf890bpL23UH_6x4_ntt4lazy13ntt_lazy_avx2         926   764   119       58     116       0         0     0       240
+_RNvNtCsf890bpL23UH_6x4_ntt4lazy3ntt                    983   803   119       58     116       4         0     0       240
+_RNvNtCsf890bpL23UH_6x4_ntt4lazy6layer4                 311   221    81        8      16       0         0     0       141
+_RNvNtCsf890bpL23UH_6x4_ntt4lazy7layer16                 53    41     2        4       8       0         0     0         4
+_RNvNtCsf890bpL23UH_6x4_ntt4lazy8layer128                28    22     1        2       4       0         0     0         2
+_RNvNtCsf890bpL23UH_6x4_ntt4lazy8ntt_avx2               983   803   119       58     116       4         0     0       240
+_RNvNtCsf890bpL23UH_6x4_ntt4lazy8ntt_lazy               926   764   119       58     116       0         0     0       240
+_RNvNtCsf890bpL23UH_6x4_ntt5mont212multiply_ntt          61    37     1       12       0       0         0     0         1
+_RNvNtCsf890bpL23UH_6x4_ntt5mont217multiply_ntt_avx2     61    37     1       12       0       0         0     0         1
+_RNvNtCsf890bpL23UH_6x4_ntt5origl17ntt_in_tf_wrapper      1     0     0        0       0       0         0     0         0
+_RNvNtCsf890bpL23UH_6x4_ntt5origl6layer4                608   243   159        8       0       0        32    32       110
+_RNvNtCsf890bpL23UH_6x4_ntt5origl7layer16              1602   474   321       32       0       0       128   128        96
+_RNvNtCsf890bpL23UH_6x4_ntt5origl8layer128              122    32    21        2       0       0         8     8         6
+_RNvNtCsf890bpL23UH_6x4_ntt5shoup10ntt_blocks          2346  1929   378      128       0     128         0     0       428
+_RNvNtCsf890bpL23UH_6x4_ntt5shoup11ntt_inverse         2037  1594   379      104       0     104         0     0       403
+_RNvNtCsf890bpL23UH_6x4_ntt5shoup15ntt_blocks_avx2     2346  1929   378      128       0     128         0     0       428
+_RNvNtCsf890bpL23UH_6x4_ntt5shoup16ntt_inverse_avx2    2037  1594   379      104       0     104         0     0       403
+_RNvNtCsf890bpL23UH_6x4_ntt5shoup3ntt                  2346  1929   378      128       0     128         0     0       428
+_RNvNtCsf890bpL23UH_6x4_ntt5shoup8ntt_avx2             2346  1929   378      128       0     128         0     0       428
+== loop-vectorizer remarks for the real crate (src/ntt.rs, src/field.rs), deduplicated
+      1 note: src/ntt.rs:93:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:54:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:49:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:37:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:32:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:125:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 4)
+      1 note: src/ntt.rs:115:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 4)
+      1 note: src/ntt.rs:104:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/field.rs:66:5 slp-vectorizer (missed): List vectorization was possible but not beneficial with cost 0 >= 0
+      1 note: src/field.rs:66:5 slp-vectorizer (missed): Cannot SLP vectorize list: vectorization was impossible with available vectorization factors
+      1 note: src/field.rs:66:16 slp-vectorizer (missed): List vectorization was possible but not beneficial with cost 0 >= 0
+      1 note: src/field.rs:66:16 slp-vectorizer (missed): Cannot SLP vectorize list: vectorization was impossible with available vectorization factors
+      1 note: src/field.rs:12:9 slp-vectorizer (missed): List vectorization was possible but not beneficial with cost 0 >= 0
+      1 note: src/field.rs:12:9 slp-vectorizer (missed): Cannot SLP vectorize list: vectorization was impossible with available vectorization factors
+      1 note: src/field.rs:12:5 slp-vectorizer (missed): List vectorization was possible but not beneficial with cost 0 >= 0
+== loop-vectorizer remarks for x4_ntt
+      1 note: src/shoup.rs:93:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/shoup.rs:76:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/shoup.rs:63:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/shoup.rs:46:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/shoup.rs:40:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/shoup.rs:27:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/shoup.rs:21:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/shoup.rs:158:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/origl.rs:8:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/origl.rs:13:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:93:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:54:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:49:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:37:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/ntt.rs:32:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/mont2.rs:28:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/lazy.rs:62:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 4)
+      1 note: src/lazy.rs:25:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/lazy.rs:20:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/lazy.rs:20:11 loop-vectorize (missed): the cost-model indicates that vectorization is not beneficial
+      1 note: src/lazy.rs:20:11 loop-vectorize (missed): the cost-model indicates that interleaving is not beneficial
+      1 note: src/fold.rs:65:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/fold.rs:60:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/fold.rs:47:15 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)
+      1 note: src/fold.rs:42:11 loop-vectorize (success): vectorized loop (vectorization width: 8, interleaved count: 1)

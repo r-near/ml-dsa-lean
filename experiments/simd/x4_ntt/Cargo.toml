@@ -1,0 +1,12 @@
+[package]
+name = "x4_ntt"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+
+[profile.release]
+debug = false
+
+[workspace]

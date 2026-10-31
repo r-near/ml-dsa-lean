@@ -1,0 +1,1291 @@
+charon exit: 0
+aeneas exit: 0
+=== extract-mini rc=0
+=== aeneas problems
+[Info ] Creating missing directory: $HOME/rx/scratch/simd-x5/lean/Impl
+[Info ] Total execution time: 1.338363 seconds
+=== charon problems
+=== llbc attrs
+EXTERN core::clone::Clone::clone_from body= None
+EXTERN core::cmp::PartialEq::ne body= None
+EXTERN core::cmp::PartialOrd::lt body= None
+EXTERN core::cmp::PartialOrd::le body= None
+EXTERN core::cmp::PartialOrd::gt body= None
+EXTERN core::cmp::PartialOrd::ge body= None
+EXTERN core::iter::range::Step::forward body= None
+EXTERN core::iter::range::Step::forward_unchecked body= None
+EXTERN core::iter::range::Step::backward body= None
+EXTERN core::iter::range::Step::backward_unchecked body= None
+x5_shim::kernel_shim::ntt_lazy_vec {"attributes": [{"DocComment": " The whole lazy forward transform (no normalization): all eight layers."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 6, "beg": {"line": 127, "col": 0}, "end": {"line": 127, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::kernel_shim::ntt_vec {"attributes": [{"DocComment": " Canonical in, canonical out: transform, then normalize with the scalar routine (LLVM vectorizes that loop)."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 6, "beg": {"line": 149, "col": 0}, "end": {"line": 149, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::set1_epi32 {"attributes": [{"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 11, "col": 0}, "end": {"line": 11, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::setr_epi32 {"attributes": [{"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 16, "col": 0}, "end": {"line": 16, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::add_epi32 {"attributes": [{"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 21, "col": 0}, "end": {"line": 21, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::sub_epi32 {"attributes": [{"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 32, "col": 0}, "end": {"line": 32, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::mullo_epi32 {"attributes": [{"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 43, "col": 0}, "end": {"line": 43, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::mul_epi32 {"attributes": [{"DocComment": " Signed 32 x 32 -> 64 multiply of the even dwords (0, 2, 4, 6); result qword k is the product of dwords 2k."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 55, "col": 0}, "end": {"line": 55, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::and_si256 {"attributes": [{"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 68, "col": 0}, "end": {"line": 68, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::srli_epi64 {"attributes": [{"DocComment": " Logical right shift of each qword by `IMM` bits (zero when `IMM > 63`)."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 80, "col": 0}, "end": {"line": 80, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::srai_epi32 {"attributes": [{"DocComment": " Arithmetic right shift of each dword by `IMM` bits (sign fill when `IMM > 31`)."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 97, "col": 0}, "end": {"line": 97, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::cmpgt_epi32 {"attributes": [{"DocComment": " Signed compare greater-than: all ones where a > b."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 110, "col": 0}, "end": {"line": 110, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::shuffle_epi32 {"attributes": [{"DocComment": " Within each 128-bit half, dword i of the result is dword `(MASK >> 2i) & 3` of the same half of `a`."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 122, "col": 0}, "end": {"line": 122, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::permute4x64_epi64 {"attributes": [{"DocComment": " Qword j of the result is qword `(IMM >> 2j) & 3` of `a` (crosses the 128-bit halves)."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 139, "col": 0}, "end": {"line": 139, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::blend_epi32 {"attributes": [{"DocComment": " Dword i of the result comes from `b` if bit i of `IMM` is set, else from `a`."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 153, "col": 0}, "end": {"line": 153, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::permutevar8x32_epi32 {"attributes": [{"DocComment": " Dword i of the result is dword `idx[i] & 7` of `a` (crosses the 128-bit halves)."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 165, "col": 0}, "end": {"line": 165, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::unpacklo_epi64 {"attributes": [{"DocComment": " Interleave the low qword of each 128-bit half of `a` and `b`."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 177, "col": 0}, "end": {"line": 177, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::unpackhi_epi64 {"attributes": [{"DocComment": " Interleave the high qword of each 128-bit half of `a` and `b`."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 183, "col": 0}, "end": {"line": 183, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::permute2x128_si256 {"attributes": [{"DocComment": " Low half from `IMM & 0xF`, high half from `(IMM >> 4) & 0xF`: 0 = a.lo, 1 = a.hi, 2 = b.lo, 3 = b.hi, bit 3 = zero."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 199, "col": 0}, "end": {"line": 199, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::loadu_si256 {"attributes": [{"DocComment": " Load eight lanes from `mem[at..at + 8]` (the model of `_mm256_loadu_si256` on a slice-backed polynomial)."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 207, "col": 0}, "end": {"line": 207, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::shim::storeu_si256 {"attributes": [{"DocComment": " Store eight lanes to `mem[at..at + 8]` (the model of `_mm256_storeu_si256`)."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 213, "col": 0}, "end": {"line": 213, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::kernel_shim::layer_wide {"attributes": [{"DocComment": " Layers with LEN >= 8: whole registers, butterfly between register j and register j + LEN."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 6, "beg": {"line": 35, "col": 0}, "end": {"line": 35, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::kernel_shim::layer4 {"attributes": [{"DocComment": " LEN = 4: one block per register; partner halves are brought together with `permute2x128`."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 6, "beg": {"line": 57, "col": 0}, "end": {"line": 57, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::kernel_shim::layer2 {"attributes": [{"DocComment": " LEN = 2: two blocks per register (one per 128-bit half, each with its own zeta)."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 6, "beg": {"line": 74, "col": 0}, "end": {"line": 74, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::kernel_shim::layer1 {"attributes": [{"DocComment": " LEN = 1: four blocks per register, one zeta per pair of lanes."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 6, "beg": {"line": 96, "col": 0}, "end": {"line": 96, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+x5_shim::kernel_shim::normalize_one {"attributes": [{"DocComment": " [0, q) representative of the lazy value x, for |x| <= 2^30 (copy of `lazy::normalize_one` in x4_ntt)."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 6, "beg": {"line": 141, "col": 0}, "end": {"line": 141, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+EXTERN core::num::{impl}::wrapping_add body= None
+EXTERN core::num::{impl}::wrapping_sub body= None
+EXTERN core::num::{impl}::wrapping_mul body= None
+x5_shim::shim::half {"attributes": [{"Builtin": {"Inline": ["Always", {"data": {"file_id": 7, "beg": {"line": 188, "col": 0}, "end": {"line": 188, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": false} body= present
+x5_shim::kernel_shim::zeta_vecs {"attributes": [{"Builtin": {"Inline": ["Always", {"data": {"file_id": 6, "beg": {"line": 29, "col": 0}, "end": {"line": 29, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": false} body= present
+x5_shim::kernel_shim::montmul {"attributes": [{"DocComment": " Lane-wise `lazy::mont(z * b)` for a broadcast zeta `z` and `zq = z * QINV mod 2^32` (also broadcast): signed"}, {"DocComment": " Montgomery product z*b*2^-32 in (-(q/2 + |zb|/2^32), +...). Only even-lane 32 x 32 -> 64 multiplies exist, so the odd"}, {"DocComment": " lanes are moved down with `shuffle_epi32` and the results merged with `blend_epi32`."}, {"Builtin": {"Inline": ["Always", {"data": {"file_id": 6, "beg": {"line": 15, "col": 0}, "end": {"line": 15, "col": 17}}, "generated_from_span": null}]}}], "inline": "Always", "rename": null, "public": true} body= present
+EXTERN core::num::{impl}::wrapping_mul body= None
+x5_shim::kernel_shim::Q {"attributes": [], "inline": null, "rename": null, "public": false} body= present
+x5_shim::tables::ZETAS_MONT {"attributes": [{"DocComment": " ZETAS[k] * 2^32 mod q, centered into [-(q-1)/2, (q-1)/2]."}], "inline": null, "rename": null, "public": true} body= present
+x5_shim::tables::QINV {"attributes": [{"DocComment": " q^-1 mod 2^32 (as the i32 bit pattern used by Montgomery reduction)."}], "inline": null, "rename": null, "public": true} body= present
+=== Funs.lean
+-- THIS FILE WAS AUTOMATICALLY GENERATED BY AENEAS
+-- [x5_shim]: function definitions
+import Aeneas
+import Impl.Types
+import Impl.FunsExternal
+open Aeneas Aeneas.Std RustM ControlFlow Error
+set_option linter.dupNamespace false
+set_option linter.hashCommand false
+set_option linter.unusedVariables false
+set_option linter.style.whitespace false
+set_option linter.style.setOption false
+set_option linter.style.longLine false
+
+/- You can set the `maxHeartbeats` value with the `-max-heartbeats` CLI option -/
+set_option maxHeartbeats 1000000
+
+/- You can set the `maxRecDepth` value with the `-max-recdepth` CLI option -/
+set_option maxRecDepth 2048
+
+/- You can remove the following line by using the CLI option `-all-computable`: -/
+noncomputable section
+
+namespace Impl
+
+/-- [x5_shim::kernel_shim::Q]
+    Source: 'src/kernel.rs', lines 10:0-10:25 -/
+@[global_simps, irreducible] def kernel_shim.Q : Std.U32 := 8380417#u32
+
+/-- [x5_shim::shim::blend_epi32]: loop body 0:
+    Source: 'src/shim.rs', lines 157:4-160:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.blend_epi32_loop.body
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if i < 8#usize
+  then
+    let i1 ← IMM >>> i
+    let i2 ← lift (i1 &&& 1#i32)
+    let i3 ←
+      if i2 = 1#i32
+      then Array.index_usize b i
+      else Array.index_usize a i
+    let a1 ← Array.update r i i3
+    let i4 ← i + 1#usize
+    ok (cont (a1, i4))
+  else ok (done r)
+
+/-- [x5_shim::shim::blend_epi32]: loop 0:
+    Source: 'src/shim.rs', lines 157:4-160:5
+    Visibility: public -/
+@[rust_loop]
+def shim.blend_epi32_loop
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, i1) => shim.blend_epi32_loop.body IMM a b r1 i1)
+    (r, i)
+
+/-- [x5_shim::shim::blend_epi32]:
+    Source: 'src/shim.rs', lines 154:0-162:1
+    Visibility: public -/
+def shim.blend_epi32
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.blend_epi32_loop IMM a b r 0#usize
+
+/-- [x5_shim::shim::shuffle_epi32]: loop body 1:
+    Source: 'src/shim.rs', lines 128:8-132:9
+    Visibility: public -/
+@[rust_loop_body]
+def shim.shuffle_epi32_loop0_loop0.body
+  (MASK : Std.I32) (a : Array Std.U32 8#usize) (h : Std.Usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if i < 4#usize
+  then
+    let i1 ← 2#usize * i
+    let i2 ← MASK >>> i1
+    let i3 ← lift (i2 &&& 3#i32)
+    let sel ← lift (IScalar.hcast .Usize i3)
+    let i4 ← 4#usize * h
+    let i5 ← i4 + sel
+    let i6 ← Array.index_usize a i5
+    let i7 ← i4 + i
+    let a1 ← Array.update r i7 i6
+    let i8 ← i + 1#usize
+    ok (cont (a1, i8))
+  else ok (done r)
+
+/-- [x5_shim::shim::shuffle_epi32]: loop 1:
+    Source: 'src/shim.rs', lines 128:8-132:9
+    Visibility: public -/
+@[rust_loop]
+def shim.shuffle_epi32_loop0_loop0
+  (MASK : Std.I32) (a : Array Std.U32 8#usize) (r : Array Std.U32 8#usize)
+  (h : Std.Usize) (i : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, i1) => shim.shuffle_epi32_loop0_loop0.body MASK a h r1 i1)
+    (r, i)
+
+/-- [x5_shim::shim::shuffle_epi32]: loop body 0:
+    Source: 'src/shim.rs', lines 126:4-134:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.shuffle_epi32_loop0.body
+  (MASK : Std.I32) (a : Array Std.U32 8#usize) (r : Array Std.U32 8#usize)
+  (h : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if h < 2#usize
+  then
+    let r1 ← shim.shuffle_epi32_loop0_loop0 MASK a r h 0#usize
+    let h1 ← h + 1#usize
+    ok (cont (r1, h1))
+  else ok (done r)
+
+/-- [x5_shim::shim::shuffle_epi32]: loop 0:
+    Source: 'src/shim.rs', lines 126:4-134:5
+    Visibility: public -/
+@[rust_loop]
+def shim.shuffle_epi32_loop0
+  (MASK : Std.I32) (a : Array Std.U32 8#usize) (r : Array Std.U32 8#usize)
+  (h : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, h1) => shim.shuffle_epi32_loop0.body MASK a r1 h1)
+    (r, h)
+
+/-- [x5_shim::shim::shuffle_epi32]:
+    Source: 'src/shim.rs', lines 123:0-136:1
+    Visibility: public -/
+def shim.shuffle_epi32
+  (MASK : Std.I32) (a : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.shuffle_epi32_loop0 MASK a r 0#usize
+
+/-- [x5_shim::shim::srli_epi64]: loop body 0:
+    Source: 'src/shim.rs', lines 85:8-91:9
+    Visibility: public -/
+@[rust_loop_body]
+def shim.srli_epi64_loop.body
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) (r : Array Std.U32 8#usize)
+  (k : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if k < 4#usize
+  then
+    let i ← 2#usize * k
+    let i1 ← Array.index_usize a i
+    let i2 ← lift (UScalar.cast .U64 i1)
+    let i3 ← i + 1#usize
+    let i4 ← Array.index_usize a i3
+    let i5 ← lift (UScalar.cast .U64 i4)
+    let i6 ← i5 <<< 32#i32
+    let q ← lift (i2 ||| i6)
+    let i7 ← lift (IScalar.hcast .U32 IMM)
+    let s ← q >>> i7
+    let i8 ← lift (UScalar.cast .U32 s)
+    let r1 ← Array.update r i i8
+    let i9 ← s >>> 32#i32
+    let i10 ← i + 1#usize
+    let i11 ← lift (UScalar.cast .U32 i9)
+    let a1 ← Array.update r1 i10 i11
+    let k1 ← k + 1#usize
+    ok (cont (a1, k1))
+  else ok (done r)
+
+/-- [x5_shim::shim::srli_epi64]: loop 0:
+    Source: 'src/shim.rs', lines 85:8-91:9
+    Visibility: public -/
+@[rust_loop]
+def shim.srli_epi64_loop
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) (r : Array Std.U32 8#usize)
+  (k : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, k1) => shim.srli_epi64_loop.body IMM a r1 k1)
+    (r, k)
+
+/-- [x5_shim::shim::srli_epi64]:
+    Source: 'src/shim.rs', lines 81:0-94:1
+    Visibility: public -/
+def shim.srli_epi64
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  if IMM >= 0#i32
+  then if IMM < 64#i32
+       then shim.srli_epi64_loop IMM a r 0#usize
+       else ok r
+  else ok r
+
+/-- [x5_shim::shim::mul_epi32]: loop body 0:
+    Source: 'src/shim.rs', lines 59:4-64:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.mul_epi32_loop.body
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (k : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if k < 4#usize
+  then
+    let i ← 2#usize * k
+    let i1 ← Array.index_usize a i
+    let i2 ← lift (UScalar.hcast .I32 i1)
+    let i3 ← lift (IScalar.cast .I64 i2)
+    let i4 ← Array.index_usize b i
+    let i5 ← lift (UScalar.hcast .I32 i4)
+    let i6 ← lift (IScalar.cast .I64 i5)
+    let p ← i3 * i6
+    let i7 ← lift (IScalar.hcast .U32 p)
+    let r1 ← Array.update r i i7
+    let i8 ← p >>> 32#i32
+    let i9 ← i + 1#usize
+    let i10 ← lift (IScalar.hcast .U32 i8)
+    let a1 ← Array.update r1 i9 i10
+    let k1 ← k + 1#usize
+    ok (cont (a1, k1))
+  else ok (done r)
+
+/-- [x5_shim::shim::mul_epi32]: loop 0:
+    Source: 'src/shim.rs', lines 59:4-64:5
+    Visibility: public -/
+@[rust_loop]
+def shim.mul_epi32_loop
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (k : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, k1) => shim.mul_epi32_loop.body a b r1 k1)
+    (r, k)
+
+/-- [x5_shim::shim::mul_epi32]:
+    Source: 'src/shim.rs', lines 56:0-66:1
+    Visibility: public -/
+def shim.mul_epi32
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.mul_epi32_loop a b r 0#usize
+
+/-- [x5_shim::shim::sub_epi32]: loop body 0:
+    Source: 'src/shim.rs', lines 36:4-39:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.sub_epi32_loop.body
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if i < 8#usize
+  then
+    let i1 ← Array.index_usize a i
+    let i2 ← Array.index_usize b i
+    let i3 ← lift (core.num.U32.wrapping_sub i1 i2)
+    let a1 ← Array.update r i i3
+    let i4 ← i + 1#usize
+    ok (cont (a1, i4))
+  else ok (done r)
+
+/-- [x5_shim::shim::sub_epi32]: loop 0:
+    Source: 'src/shim.rs', lines 36:4-39:5
+    Visibility: public -/
+@[rust_loop]
+def shim.sub_epi32_loop
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, i1) => shim.sub_epi32_loop.body a b r1 i1)
+    (r, i)
+
+/-- [x5_shim::shim::sub_epi32]:
+    Source: 'src/shim.rs', lines 33:0-41:1
+    Visibility: public -/
+def shim.sub_epi32
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.sub_epi32_loop a b r 0#usize
+
+/-- [x5_shim::kernel_shim::montmul]:
+    Source: 'src/kernel.rs', lines 16:0-27:1
+    Visibility: public -/
+def kernel_shim.montmul
+  (b : Array Std.U32 8#usize) (z : Array Std.U32 8#usize)
+  (zq : Array Std.U32 8#usize) (q : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let b_odd ← shim.shuffle_epi32 245#i32 b
+  let pe ← shim.mul_epi32 z b
+  let po ← shim.mul_epi32 z b_odd
+  let me ← shim.mul_epi32 zq b
+  let mo ← shim.mul_epi32 zq b_odd
+  let qe ← shim.mul_epi32 me q
+  let qo ← shim.mul_epi32 mo q
+  let a ← shim.sub_epi32 pe qe
+  let re ← shim.srli_epi64 32#i32 a
+  let ro ← shim.sub_epi32 po qo
+  shim.blend_epi32 170#i32 re ro
+
+/-- [x5_shim::tables::QINV]
+    Source: 'src/tables.rs', lines 3:0-3:31
+    Visibility: public -/
+@[global_simps, irreducible] def tables.QINV : Std.I32 := 58728449#i32
+
+/-- [x5_shim::shim::set1_epi32]:
+    Source: 'src/shim.rs', lines 12:0-14:1
+    Visibility: public -/
+def shim.set1_epi32 (x : Std.U32) : RustM (Array Std.U32 8#usize) := do
+  ok (Array.repeat 8#usize x)
+
+/-- [x5_shim::kernel_shim::zeta_vecs]:
+    Source: 'src/kernel.rs', lines 30:0-32:1 -/
+def kernel_shim.zeta_vecs
+  (zc : Std.I32) :
+  RustM ((Array Std.U32 8#usize) × (Array Std.U32 8#usize))
+  := do
+  let i ← lift (IScalar.hcast .U32 zc)
+  let a ← shim.set1_epi32 i
+  let i1 ← lift (core.num.I32.wrapping_mul zc tables.QINV)
+  let i2 ← lift (IScalar.hcast .U32 i1)
+  let a1 ← shim.set1_epi32 i2
+  ok (a, a1)
+
+/-- [x5_shim::tables::ZETAS_MONT]
+    Source: 'src/tables.rs', lines 40:0-73:2
+    Visibility: public -/
+@[global_simps, irreducible]
+def tables.ZETAS_MONT : Array Std.I32 256#usize :=
+  Array.make 256#usize [
+    (-4186625)#i32, 25847#i32, (-2608894)#i32, (-518909)#i32, 237124#i32,
+    (-777960)#i32, (-876248)#i32, 466468#i32, 1826347#i32, 2353451#i32,
+    (-359251)#i32, (-2091905)#i32, 3119733#i32, (-2884855)#i32, 3111497#i32,
+    2680103#i32, 2725464#i32, 1024112#i32, (-1079900)#i32, 3585928#i32,
+    (-549488)#i32, (-1119584)#i32, 2619752#i32, (-2108549)#i32, (-2118186)#i32,
+    (-3859737)#i32, (-1399561)#i32, (-3277672)#i32, 1757237#i32, (-19422)#i32,
+    4010497#i32, 280005#i32, 2706023#i32, 95776#i32, 3077325#i32, 3530437#i32,
+    (-1661693)#i32, (-3592148)#i32, (-2537516)#i32, 3915439#i32,
+    (-3861115)#i32, (-3043716)#i32, 3574422#i32, (-2867647)#i32, 3539968#i32,
+    (-300467)#i32, 2348700#i32, (-539299)#i32, (-1699267)#i32, (-1643818)#i32,
+    3505694#i32, (-3821735)#i32, 3507263#i32, (-2140649)#i32, (-1600420)#i32,
+    3699596#i32, 811944#i32, 531354#i32, 954230#i32, 3881043#i32, 3900724#i32,
+    (-2556880)#i32, 2071892#i32, (-2797779)#i32, (-3930395)#i32,
+    (-1528703)#i32, (-3677745)#i32, (-3041255)#i32, (-1452451)#i32,
+    3475950#i32, 2176455#i32, (-1585221)#i32, (-1257611)#i32, 1939314#i32,
+    (-4083598)#i32, (-1000202)#i32, (-3190144)#i32, (-3157330)#i32,
+    (-3632928)#i32, 126922#i32, 3412210#i32, (-983419)#i32, 2147896#i32,
+    2715295#i32, (-2967645)#i32, (-3693493)#i32, (-411027)#i32, (-2477047)#i32,
+    (-671102)#i32, (-1228525)#i32, (-22981)#i32, (-1308169)#i32, (-381987)#i32,
+    1349076#i32, 1852771#i32, (-1430430)#i32, (-3343383)#i32, 264944#i32,
+    508951#i32, 3097992#i32, 44288#i32, (-1100098)#i32, 904516#i32,
+    3958618#i32, (-3724342)#i32, (-8578)#i32, 1653064#i32, (-3249728)#i32,
+    2389356#i32, (-210977)#i32, 759969#i32, (-1316856)#i32, 189548#i32,
+    (-3553272)#i32, 3159746#i32, (-1851402)#i32, (-2409325)#i32, (-177440)#i32,
+    1315589#i32, 1341330#i32, 1285669#i32, (-1584928)#i32, (-812732)#i32,
+    (-1439742)#i32, (-3019102)#i32, (-3881060)#i32, (-3628969)#i32,
+    3839961#i32, 2091667#i32, 3407706#i32, 2316500#i32, 3817976#i32,
+    (-3342478)#i32, 2244091#i32, (-2446433)#i32, (-3562462)#i32, 266997#i32,
+    2434439#i32, (-1235728)#i32, 3513181#i32, (-3520352)#i32, (-3759364)#i32,
+    (-1197226)#i32, (-3193378)#i32, 900702#i32, 1859098#i32, 909542#i32,
+    819034#i32, 495491#i32, (-1613174)#i32, (-43260)#i32, (-522500)#i32,
+    (-655327)#i32, (-3122442)#i32, 2031748#i32, 3207046#i32, (-3556995)#i32,
+    (-525098)#i32, (-768622)#i32, (-3595838)#i32, 342297#i32, 286988#i32,
+    (-2437823)#i32, 4108315#i32, 3437287#i32, (-3342277)#i32, 1735879#i32,
+    203044#i32, 2842341#i32, 2691481#i32, (-2590150)#i32, 1265009#i32,
+    4055324#i32, 1247620#i32, 2486353#i32, 1595974#i32, (-3767016)#i32,
+    1250494#i32, 2635921#i32, (-3548272)#i32, (-2994039)#i32, 1869119#i32,
+    1903435#i32, (-1050970)#i32, (-1333058)#i32, 1237275#i32, (-3318210)#i32,
+    (-1430225)#i32, (-451100)#i32, 1312455#i32, 3306115#i32, (-1962642)#i32,
+    (-1279661)#i32, 1917081#i32, (-2546312)#i32, (-1374803)#i32, 1500165#i32,
+    777191#i32, 2235880#i32, 3406031#i32, (-542412)#i32, (-2831860)#i32,
+    (-1671176)#i32, (-1846953)#i32, (-2584293)#i32, (-3724270)#i32, 594136#i32,
+    (-3776993)#i32, (-2013608)#i32, 2432395#i32, 2454455#i32, (-164721)#i32,
+    1957272#i32, 3369112#i32, 185531#i32, (-1207385)#i32, (-3183426)#i32,
+    162844#i32, 1616392#i32, 3014001#i32, 810149#i32, 1652634#i32,
+    (-3694233)#i32, (-1799107)#i32, (-3038916)#i32, 3523897#i32, 3866901#i32,
+    269760#i32, 2213111#i32, (-975884)#i32, 1717735#i32, 472078#i32,
+    (-426683)#i32, 1723600#i32, (-1803090)#i32, 1910376#i32, (-1667432)#i32,
+    (-1104333)#i32, (-260646)#i32, (-3833893)#i32, (-2939036)#i32,
+    (-2235985)#i32, (-420899)#i32, (-2286327)#i32, 183443#i32, (-976891)#i32,
+    1612842#i32, (-3545687)#i32, (-554416)#i32, 3919660#i32, (-48306)#i32,
+    (-1362209)#i32, 3937738#i32, 1400424#i32, (-846154)#i32, 1976782#i32
+    ]
+
+/-- [x5_shim::shim::storeu_si256]:
+    Source: 'src/shim.rs', lines 214:0-223:1
+    Visibility: public -/
+def shim.storeu_si256
+  (mem : Array Std.U32 256#usize) («at» : Std.Usize)
+  (v : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 256#usize)
+  := do
+  let i ← Array.index_usize v 0#usize
+  let mem1 ← Array.update mem «at» i
+  let i1 ← Array.index_usize v 1#usize
+  let i2 ← «at» + 1#usize
+  let mem2 ← Array.update mem1 i2 i1
+  let i3 ← Array.index_usize v 2#usize
+  let i4 ← «at» + 2#usize
+  let mem3 ← Array.update mem2 i4 i3
+  let i5 ← Array.index_usize v 3#usize
+  let i6 ← «at» + 3#usize
+  let mem4 ← Array.update mem3 i6 i5
+  let i7 ← Array.index_usize v 4#usize
+  let i8 ← «at» + 4#usize
+  let mem5 ← Array.update mem4 i8 i7
+  let i9 ← Array.index_usize v 5#usize
+  let i10 ← «at» + 5#usize
+  let mem6 ← Array.update mem5 i10 i9
+  let i11 ← Array.index_usize v 6#usize
+  let i12 ← «at» + 6#usize
+  let mem7 ← Array.update mem6 i12 i11
+  let i13 ← Array.index_usize v 7#usize
+  let i14 ← «at» + 7#usize
+  Array.update mem7 i14 i13
+
+/-- [x5_shim::shim::loadu_si256]:
+    Source: 'src/shim.rs', lines 208:0-210:1
+    Visibility: public -/
+def shim.loadu_si256
+  (mem : Array Std.U32 256#usize) («at» : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let i ← Array.index_usize mem «at»
+  let i1 ← «at» + 1#usize
+  let i2 ← Array.index_usize mem i1
+  let i3 ← «at» + 2#usize
+  let i4 ← Array.index_usize mem i3
+  let i5 ← «at» + 3#usize
+  let i6 ← Array.index_usize mem i5
+  let i7 ← «at» + 4#usize
+  let i8 ← Array.index_usize mem i7
+  let i9 ← «at» + 5#usize
+  let i10 ← Array.index_usize mem i9
+  let i11 ← «at» + 6#usize
+  let i12 ← Array.index_usize mem i11
+  let i13 ← «at» + 7#usize
+  let i14 ← Array.index_usize mem i13
+  ok (Array.make 8#usize [ i, i2, i4, i6, i8, i10, i12, i14 ])
+
+/-- [x5_shim::shim::add_epi32]: loop body 0:
+    Source: 'src/shim.rs', lines 25:4-28:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.add_epi32_loop.body
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if i < 8#usize
+  then
+    let i1 ← Array.index_usize a i
+    let i2 ← Array.index_usize b i
+    let i3 ← lift (core.num.U32.wrapping_add i1 i2)
+    let a1 ← Array.update r i i3
+    let i4 ← i + 1#usize
+    ok (cont (a1, i4))
+  else ok (done r)
+
+/-- [x5_shim::shim::add_epi32]: loop 0:
+    Source: 'src/shim.rs', lines 25:4-28:5
+    Visibility: public -/
+@[rust_loop]
+def shim.add_epi32_loop
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, i1) => shim.add_epi32_loop.body a b r1 i1)
+    (r, i)
+
+/-- [x5_shim::shim::add_epi32]:
+    Source: 'src/shim.rs', lines 22:0-30:1
+    Visibility: public -/
+def shim.add_epi32
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.add_epi32_loop a b r 0#usize
+
+/-- [x5_shim::kernel_shim::layer_wide]: loop body 1:
+    Source: 'src/kernel.rs', lines 44:8-51:9
+    Visibility: public -/
+@[rust_loop_body]
+def kernel_shim.layer_wide_loop0_loop0.body
+  (LEN : Std.Usize) (q : Array Std.U32 8#usize) (start : Std.Usize)
+  (z : Array Std.U32 8#usize) (zq : Array Std.U32 8#usize)
+  (w : Array Std.U32 256#usize) (j : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize) (Array Std.U32
+    256#usize))
+  := do
+  let i ← start + LEN
+  if j < i
+  then
+    let a ← shim.loadu_si256 w j
+    let i1 ← j + LEN
+    let b ← shim.loadu_si256 w i1
+    let t ← kernel_shim.montmul b z zq q
+    let a1 ← shim.sub_epi32 a t
+    let w1 ← shim.storeu_si256 w i1 a1
+    let a2 ← shim.add_epi32 a t
+    let w2 ← shim.storeu_si256 w1 j a2
+    let j1 ← j + 8#usize
+    ok (cont (w2, j1))
+  else ok (done w)
+
+/-- [x5_shim::kernel_shim::layer_wide]: loop 1:
+    Source: 'src/kernel.rs', lines 44:8-51:9
+    Visibility: public -/
+@[rust_loop]
+def kernel_shim.layer_wide_loop0_loop0
+  (LEN : Std.Usize) (w : Array Std.U32 256#usize) (q : Array Std.U32 8#usize)
+  (start : Std.Usize) (z : Array Std.U32 8#usize) (zq : Array Std.U32 8#usize)
+  (j : Std.Usize) :
+  RustM (Array Std.U32 256#usize)
+  := do
+  loop
+    (fun (w1, j1) => kernel_shim.layer_wide_loop0_loop0.body LEN q start z zq
+      w1 j1)
+    (w, j)
+
+/-- [x5_shim::kernel_shim::layer_wide]: loop body 0:
+    Source: 'src/kernel.rs', lines 39:4-53:5
+    Visibility: public -/
+@[rust_loop_body]
+def kernel_shim.layer_wide_loop0.body
+  (LEN : Std.Usize) (ITERATIONS : Std.Usize) (q : Array Std.U32 8#usize)
+  (w : Array Std.U32 256#usize) (m : Std.Usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize × Std.Usize)
+    ((Array Std.U32 256#usize) × Std.Usize))
+  := do
+  if i < ITERATIONS
+  then
+    let i1 ← i * 2#usize
+    let start ← i1 * LEN
+    let m1 ← m + 1#usize
+    let i2 ← Array.index_usize tables.ZETAS_MONT m1
+    let (z, zq) ← kernel_shim.zeta_vecs i2
+    let w1 ← kernel_shim.layer_wide_loop0_loop0 LEN w q start z zq start
+    let i3 ← i + 1#usize
+    ok (cont (w1, m1, i3))
+  else ok (done (w, m))
+
+/-- [x5_shim::kernel_shim::layer_wide]: loop 0:
+    Source: 'src/kernel.rs', lines 39:4-53:5
+    Visibility: public -/
+@[rust_loop]
+def kernel_shim.layer_wide_loop0
+  (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
+  (m : Std.Usize) (q : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM ((Array Std.U32 256#usize) × Std.Usize)
+  := do
+  loop
+    (fun (w1, m1, i1) => kernel_shim.layer_wide_loop0.body LEN ITERATIONS q w1
+      m1 i1)
+    (w, m, i)
+
+/-- [x5_shim::kernel_shim::layer_wide]:
+    Source: 'src/kernel.rs', lines 36:0-54:1
+    Visibility: public -/
+def kernel_shim.layer_wide
+  (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
+  (m : Std.Usize) :
+  RustM ((Array Std.U32 256#usize) × Std.Usize)
+  := do
+  let q ← shim.set1_epi32 kernel_shim.Q
+  kernel_shim.layer_wide_loop0 LEN ITERATIONS w m q 0#usize
+
+/-- [x5_shim::shim::half]:
+    Source: 'src/shim.rs', lines 189:0-196:1 -/
+def shim.half
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) (sel : Std.I32) :
+  RustM (Array Std.U32 4#usize)
+  := do
+  let i ← lift (sel &&& 8#i32)
+  if i != 0#i32
+  then ok (Array.repeat 4#usize 0#u32)
+  else
+    let i1 ← lift (sel &&& 2#i32)
+    let src ← if i1 != 0#i32
+                then ok b
+                else ok a
+    let i2 ← lift (sel &&& 1#i32)
+    let o ← if i2 != 0#i32
+              then ok 4#usize
+              else ok 0#usize
+    let i3 ← Array.index_usize src o
+    let i4 ← o + 1#usize
+    let i5 ← Array.index_usize src i4
+    let i6 ← o + 2#usize
+    let i7 ← Array.index_usize src i6
+    let i8 ← o + 3#usize
+    let i9 ← Array.index_usize src i8
+    ok (Array.make 4#usize [ i3, i5, i7, i9 ])
+
+/-- [x5_shim::shim::permute2x128_si256]:
+    Source: 'src/shim.rs', lines 200:0-204:1
+    Visibility: public -/
+def shim.permute2x128_si256
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let i ← lift (IMM &&& 15#i32)
+  let lo ← shim.half a b i
+  let i1 ← IMM >>> 4#i32
+  let i2 ← lift (i1 &&& 15#i32)
+  let hi ← shim.half a b i2
+  let i3 ← Array.index_usize lo 0#usize
+  let i4 ← Array.index_usize lo 1#usize
+  let i5 ← Array.index_usize lo 2#usize
+  let i6 ← Array.index_usize lo 3#usize
+  let i7 ← Array.index_usize hi 0#usize
+  let i8 ← Array.index_usize hi 1#usize
+  let i9 ← Array.index_usize hi 2#usize
+  let i10 ← Array.index_usize hi 3#usize
+  ok (Array.make 8#usize [ i3, i4, i5, i6, i7, i8, i9, i10 ])
+
+/-- [x5_shim::kernel_shim::layer4]: loop body 0:
+    Source: 'src/kernel.rs', lines 61:4-70:5
+    Visibility: public -/
+@[rust_loop_body]
+def kernel_shim.layer4_loop.body
+  (q : Array Std.U32 8#usize) (w : Array Std.U32 256#usize) (m : Std.Usize)
+  (g : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize × Std.Usize)
+    ((Array Std.U32 256#usize) × Std.Usize))
+  := do
+  if g < 32#usize
+  then
+    let m1 ← m + 1#usize
+    let i ← Array.index_usize tables.ZETAS_MONT m1
+    let (z, zq) ← kernel_shim.zeta_vecs i
+    let i1 ← 8#usize * g
+    let v ← shim.loadu_si256 w i1
+    let ae ← shim.permute2x128_si256 0#i32 v v
+    let bo ← shim.permute2x128_si256 17#i32 v v
+    let t ← kernel_shim.montmul bo z zq q
+    let a ← shim.add_epi32 ae t
+    let a1 ← shim.sub_epi32 ae t
+    let a2 ← shim.blend_epi32 240#i32 a a1
+    let w1 ← shim.storeu_si256 w i1 a2
+    let g1 ← g + 1#usize
+    ok (cont (w1, m1, g1))
+  else ok (done (w, m))
+
+/-- [x5_shim::kernel_shim::layer4]: loop 0:
+    Source: 'src/kernel.rs', lines 61:4-70:5
+    Visibility: public -/
+@[rust_loop]
+def kernel_shim.layer4_loop
+  (w : Array Std.U32 256#usize) (m : Std.Usize) (q : Array Std.U32 8#usize)
+  (g : Std.Usize) :
+  RustM ((Array Std.U32 256#usize) × Std.Usize)
+  := do
+  loop
+    (fun (w1, m1, g1) => kernel_shim.layer4_loop.body q w1 m1 g1)
+    (w, m, g)
+
+/-- [x5_shim::kernel_shim::layer4]:
+    Source: 'src/kernel.rs', lines 58:0-71:1
+    Visibility: public -/
+def kernel_shim.layer4
+  (w : Array Std.U32 256#usize) (m : Std.Usize) :
+  RustM ((Array Std.U32 256#usize) × Std.Usize)
+  := do
+  let q ← shim.set1_epi32 kernel_shim.Q
+  kernel_shim.layer4_loop w m q 0#usize
+
+/-- [x5_shim::kernel_shim::layer2]: loop body 0:
+    Source: 'src/kernel.rs', lines 78:4-92:5
+    Visibility: public -/
+@[rust_loop_body]
+def kernel_shim.layer2_loop.body
+  (q : Array Std.U32 8#usize) (w : Array Std.U32 256#usize) (m : Std.Usize)
+  (h : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize × Std.Usize)
+    ((Array Std.U32 256#usize) × Std.Usize))
+  := do
+  if h < 32#usize
+  then
+    let i ← m + 1#usize
+    let z0 ← Array.index_usize tables.ZETAS_MONT i
+    let i1 ← m + 2#usize
+    let z1 ← Array.index_usize tables.ZETAS_MONT i1
+    let (za, zqa) ← kernel_shim.zeta_vecs z0
+    let (zb, zqb) ← kernel_shim.zeta_vecs z1
+    let z ← shim.blend_epi32 240#i32 za zb
+    let zq ← shim.blend_epi32 240#i32 zqa zqb
+    let i2 ← 8#usize * h
+    let v ← shim.loadu_si256 w i2
+    let ae ← shim.shuffle_epi32 68#i32 v
+    let bo ← shim.shuffle_epi32 238#i32 v
+    let t ← kernel_shim.montmul bo z zq q
+    let a ← shim.add_epi32 ae t
+    let a1 ← shim.sub_epi32 ae t
+    let a2 ← shim.blend_epi32 204#i32 a a1
+    let w1 ← shim.storeu_si256 w i2 a2
+    let h1 ← h + 1#usize
+    ok (cont (w1, i1, h1))
+  else ok (done (w, m))
+
+/-- [x5_shim::kernel_shim::layer2]: loop 0:
+    Source: 'src/kernel.rs', lines 78:4-92:5
+    Visibility: public -/
+@[rust_loop]
+def kernel_shim.layer2_loop
+  (w : Array Std.U32 256#usize) (m : Std.Usize) (q : Array Std.U32 8#usize)
+  (h : Std.Usize) :
+  RustM ((Array Std.U32 256#usize) × Std.Usize)
+  := do
+  loop
+    (fun (w1, m1, h1) => kernel_shim.layer2_loop.body q w1 m1 h1)
+    (w, m, h)
+
+/-- [x5_shim::kernel_shim::layer2]:
+    Source: 'src/kernel.rs', lines 75:0-93:1
+    Visibility: public -/
+def kernel_shim.layer2
+  (w : Array Std.U32 256#usize) (m : Std.Usize) :
+  RustM ((Array Std.U32 256#usize) × Std.Usize)
+  := do
+  let q ← shim.set1_epi32 kernel_shim.Q
+  kernel_shim.layer2_loop w m q 0#usize
+
+/-- [x5_shim::shim::setr_epi32]:
+    Source: 'src/shim.rs', lines 17:0-19:1
+    Visibility: public -/
+def shim.setr_epi32
+  (e0 : Std.U32) (e1 : Std.U32) (e2 : Std.U32) (e3 : Std.U32) (e4 : Std.U32)
+  (e5 : Std.U32) (e6 : Std.U32) (e7 : Std.U32) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  ok (Array.make 8#usize [ e0, e1, e2, e3, e4, e5, e6, e7 ])
+
+/-- [x5_shim::kernel_shim::layer1]: loop body 0:
+    Source: 'src/kernel.rs', lines 100:4-123:5
+    Visibility: public -/
+@[rust_loop_body]
+def kernel_shim.layer1_loop.body
+  (q : Array Std.U32 8#usize) (w : Array Std.U32 256#usize) (m : Std.Usize)
+  (h : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize × Std.Usize)
+    ((Array Std.U32 256#usize) × Std.Usize))
+  := do
+  if h < 32#usize
+  then
+    let i ← m + 1#usize
+    let z0 ← Array.index_usize tables.ZETAS_MONT i
+    let i1 ← m + 2#usize
+    let z1 ← Array.index_usize tables.ZETAS_MONT i1
+    let i2 ← m + 3#usize
+    let z2 ← Array.index_usize tables.ZETAS_MONT i2
+    let i3 ← m + 4#usize
+    let z3 ← Array.index_usize tables.ZETAS_MONT i3
+    let i4 ← lift (IScalar.hcast .U32 z0)
+    let i5 ← lift (IScalar.hcast .U32 z0)
+    let i6 ← lift (IScalar.hcast .U32 z1)
+    let i7 ← lift (IScalar.hcast .U32 z1)
+    let i8 ← lift (IScalar.hcast .U32 z2)
+    let i9 ← lift (IScalar.hcast .U32 z2)
+    let i10 ← lift (IScalar.hcast .U32 z3)
+    let i11 ← lift (IScalar.hcast .U32 z3)
+    let z ← shim.setr_epi32 i4 i5 i6 i7 i8 i9 i10 i11
+    let i12 ← lift (core.num.I32.wrapping_mul z0 tables.QINV)
+    let i13 ← lift (IScalar.hcast .U32 i12)
+    let i14 ← lift (core.num.I32.wrapping_mul z0 tables.QINV)
+    let i15 ← lift (IScalar.hcast .U32 i14)
+    let i16 ← lift (core.num.I32.wrapping_mul z1 tables.QINV)
+    let i17 ← lift (IScalar.hcast .U32 i16)
+    let i18 ← lift (core.num.I32.wrapping_mul z1 tables.QINV)
+    let i19 ← lift (IScalar.hcast .U32 i18)
+    let i20 ← lift (core.num.I32.wrapping_mul z2 tables.QINV)
+    let i21 ← lift (IScalar.hcast .U32 i20)
+    let i22 ← lift (core.num.I32.wrapping_mul z2 tables.QINV)
+    let i23 ← lift (IScalar.hcast .U32 i22)
+    let i24 ← lift (core.num.I32.wrapping_mul z3 tables.QINV)
+    let i25 ← lift (IScalar.hcast .U32 i24)
+    let i26 ← lift (core.num.I32.wrapping_mul z3 tables.QINV)
+    let i27 ← lift (IScalar.hcast .U32 i26)
+    let zq ← shim.setr_epi32 i13 i15 i17 i19 i21 i23 i25 i27
+    let i28 ← 8#usize * h
+    let v ← shim.loadu_si256 w i28
+    let ae ← shim.shuffle_epi32 160#i32 v
+    let bo ← shim.shuffle_epi32 245#i32 v
+    let t ← kernel_shim.montmul bo z zq q
+    let a ← shim.add_epi32 ae t
+    let a1 ← shim.sub_epi32 ae t
+    let a2 ← shim.blend_epi32 170#i32 a a1
+    let w1 ← shim.storeu_si256 w i28 a2
+    let h1 ← h + 1#usize
+    ok (cont (w1, i3, h1))
+  else ok (done (w, m))
+
+/-- [x5_shim::kernel_shim::layer1]: loop 0:
+    Source: 'src/kernel.rs', lines 100:4-123:5
+    Visibility: public -/
+@[rust_loop]
+def kernel_shim.layer1_loop
+  (w : Array Std.U32 256#usize) (m : Std.Usize) (q : Array Std.U32 8#usize)
+  (h : Std.Usize) :
+  RustM ((Array Std.U32 256#usize) × Std.Usize)
+  := do
+  loop
+    (fun (w1, m1, h1) => kernel_shim.layer1_loop.body q w1 m1 h1)
+    (w, m, h)
+
+/-- [x5_shim::kernel_shim::layer1]:
+    Source: 'src/kernel.rs', lines 97:0-124:1
+    Visibility: public -/
+def kernel_shim.layer1
+  (w : Array Std.U32 256#usize) (m : Std.Usize) :
+  RustM ((Array Std.U32 256#usize) × Std.Usize)
+  := do
+  let q ← shim.set1_epi32 kernel_shim.Q
+  kernel_shim.layer1_loop w m q 0#usize
+
+/-- [x5_shim::kernel_shim::ntt_lazy_vec]:
+    Source: 'src/kernel.rs', lines 128:0-138:1
+    Visibility: public -/
+def kernel_shim.ntt_lazy_vec
+  (w : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
+  let (w1, m) ← kernel_shim.layer_wide 128#usize 1#usize w 0#usize
+  let (w2, m1) ← kernel_shim.layer_wide 64#usize 2#usize w1 m
+  let (w3, m2) ← kernel_shim.layer_wide 32#usize 4#usize w2 m1
+  let (w4, m3) ← kernel_shim.layer_wide 16#usize 8#usize w3 m2
+  let (w5, m4) ← kernel_shim.layer_wide 8#usize 16#usize w4 m3
+  let (w6, m5) ← kernel_shim.layer4 w5 m4
+  let (w7, m6) ← kernel_shim.layer2 w6 m5
+  let (w8, _) ← kernel_shim.layer1 w7 m6
+  ok w8
+
+/-- [x5_shim::kernel_shim::normalize_one]:
+    Source: 'src/kernel.rs', lines 142:0-146:1
+    Visibility: public -/
+def kernel_shim.normalize_one (x : Std.I32) : RustM Std.U32 := do
+  let i ← 1#i32 <<< 22#i32
+  let i1 ← x + i
+  let t ← i1 >>> 23#i32
+  let i2 ← lift (UScalar.hcast .I32 kernel_shim.Q)
+  let i3 ← t * i2
+  let r ← x - i3
+  let i4 ← r >>> 31#i32
+  let i5 ← lift (UScalar.hcast .I32 kernel_shim.Q)
+  let i6 ← lift (i4 &&& i5)
+  let i7 ← r + i6
+  ok (IScalar.hcast .U32 i7)
+
+/-- [x5_shim::kernel_shim::ntt_vec]: loop body 0:
+    Source: 'src/kernel.rs', lines 155:4-158:5
+    Visibility: public -/
+@[rust_loop_body]
+def kernel_shim.ntt_vec_loop.body
+  (a : Array Std.U32 256#usize) (out : Array Std.U32 256#usize) (j : Std.Usize)
+  :
+  RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize) (Array Std.U32
+    256#usize))
+  := do
+  if j < 256#usize
+  then
+    let i ← Array.index_usize a j
+    let i1 ← lift (UScalar.hcast .I32 i)
+    let i2 ← kernel_shim.normalize_one i1
+    let a1 ← Array.update out j i2
+    let j1 ← j + 1#usize
+    ok (cont (a1, j1))
+  else ok (done out)
+
+/-- [x5_shim::kernel_shim::ntt_vec]: loop 0:
+    Source: 'src/kernel.rs', lines 155:4-158:5
+    Visibility: public -/
+@[rust_loop]
+def kernel_shim.ntt_vec_loop
+  (a : Array Std.U32 256#usize) (out : Array Std.U32 256#usize) (j : Std.Usize)
+  :
+  RustM (Array Std.U32 256#usize)
+  := do
+  loop
+    (fun (out1, j1) => kernel_shim.ntt_vec_loop.body a out1 j1)
+    (out, j)
+
+/-- [x5_shim::kernel_shim::ntt_vec]:
+    Source: 'src/kernel.rs', lines 150:0-160:1
+    Visibility: public -/
+def kernel_shim.ntt_vec
+  (w : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
+  let w1 ← kernel_shim.ntt_lazy_vec w
+  let out := Array.repeat 256#usize 0#u32
+  kernel_shim.ntt_vec_loop w1 out 0#usize
+
+/-- [x5_shim::shim::mullo_epi32]: loop body 0:
+    Source: 'src/shim.rs', lines 47:4-50:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.mullo_epi32_loop.body
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if i < 8#usize
+  then
+    let i1 ← Array.index_usize a i
+    let i2 ← Array.index_usize b i
+    let i3 ← lift (core.num.U32.wrapping_mul i1 i2)
+    let a1 ← Array.update r i i3
+    let i4 ← i + 1#usize
+    ok (cont (a1, i4))
+  else ok (done r)
+
+/-- [x5_shim::shim::mullo_epi32]: loop 0:
+    Source: 'src/shim.rs', lines 47:4-50:5
+    Visibility: public -/
+@[rust_loop]
+def shim.mullo_epi32_loop
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, i1) => shim.mullo_epi32_loop.body a b r1 i1)
+    (r, i)
+
+/-- [x5_shim::shim::mullo_epi32]:
+    Source: 'src/shim.rs', lines 44:0-52:1
+    Visibility: public -/
+def shim.mullo_epi32
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.mullo_epi32_loop a b r 0#usize
+
+/-- [x5_shim::shim::and_si256]: loop body 0:
+    Source: 'src/shim.rs', lines 72:4-75:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.and_si256_loop.body
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if i < 8#usize
+  then
+    let i1 ← Array.index_usize a i
+    let i2 ← Array.index_usize b i
+    let i3 ← lift (i1 &&& i2)
+    let a1 ← Array.update r i i3
+    let i4 ← i + 1#usize
+    ok (cont (a1, i4))
+  else ok (done r)
+
+/-- [x5_shim::shim::and_si256]: loop 0:
+    Source: 'src/shim.rs', lines 72:4-75:5
+    Visibility: public -/
+@[rust_loop]
+def shim.and_si256_loop
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, i1) => shim.and_si256_loop.body a b r1 i1)
+    (r, i)
+
+/-- [x5_shim::shim::and_si256]:
+    Source: 'src/shim.rs', lines 69:0-77:1
+    Visibility: public -/
+def shim.and_si256
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.and_si256_loop a b r 0#usize
+
+/-- [x5_shim::shim::srai_epi32]: loop body 0:
+    Source: 'src/shim.rs', lines 102:4-105:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.srai_epi32_loop.body
+  (a : Array Std.U32 8#usize) (sh : Std.U32) (r : Array Std.U32 8#usize)
+  (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if i < 8#usize
+  then
+    let i1 ← Array.index_usize a i
+    let i2 ← lift (UScalar.hcast .I32 i1)
+    let i3 ← i2 >>> sh
+    let i4 ← lift (IScalar.hcast .U32 i3)
+    let a1 ← Array.update r i i4
+    let i5 ← i + 1#usize
+    ok (cont (a1, i5))
+  else ok (done r)
+
+/-- [x5_shim::shim::srai_epi32]: loop 0:
+    Source: 'src/shim.rs', lines 102:4-105:5
+    Visibility: public -/
+@[rust_loop]
+def shim.srai_epi32_loop
+  (a : Array Std.U32 8#usize) (r : Array Std.U32 8#usize) (sh : Std.U32)
+  (i : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, i1) => shim.srai_epi32_loop.body a sh r1 i1)
+    (r, i)
+
+/-- [x5_shim::shim::srai_epi32]:
+    Source: 'src/shim.rs', lines 98:0-107:1
+    Visibility: public -/
+def shim.srai_epi32
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  let sh ←
+    if IMM >= 0#i32
+    then if IMM < 32#i32
+         then ok (IScalar.hcast .U32 IMM)
+         else ok 31#u32
+    else ok 31#u32
+  shim.srai_epi32_loop a r sh 0#usize
+
+/-- [x5_shim::shim::cmpgt_epi32]: loop body 0:
+    Source: 'src/shim.rs', lines 114:4-117:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.cmpgt_epi32_loop.body
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if i < 8#usize
+  then
+    let i1 ← Array.index_usize a i
+    let i2 ← lift (UScalar.hcast .I32 i1)
+    let i3 ← Array.index_usize b i
+    let i4 ← lift (UScalar.hcast .I32 i3)
+    let i5 ← if i2 > i4
+               then ok 4294967295#u32
+               else ok 0#u32
+    let a1 ← Array.update r i i5
+    let i6 ← i + 1#usize
+    ok (cont (a1, i6))
+  else ok (done r)
+
+/-- [x5_shim::shim::cmpgt_epi32]: loop 0:
+    Source: 'src/shim.rs', lines 114:4-117:5
+    Visibility: public -/
+@[rust_loop]
+def shim.cmpgt_epi32_loop
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, i1) => shim.cmpgt_epi32_loop.body a b r1 i1)
+    (r, i)
+
+/-- [x5_shim::shim::cmpgt_epi32]:
+    Source: 'src/shim.rs', lines 111:0-119:1
+    Visibility: public -/
+def shim.cmpgt_epi32
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.cmpgt_epi32_loop a b r 0#usize
+
+/-- [x5_shim::shim::permute4x64_epi64]: loop body 0:
+    Source: 'src/shim.rs', lines 143:4-148:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.permute4x64_epi64_loop.body
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) (r : Array Std.U32 8#usize)
+  (j : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if j < 4#usize
+  then
+    let i ← 2#usize * j
+    let i1 ← IMM >>> i
+    let i2 ← lift (i1 &&& 3#i32)
+    let sel ← lift (IScalar.hcast .Usize i2)
+    let i3 ← 2#usize * sel
+    let i4 ← Array.index_usize a i3
+    let r1 ← Array.update r i i4
+    let i5 ← i3 + 1#usize
+    let i6 ← Array.index_usize a i5
+    let i7 ← i + 1#usize
+    let a1 ← Array.update r1 i7 i6
+    let j1 ← j + 1#usize
+    ok (cont (a1, j1))
+  else ok (done r)
+
+/-- [x5_shim::shim::permute4x64_epi64]: loop 0:
+    Source: 'src/shim.rs', lines 143:4-148:5
+    Visibility: public -/
+@[rust_loop]
+def shim.permute4x64_epi64_loop
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) (r : Array Std.U32 8#usize)
+  (j : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, j1) => shim.permute4x64_epi64_loop.body IMM a r1 j1)
+    (r, j)
+
+/-- [x5_shim::shim::permute4x64_epi64]:
+    Source: 'src/shim.rs', lines 140:0-150:1
+    Visibility: public -/
+def shim.permute4x64_epi64
+  (IMM : Std.I32) (a : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.permute4x64_epi64_loop IMM a r 0#usize
+
+/-- [x5_shim::shim::permutevar8x32_epi32]: loop body 0:
+    Source: 'src/shim.rs', lines 169:4-172:5
+    Visibility: public -/
+@[rust_loop_body]
+def shim.permutevar8x32_epi32_loop.body
+  (a : Array Std.U32 8#usize) (idx : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 8#usize) × Std.Usize) (Array Std.U32
+    8#usize))
+  := do
+  if i < 8#usize
+  then
+    let i1 ← Array.index_usize idx i
+    let i2 ← lift (i1 &&& 7#u32)
+    let i3 ← lift (UScalar.cast .Usize i2)
+    let i4 ← Array.index_usize a i3
+    let a1 ← Array.update r i i4
+    let i5 ← i + 1#usize
+    ok (cont (a1, i5))
+  else ok (done r)
+
+/-- [x5_shim::shim::permutevar8x32_epi32]: loop 0:
+    Source: 'src/shim.rs', lines 169:4-172:5
+    Visibility: public -/
+@[rust_loop]
+def shim.permutevar8x32_epi32_loop
+  (a : Array Std.U32 8#usize) (idx : Array Std.U32 8#usize)
+  (r : Array Std.U32 8#usize) (i : Std.Usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  loop
+    (fun (r1, i1) => shim.permutevar8x32_epi32_loop.body a idx r1 i1)
+    (r, i)
+
+/-- [x5_shim::shim::permutevar8x32_epi32]:
+    Source: 'src/shim.rs', lines 166:0-174:1
+    Visibility: public -/
+def shim.permutevar8x32_epi32
+  (a : Array Std.U32 8#usize) (idx : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let r := Array.repeat 8#usize 0#u32
+  shim.permutevar8x32_epi32_loop a idx r 0#usize
+
+/-- [x5_shim::shim::unpacklo_epi64]:
+    Source: 'src/shim.rs', lines 178:0-180:1
+    Visibility: public -/
+def shim.unpacklo_epi64
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let i ← Array.index_usize a 0#usize
+  let i1 ← Array.index_usize a 1#usize
+  let i2 ← Array.index_usize b 0#usize
+  let i3 ← Array.index_usize b 1#usize
+  let i4 ← Array.index_usize a 4#usize
+  let i5 ← Array.index_usize a 5#usize
+  let i6 ← Array.index_usize b 4#usize
+  let i7 ← Array.index_usize b 5#usize
+  ok (Array.make 8#usize [ i, i1, i2, i3, i4, i5, i6, i7 ])
+
+/-- [x5_shim::shim::unpackhi_epi64]:
+    Source: 'src/shim.rs', lines 184:0-186:1
+    Visibility: public -/
+def shim.unpackhi_epi64
+  (a : Array Std.U32 8#usize) (b : Array Std.U32 8#usize) :
+  RustM (Array Std.U32 8#usize)
+  := do
+  let i ← Array.index_usize a 2#usize
+  let i1 ← Array.index_usize a 3#usize
+  let i2 ← Array.index_usize b 2#usize
+  let i3 ← Array.index_usize b 3#usize
+  let i4 ← Array.index_usize a 6#usize
+  let i5 ← Array.index_usize a 7#usize
+  let i6 ← Array.index_usize b 6#usize
+  let i7 ← Array.index_usize b 7#usize
+  ok (Array.make 8#usize [ i, i1, i2, i3, i4, i5, i6, i7 ])
+
+end Impl
+=== FunsExternal_Template.lean (axioms only)
+axiom core.iter.range.Step.forward.default
+axiom core.iter.range.Step.forward_unchecked.default
+axiom core.iter.range.Step.backward.default
+axiom core.iter.range.Step.backward_unchecked.default
