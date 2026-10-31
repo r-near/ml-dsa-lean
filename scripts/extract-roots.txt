@@ -42,3 +42,12 @@ ml_dsa_verified::api::verify_internal_prepared_65
 ml_dsa_verified::api::verifying_key_87
 ml_dsa_verified::api::verify_prepared_87
 ml_dsa_verified::api::verify_internal_prepared_87
+ml_dsa_verified::api::signing_key_44
+ml_dsa_verified::api::sign_prepared_44
+ml_dsa_verified::api::sign_internal_prepared_44
+ml_dsa_verified::api::signing_key_65
+ml_dsa_verified::api::sign_prepared_65
+ml_dsa_verified::api::sign_internal_prepared_65
+ml_dsa_verified::api::signing_key_87
+ml_dsa_verified::api::sign_prepared_87
+ml_dsa_verified::api::sign_internal_prepared_87

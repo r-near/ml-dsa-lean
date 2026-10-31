@@ -19,6 +19,14 @@
 //! key the `VerifyingKey*` was built from (proved in Lean, `Proofs/PreparedVerify.lean`). The key objects are
 //! 20,544 / 36,928 / 65,600 bytes (ML-DSA-44 / 65 / 87): too large to copy freely, so keep them in a `Box`
 //! (this crate is `no_std` without `alloc`, so it cannot do that for you).
+//!
+//! Prepared signing keys: `signing_key_*` computes the part of Sign that depends on the secret key alone (ŝ1, ŝ2, t̂0,
+//! Â, K, tr) once; `sign_prepared_*` and `sign_internal_prepared_*` then sign without recomputing, returning exactly
+//! what `sign_*` and `sign_internal_*` return for the same key (proved in Lean, `Proofs/PreparedSign.lean`). The
+//! operations on secret data are those of `sign_*`, reorganized; no new secret-dependent branch. The key objects
+//! are 28,768 / 48,224 / 80,992 bytes and contain secrets: keep them in a `Box`, do not copy them. With the
+//! `zeroize` feature, dropping one wipes ŝ1, ŝ2, t̂0 and K (the `Drop` impl is not part of the Lean model).
+//!
 //! `sk_is_well_formed_*` is an optional range check on a stored secret key (s₁, s₂ within [−η, η]); `sign_*` does
 //! not call it. `pk_from_sk_*` is a stronger optional check (not a FIPS step): it recomputes the public key from
 //! a stored secret key and rejects keys that are inconsistent. HashML-DSA (Algorithms 4 and 5) and external μ are out of scope.
@@ -26,7 +34,7 @@
 use crate::encode::sk_is_well_formed;
 use crate::keygen::{keygen_internal, pk_from_sk};
 use crate::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
-use crate::sign::sign_internal;
+use crate::sign::{prepare_sk, sign_internal, sign_prepared_internal, PreparedSk};
 use crate::verify::{prepare_vk, verify_internal, verify_prepared_internal, PreparedVk};
 
 /// Builds the prefix 0 ‖ |ctx| ‖ ctx of M′ = IntegerToBytes(0, 1) ‖ IntegerToBytes(|ctx|, 1) ‖ ctx ‖ M.
@@ -136,6 +144,56 @@ pub fn verify_prepared_44(vk: &VerifyingKey44, m: &[u8], ctx: &[u8], sig: &[u8; 
 /// `vk = verifying_key_44(pk)` it returns exactly `verify_internal_44(pk, m_prime, sig)`.
 pub fn verify_internal_prepared_44(vk: &VerifyingKey44, m_prime: &[u8], sig: &[u8; 2420]) -> bool {
     verify_prepared_internal::<4, 4>(&ML_DSA_44, &vk.inner, &[], m_prime, sig)
+}
+
+/// A secret key prepared for repeated signing (ML-DSA-44): ŝ1, ŝ2 and t̂0 in the NTT domain, Â = ExpandA(ρ), K and
+/// tr, everything Algorithm 7 recomputes from the secret key on every call (steps 1-5, plus the key inputs of 6-7).
+///
+/// Build it with [`signing_key_44`], use it with [`sign_prepared_44`] and [`sign_internal_prepared_44`]. It holds
+/// secret material (ŝ1, ŝ2, t̂0, K). With the `zeroize` feature, dropping it wipes those fields (a `cfg`-gated `Drop`
+/// impl; outside the Lean model, which has no `Drop`). Not `Clone`: do not make extra copies of a secret.
+/// Size: 28,768 bytes (4·4 + 4 + 2·4 = 28 polynomials of 1 KiB, plus 96 bytes), so keep it in a `Box` or a
+/// long-lived structure rather than on a small stack; moving it copies it (the copy is not wiped). The fields are
+/// private: the only way to obtain one is `signing_key_44`, which fixes the relation to the key bytes.
+pub struct SigningKey44 {
+    inner: PreparedSk<4, 4>,
+}
+
+/// Prepares a secret key for ML-DSA-44 signing: skDecode, the three NTTs and ExpandA (Algorithm 7 steps 1-5) once.
+/// Cost: about the key-dependent share of one `sign_44` call, dominated by ExpandA.
+///
+/// Like `sign_44` it does not validate the key (see `sk_is_well_formed_44`) and diverges only where FIPS 204's
+/// unbounded ExpandA would. Returns by value (28,768 bytes); with a `Box`, write
+/// `Box::new(signing_key_44(&sk))`.
+pub fn signing_key_44(sk: &[u8; 2560]) -> SigningKey44 {
+    SigningKey44 { inner: prepare_sk::<4, 4>(&ML_DSA_44, sk) }
+}
+
+/// Algorithm 2 ML-DSA.Sign for ML-DSA-44 with a prepared key. For `ssk = signing_key_44(sk)` it returns exactly
+/// `sign_44(sk, m, ctx, rnd)`. `None` if |ctx| > 255 or the κ budget is exhausted. Same operations on secret data
+/// as `sign_44` (only reorganized: no new branch depends on a secret).
+pub fn sign_prepared_44(ssk: &SigningKey44, m: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Option<[u8; 2420]> {
+    let prefix = match ctx_prefix(ctx) {
+        Some(b) => b,
+        None => return None,
+    };
+    let mut sig = [0u8; 2420];
+    if sign_prepared_internal::<4, 4>(&ML_DSA_44, &ssk.inner, &prefix[..2 + ctx.len()], m, rnd, &mut sig) {
+        Some(sig)
+    } else {
+        None
+    }
+}
+
+/// Algorithm 7 ML-DSA.Sign_internal for ML-DSA-44 with a prepared key: M′ is supplied by the caller. For
+/// `ssk = signing_key_44(sk)` it returns exactly `sign_internal_44(sk, m_prime, rnd)`.
+pub fn sign_internal_prepared_44(ssk: &SigningKey44, m_prime: &[u8], rnd: &[u8; 32]) -> Option<[u8; 2420]> {
+    let mut sig = [0u8; 2420];
+    if sign_prepared_internal::<4, 4>(&ML_DSA_44, &ssk.inner, &[], m_prime, rnd, &mut sig) {
+        Some(sig)
+    } else {
+        None
+    }
 }
 
 /// Optional check for secret keys loaded from untrusted storage (ML-DSA-44). True iff every coefficient of s₁
@@ -268,6 +326,56 @@ pub fn verify_internal_prepared_65(vk: &VerifyingKey65, m_prime: &[u8], sig: &[u
     verify_prepared_internal::<6, 5>(&ML_DSA_65, &vk.inner, &[], m_prime, sig)
 }
 
+/// A secret key prepared for repeated signing (ML-DSA-65): ŝ1, ŝ2 and t̂0 in the NTT domain, Â = ExpandA(ρ), K and
+/// tr, everything Algorithm 7 recomputes from the secret key on every call (steps 1-5, plus the key inputs of 6-7).
+///
+/// Build it with [`signing_key_65`], use it with [`sign_prepared_65`] and [`sign_internal_prepared_65`]. It holds
+/// secret material (ŝ1, ŝ2, t̂0, K). With the `zeroize` feature, dropping it wipes those fields (a `cfg`-gated `Drop`
+/// impl; outside the Lean model, which has no `Drop`). Not `Clone`: do not make extra copies of a secret.
+/// Size: 48,224 bytes (6·5 + 5 + 2·6 = 47 polynomials of 1 KiB, plus 96 bytes), so keep it in a `Box` or a
+/// long-lived structure rather than on a small stack; moving it copies it (the copy is not wiped). The fields are
+/// private: the only way to obtain one is `signing_key_65`, which fixes the relation to the key bytes.
+pub struct SigningKey65 {
+    inner: PreparedSk<6, 5>,
+}
+
+/// Prepares a secret key for ML-DSA-65 signing: skDecode, the three NTTs and ExpandA (Algorithm 7 steps 1-5) once.
+/// Cost: about the key-dependent share of one `sign_65` call, dominated by ExpandA.
+///
+/// Like `sign_65` it does not validate the key (see `sk_is_well_formed_65`) and diverges only where FIPS 204's
+/// unbounded ExpandA would. Returns by value (48,224 bytes); with a `Box`, write
+/// `Box::new(signing_key_65(&sk))`.
+pub fn signing_key_65(sk: &[u8; 4032]) -> SigningKey65 {
+    SigningKey65 { inner: prepare_sk::<6, 5>(&ML_DSA_65, sk) }
+}
+
+/// Algorithm 2 ML-DSA.Sign for ML-DSA-65 with a prepared key. For `ssk = signing_key_65(sk)` it returns exactly
+/// `sign_65(sk, m, ctx, rnd)`. `None` if |ctx| > 255 or the κ budget is exhausted. Same operations on secret data
+/// as `sign_65` (only reorganized: no new branch depends on a secret).
+pub fn sign_prepared_65(ssk: &SigningKey65, m: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Option<[u8; 3309]> {
+    let prefix = match ctx_prefix(ctx) {
+        Some(b) => b,
+        None => return None,
+    };
+    let mut sig = [0u8; 3309];
+    if sign_prepared_internal::<6, 5>(&ML_DSA_65, &ssk.inner, &prefix[..2 + ctx.len()], m, rnd, &mut sig) {
+        Some(sig)
+    } else {
+        None
+    }
+}
+
+/// Algorithm 7 ML-DSA.Sign_internal for ML-DSA-65 with a prepared key: M′ is supplied by the caller. For
+/// `ssk = signing_key_65(sk)` it returns exactly `sign_internal_65(sk, m_prime, rnd)`.
+pub fn sign_internal_prepared_65(ssk: &SigningKey65, m_prime: &[u8], rnd: &[u8; 32]) -> Option<[u8; 3309]> {
+    let mut sig = [0u8; 3309];
+    if sign_prepared_internal::<6, 5>(&ML_DSA_65, &ssk.inner, &[], m_prime, rnd, &mut sig) {
+        Some(sig)
+    } else {
+        None
+    }
+}
+
 /// Optional check for secret keys loaded from untrusted storage (ML-DSA-65). True iff every coefficient of s₁
 /// and s₂, as decoded by skDecode (FIPS 204 Algorithm 25: BitUnpack with a = b = η), lies in [−η, η]. t₀ needs no
 /// check: its 13-bit field decodes to 4096 − z with z < 2¹³, always within [−4095, 4096].
@@ -396,6 +504,56 @@ pub fn verify_prepared_87(vk: &VerifyingKey87, m: &[u8], ctx: &[u8], sig: &[u8; 
 /// `vk = verifying_key_87(pk)` it returns exactly `verify_internal_87(pk, m_prime, sig)`.
 pub fn verify_internal_prepared_87(vk: &VerifyingKey87, m_prime: &[u8], sig: &[u8; 4627]) -> bool {
     verify_prepared_internal::<8, 7>(&ML_DSA_87, &vk.inner, &[], m_prime, sig)
+}
+
+/// A secret key prepared for repeated signing (ML-DSA-87): ŝ1, ŝ2 and t̂0 in the NTT domain, Â = ExpandA(ρ), K and
+/// tr, everything Algorithm 7 recomputes from the secret key on every call (steps 1-5, plus the key inputs of 6-7).
+///
+/// Build it with [`signing_key_87`], use it with [`sign_prepared_87`] and [`sign_internal_prepared_87`]. It holds
+/// secret material (ŝ1, ŝ2, t̂0, K). With the `zeroize` feature, dropping it wipes those fields (a `cfg`-gated `Drop`
+/// impl; outside the Lean model, which has no `Drop`). Not `Clone`: do not make extra copies of a secret.
+/// Size: 80,992 bytes (8·7 + 7 + 2·8 = 79 polynomials of 1 KiB, plus 96 bytes), so keep it in a `Box` or a
+/// long-lived structure rather than on a small stack; moving it copies it (the copy is not wiped). The fields are
+/// private: the only way to obtain one is `signing_key_87`, which fixes the relation to the key bytes.
+pub struct SigningKey87 {
+    inner: PreparedSk<8, 7>,
+}
+
+/// Prepares a secret key for ML-DSA-87 signing: skDecode, the three NTTs and ExpandA (Algorithm 7 steps 1-5) once.
+/// Cost: about the key-dependent share of one `sign_87` call, dominated by ExpandA.
+///
+/// Like `sign_87` it does not validate the key (see `sk_is_well_formed_87`) and diverges only where FIPS 204's
+/// unbounded ExpandA would. Returns by value (80,992 bytes); with a `Box`, write
+/// `Box::new(signing_key_87(&sk))`.
+pub fn signing_key_87(sk: &[u8; 4896]) -> SigningKey87 {
+    SigningKey87 { inner: prepare_sk::<8, 7>(&ML_DSA_87, sk) }
+}
+
+/// Algorithm 2 ML-DSA.Sign for ML-DSA-87 with a prepared key. For `ssk = signing_key_87(sk)` it returns exactly
+/// `sign_87(sk, m, ctx, rnd)`. `None` if |ctx| > 255 or the κ budget is exhausted. Same operations on secret data
+/// as `sign_87` (only reorganized: no new branch depends on a secret).
+pub fn sign_prepared_87(ssk: &SigningKey87, m: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Option<[u8; 4627]> {
+    let prefix = match ctx_prefix(ctx) {
+        Some(b) => b,
+        None => return None,
+    };
+    let mut sig = [0u8; 4627];
+    if sign_prepared_internal::<8, 7>(&ML_DSA_87, &ssk.inner, &prefix[..2 + ctx.len()], m, rnd, &mut sig) {
+        Some(sig)
+    } else {
+        None
+    }
+}
+
+/// Algorithm 7 ML-DSA.Sign_internal for ML-DSA-87 with a prepared key: M′ is supplied by the caller. For
+/// `ssk = signing_key_87(sk)` it returns exactly `sign_internal_87(sk, m_prime, rnd)`.
+pub fn sign_internal_prepared_87(ssk: &SigningKey87, m_prime: &[u8], rnd: &[u8; 32]) -> Option<[u8; 4627]> {
+    let mut sig = [0u8; 4627];
+    if sign_prepared_internal::<8, 7>(&ML_DSA_87, &ssk.inner, &[], m_prime, rnd, &mut sig) {
+        Some(sig)
+    } else {
+        None
+    }
 }
 
 /// Optional check for secret keys loaded from untrusted storage (ML-DSA-87). True iff every coefficient of s₁

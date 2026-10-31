@@ -1,4 +1,4 @@
-//! Prepared keys (`VerifyingKey*`, `verifying_key_*`, `verify_prepared_*`, `verify_internal_prepared_*`) against
+//! Prepared verifying keys (`VerifyingKey*`, `verifying_key_*`, `verify_prepared_*`, `verify_internal_prepared_*`) against
 //! the unprepared functions they must equal: keygen -> sign -> verify, mutated signatures, wrong keys, wrong
 //! messages, random public keys, and every context length class including 255 (largest valid), 256 (rejected).
 //!
@@ -174,3 +174,113 @@ prepared_tests!(p65, 0x6565_0001, 36_928, 1952, 3309, keygen_65, sign_65, verify
     VerifyingKey65, verifying_key_65, verify_prepared_65, verify_internal_prepared_65);
 prepared_tests!(p87, 0x8787_0001, 65_600, 2592, 4627, keygen_87, sign_87, verify_87, verify_internal_87, sign_internal_87,
     VerifyingKey87, verifying_key_87, verify_prepared_87, verify_internal_prepared_87);
+
+// ---------------------------------------------------------------------------------------------
+// Prepared signing keys
+// ---------------------------------------------------------------------------------------------
+
+/// `SigningKey*`, `signing_key_*`, `sign_prepared_*`, `sign_internal_prepared_*` against `sign_*` and
+/// `sign_internal_*`: signatures must be byte-identical (signing is deterministic given `rnd`), for the zero and
+/// random `rnd`, every context length class (256 and 300 give `None` from both), and keys that are not
+/// well-formed (random bytes: whatever `sign_*` does there, including exhausting the kappa budget, the prepared
+/// function must do too; release builds only, since exhaustion takes thousands of attempts).
+macro_rules! prepared_sign_tests {
+    ($modname:ident, $seed:expr, $size:expr, $sk:literal, $sig:literal, $keygen:ident, $sign:ident, $verify:ident,
+     $sign_internal:ident, $verify_internal:ident, $sk_ty:ident, $ssk:ident, $sp:ident, $sip:ident) => {
+        mod $modname {
+            use super::*;
+
+            #[test]
+            fn size_matches_the_documented_value() {
+                assert_eq!(std::mem::size_of::<$sk_ty>(), $size);
+            }
+
+            fn agree(sk: &[u8; $sk], ssk: &$sk_ty, m: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Option<[u8; $sig]> {
+                let a = $sign(sk, m, ctx, rnd);
+                let b = $sp(ssk, m, ctx, rnd);
+                assert_eq!(a, b, "sign vs sign_prepared, |m| = {}, |ctx| = {}", m.len(), ctx.len());
+                let c = $sign_internal(sk, m, rnd);
+                let d = $sip(ssk, m, rnd);
+                assert_eq!(c, d, "sign_internal vs sign_internal_prepared, |m| = {}", m.len());
+                a
+            }
+
+            #[test]
+            fn prepared_equals_unprepared() {
+                let mut r = Rng($seed);
+                for _ in 0..(10 / SCALE).max(2) {
+                    let (pk, sk) = $keygen(&r.arr32());
+                    let ssk = Box::new($ssk(&sk));
+                    for _ in 0..(10 / SCALE).max(2) {
+                        let m = r.bytes_below(300);
+                        let ctx_len = r.pick(&CTX_LENS);
+                        let ctx = r.bytes(ctx_len);
+                        let rnd = if r.below(2) == 0 { [0u8; 32] } else { r.arr32() };
+                        let sig = agree(&sk, &ssk, &m, &ctx, &rnd);
+                        if ctx_len > 255 {
+                            assert!(sig.is_none());
+                        } else {
+                            let sig = sig.expect("a well-formed key signs");
+                            assert!($verify(&pk, &m, &ctx, &sig));
+                        }
+                    }
+                }
+            }
+
+            #[test]
+            fn one_prepared_key_serves_many_signatures() {
+                let mut r = Rng($seed ^ 0xabcd);
+                let (pk, sk) = $keygen(&r.arr32());
+                let ssk = Box::new($ssk(&sk));
+                for _ in 0..(20 / SCALE).max(2) {
+                    let m = r.bytes_below(64);
+                    let mp = r.bytes_below(64);
+                    let sig = $sp(&ssk, &m, b"ctx", &r.arr32()).unwrap();
+                    assert!($verify(&pk, &m, b"ctx", &sig));
+                    let sig = $sip(&ssk, &mp, &r.arr32()).unwrap();
+                    assert!($verify_internal(&pk, &mp, &sig));
+                }
+            }
+
+            #[test]
+            fn two_prepared_keys_do_not_interfere() {
+                let mut r = Rng($seed ^ 0x77);
+                let (pk1, sk1) = $keygen(&r.arr32());
+                let (pk2, sk2) = $keygen(&r.arr32());
+                let s1 = Box::new($ssk(&sk1));
+                let s2 = Box::new($ssk(&sk2));
+                let m = r.bytes_below(64);
+                let rnd = r.arr32();
+                let a = $sp(&s1, &m, b"", &rnd).unwrap();
+                let b = $sp(&s2, &m, b"", &rnd).unwrap();
+                drop(s1);
+                // dropping one key (which wipes it under the `zeroize` feature) leaves the other usable
+                let b2 = $sp(&s2, &m, b"", &rnd).unwrap();
+                assert_eq!(b, b2);
+                assert!($verify(&pk1, &m, b"", &a) && !$verify(&pk2, &m, b"", &a));
+                assert!($verify(&pk2, &m, b"", &b) && !$verify(&pk1, &m, b"", &b));
+            }
+
+            #[test]
+            fn malformed_secret_keys_behave_alike() {
+                if cfg!(debug_assertions) {
+                    return;
+                }
+                let mut r = Rng($seed ^ 0x5eed);
+                for _ in 0..2 {
+                    let sk: [u8; $sk] = r.bytes($sk).try_into().unwrap();
+                    let ssk = Box::new($ssk(&sk));
+                    let m = r.bytes_below(64);
+                    agree(&sk, &ssk, &m, b"x", &r.arr32());
+                }
+            }
+        }
+    };
+}
+
+prepared_sign_tests!(s44, 0x4444_0002, 28_768, 2560, 2420, keygen_44, sign_44, verify_44, sign_internal_44, verify_internal_44,
+    SigningKey44, signing_key_44, sign_prepared_44, sign_internal_prepared_44);
+prepared_sign_tests!(s65, 0x6565_0002, 48_224, 4032, 3309, keygen_65, sign_65, verify_65, sign_internal_65, verify_internal_65,
+    SigningKey65, signing_key_65, sign_prepared_65, sign_internal_prepared_65);
+prepared_sign_tests!(s87, 0x8787_0002, 80_992, 4896, 4627, keygen_87, sign_87, verify_87, sign_internal_87, verify_internal_87,
+    SigningKey87, signing_key_87, sign_prepared_87, sign_internal_prepared_87);

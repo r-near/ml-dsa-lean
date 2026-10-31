@@ -124,57 +124,87 @@ fn attempt<const K: usize, const L: usize>(
     Some((c_tilde, z, hint))
 }
 
-/// Zeroizes the secret temporaries of `sign_internal`: ρ″, the decoded key's K/s1/s2/t0 and the NTT
-/// forms ŝ1, ŝ2, t̂0. Only compiled with the `zeroize` feature. This is outside the Lean proof (Aeneas
-/// models neither `Drop` nor volatile writes); the feature-on build differs from the proved code only by
-/// the calls to this function, which run after σ is written. Not wiped: the per-attempt vectors y, cs1,
-/// cs2, ct0 (locals of `attempt`), and any copies the compiler makes of the above.
+/// The part of Algorithm 7 that depends on the secret key alone: ŝ1, ŝ2, t̂0 (steps 2-4), Â (step 5), and the
+/// key's K and tr (used by steps 6-7). Signing many messages with one key computes it once. The fields are
+/// private to the crate; the `api` module wraps this type per parameter set.
+///
+/// Secret material: ŝ1, ŝ2, t̂0 and K. With the `zeroize` feature, dropping it wipes them (the `Drop` impl is
+/// `cfg`-gated, so it is outside the Lean model, which has no `Drop`).
+///
+/// Size: (K·L + L + 2K) KiB + 96 bytes (28,768 / 48,224 / 80,992 bytes for ML-DSA-44 / 65 / 87).
+pub struct PreparedSk<const K: usize, const L: usize> {
+    /// Â ← ExpandA(ρ), NTT domain. Public. (ρ itself is not kept: ExpandA is its only use.)
+    pub(crate) a_hat: [[[u32; 256]; L]; K],
+    /// ŝ1 ← NTT(s1).
+    pub(crate) s1_hat: [[u32; 256]; L],
+    /// ŝ2 ← NTT(s2).
+    pub(crate) s2_hat: [[u32; 256]; K],
+    /// t̂0 ← NTT(t0).
+    pub(crate) t0_hat: [[u32; 256]; K],
+    /// K, the secret seed of step 7.
+    pub(crate) key: [u8; 32],
+    /// tr, the hash of the public key (step 6).
+    pub(crate) tr: [u8; 64],
+}
+
 #[cfg(feature = "zeroize")]
-fn wipe_sign<const K: usize, const L: usize>(
-    key: &mut SecretKey<K, L>,
-    s1_hat: &mut [[u32; 256]; L],
-    s2_hat: &mut [[u32; 256]; K],
-    t0_hat: &mut [[u32; 256]; K],
-    rho_pp: &mut [u8; 64],
-) {
+impl<const K: usize, const L: usize> Drop for PreparedSk<K, L> {
+    /// Wipes ŝ1, ŝ2, t̂0 and K (Â and tr are public). Outside the Lean proof: Aeneas models neither `Drop` nor
+    /// volatile writes. Copies the compiler makes of the struct (moves) are not wiped.
+    fn drop(&mut self) {
+        use zeroize::Zeroize;
+        self.s1_hat.zeroize();
+        self.s2_hat.zeroize();
+        self.t0_hat.zeroize();
+        self.key.zeroize();
+    }
+}
+
+/// Steps 1-5 of Algorithm 7: skDecode, the three NTTs and ExpandA. Everything that depends on `sk` alone.
+/// With the `zeroize` feature the decoded s1, s2, t0 and K are wiped before returning.
+pub fn prepare_sk<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> PreparedSk<K, L> {
+    // 1: (ρ, K, tr, s1, s2, t0) ← skDecode(sk)
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+    let mut key = sk_decode::<K, L>(p, sk);
+    // 2–4: ŝ1, ŝ2, t̂0
+    let s1_hat = ntt_vec(&key.s1);
+    let s2_hat = ntt_vec(&key.s2);
+    let t0_hat = ntt_vec(&key.t0);
+    // 5: Â ← ExpandA(ρ)
+    let a_hat = expand_a::<K, L>(&key.rho);
+    let out = PreparedSk { a_hat, s1_hat, s2_hat, t0_hat, key: key.key, tr: key.tr };
+    #[cfg(feature = "zeroize")]
+    wipe_decoded::<K, L>(&mut key);
+    out
+}
+
+/// Zeroizes the decoded secret key of `prepare_sk` (K, s1, s2, t0). Only compiled with the `zeroize` feature.
+/// Outside the Lean proof (see `PreparedSk`'s `Drop`).
+#[cfg(feature = "zeroize")]
+fn wipe_decoded<const K: usize, const L: usize>(key: &mut SecretKey<K, L>) {
     use zeroize::Zeroize;
     key.key.zeroize();
     key.s1.zeroize();
     key.s2.zeroize();
     key.t0.zeroize();
-    s1_hat.zeroize();
-    s2_hat.zeroize();
-    t0_hat.zeroize();
-    rho_pp.zeroize();
 }
 
-/// Algorithm 7 ML-DSA.Sign_internal(sk, M′, rnd) with M′ = `m_prefix` ‖ `m` (the external API passes
-/// 0 ‖ |ctx| ‖ ctx as the prefix; the internal interface passes an empty prefix). Writes σ to `sig` and
-/// returns true, or returns false when the κ budget (all complete ExpandMask batches below 2^16) is exhausted.
-pub fn sign_internal<const K: usize, const L: usize>(
+/// Steps 6-33 of Algorithm 7 on a prepared key: μ, ρ″, the rejection loop and sigEncode. Same contract as
+/// `sign_internal` for the key `ps` was built from (`sign_internal` is `prepare_sk` followed by this function).
+/// The operations and their order on secret data are those of `sign_internal`; there is no branch on a secret
+/// beyond the algorithm's own rejection tests. With the `zeroize` feature ρ″ is wiped before returning.
+pub fn sign_prepared_internal<const K: usize, const L: usize>(
     p: &Params,
-    sk: &[u8],
+    ps: &PreparedSk<K, L>,
     m_prefix: &[u8],
     m: &[u8],
     rnd: &[u8; 32],
     sig: &mut [u8],
 ) -> bool {
-    // 1: (ρ, K, tr, s1, s2, t0) ← skDecode(sk)
-    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
-    let mut key = sk_decode::<K, L>(p, sk);
-    // 2–4: ŝ1, ŝ2, t̂0
-    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
-    let mut s1_hat = ntt_vec(&key.s1);
-    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
-    let mut s2_hat = ntt_vec(&key.s2);
-    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
-    let mut t0_hat = ntt_vec(&key.t0);
-    // 5: Â ← ExpandA(ρ)
-    let a_hat = expand_a::<K, L>(&key.rho);
     // 6: μ ← H(tr || M′, 64)
     let mut mu = [0u8; 64];
     let mut h = Shake::shake256();
-    h.absorb(&key.tr);
+    h.absorb(&ps.tr);
     h.absorb(m_prefix);
     h.absorb(m);
     h.finalize();
@@ -183,7 +213,7 @@ pub fn sign_internal<const K: usize, const L: usize>(
     #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
     let mut rho_pp = [0u8; 64];
     let mut h = Shake::shake256();
-    h.absorb(&key.key);
+    h.absorb(&ps.key);
     h.absorb(rnd);
     h.absorb(&mu);
     h.finalize();
@@ -192,17 +222,42 @@ pub fn sign_internal<const K: usize, const L: usize>(
     let mut kappa: u32 = 0;
     while kappa + (L as u32) - 1 <= 0xFFFF {
         if let Some((c_tilde, z, hint)) =
-            attempt::<K, L>(p, &a_hat, &s1_hat, &s2_hat, &t0_hat, &mu, &rho_pp, kappa as u16)
+            attempt::<K, L>(p, &ps.a_hat, &ps.s1_hat, &ps.s2_hat, &ps.t0_hat, &mu, &rho_pp, kappa as u16)
         {
             // 33: σ ← sigEncode(c̃, z mod± q, h); z is already the canonical Z_q representative
             sig_encode::<K, L>(p, &c_tilde, &z, &hint, sig);
             #[cfg(feature = "zeroize")]
-            wipe_sign::<K, L>(&mut key, &mut s1_hat, &mut s2_hat, &mut t0_hat, &mut rho_pp);
+            wipe_rho_pp(&mut rho_pp);
             return true;
         }
         kappa += L as u32;
     }
     #[cfg(feature = "zeroize")]
-    wipe_sign::<K, L>(&mut key, &mut s1_hat, &mut s2_hat, &mut t0_hat, &mut rho_pp);
+    wipe_rho_pp(&mut rho_pp);
     false
+}
+
+/// Zeroizes ρ″ (Algorithm 7 step 7). Only compiled with the `zeroize` feature; outside the Lean proof.
+/// Not wiped: the per-attempt vectors y, cs1, cs2, ct0 (locals of `attempt`), and any copies the compiler makes.
+#[cfg(feature = "zeroize")]
+fn wipe_rho_pp(rho_pp: &mut [u8; 64]) {
+    use zeroize::Zeroize;
+    rho_pp.zeroize();
+}
+
+/// Algorithm 7 ML-DSA.Sign_internal(sk, M′, rnd) with M′ = `m_prefix` ‖ `m` (the external API passes
+/// 0 ‖ |ctx| ‖ ctx as the prefix; the internal interface passes an empty prefix). Writes σ to `sig` and
+/// returns true, or returns false when the κ budget (all complete ExpandMask batches below 2^16) is exhausted.
+/// It is `prepare_sk` followed by `sign_prepared_internal`; with the `zeroize` feature the prepared key is
+/// wiped when it goes out of scope.
+pub fn sign_internal<const K: usize, const L: usize>(
+    p: &Params,
+    sk: &[u8],
+    m_prefix: &[u8],
+    m: &[u8],
+    rnd: &[u8; 32],
+    sig: &mut [u8],
+) -> bool {
+    let ps = prepare_sk::<K, L>(p, sk);
+    sign_prepared_internal::<K, L>(p, &ps, m_prefix, m, rnd, sig)
 }
