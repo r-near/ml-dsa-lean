@@ -97,7 +97,7 @@ pub const ZETAS_NEG_SHOUP: [u32; 256] = [
 pub const F_SHOUP: u32 = 4278190082;
 // END GENERATED
 
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 256], m: &mut usize) {
     let mut i = 0;
     while i < ITERATIONS {
@@ -116,7 +116,7 @@ fn ntt_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 256], m: &
     }
 }
 
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_inverse_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 256], m: &mut usize) {
     let mut i = 0;
     while i < ITERATIONS {
@@ -136,7 +136,7 @@ fn ntt_inverse_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 25
 }
 
 /// Algorithm 41 NTT(w), the shared body (see "Dispatch" below).
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_body(w: &[u32; 256]) -> [u32; 256] {
     let mut w = *w;
     let mut m = 0;
@@ -152,7 +152,7 @@ fn ntt_body(w: &[u32; 256]) -> [u32; 256] {
 }
 
 /// Algorithm 42 NTT⁻¹(ŵ), the shared body.
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_inverse_body(w_hat: &[u32; 256]) -> [u32; 256] {
     let mut w = *w_hat;
     let mut m = 256;
@@ -174,7 +174,7 @@ fn ntt_inverse_body(w_hat: &[u32; 256]) -> [u32; 256] {
 }
 
 /// Algorithm 45 MultiplyNTT(â, b̂), the shared body.
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
     let mut c = [0u32; 256];
     let mut i = 0;
@@ -189,7 +189,7 @@ fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
 // Dispatch. NOT part of the Lean proof; read this before relying on the theorems for a shipped binary.
 //
 // `ntt`, `ntt_inverse` and `multiply_ntt` are the only entry points the rest of the crate (and the proofs) use.
-// Each has one shared `#[inline(always)]` body, proved against FIPS 204 (`Proofs/NTT.lean`, `NTTInverse.lean`,
+// Each has one shared body (`#[inline(always)]` where this dispatch has a second compilation, see `field.rs`), proved against FIPS 204 (`Proofs/NTT.lean`, `NTTInverse.lean`,
 // `NTTOps.lean`). On x86_64 the body is compiled twice: once with the crate's target features, and once inside a
 // `#[target_feature(enable = "avx2")]` wrapper, where LLVM vectorizes the 32 x 32 -> 64 bit butterflies with
 // 256-bit vectors. A cached CPUID/XGETBV check picks one of the two compilations of the SAME source body.

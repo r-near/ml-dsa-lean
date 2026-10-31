@@ -8,12 +8,14 @@ pub const Q: u32 = 8_380_417;
 const BARRETT_SHIFT: u32 = 46; // 2 * (ilog2(Q) + 1)
 const BARRETT_MULTIPLIER: u128 = (1u128 << BARRETT_SHIFT) / (Q as u128);
 
-// The functions the NTT bodies call are `#[inline(always)]` so that the AVX2 compilation of a body (see `ntt.rs`,
-// `dispatch`) contains them: LLVM only inlines a callee into a `#[target_feature]` function when it is allowed to,
-// and an out-of-line copy would be compiled without AVX2.
+// The functions the NTT bodies call are `#[inline(always)]` on x86_64 builds that have the runtime AVX2 dispatch (see
+// `ntt.rs`, `dispatch`), so that the AVX2 compilation of a body contains them: LLVM only inlines a callee into a
+// `#[target_feature]` function when it is allowed to, and an out-of-line copy would be compiled without AVX2. Other
+// targets keep ordinary inlining: forcing it crate-wide changed the code shape enough that BINSEC no longer finished the
+// riscv32imac `response`/`hint_step` probes within an hour (they were `secure` before).
 
 /// x - q if x >= q, else x. Requires x < 2q.
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn small_reduce(x: u32) -> u32 {
     let mask = 0u32.wrapping_sub((x >= Q) as u32);
     x - (Q & mask)
@@ -28,11 +30,11 @@ pub fn barrett_reduce(x: u64) -> u32 {
     small_reduce(remainder as u32)
 }
 
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn add(a: u32, b: u32) -> u32 {
     small_reduce(a + b)
 }
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn sub(a: u32, b: u32) -> u32 {
     small_reduce(a + Q - b)
 }
@@ -50,7 +52,7 @@ pub fn mul(a: u32, b: u32) -> u32 {
 /// With `hi = floor(x * zp / 2^32)` the exact quotient satisfies `hi <= floor(z * x / q) <= hi + 1`, so
 /// `z * x - hi * q` lies in `[0, 2q)` and fits in a u32; the wrapping u32 arithmetic below computes it exactly. One
 /// `small_reduce` (a mask, no branch) finishes. Only 32 x 32 -> 64 multiplies.
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn mul_shoup(z: u32, zp: u32, x: u32) -> u32 {
     let hi = (((x as u64) * (zp as u64)) >> 32) as u32;
     small_reduce(z.wrapping_mul(x).wrapping_sub(hi.wrapping_mul(Q)))
@@ -62,7 +64,7 @@ const QNEG: u32 = 4_236_238_847;
 const R2: u64 = 2_365_951;
 
 /// Montgomery reduction with R = 2^32: `a * 2^-32 mod q`, in `[0, 2q)`, for `a < 2^32 * q`.
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn mont_reduce(a: u64) -> u32 {
     let m = (a as u32).wrapping_mul(QNEG);
     ((a + (m as u64) * (Q as u64)) >> 32) as u32
@@ -70,7 +72,7 @@ pub fn mont_reduce(a: u64) -> u32 {
 
 /// `a * b mod q` for canonical `a`, `b`, with two Montgomery reductions: the first leaves `a * b * 2^-32`, the second
 /// multiplies by `2^64 mod q` to cancel it. Only 32 x 32 -> 64 multiplies.
-#[inline(always)]
+#[cfg_attr(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn mul_mont(a: u32, b: u32) -> u32 {
     let p = mont_reduce((a as u64) * (b as u64));
     small_reduce(mont_reduce((p as u64) * R2))

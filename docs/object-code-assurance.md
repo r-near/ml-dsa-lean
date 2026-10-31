@@ -297,6 +297,58 @@ baseline (riscv32imac: 22 secure, 12 insecure, 6 unknown), while `ISSUES.md` CT-
 run. (2) The 40-versus-39 count is not a discrepancy: the README's own note says LLVM merges `field_add` and `field_small_reduce`
 into one symbol that cargo-checkct lists twice. I did not edit the README.
 
+### 3.5 AVX2 dispatch of the NTT bodies
+
+`src/ntt.rs` ("Dispatch") compiles the NTT, inverse NTT and pointwise-product bodies twice on x86_64 and picks one at run
+time. This section records what that does to the claims above.
+
+**Trust argument.** The Lean proofs (`Proofs/NTT.lean`, `NTTInverse.lean`, `NTTOps.lean`) are about the source of the shared
+`#[inline(always)]` bodies `ntt_body`, `ntt_inverse_body` and `multiply_ntt_body`. Extraction runs with `--cfg miri`, where the
+public entry points are the bodies themselves: the proved model contains no dispatch, no atomic and no `unsafe`. In a normal
+build the dispatch picks one of two compilations of that same body: the crate's baseline target features, or a
+`#[target_feature(enable = "avx2")]` wrapper in which LLVM vectorizes the 32 x 32 -> 64 bit butterflies. The shim (CPUID leaf 7,
+OSXSAVE, XCR0 bits 1 and 2, a relaxed `AtomicU8` cache) is outside the proof, in the same class as the zeroize code and the
+`black_box` barriers. It reads only the CPU model. A wrong answer cannot change a result (both copies compute the same
+function); it can only cause SIGILL (AVX2 reported but unusable) or a slower run. `tests/dispatch.rs` compares the two
+compilations on random and edge polynomials. What stays assumed is that LLVM compiles both copies faithfully, which is the
+assumption already made for the portable copy.
+
+**What BINSEC covers.**
+- cargo-checkct models `cpuid` as "no optional features" (`docs/upstream-issues.md` U-32). The dispatch cache is a `static` in `.bss`, which
+  BINSEC leaves symbolic, so it would explore the AVX2 arm anyway. `checkct/run-select.sh` therefore pre-sets the cache to 1
+  ("checked, no AVX2") in the generated BINSEC script on x86_64, which is exactly what the stubbed `cpuid` would have produced.
+  The probes then follow the portable arm, which is the body the proofs cover.
+- BINSEC 0.11.3 cannot lift the VEX-encoded instructions of the AVX2 copy (status `unknown`, "uninterpreted KO" at the first
+  vector instruction). A build with `-C target-feature=+avx2` (`bash checkct/select-ntt.sh avx2`) therefore ends `unknown` for
+  every probe that reaches the vectorized NTT; the scalar probes (`field_mul_shoup`, `field_mont_reduce`, `field_mul_mont`)
+  stay `secure` there. No claim is made about BINSEC verdicts for the AVX2 copy.
+- Substitute for the AVX2 copy: a static scan of the disassembly (`checkct/scan-avx2.sh`, `checkct/scan-avx2.py`). For
+  `ntt_avx2`, `ntt_inverse_avx2` and `multiply_ntt_avx2` it reports no `div`/`idiv`, no gather or scatter, only conditional
+  jumps that are loop back-edges on a counter compared with an immediate (5, 6 and 1 of them), and index registers that are
+  only those loop counters. The only indirect calls are `memcpy` calls (length 0x400) through the GOT for the by-value `[u32; 256]`
+  arrays. This is a review aid, not a proof: it does not show that the vector instructions are data-independent in time
+  (VPMULUDQ and the other instructions used are fixed-latency on current Intel and AMD cores, which is an assumption about
+  hardware, as in section 2.3).
+
+**Results of the runs for the Shoup/Montgomery NTT and the dispatch** (`checkct/select-ntt.sh`, 28 probes per target: the NTT,
+inverse NTT, pointwise product, the three field products, `ntt_vec`, `matrix_vector_ntt`, `scalar_vector_ntt_inverse`,
+`compute_t`, `response`, `hint_step` and the `sign_internal` census; nightly-2026-10-06, 1 hour per probe):
+
+| target | secure | not secure |
+|---|---|---|
+| x86_64-unknown-linux-gnu | 27 | `census_sign_internal_44`: first leak at `sampling.rs:35` (the `sample_in_ball` rejection test, public outcome), no verdict (`error`), as in `checkct/README.md` |
+| thumbv7em-none-eabihf | 27 | `census_sign_internal_44`: leak found, no verdict (`error`), as in the README |
+| riscv32imac-unknown-none-elf | 26 | `compute_t_87`: unknown (timeout at 1 hour, no leak found; also unknown before this change); `census_sign_internal_44`: `error` |
+
+The `ntt`, `ntt_inverse` and `multiply_ntt` probes are secure on all three targets. A first version of the dispatch marked the field
+functions `#[inline(always)]` on every target. That made the riscv32imac `response_*` and `hint_step_*` probes `unknown` (1 hour,
+one pending path) where the Shoup/Montgomery tree without dispatch finishes them `secure` in about ten minutes. The attribute is
+now gated by `cfg_attr` on x86_64 builds that have the dispatch, which restored the verdicts above. This is a reminder that BINSEC
+completion depends on code shape, not only on the source.
+
+Section 3.3's "not covered" list gains one entry: the vectorized AVX2 copies are checked only by the static scan above (the
+indirect calls it lists are `memcpy` of 1024 bytes through the GOT, confirmed in the disassembly).
+
 ## 4. Part 3: options for object-code functional correctness of our crate
 
 Framing. Our theorem is about the Rust source; rustc/LLVM output is trusted (`STATUS.md` "Trusted base"). An object-code
