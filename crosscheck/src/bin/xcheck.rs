@@ -243,8 +243,8 @@ fn main() {
         for &set in &a.sets {
             println!("\n{} ({} trials per variant; deterministic Sign, empty ctx; outcome vs ours)", set.name(), a.sk_trials);
             let rows = undefined::run(set, &imps, a.sk_trials, a.seed, 120);
-            println!("| variant | ours sk_is_well_formed | mldsa-native pk_from_sk | {} |", imps.iter().map(|i| i.name()).collect::<Vec<_>>().join(" | "));
-            println!("|---|---|---|{}", "---|".repeat(imps.len()));
+            println!("| variant | ours sk_is_well_formed | mldsa-native pk_from_sk | ours pk_from_sk | {} |", imps.iter().map(|i| i.name()).collect::<Vec<_>>().join(" | "));
+            println!("|---|---|---|---|{}", "---|".repeat(imps.len()));
             let mut panics: std::collections::BTreeSet<String> = Default::default();
             for r in &rows {
                 for (ii, o) in r.outcomes.iter().enumerate() {
@@ -255,16 +255,20 @@ fn main() {
                     }
                 }
                 println!(
-                    "| {} | {} | {} | {} |",
+                    "| {} | {} | {} | {} | {} |",
                     r.variant,
                     r.ours_well_formed,
                     r.mldsa_validate,
+                    r.ours_pk_from_sk,
                     r.outcomes.iter().map(|o| undefined::summarize(o)).collect::<Vec<_>>().join(" | ")
                 );
             }
             for p in &panics {
                 println!("  panic message, {p}");
             }
+            let bad: Vec<&str> = rows.iter().filter(|r| !r.pk_from_sk_agrees).map(|r| r.variant.as_str()).collect();
+            println!("  pk_from_sk vs mldsa-native: {} of {} variants agree{}", rows.len() - bad.len(), rows.len(),
+                if bad.is_empty() { String::new() } else { format!(" (DISAGREE: {})", bad.join(", ")) });
         }
     }
 

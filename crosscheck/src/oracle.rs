@@ -227,6 +227,15 @@ pub fn ours_sk_is_well_formed(set: Set, sk: &[u8]) -> bool {
     }
 }
 
+/// `pk_from_sk_NN` of our crate (the key-consistency check): `Some(pk)` iff the key is consistent.
+pub fn ours_pk_from_sk(set: Set, sk: &[u8]) -> Option<Vec<u8>> {
+    match set {
+        Set::S44 => api::pk_from_sk_44(sk.try_into().unwrap()).map(|p| p.to_vec()),
+        Set::S65 => api::pk_from_sk_65(sk.try_into().unwrap()).map(|p| p.to_vec()),
+        Set::S87 => api::pk_from_sk_87(sk.try_into().unwrap()).map(|p| p.to_vec()),
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // RustCrypto ml-dsa
 // ---------------------------------------------------------------------------------------------

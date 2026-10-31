@@ -106,6 +106,10 @@ pub struct Row {
     pub ours_well_formed: bool,
     /// mldsa-native `pk_from_sk`: "ok", "ok (different pk)" or the error name.
     pub mldsa_validate: String,
+    /// Our `pk_from_sk_NN`: "ok", "ok (different pk)" or "rejected"; "mixed" if the trials differ.
+    pub ours_pk_from_sk: String,
+    /// True iff our `pk_from_sk_NN` accepted and rejected exactly the keys mldsa-native's `pk_from_sk` did.
+    pub pk_from_sk_agrees: bool,
     /// Per implementation (in `imps` order), outcomes over the trials.
     pub outcomes: Vec<Vec<Outcome>>,
 }
@@ -125,7 +129,7 @@ pub fn run(set: Set, imps: &[Imp], trials: usize, seed: u64, timeout_secs: u64) 
     let names: Vec<String> = variants(set, &keys[0].1, &mut Rng::new(1)).into_iter().map(|(n, _)| n).collect();
     let mut rows: Vec<Row> = names
         .iter()
-        .map(|n| Row { variant: n.clone(), ours_well_formed: true, mldsa_validate: String::new(), outcomes: vec![Vec::new(); imps.len()] })
+        .map(|n| Row { variant: n.clone(), ours_well_formed: true, mldsa_validate: String::new(), ours_pk_from_sk: String::new(), pk_from_sk_agrees: true, outcomes: vec![Vec::new(); imps.len()] })
         .collect();
     for (pk, sk, msg) in &keys {
         let vs = variants(set, sk, &mut Rng::new(seed.wrapping_add(7)));
@@ -133,7 +137,7 @@ pub fn run(set: Set, imps: &[Imp], trials: usize, seed: u64, timeout_secs: u64) 
             let row = &mut rows[vi];
             row.ours_well_formed = row.ours_well_formed && oracle::ours_sk_is_well_formed(set, k);
             let mv = imps.iter().find_map(|i| i.validate_sk(set, k));
-            let s = match mv {
+            let s = match mv.clone() {
                 None => "n/a".to_string(),
                 Some(Ok(p)) if &p == pk => "ok".to_string(),
                 Some(Ok(_)) => "ok (different pk)".to_string(),
@@ -144,6 +148,25 @@ pub fn run(set: Set, imps: &[Imp], trials: usize, seed: u64, timeout_secs: u64) 
             } else if row.mldsa_validate != s {
                 row.mldsa_validate = "mixed".into();
             }
+            let ours_pk = oracle::ours_pk_from_sk(set, k);
+            let os = match &ours_pk {
+                None => "rejected".to_string(),
+                Some(p) if p == pk => "ok".to_string(),
+                Some(_) => "ok (different pk)".to_string(),
+            };
+            if row.ours_pk_from_sk.is_empty() {
+                row.ours_pk_from_sk = os;
+            } else if row.ours_pk_from_sk != os {
+                row.ours_pk_from_sk = "mixed".into();
+            }
+            // mldsa-native: an error code is a rejection; a returned pk must be ours.
+            row.pk_from_sk_agrees = row.pk_from_sk_agrees
+                && match (&mv, &ours_pk) {
+                    (None, _) => true,
+                    (Some(Ok(a)), Some(b)) => a == b,
+                    (Some(Err(_)), None) => true,
+                    _ => false,
+                };
             let results: Vec<Option<SignRes>> = imps.iter().map(|&i| sign_with_timeout(i, set, k.clone(), msg.clone(), timeout_secs)).collect();
             let ours = results[0].clone();
             for (ii, res) in results.iter().enumerate() {
