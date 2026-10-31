@@ -272,7 +272,8 @@ theorem keygen_87_partial (ξ : Array U8 32#usize) :
 
 /-- **ML-DSA-44 `keygen` is exactly the unbounded FIPS 204 Algorithm 1.** For all `F`, `pk`, `sk`:
 `Spec … F = some (pk, sk) → Rust = ok (arrays holding pk, sk)`; `Rust = ok (pk, sk) → ∃ F, Spec … F = some …`;
-and the Rust is never `fail`. (So the Rust diverges exactly when the spec returns `none` at every fuel.) -/
+and the Rust is never `fail`. (It follows, though it is not a separate theorem, that the Rust diverges exactly when the spec returns `none`
+at every fuel.) -/
 theorem keygen_44_exact (ξ : Array U8 32#usize) :
     (∀ e, api.keygen_44 ξ ≠ .fail e) ∧
     (∀ (F : Spec.Fuel) (pk sk : List UInt8), Spec.KeyGen Spec.ML_DSA_44 (bytesA ξ) F = some (pk, sk) →
@@ -285,7 +286,8 @@ theorem keygen_44_exact (ξ : Array U8 32#usize) :
 
 /-- **ML-DSA-65 `keygen` is exactly the unbounded FIPS 204 Algorithm 1.** For all `F`, `pk`, `sk`:
 `Spec … F = some (pk, sk) → Rust = ok (arrays holding pk, sk)`; `Rust = ok (pk, sk) → ∃ F, Spec … F = some …`;
-and the Rust is never `fail`. (So the Rust diverges exactly when the spec returns `none` at every fuel.) -/
+and the Rust is never `fail`. (It follows, though it is not a separate theorem, that the Rust diverges exactly when the spec returns `none`
+at every fuel.) -/
 theorem keygen_65_exact (ξ : Array U8 32#usize) :
     (∀ e, api.keygen_65 ξ ≠ .fail e) ∧
     (∀ (F : Spec.Fuel) (pk sk : List UInt8), Spec.KeyGen Spec.ML_DSA_65 (bytesA ξ) F = some (pk, sk) →
@@ -298,7 +300,8 @@ theorem keygen_65_exact (ξ : Array U8 32#usize) :
 
 /-- **ML-DSA-87 `keygen` is exactly the unbounded FIPS 204 Algorithm 1.** For all `F`, `pk`, `sk`:
 `Spec … F = some (pk, sk) → Rust = ok (arrays holding pk, sk)`; `Rust = ok (pk, sk) → ∃ F, Spec … F = some …`;
-and the Rust is never `fail`. (So the Rust diverges exactly when the spec returns `none` at every fuel.) -/
+and the Rust is never `fail`. (It follows, though it is not a separate theorem, that the Rust diverges exactly when the spec returns `none`
+at every fuel.) -/
 theorem keygen_87_exact (ξ : Array U8 32#usize) :
     (∀ e, api.keygen_87 ξ ≠ .fail e) ∧
     (∀ (F : Spec.Fuel) (pk sk : List UInt8), Spec.KeyGen Spec.ML_DSA_87 (bytesA ξ) F = some (pk, sk) →

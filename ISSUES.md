@@ -84,7 +84,9 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   The guard needs `ω ≤ 255` in `StdParams` (checked `usize` arithmetic in `sig_len`; 80/55/75 for 44/65/87).
 - **E-3 (2026-10-29): rejection loops have no provable bound.** Verify runs RejNTTPoly (on ρ from pk) and
   SampleInBall (on c̃ from σ) on attacker-chosen seeds; their termination is probabilistic. The Verify theorem is
-  conditioned on the spec's fuel sufficing (`RejTerm`), not stated for every input unconditionally.
+  conditioned on the spec's fuel sufficing (`RejTerm`), not stated for every input unconditionally. Resolved for
+  every input by partial correctness plus panic-freedom: Verify c9f6663, KeyGen 1be1625, Sign 0074e0c
+  (`*_exact` theorems; generic loop lemma by fixpoint induction in `Proofs/Partial.lean`).
 - **E-2 (2026-10-29): upstream's `Signature::decode` also rejects ‖z‖∞ ≥ γ1 − β.** FIPS 204 Alg 27 does not; Alg 8
   does. Same final verdict; this crate follows FIPS (check in `verify_internal`).
 

@@ -31,10 +31,10 @@ The phase 1–4a rows were also re-verified by a cold rebuild of ffc445c (job `v
 
 | `Proofs/Bridge.lean` | Z_q infinity norm of a `ReprVec`, ‖LowBits‖∞ ≤ γ2, t1 ∈ [0, 1024) after pkDecode | γ2 ∈ {95232, 261888}; d = 13 |
 | `Proofs/Witnesses.lean`, `SampleBallWitness.lean` | kernel witnesses: ExpandA (44, zero seed), ExpandS (65, bundled with `Params.Std`), SampleInBall (44, zero c̃) | none (~16 min of kernel evaluation on a cold build) |
-| `Proofs/KeyGen.lean` | **KeyGen_internal (Alg 6)**: Rust pk and sk bytes = spec's, for every ξ on which the spec returns `some` | `Params.Std`; buffer lengths; `RejTerm` (= ExpandA and ExpandS return `some` on the derived seeds, `keygen_isSome_iff`) |
+| `Proofs/KeyGen.lean` | **KeyGen_internal (Alg 6)**: Rust pk and sk bytes = spec's, for every ξ on which the spec returns `some` | `Params.Std`; buffer lengths; `RejTerm` (= ExpandA and ExpandS return `some` on the derived seeds, `keygen_isSome_iff`); unconditional version without `RejTerm`: `PartialKeyGen.lean` |
 
 | `Proofs/Verify.lean` | **Verify_internal (Alg 8)**: Rust verdict = spec's, for every pk and σ (any length: a wrong length returns false on both sides) and every M′ = m_prefix ‖ m | `Params.Std`; `RejTerm` (`verify_isSome_iff`: if sigDecode succeeds, ExpandA(ρ) and SampleInBall(c̃) return `some`; malformed hints and wrong lengths always give `some false`) |
-| `Proofs/Sign.lean` | **Sign_internal (Alg 7, bounded)**: spec `some σ` (any budget B) ⇒ Rust returns true and writes σ; all `kappaBudget` attempts rejected with enough sampler fuel (`Exhausted`) ⇒ Rust returns false and leaves the output buffer untouched (`r.2 = sig`). For every sk byte string of length skLen | `Params.Std`; buffer lengths; `RejTerm` (`sign_isSome_iff`, `sign_none_cases`: the spec's `none` splits into fuel failure vs budget exhaustion) |
+| `Proofs/Sign.lean` | **Sign_internal (Alg 7, bounded)**: spec `some σ` (any budget B) ⇒ Rust returns true and writes σ; all `kappaBudget` attempts rejected with enough sampler fuel (`Exhausted`) ⇒ Rust returns false and leaves the output buffer untouched (`r.2 = sig`). For every sk byte string of length skLen | `Params.Std`; buffer lengths; `RejTerm` (`sign_isSome_iff`, `sign_none_cases`: the spec's `none` splits into fuel failure vs budget exhaustion); unconditional version without `RejTerm`: `PartialSign.lean` |
 
 `Params.Std` = `Params.Valid` ∧ `StdParams`; `StdParams` (d = 13, γ1/γ2/η of the standard sets, τ ≤ 64, k + ℓ < 256,
 k ≤ 8, ℓ ≥ 1, ω ≤ 255, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`).
@@ -68,6 +68,21 @@ One end-to-end Lean proof, readable top-down:
   SampleInBall would never terminate (this follows from (a)–(c); it is not a separate theorem). The proof uses
   generic loop lemmas proved by fixpoint induction (`Proofs/Partial.lean`) and fuel monotonicity of the samplers.
   Not modeled: stack exhaustion and out-of-memory.
+- `keygen_correct`, **no premises since 1be1625** (`Proofs/PartialKeyGen.lean`, `keygen_NN_exact`): for every seed
+  ξ, (a) the extracted Rust never returns `fail`; (b) if `api.keygen_NN ξ = ok (pk, sk)` then `Spec.KeyGen … F =
+  some (pk, sk)` for some fuel `F`; (c) if `Spec.KeyGen … F = some (pk, sk)` at any `F`, it returns `ok` of arrays
+  holding that pair. So the pair is unique across fuels, and the Rust diverges exactly when the spec returns `none`
+  at every fuel (this follows from (a)–(c); it is not a separate theorem).
+- `sign_correct`, **no premises since 0074e0c** (`Proofs/PartialSign.lean`, `sign_NN_exact`,
+  `sign_internal_NN_exact`): for every `sk`, `m`, `ctx`, `rnd` of the API types, (a) never `fail`; (b) if the Rust
+  returns `some σ` then `Spec.Sign … F = some σ` for some `F`; (c) if `Spec.Sign … F = some σ` at any `F`, the Rust
+  returns `some σ`; (d) it returns `none` iff |ctx| > 255 or `Exhausted` holds at some fuel for M′ = 0 ‖ |ctx| ‖ ctx
+  ‖ m: ExpandA and all `kappaBudget` SampleInBall calls finished within the fuel and every attempt was rejected. The
+  Rust's cap κ + ℓ ≤ 2¹⁶ is the same as `kappaBudget`; it is an implementation bound FIPS 204 allows (κ is encoded
+  in 16 bits by ExpandMask), not a divergence from FIPS. Divergence happens only when no fuel lets ExpandA and the
+  SampleInBall calls of the attempts that run terminate (follows from (a)–(d)).
+- These partial theorems restrict what the Rust may return; they give no positive guarantee for a concrete input.
+  That the spec returns `some` for a given input still has no kernel witness at the top level (see below).
 - Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`. **Done** (`Proofs/Correctness.lean`).
 
 Named premises (the only ones allowed; each needs a satisfiability witness):
@@ -75,8 +90,8 @@ Named premises (the only ones allowed; each needs a satisfiability witness):
 - `RejTerm`: the rejection samplers (RejNTTPoly in ExpandA, RejBoundedPoly in ExpandS, SampleInBall's draw) receive
   enough accepted samples from SHAKE. Probabilistic, not provable. Concretely: the spec samplers are fuel-bounded and
   return `Option`; theorems take "the spec returns `some` at fuel F" as the hypothesis. The Rust loops are unbounded
-  (Aeneas `loop`). For Verify this premise is gone (partial correctness plus panic-freedom for every input, above);
-  KeyGen and Sign still carry it.
+  (Aeneas `loop`). The unconditional `*_exact` theorems for KeyGen, Sign and Verify (above) do not carry it; the
+  older premised theorems (`keygen_internal_spec`, `sign_internal_spec_some`, …) still do.
 - κ budget: Sign is compared with `Sign_internal_bounded B`, B = ⌊(2¹⁶ − ℓ)/ℓ⌋ + 1.
 
 Witness status of the premises:
@@ -92,12 +107,9 @@ Witness status of the premises:
 
 Not covered by any theorem:
 
-- KeyGen and Sign on inputs where a spec sampler runs out of fuel. The Rust squeezes without bound there, so it most
-  likely returns the true FIPS result, but nothing proves it yet. In Sign this includes a SampleInBall fuel failure
-  in any earlier rejected attempt. (Verify is covered for every input since c9f6663.)
-- Sign's `none` when a spec sampler runs out of fuel: `sign_NN_none_only_if` shows that a Rust `none` means the spec
-  fails at every fuel (|ctx| > 255, a fuel failure, or exhaustion), but the converse for fuel failures is unproved,
-  since the Rust may diverge there.
+- Positive existence: that the spec returns `some` for a concrete input has no kernel witness at the top level
+  (KeyGen/Sign/Verify); the sampler leaves have witnesses. Every input is covered by the unconditional theorems
+  above, which say the Rust never panics and agrees with the spec whenever either returns.
 - The crate-private internals, public only under the `internals` feature (tests, fuzzing): `verify_internal` with a
   `Params` inconsistent with its `K`/`L` (the decoders index by `K`/`L`, so it can panic), and `sign_internal` /
   `keygen_internal` with wrong-length slices (E-1). Without the feature the public surface is `api` only, and every
