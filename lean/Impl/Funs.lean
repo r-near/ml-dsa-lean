@@ -23,7 +23,7 @@ noncomputable section
 namespace Impl
 
 /-- [ml_dsa_verified::api::ctx_prefix]: loop body 0:
-    Source: 'src/api.rs', lines 35:4-38:5 -/
+    Source: 'src/api.rs', lines 36:4-39:5 -/
 @[rust_loop_body]
 def api.ctx_prefix_loop.body
   (ctx : Slice Std.U8) («prefix» : Array Std.U8 257#usize) (i : Std.Usize) :
@@ -41,7 +41,7 @@ def api.ctx_prefix_loop.body
   else ok (done «prefix»)
 
 /-- [ml_dsa_verified::api::ctx_prefix]: loop 0:
-    Source: 'src/api.rs', lines 35:4-38:5 -/
+    Source: 'src/api.rs', lines 36:4-39:5 -/
 @[rust_loop]
 def api.ctx_prefix_loop
   (ctx : Slice Std.U8) («prefix» : Array Std.U8 257#usize) (i : Std.Usize) :
@@ -52,7 +52,7 @@ def api.ctx_prefix_loop
     («prefix», i)
 
 /-- [ml_dsa_verified::api::ctx_prefix]:
-    Source: 'src/api.rs', lines 27:0-40:1 -/
+    Source: 'src/api.rs', lines 28:0-41:1 -/
 def api.ctx_prefix
   (ctx : Slice Std.U8) : RustM (Option (Array Std.U8 257#usize)) := do
   let i := Slice.len ctx
@@ -1509,7 +1509,7 @@ def ntt.ntt_inverse
   ntt.ntt_inverse_loop w_hat8 0#usize
 
 /-- [ml_dsa_verified::keygen::compute_t]: loop body 0:
-    Source: 'src/keygen.rs', lines 34:4-37:5 -/
+    Source: 'src/keygen.rs', lines 35:4-38:5 -/
 @[rust_loop_body]
 def keygen.compute_t_loop.body
   {K : Std.Usize} (s2 : Array (Array Std.U32 256#usize) K)
@@ -1530,7 +1530,7 @@ def keygen.compute_t_loop.body
   else ok (done t)
 
 /-- [ml_dsa_verified::keygen::compute_t]: loop 0:
-    Source: 'src/keygen.rs', lines 34:4-37:5 -/
+    Source: 'src/keygen.rs', lines 35:4-38:5 -/
 @[rust_loop]
 def keygen.compute_t_loop
   {K : Std.Usize} (s2 : Array (Array Std.U32 256#usize) K)
@@ -1543,7 +1543,7 @@ def keygen.compute_t_loop
     (t, i)
 
 /-- [ml_dsa_verified::keygen::compute_t]:
-    Source: 'src/keygen.rs', lines 26:0-39:1 -/
+    Source: 'src/keygen.rs', lines 27:0-40:1 -/
 def keygen.compute_t
   {K : Std.Usize} {L : Std.Usize}
   (a_hat : Array (Array (Array Std.U32 256#usize) L) K)
@@ -1679,7 +1679,7 @@ def rounding.poly_power2round
   rounding.poly_power2round_loop t t1 t0 0#usize
 
 /-- [ml_dsa_verified::keygen::vec_power2round]: loop body 0:
-    Source: 'src/keygen.rs', lines 16:4-21:5 -/
+    Source: 'src/keygen.rs', lines 17:4-22:5 -/
 @[rust_loop_body]
 def keygen.vec_power2round_loop.body
   {K : Std.Usize} (t : Array (Array Std.U32 256#usize) K)
@@ -1700,7 +1700,7 @@ def keygen.vec_power2round_loop.body
   else ok (done (t1, t0))
 
 /-- [ml_dsa_verified::keygen::vec_power2round]: loop 0:
-    Source: 'src/keygen.rs', lines 16:4-21:5 -/
+    Source: 'src/keygen.rs', lines 17:4-22:5 -/
 @[rust_loop]
 def keygen.vec_power2round_loop
   {K : Std.Usize} (t : Array (Array Std.U32 256#usize) K)
@@ -1714,7 +1714,7 @@ def keygen.vec_power2round_loop
     (t1, t0, i)
 
 /-- [ml_dsa_verified::keygen::vec_power2round]:
-    Source: 'src/keygen.rs', lines 12:0-23:1 -/
+    Source: 'src/keygen.rs', lines 13:0-24:1 -/
 def keygen.vec_power2round
   {K : Std.Usize} (t : Array (Array Std.U32 256#usize) K) :
   RustM ((Array (Array Std.U32 256#usize) K) × (Array (Array Std.U32
@@ -2122,7 +2122,7 @@ def encode.pk_encode
   encode.pk_encode_loop1 t1 out1 0#usize
 
 /-- [ml_dsa_verified::keygen::keygen_internal]: loop body 0:
-    Source: 'src/keygen.rs', lines 77:4-81:5
+    Source: 'src/keygen.rs', lines 78:4-82:5
     Visibility: public -/
 @[rust_loop_body]
 def keygen.keygen_internal_loop0.body
@@ -2143,7 +2143,7 @@ def keygen.keygen_internal_loop0.body
   else ok (done (rho, key))
 
 /-- [ml_dsa_verified::keygen::keygen_internal]: loop 0:
-    Source: 'src/keygen.rs', lines 77:4-81:5
+    Source: 'src/keygen.rs', lines 78:4-82:5
     Visibility: public -/
 @[rust_loop]
 def keygen.keygen_internal_loop0
@@ -2157,7 +2157,7 @@ def keygen.keygen_internal_loop0
     (rho, key, i)
 
 /-- [ml_dsa_verified::keygen::keygen_internal]: loop body 1:
-    Source: 'src/keygen.rs', lines 83:4-86:5
+    Source: 'src/keygen.rs', lines 84:4-87:5
     Visibility: public -/
 @[rust_loop_body]
 def keygen.keygen_internal_loop1.body
@@ -2176,7 +2176,7 @@ def keygen.keygen_internal_loop1.body
   else ok (done rho_prime)
 
 /-- [ml_dsa_verified::keygen::keygen_internal]: loop 1:
-    Source: 'src/keygen.rs', lines 83:4-86:5
+    Source: 'src/keygen.rs', lines 84:4-87:5
     Visibility: public -/
 @[rust_loop]
 def keygen.keygen_internal_loop1
@@ -2190,7 +2190,7 @@ def keygen.keygen_internal_loop1
     (rho_prime, i)
 
 /-- [ml_dsa_verified::keygen::keygen_internal]:
-    Source: 'src/keygen.rs', lines 64:0-109:1
+    Source: 'src/keygen.rs', lines 65:0-110:1
     Visibility: public -/
 def keygen.keygen_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params)
@@ -2235,7 +2235,7 @@ def keygen.keygen_internal
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::keygen_44]:
-    Source: 'src/api.rs', lines 48:0-53:1
+    Source: 'src/api.rs', lines 49:0-54:1
     Visibility: public -/
 def api.keygen_44
   (xi : Array Std.U8 32#usize) :
@@ -3806,7 +3806,7 @@ def sign.sign_internal
   sign.sign_internal_loop p sig s1_hat s2_hat t0_hat a_hat mu1 rho_pp1 0#u32
 
 /-- [ml_dsa_verified::api::sign_44]:
-    Source: 'src/api.rs', lines 57:0-68:1
+    Source: 'src/api.rs', lines 58:0-69:1
     Visibility: public -/
 def api.sign_44
   (sk : Array Std.U8 2560#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4534,7 +4534,7 @@ def verify.verify_internal
         else ok false
 
 /-- [ml_dsa_verified::api::verify_44]:
-    Source: 'src/api.rs', lines 71:0-77:1
+    Source: 'src/api.rs', lines 72:0-78:1
     Visibility: public -/
 def api.verify_44
   (pk : Array Std.U8 1312#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4557,7 +4557,7 @@ def api.verify_44
     verify.verify_internal 4#usize 4#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_44]:
-    Source: 'src/api.rs', lines 80:0-87:1
+    Source: 'src/api.rs', lines 81:0-88:1
     Visibility: public -/
 def api.sign_internal_44
   (sk : Array Std.U8 2560#usize) (m_prime : Slice Std.U8)
@@ -4576,7 +4576,7 @@ def api.sign_internal_44
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_44]:
-    Source: 'src/api.rs', lines 90:0-92:1
+    Source: 'src/api.rs', lines 91:0-93:1
     Visibility: public -/
 def api.verify_internal_44
   (pk : Array Std.U8 1312#usize) (m_prime : Slice Std.U8)
@@ -4714,12 +4714,154 @@ def encode.sk_is_well_formed
     true 0#usize
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_44]:
-    Source: 'src/api.rs', lines 104:0-106:1
+    Source: 'src/api.rs', lines 105:0-107:1
     Visibility: public -/
 def api.sk_is_well_formed_44 (sk : Array Std.U8 2560#usize) : RustM Bool := do
   let p ← params.ML_DSA_44
   let s ← lift (Array.to_slice sk)
   encode.sk_is_well_formed 4#usize 4#usize p s
+
+/-- [ml_dsa_verified::keygen::poly_diff]: loop body 0:
+    Source: 'src/keygen.rs', lines 116:4-119:5 -/
+@[rust_loop_body]
+def keygen.poly_diff_loop.body
+  (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) (diff : Std.U32)
+  (i : Std.Usize) :
+  RustM (ControlFlow (Std.U32 × Std.Usize) Std.U32)
+  := do
+  if i < 256#usize
+  then
+    let i1 ← Array.index_usize a i
+    let i2 ← Array.index_usize b i
+    let i3 ← lift (i1 ^^^ i2)
+    let diff1 ← lift (diff ||| i3)
+    let i4 ← i + 1#usize
+    ok (cont (diff1, i4))
+  else ok (done diff)
+
+/-- [ml_dsa_verified::keygen::poly_diff]: loop 0:
+    Source: 'src/keygen.rs', lines 116:4-119:5 -/
+@[rust_loop]
+def keygen.poly_diff_loop
+  (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) (diff : Std.U32)
+  (i : Std.Usize) :
+  RustM Std.U32
+  := do
+  loop
+    (fun (diff1, i1) => keygen.poly_diff_loop.body a b diff1 i1)
+    (diff, i)
+
+/-- [ml_dsa_verified::keygen::poly_diff]:
+    Source: 'src/keygen.rs', lines 113:0-121:1 -/
+@[reducible]
+def keygen.poly_diff
+  (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) :
+  RustM Std.U32
+  := do
+  keygen.poly_diff_loop a b 0#u32 0#usize
+
+/-- [ml_dsa_verified::keygen::vec_diff]: loop body 0:
+    Source: 'src/keygen.rs', lines 127:4-130:5 -/
+@[rust_loop_body]
+def keygen.vec_diff_loop.body
+  {K : Std.Usize} (a : Array (Array Std.U32 256#usize) K)
+  (b : Array (Array Std.U32 256#usize) K) (diff : Std.U32) (i : Std.Usize) :
+  RustM (ControlFlow (Std.U32 × Std.Usize) Std.U32)
+  := do
+  if i < K
+  then
+    let a1 ← Array.index_usize a i
+    let a2 ← Array.index_usize b i
+    let i1 ← keygen.poly_diff a1 a2
+    let diff1 ← lift (diff ||| i1)
+    let i2 ← i + 1#usize
+    ok (cont (diff1, i2))
+  else ok (done diff)
+
+/-- [ml_dsa_verified::keygen::vec_diff]: loop 0:
+    Source: 'src/keygen.rs', lines 127:4-130:5 -/
+@[rust_loop]
+def keygen.vec_diff_loop
+  {K : Std.Usize} (a : Array (Array Std.U32 256#usize) K)
+  (b : Array (Array Std.U32 256#usize) K) (diff : Std.U32) (i : Std.Usize) :
+  RustM Std.U32
+  := do
+  loop
+    (fun (diff1, i1) => keygen.vec_diff_loop.body a b diff1 i1)
+    (diff, i)
+
+/-- [ml_dsa_verified::keygen::vec_diff]:
+    Source: 'src/keygen.rs', lines 124:0-132:1 -/
+@[reducible]
+def keygen.vec_diff
+  {K : Std.Usize} (a : Array (Array Std.U32 256#usize) K)
+  (b : Array (Array Std.U32 256#usize) K) :
+  RustM Std.U32
+  := do
+  keygen.vec_diff_loop a b 0#u32 0#usize
+
+/-- [ml_dsa_verified::keygen::pk_check]:
+    Source: 'src/keygen.rs', lines 149:0-176:1 -/
+def keygen.pk_check
+  {K : Std.Usize} {L : Std.Usize}
+  (a_hat : Array (Array (Array Std.U32 256#usize) L) K)
+  (dec : encode.SecretKey K L) (pk : Slice Std.U8) :
+  RustM (Bool × (Slice Std.U8))
+  := do
+  let a ← ntt.ntt_vec dec.s1
+  let t ← keygen.compute_t a_hat a dec.s2
+  let (t1, t0_new) ← keygen.vec_power2round t
+  let pk1 ← encode.pk_encode dec.rho t1 pk
+  let tr := Array.repeat 64#usize 0#u8
+  let h ← keccak.Shake.shake256
+  let i ← 320#usize * K
+  let i1 ← 32#usize + i
+  let s ←
+    core.slice.index.Slice.index (core.slice.index.SliceIndexRangeToUsizeSlice
+      Std.U8) pk1 { «end» := i1 }
+  let h1 ← keccak.Shake.absorb h s
+  let h2 ← keccak.Shake.finalize h1
+  let (s1, to_slice_mut_back) ← lift (Array.to_slice_mut tr)
+  let (_, s2) ← keccak.Shake.squeeze h2 s1
+  let i2 ← keygen.vec_diff t0_new dec.t0
+  let tr1 := to_slice_mut_back s2
+  let tr_same ← verify.prefix_eq tr1 dec.tr 64#usize
+  if i2 = 0#u32
+  then ok (tr_same, pk1)
+  else ok (false, pk1)
+
+/-- [ml_dsa_verified::keygen::pk_from_sk]:
+    Source: 'src/keygen.rs', lines 189:0-203:1
+    Visibility: public -/
+def keygen.pk_from_sk
+  (K : Std.Usize) (L : Std.Usize) (p : params.Params) (sk : Slice Std.U8)
+  (pk : Slice Std.U8) :
+  RustM (Bool × (Slice Std.U8))
+  := do
+  let b ← encode.sk_is_well_formed K L p sk
+  if b
+  then
+    let dec ← encode.sk_decode K L p sk
+    let a_hat ← sampling.expand_a K L dec.rho
+    keygen.pk_check a_hat dec pk
+  else ok (false, pk)
+
+/-- [ml_dsa_verified::api::pk_from_sk_44]:
+    Source: 'src/api.rs', lines 125:0-132:1
+    Visibility: public -/
+def api.pk_from_sk_44
+  (sk : Array Std.U8 2560#usize) :
+  RustM (Option (Array Std.U8 1312#usize))
+  := do
+  let p ← params.ML_DSA_44
+  let pk := Array.repeat 1312#usize 0#u8
+  let s ← lift (Array.to_slice sk)
+  let (s1, to_slice_mut_back) ← lift (Array.to_slice_mut pk)
+  let (b, s2) ← keygen.pk_from_sk 4#usize 4#usize p s s1
+  if b
+  then let pk1 := to_slice_mut_back s2
+       ok (some pk1)
+  else ok none
 
 /-- [ml_dsa_verified::params::ML_DSA_65]
     Source: 'src/params.rs', lines 46:0-62:2
@@ -4747,7 +4889,7 @@ def params.ML_DSA_65 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_65]:
-    Source: 'src/api.rs', lines 114:0-119:1
+    Source: 'src/api.rs', lines 140:0-145:1
     Visibility: public -/
 def api.keygen_65
   (xi : Array Std.U8 32#usize) :
@@ -4764,7 +4906,7 @@ def api.keygen_65
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_65]:
-    Source: 'src/api.rs', lines 123:0-134:1
+    Source: 'src/api.rs', lines 149:0-160:1
     Visibility: public -/
 def api.sign_65
   (sk : Array Std.U8 4032#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4792,7 +4934,7 @@ def api.sign_65
     else ok none
 
 /-- [ml_dsa_verified::api::verify_65]:
-    Source: 'src/api.rs', lines 137:0-143:1
+    Source: 'src/api.rs', lines 163:0-169:1
     Visibility: public -/
 def api.verify_65
   (pk : Array Std.U8 1952#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4815,7 +4957,7 @@ def api.verify_65
     verify.verify_internal 6#usize 5#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_65]:
-    Source: 'src/api.rs', lines 146:0-153:1
+    Source: 'src/api.rs', lines 172:0-179:1
     Visibility: public -/
 def api.sign_internal_65
   (sk : Array Std.U8 4032#usize) (m_prime : Slice Std.U8)
@@ -4834,7 +4976,7 @@ def api.sign_internal_65
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_65]:
-    Source: 'src/api.rs', lines 156:0-158:1
+    Source: 'src/api.rs', lines 182:0-184:1
     Visibility: public -/
 def api.verify_internal_65
   (pk : Array Std.U8 1952#usize) (m_prime : Slice Std.U8)
@@ -4848,12 +4990,29 @@ def api.verify_internal_65
   verify.verify_internal 6#usize 5#usize p s s1 m_prime s2
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_65]:
-    Source: 'src/api.rs', lines 170:0-172:1
+    Source: 'src/api.rs', lines 196:0-198:1
     Visibility: public -/
 def api.sk_is_well_formed_65 (sk : Array Std.U8 4032#usize) : RustM Bool := do
   let p ← params.ML_DSA_65
   let s ← lift (Array.to_slice sk)
   encode.sk_is_well_formed 6#usize 5#usize p s
+
+/-- [ml_dsa_verified::api::pk_from_sk_65]:
+    Source: 'src/api.rs', lines 216:0-223:1
+    Visibility: public -/
+def api.pk_from_sk_65
+  (sk : Array Std.U8 4032#usize) :
+  RustM (Option (Array Std.U8 1952#usize))
+  := do
+  let p ← params.ML_DSA_65
+  let pk := Array.repeat 1952#usize 0#u8
+  let s ← lift (Array.to_slice sk)
+  let (s1, to_slice_mut_back) ← lift (Array.to_slice_mut pk)
+  let (b, s2) ← keygen.pk_from_sk 6#usize 5#usize p s s1
+  if b
+  then let pk1 := to_slice_mut_back s2
+       ok (some pk1)
+  else ok none
 
 /-- [ml_dsa_verified::params::ML_DSA_87]
     Source: 'src/params.rs', lines 63:0-79:2
@@ -4881,7 +5040,7 @@ def params.ML_DSA_87 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_87]:
-    Source: 'src/api.rs', lines 180:0-185:1
+    Source: 'src/api.rs', lines 231:0-236:1
     Visibility: public -/
 def api.keygen_87
   (xi : Array Std.U8 32#usize) :
@@ -4898,7 +5057,7 @@ def api.keygen_87
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_87]:
-    Source: 'src/api.rs', lines 189:0-200:1
+    Source: 'src/api.rs', lines 240:0-251:1
     Visibility: public -/
 def api.sign_87
   (sk : Array Std.U8 4896#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4926,7 +5085,7 @@ def api.sign_87
     else ok none
 
 /-- [ml_dsa_verified::api::verify_87]:
-    Source: 'src/api.rs', lines 203:0-209:1
+    Source: 'src/api.rs', lines 254:0-260:1
     Visibility: public -/
 def api.verify_87
   (pk : Array Std.U8 2592#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4949,7 +5108,7 @@ def api.verify_87
     verify.verify_internal 8#usize 7#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_87]:
-    Source: 'src/api.rs', lines 212:0-219:1
+    Source: 'src/api.rs', lines 263:0-270:1
     Visibility: public -/
 def api.sign_internal_87
   (sk : Array Std.U8 4896#usize) (m_prime : Slice Std.U8)
@@ -4968,7 +5127,7 @@ def api.sign_internal_87
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_87]:
-    Source: 'src/api.rs', lines 222:0-224:1
+    Source: 'src/api.rs', lines 273:0-275:1
     Visibility: public -/
 def api.verify_internal_87
   (pk : Array Std.U8 2592#usize) (m_prime : Slice Std.U8)
@@ -4982,11 +5141,28 @@ def api.verify_internal_87
   verify.verify_internal 8#usize 7#usize p s s1 m_prime s2
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_87]:
-    Source: 'src/api.rs', lines 236:0-238:1
+    Source: 'src/api.rs', lines 287:0-289:1
     Visibility: public -/
 def api.sk_is_well_formed_87 (sk : Array Std.U8 4896#usize) : RustM Bool := do
   let p ← params.ML_DSA_87
   let s ← lift (Array.to_slice sk)
   encode.sk_is_well_formed 8#usize 7#usize p s
+
+/-- [ml_dsa_verified::api::pk_from_sk_87]:
+    Source: 'src/api.rs', lines 307:0-314:1
+    Visibility: public -/
+def api.pk_from_sk_87
+  (sk : Array Std.U8 4896#usize) :
+  RustM (Option (Array Std.U8 2592#usize))
+  := do
+  let p ← params.ML_DSA_87
+  let pk := Array.repeat 2592#usize 0#u8
+  let s ← lift (Array.to_slice sk)
+  let (s1, to_slice_mut_back) ← lift (Array.to_slice_mut pk)
+  let (b, s2) ← keygen.pk_from_sk 8#usize 7#usize p s s1
+  if b
+  then let pk1 := to_slice_mut_back s2
+       ok (some pk1)
+  else ok none
 
 end Impl

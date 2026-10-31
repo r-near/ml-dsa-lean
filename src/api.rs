@@ -13,10 +13,11 @@
 //!
 //! `sign_internal_*` and `verify_internal_*` expose Algorithms 7 and 8 (M′ supplied by the caller).
 //! `sk_is_well_formed_*` is an optional range check on a stored secret key (s₁, s₂ within [−η, η]); `sign_*` does
-//! not call it. HashML-DSA (Algorithms 4 and 5) and external μ are out of scope.
+//! not call it. `pk_from_sk_*` is a stronger optional check (not a FIPS step): it recomputes the public key from
+//! a stored secret key and rejects keys that are inconsistent. HashML-DSA (Algorithms 4 and 5) and external μ are out of scope.
 
 use crate::encode::sk_is_well_formed;
-use crate::keygen::keygen_internal;
+use crate::keygen::{keygen_internal, pk_from_sk};
 use crate::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
 use crate::sign::sign_internal;
 use crate::verify::verify_internal;
@@ -105,6 +106,31 @@ pub fn sk_is_well_formed_44(sk: &[u8; 2560]) -> bool {
     sk_is_well_formed::<4, 4>(&ML_DSA_44, sk)
 }
 
+/// Derives the public key from a stored secret key and checks that the key is internally consistent
+/// (ML-DSA-44). Returns `Some(pk)` iff every coefficient of s₁ and s₂ lies in [−η, η] and recomputing from
+/// (ρ, s₁, s₂) as in KeyGen_internal steps 5–9 (Â ← ExpandA(ρ); t ← NTT⁻¹(Â ∘ NTT(s₁)) + s₂;
+/// (t₁, t₀) ← Power2Round(t); pk ← pkEncode(ρ, t₁); tr ← H(pk, 64)) gives the stored t₀ and tr. Keys from
+/// `keygen_44` pass and give back their pk. A flipped bit in ρ, tr, t₀, s₁ or s₂ is rejected. The key K
+/// (bytes 32..64) is a free seed and is not checked.
+///
+/// This is not a FIPS 204 step. FIPS 204 Algorithm 25 and Section 7.2 say skDecode should only run on trusted
+/// input, and `sign_44` follows it literally (it never calls this). Use this to validate secret keys loaded from
+/// untrusted storage and to derive the public key of a stored key. It matches the intent of mldsa-native's
+/// `pk_from_sk`.
+///
+/// Constant time: the t₀ and tr comparisons accumulate differences with no early exit, and the range check is
+/// `sk_is_well_formed`. The function returns early when that check fails, which only reveals the (public) result.
+/// The recomputation is the data-independent KeyGen arithmetic; BINSEC covers the individual steps, not this
+/// function as a whole.
+pub fn pk_from_sk_44(sk: &[u8; 2560]) -> Option<[u8; 1312]> {
+    let mut pk = [0u8; 1312];
+    if pk_from_sk::<4, 4>(&ML_DSA_44, sk, &mut pk) {
+        Some(pk)
+    } else {
+        None
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // ML-DSA-65 (K = 6, L = 5)
 // ---------------------------------------------------------------------------------------------
@@ -171,6 +197,31 @@ pub fn sk_is_well_formed_65(sk: &[u8; 4032]) -> bool {
     sk_is_well_formed::<6, 5>(&ML_DSA_65, sk)
 }
 
+/// Derives the public key from a stored secret key and checks that the key is internally consistent
+/// (ML-DSA-65). Returns `Some(pk)` iff every coefficient of s₁ and s₂ lies in [−η, η] and recomputing from
+/// (ρ, s₁, s₂) as in KeyGen_internal steps 5–9 (Â ← ExpandA(ρ); t ← NTT⁻¹(Â ∘ NTT(s₁)) + s₂;
+/// (t₁, t₀) ← Power2Round(t); pk ← pkEncode(ρ, t₁); tr ← H(pk, 64)) gives the stored t₀ and tr. Keys from
+/// `keygen_65` pass and give back their pk. A flipped bit in ρ, tr, t₀, s₁ or s₂ is rejected. The key K
+/// (bytes 32..64) is a free seed and is not checked.
+///
+/// This is not a FIPS 204 step. FIPS 204 Algorithm 25 and Section 7.2 say skDecode should only run on trusted
+/// input, and `sign_65` follows it literally (it never calls this). Use this to validate secret keys loaded from
+/// untrusted storage and to derive the public key of a stored key. It matches the intent of mldsa-native's
+/// `pk_from_sk`.
+///
+/// Constant time: the t₀ and tr comparisons accumulate differences with no early exit, and the range check is
+/// `sk_is_well_formed`. The function returns early when that check fails, which only reveals the (public) result.
+/// The recomputation is the data-independent KeyGen arithmetic; BINSEC covers the individual steps, not this
+/// function as a whole.
+pub fn pk_from_sk_65(sk: &[u8; 4032]) -> Option<[u8; 1952]> {
+    let mut pk = [0u8; 1952];
+    if pk_from_sk::<6, 5>(&ML_DSA_65, sk, &mut pk) {
+        Some(pk)
+    } else {
+        None
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // ML-DSA-87 (K = 8, L = 7)
 // ---------------------------------------------------------------------------------------------
@@ -235,4 +286,29 @@ pub fn verify_internal_87(pk: &[u8; 2592], m_prime: &[u8], sig: &[u8; 4627]) -> 
 /// it where timing is not observable, e.g. once at key load.
 pub fn sk_is_well_formed_87(sk: &[u8; 4896]) -> bool {
     sk_is_well_formed::<8, 7>(&ML_DSA_87, sk)
+}
+
+/// Derives the public key from a stored secret key and checks that the key is internally consistent
+/// (ML-DSA-87). Returns `Some(pk)` iff every coefficient of s₁ and s₂ lies in [−η, η] and recomputing from
+/// (ρ, s₁, s₂) as in KeyGen_internal steps 5–9 (Â ← ExpandA(ρ); t ← NTT⁻¹(Â ∘ NTT(s₁)) + s₂;
+/// (t₁, t₀) ← Power2Round(t); pk ← pkEncode(ρ, t₁); tr ← H(pk, 64)) gives the stored t₀ and tr. Keys from
+/// `keygen_87` pass and give back their pk. A flipped bit in ρ, tr, t₀, s₁ or s₂ is rejected. The key K
+/// (bytes 32..64) is a free seed and is not checked.
+///
+/// This is not a FIPS 204 step. FIPS 204 Algorithm 25 and Section 7.2 say skDecode should only run on trusted
+/// input, and `sign_87` follows it literally (it never calls this). Use this to validate secret keys loaded from
+/// untrusted storage and to derive the public key of a stored key. It matches the intent of mldsa-native's
+/// `pk_from_sk`.
+///
+/// Constant time: the t₀ and tr comparisons accumulate differences with no early exit, and the range check is
+/// `sk_is_well_formed`. The function returns early when that check fails, which only reveals the (public) result.
+/// The recomputation is the data-independent KeyGen arithmetic; BINSEC covers the individual steps, not this
+/// function as a whole.
+pub fn pk_from_sk_87(sk: &[u8; 4896]) -> Option<[u8; 2592]> {
+    let mut pk = [0u8; 2592];
+    if pk_from_sk::<8, 7>(&ML_DSA_87, sk, &mut pk) {
+        Some(pk)
+    } else {
+        None
+    }
 }

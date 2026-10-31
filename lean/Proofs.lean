@@ -37,3 +37,5 @@ import Proofs.PartialAPI
 import Proofs.PartialSampleS
 import Proofs.PartialKeyGen
 import Proofs.PartialSign
+import Proofs.PkFromSk
+import Proofs.Divergence

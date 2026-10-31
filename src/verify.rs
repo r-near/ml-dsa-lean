@@ -31,7 +31,7 @@ fn scale_vec_by_2d<const N: usize>(t1: &[[u32; 256]; N]) -> [[u32; 256]; N] {
 }
 
 /// Constant-shape equality of the first `len` bytes of two 64-byte buffers (`len` ≤ 64).
-fn prefix_eq(a: &[u8; 64], b: &[u8; 64], len: usize) -> bool {
+pub(crate) fn prefix_eq(a: &[u8; 64], b: &[u8; 64], len: usize) -> bool {
     let mut diff = 0u8;
     let mut i = 0;
     while i < len {
