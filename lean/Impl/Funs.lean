@@ -3941,99 +3941,62 @@ def rounding.poly_use_hint
   let out := Array.repeat 256#usize 0#u32
   rounding.poly_use_hint_loop p h r out 0#usize
 
-/-- [ml_dsa_verified::verify::verify_decoded]: loop body 0:
+/-- [ml_dsa_verified::verify::verify_core]: loop body 0:
     Source: 'src/verify.rs', lines 116:4-122:5 -/
 @[rust_loop_body]
-def verify.verify_decoded_loop.body
-  {K : Std.Usize} (i : Std.Usize) (i1 : Std.Usize) (i2 : Std.U32)
-  (i3 : Std.Usize) (i4 : Std.Usize) (i5 : Std.U32) (i6 : Std.U32)
-  (i7 : Std.Usize) (i8 : Std.U32) (i9 : Std.Usize) (i10 : Std.Usize)
-  (i11 : Std.Usize) (i12 : Std.U32) (i13 : Std.U64) (i14 : Std.U64)
-  (a : Array (Array Std.U32 256#usize) K) (h : Array (Array Bool 256#usize) K)
+def verify.verify_core_loop.body
+  {K : Std.Usize} (p : params.Params) (a : Array (Array Std.U32 256#usize) K)
+  (h : Array (Array Bool 256#usize) K)
   (az_hat : Array (Array Std.U32 256#usize) K)
   (c_hat : Array Std.U32 256#usize)
   (w_approx : Array (Array Std.U32 256#usize) K)
-  (w1 : Array (Array Std.U32 256#usize) K) (i15 : Std.Usize) :
+  (w1 : Array (Array Std.U32 256#usize) K) (i : Std.Usize) :
   RustM (ControlFlow ((Array (Array Std.U32 256#usize) K) × (Array (Array
     Std.U32 256#usize) K) × Std.Usize) (Array (Array Std.U32 256#usize) K))
   := do
-  if i15 < K
+  if i < K
   then
-    let a1 ← Array.index_usize a i15
+    let a1 ← Array.index_usize a i
     let ct1_hat ← ntt.multiply_ntt c_hat a1
-    let a2 ← Array.index_usize az_hat i15
+    let a2 ← Array.index_usize az_hat i
     let a3 ← ntt.sub_poly a2 ct1_hat
     let a4 ← ntt.ntt_inverse a3
-    let w_approx1 ← Array.update w_approx i15 a4
-    let a5 ← Array.index_usize h i15
-    let a6 ← Array.index_usize w_approx1 i15
-    let a7 ←
-      rounding.poly_use_hint
-        {
-          k := i,
-          l := i1,
-          eta := i2,
-          eta_bits := i3,
-          tau := i4,
-          beta := i5,
-          gamma1 := i6,
-          gamma1_bits := i7,
-          gamma2 := i8,
-          w1_bits := i9,
-          omega := i10,
-          c_tilde_len := i11,
-          two_gamma2_shift := i12,
-          two_gamma2_mult := i13,
-          two_gamma2_div_mult := i14
-        } a5 a6
-    let a8 ← Array.update w1 i15 a7
-    let i16 ← i15 + 1#usize
-    ok (cont (w_approx1, a8, i16))
+    let w_approx1 ← Array.update w_approx i a4
+    let a5 ← Array.index_usize h i
+    let a6 ← Array.index_usize w_approx1 i
+    let a7 ← rounding.poly_use_hint p a5 a6
+    let a8 ← Array.update w1 i a7
+    let i1 ← i + 1#usize
+    ok (cont (w_approx1, a8, i1))
   else ok (done w1)
 
-/-- [ml_dsa_verified::verify::verify_decoded]: loop 0:
+/-- [ml_dsa_verified::verify::verify_core]: loop 0:
     Source: 'src/verify.rs', lines 116:4-122:5 -/
 @[rust_loop]
-def verify.verify_decoded_loop
-  {K : Std.Usize} (i : Std.Usize) (i1 : Std.Usize) (i2 : Std.U32)
-  (i3 : Std.Usize) (i4 : Std.Usize) (i5 : Std.U32) (i6 : Std.U32)
-  (i7 : Std.Usize) (i8 : Std.U32) (i9 : Std.Usize) (i10 : Std.Usize)
-  (i11 : Std.Usize) (i12 : Std.U32) (i13 : Std.U64) (i14 : Std.U64)
-  (a : Array (Array Std.U32 256#usize) K) (h : Array (Array Bool 256#usize) K)
+def verify.verify_core_loop
+  {K : Std.Usize} (p : params.Params) (a : Array (Array Std.U32 256#usize) K)
+  (h : Array (Array Bool 256#usize) K)
   (az_hat : Array (Array Std.U32 256#usize) K)
   (c_hat : Array Std.U32 256#usize)
   (w_approx : Array (Array Std.U32 256#usize) K)
-  (w1 : Array (Array Std.U32 256#usize) K) (i15 : Std.Usize) :
+  (w1 : Array (Array Std.U32 256#usize) K) (i : Std.Usize) :
   RustM (Array (Array Std.U32 256#usize) K)
   := do
   loop
-    (fun (w_approx1, w11, i16) => verify.verify_decoded_loop.body i i1 i2 i3 i4
-      i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 a h az_hat c_hat w_approx1 w11 i16)
-    (w_approx, w1, i15)
+    (fun (w_approx1, w11, i1) => verify.verify_core_loop.body p a h az_hat
+      c_hat w_approx1 w11 i1)
+    (w_approx, w1, i)
 
-/-- [ml_dsa_verified::verify::verify_decoded]:
-    Source: 'src/verify.rs', lines 91:0-136:1 -/
-def verify.verify_decoded
+/-- [ml_dsa_verified::verify::verify_core]:
+    Source: 'src/verify.rs', lines 101:0-136:1 -/
+def verify.verify_core
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
-  (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
-  (c_tilde : Array Std.U8 64#usize) (z : Array (Array Std.U32 256#usize) L)
-  (h : Array (Array Bool 256#usize) K) :
+  (vk : verify.PreparedVk K L) (mu : Array Std.U8 64#usize)
+  (c_tilde : Array Std.U8 64#usize) (c : Array Std.U32 256#usize)
+  (z : Array (Array Std.U32 256#usize) L) (h : Array (Array Bool 256#usize) K)
+  :
   RustM Bool
   := do
-  let mu := Array.repeat 64#usize 0#u8
-  let hash ← keccak.Shake.shake256
-  let s ← lift (Array.to_slice vk.tr)
-  let hash1 ← keccak.Shake.absorb hash s
-  let hash2 ← keccak.Shake.absorb hash1 m_prefix
-  let hash3 ← keccak.Shake.absorb hash2 m
-  let hash4 ← keccak.Shake.finalize hash3
-  let (s1, to_slice_mut_back) ← lift (Array.to_slice_mut mu)
-  let (_, s2) ← keccak.Shake.squeeze hash4 s1
-  let s3 ←
-    core.array.Array.index (core.ops.index.IndexSlice
-      (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde
-      { «end» := p.c_tilde_len }
-  let c ← sampling.sample_in_ball p s3
   let a ← ntt.ntt_vec z
   let az_hat ← ntt.matrix_vector_ntt vk.a_hat a
   let c_hat ← ntt.ntt c
@@ -4041,39 +4004,70 @@ def verify.verify_decoded
   let w_approx := Array.repeat K a1
   let a2 := Array.repeat 256#usize 0#u32
   let w1 := Array.repeat K a2
-  let mu1 := to_slice_mut_back s2
   let w11 ←
-    verify.verify_decoded_loop p.k p.l p.eta p.eta_bits p.tau p.beta 
-      p.gamma1 p.gamma1_bits p.gamma2 p.w1_bits p.omega p.c_tilde_len
-      p.two_gamma2_shift p.two_gamma2_mult p.two_gamma2_div_mult vk.t1_2d_hat h
-      az_hat c_hat w_approx w1 0#usize
+    verify.verify_core_loop p vk.t1_2d_hat h az_hat c_hat w_approx w1 0#usize
   let w1_enc := Array.repeat 1536#usize 0#u8
-  let (s4, to_slice_mut_back1) ← lift (Array.to_slice_mut w1_enc)
-  let s5 ← encode.w1_encode p w11 s4
+  let (s, to_slice_mut_back) ← lift (Array.to_slice_mut w1_enc)
+  let s1 ← encode.w1_encode p w11 s
   let c_tilde_prime := Array.repeat 64#usize 0#u8
-  let s6 ← lift (Array.to_slice mu1)
-  let hash5 ← keccak.Shake.absorb hash s6
-  let w1_enc1 := to_slice_mut_back1 s5
+  let hash ← keccak.Shake.shake256
+  let s2 ← lift (Array.to_slice mu)
+  let hash1 ← keccak.Shake.absorb hash s2
+  let w1_enc1 := to_slice_mut_back s1
   let i ← K * 32#usize
   let i1 ← i * p.w1_bits
-  let s7 ←
+  let s3 ←
     core.array.Array.index (core.ops.index.IndexSlice
       (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) w1_enc1
       { «end» := i1 }
-  let hash6 ← keccak.Shake.absorb hash5 s7
-  let hash7 ← keccak.Shake.finalize hash6
-  let (s8, index_mut_back) ←
+  let hash2 ← keccak.Shake.absorb hash1 s3
+  let hash3 ← keccak.Shake.finalize hash2
+  let (s4, index_mut_back) ←
     core.array.Array.index_mut (core.ops.index.IndexMutSlice
       (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde_prime
       { «end» := p.c_tilde_len }
-  let (_, s9) ← keccak.Shake.squeeze hash7 s8
+  let (_, s5) ← keccak.Shake.squeeze hash3 s4
   let i2 ← rounding.vec_infinity_norm z
   let i3 ← p.gamma1 - p.beta
-  let c_tilde_prime1 := index_mut_back s9
+  let c_tilde_prime1 := index_mut_back s5
   let hash_ok ← verify.prefix_eq c_tilde c_tilde_prime1 p.c_tilde_len
   if i2 < i3
   then ok hash_ok
   else ok false
+
+/-- [ml_dsa_verified::verify::hash_mu]:
+    Source: 'src/verify.rs', lines 87:0-96:1 -/
+def verify.hash_mu
+  (tr : Array Std.U8 64#usize) (m_prefix : Slice Std.U8) (m : Slice Std.U8) :
+  RustM (Array Std.U8 64#usize)
+  := do
+  let mu := Array.repeat 64#usize 0#u8
+  let hash ← keccak.Shake.shake256
+  let s ← lift (Array.to_slice tr)
+  let hash1 ← keccak.Shake.absorb hash s
+  let hash2 ← keccak.Shake.absorb hash1 m_prefix
+  let hash3 ← keccak.Shake.absorb hash2 m
+  let hash4 ← keccak.Shake.finalize hash3
+  let (s1, to_slice_mut_back) ← lift (Array.to_slice_mut mu)
+  let (_, s2) ← keccak.Shake.squeeze hash4 s1
+  ok (to_slice_mut_back s2)
+
+/-- [ml_dsa_verified::verify::verify_decoded]:
+    Source: 'src/verify.rs', lines 143:0-158:1 -/
+def verify.verify_decoded
+  {K : Std.Usize} {L : Std.Usize} (p : params.Params)
+  (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
+  (c_tilde : Array Std.U8 64#usize) (z : Array (Array Std.U32 256#usize) L)
+  (h : Array (Array Bool 256#usize) K) :
+  RustM Bool
+  := do
+  let mu ← verify.hash_mu vk.tr m_prefix m
+  let s ←
+    core.array.Array.index (core.ops.index.IndexSlice
+      (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde
+      { «end» := p.c_tilde_len }
+  let c ← sampling.sample_in_ball p s
+  verify.verify_core p vk mu c_tilde c z h
 
 /-- [ml_dsa_verified::verify::hash_pk]:
     Source: 'src/verify.rs', lines 60:0-67:1 -/
@@ -4529,7 +4523,7 @@ def encode.sig_decode
   | some h => ok (some (c_tilde1, z1, h))
 
 /-- [ml_dsa_verified::verify::verify_internal]:
-    Source: 'src/verify.rs', lines 148:0-169:1
+    Source: 'src/verify.rs', lines 170:0-191:1
     Visibility: public -/
 def verify.verify_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
@@ -4620,7 +4614,7 @@ def api.verifying_key_44
   ok { inner := pv }
 
 /-- [ml_dsa_verified::verify::verify_prepared_internal]:
-    Source: 'src/verify.rs', lines 175:0-192:1
+    Source: 'src/verify.rs', lines 197:0-214:1
     Visibility: public -/
 def verify.verify_prepared_internal
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)

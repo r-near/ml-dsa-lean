@@ -83,33 +83,33 @@ pub(crate) fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedV
     PreparedVk { a_hat, t1_2d_hat, tr }
 }
 
-/// Steps 8–13 of Algorithm 8 for a decoded signature (c̃, z, h) against a prepared key. Nothing here depends on
-/// the key beyond `vk`.
-///
-/// Precondition: `p` is the parameter set matching `K` and `L`, and `c_tilde[..p.c_tilde_len]` is the
-/// signature's c̃ (as returned by `sig_decode`).
-fn verify_decoded<const K: usize, const L: usize>(
-    p: &Params,
-    vk: &PreparedVk<K, L>,
-    m_prefix: &[u8],
-    m: &[u8],
-    c_tilde: &[u8; 64],
-    z: &[[u32; 256]; L],
-    h: &[[bool; 256]; K],
-) -> bool {
-    // 8: μ ← H(BytesToBits(tr) ‖ M′, 64)
+/// Step 8: μ ← H(BytesToBits(tr) ‖ M′, 64) with M′ = `m_prefix` ‖ `m`.
+fn hash_mu(tr: &[u8; 64], m_prefix: &[u8], m: &[u8]) -> [u8; 64] {
     let mut mu = [0u8; 64];
     let mut hash = Shake::shake256();
-    hash.absorb(&vk.tr);
+    hash.absorb(tr);
     hash.absorb(m_prefix);
     hash.absorb(m);
     hash.finalize();
     hash.squeeze(&mut mu);
-    // 9: c ← SampleInBall(c̃)
-    let c = sample_in_ball(p, &c_tilde[..p.c_tilde_len]);
+    mu
+}
+
+/// Steps 10–13 of Algorithm 8 once c = SampleInBall(c̃) is known: w′_Approx, UseHint, c̃′ and the comparison.
+///
+/// Precondition: `p` matches `K` and `L`; `c_tilde[..p.c_tilde_len]` is the signature's c̃.
+fn verify_core<const K: usize, const L: usize>(
+    p: &Params,
+    vk: &PreparedVk<K, L>,
+    mu: &[u8; 64],
+    c_tilde: &[u8; 64],
+    c: &[u32; 256],
+    z: &[[u32; 256]; L],
+    h: &[[bool; 256]; K],
+) -> bool {
     // 10: w′_Approx ← NTT⁻¹(Â ∘ NTT(z) − NTT(c) ∘ NTT(t1 · 2^d))
     let az_hat = matrix_vector_ntt::<K, L>(&vk.a_hat, &ntt_vec(z));
-    let c_hat = ntt(&c);
+    let c_hat = ntt(c);
     let mut w_approx = [[0u32; 256]; K];
     let mut w1 = [[0u32; 256]; K];
     let mut i = 0;
@@ -125,7 +125,7 @@ fn verify_decoded<const K: usize, const L: usize>(
     w1_encode(p, &w1, &mut w1_enc);
     let mut c_tilde_prime = [0u8; 64];
     let mut hash = Shake::shake256();
-    hash.absorb(&mu);
+    hash.absorb(mu);
     hash.absorb(&w1_enc[..K * 32 * p.w1_bits]);
     hash.finalize();
     hash.squeeze(&mut c_tilde_prime[..p.c_tilde_len]);
@@ -133,6 +133,28 @@ fn verify_decoded<const K: usize, const L: usize>(
     let norm_ok = vec_infinity_norm(z) < p.gamma1 - p.beta;
     let hash_ok = prefix_eq(c_tilde, &c_tilde_prime, p.c_tilde_len);
     norm_ok && hash_ok
+}
+
+/// Steps 8–13 of Algorithm 8 for a decoded signature (c̃, z, h) against a prepared key. Nothing here depends on
+/// the key beyond `vk`. Diverges exactly where SampleInBall does.
+///
+/// Precondition: `p` is the parameter set matching `K` and `L`, and `c_tilde[..p.c_tilde_len]` is the
+/// signature's c̃ (as returned by `sig_decode`).
+fn verify_decoded<const K: usize, const L: usize>(
+    p: &Params,
+    vk: &PreparedVk<K, L>,
+    m_prefix: &[u8],
+    m: &[u8],
+    c_tilde: &[u8; 64],
+    z: &[[u32; 256]; L],
+    h: &[[bool; 256]; K],
+) -> bool {
+    // 8: μ ← H(BytesToBits(tr) ‖ M′, 64)
+    let mu = hash_mu(&vk.tr, m_prefix, m);
+    // 9: c ← SampleInBall(c̃)
+    let c = sample_in_ball(p, &c_tilde[..p.c_tilde_len]);
+    // 10–13
+    verify_core::<K, L>(p, vk, &mu, c_tilde, &c, z, h)
 }
 
 /// Algorithm 8 ML-DSA.Verify_internal(pk, M′, σ) with M′ = `m_prefix` ‖ `m`. A `pk` whose length is not
