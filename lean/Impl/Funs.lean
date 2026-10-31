@@ -468,8 +468,67 @@ def keccak.keccak_f1600
   (a : Array Std.U64 25#usize) : RustM (Array Std.U64 25#usize) := do
   keccak.keccak_f1600_loop0 a 0#usize
 
+/-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::wrap]:
+    Source: 'src/keccak.rs', lines 151:4-156:5 -/
+def keccak.Shake.wrap (self : keccak.Shake) : RustM keccak.Shake := do
+  if self.pos = self.rate
+  then
+    let a ← keccak.keccak_f1600 self.state
+    ok { self with state := a, pos := 0#usize }
+  else ok self
+
+/-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::lane_fits]:
+    Source: 'src/keccak.rs', lines 145:4-147:5 -/
+def keccak.Shake.lane_fits
+  (self : keccak.Shake) (remaining : Std.Usize) : RustM Bool := do
+  if remaining >= 8#usize
+  then
+    let i ← self.pos % 8#usize
+    if i = 0#usize
+    then let i1 ← self.rate - self.pos
+         ok (i1 >= 8#usize)
+    else ok false
+  else ok false
+
+/-- [ml_dsa_verified::keccak::store_lane]:
+    Source: 'src/keccak.rs', lines 101:0-110:1 -/
+def keccak.store_lane
+  (out : Slice Std.U8) (i : Std.Usize) (x : Std.U64) :
+  RustM (Slice Std.U8)
+  := do
+  let i1 ← lift (UScalar.cast .U8 x)
+  let out1 ← Slice.update out i i1
+  let i2 ← x >>> 8#usize
+  let i3 ← i + 1#usize
+  let i4 ← lift (UScalar.cast .U8 i2)
+  let out2 ← Slice.update out1 i3 i4
+  let i5 ← x >>> 16#usize
+  let i6 ← i + 2#usize
+  let i7 ← lift (UScalar.cast .U8 i5)
+  let out3 ← Slice.update out2 i6 i7
+  let i8 ← x >>> 24#usize
+  let i9 ← i + 3#usize
+  let i10 ← lift (UScalar.cast .U8 i8)
+  let out4 ← Slice.update out3 i9 i10
+  let i11 ← x >>> 32#usize
+  let i12 ← i + 4#usize
+  let i13 ← lift (UScalar.cast .U8 i11)
+  let out5 ← Slice.update out4 i12 i13
+  let i14 ← x >>> 40#usize
+  let i15 ← i + 5#usize
+  let i16 ← lift (UScalar.cast .U8 i14)
+  let out6 ← Slice.update out5 i15 i16
+  let i17 ← x >>> 48#usize
+  let i18 ← i + 6#usize
+  let i19 ← lift (UScalar.cast .U8 i17)
+  let out7 ← Slice.update out6 i18 i19
+  let i20 ← x >>> 56#usize
+  let i21 ← i + 7#usize
+  let i22 ← lift (UScalar.cast .U8 i20)
+  Slice.update out7 i21 i22
+
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::squeeze]: loop body 0:
-    Source: 'src/keccak.rs', lines 138:8-146:9
+    Source: 'src/keccak.rs', lines 189:8-200:9
     Visibility: public -/
 @[rust_loop_body]
 def keccak.Shake.squeeze_loop.body
@@ -480,26 +539,33 @@ def keccak.Shake.squeeze_loop.body
   let i1 := Slice.len out
   if i < i1
   then
-    let (a, i2) ←
-      if self.pos = self.rate
-      then do
-           let a1 ← keccak.keccak_f1600 self.state
-           ok (a1, 0#usize)
-      else ok (self.state, self.pos)
-    let i3 ← i2 / 8#usize
-    let i4 ← Array.index_usize a i3
-    let i5 ← i2 % 8#usize
-    let i6 ← 8#usize * i5
-    let i7 ← i4 >>> i6
-    let i8 ← lift (UScalar.cast .U8 i7)
-    let s ← Slice.update out i i8
-    let i9 ← i2 + 1#usize
-    let i10 ← i + 1#usize
-    ok (cont ({ self with state := a, pos := i9 }, s, i10))
+    let self1 ← keccak.Shake.wrap self
+    let i2 := Slice.len out
+    let i3 ← i2 - i
+    let b ← keccak.Shake.lane_fits self1 i3
+    if b
+    then
+      let i4 ← self1.pos / 8#usize
+      let i5 ← Array.index_usize self1.state i4
+      let out1 ← keccak.store_lane out i i5
+      let i6 ← self1.pos + 8#usize
+      let i7 ← i + 8#usize
+      ok (cont ({ self1 with pos := i6 }, out1, i7))
+    else
+      let i4 ← self1.pos / 8#usize
+      let i5 ← Array.index_usize self1.state i4
+      let i6 ← self1.pos % 8#usize
+      let i7 ← 8#usize * i6
+      let i8 ← i5 >>> i7
+      let i9 ← lift (UScalar.cast .U8 i8)
+      let s ← Slice.update out i i9
+      let i10 ← self1.pos + 1#usize
+      let i11 ← i + 1#usize
+      ok (cont ({ self1 with pos := i10 }, s, i11))
   else ok (done (self, out))
 
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::squeeze]: loop 0:
-    Source: 'src/keccak.rs', lines 138:8-146:9
+    Source: 'src/keccak.rs', lines 189:8-200:9
     Visibility: public -/
 @[rust_loop]
 def keccak.Shake.squeeze_loop
@@ -511,7 +577,7 @@ def keccak.Shake.squeeze_loop
     (self, out, i)
 
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::squeeze]:
-    Source: 'src/keccak.rs', lines 136:4-147:5
+    Source: 'src/keccak.rs', lines 187:4-201:5
     Visibility: public -/
 @[reducible]
 def keccak.Shake.squeeze
@@ -521,7 +587,7 @@ def keccak.Shake.squeeze
   keccak.Shake.squeeze_loop self out 0#usize
 
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::xor_byte]:
-    Source: 'src/keccak.rs', lines 111:4-113:5 -/
+    Source: 'src/keccak.rs', lines 139:4-141:5 -/
 def keccak.Shake.xor_byte
   (self : keccak.Shake) (i : Std.Usize) (b : Std.U8) : RustM keccak.Shake := do
   let i1 ← lift (UScalar.cast .U64 b)
@@ -535,7 +601,7 @@ def keccak.Shake.xor_byte
   ok { self with state := a }
 
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::finalize]:
-    Source: 'src/keccak.rs', lines 129:4-134:5
+    Source: 'src/keccak.rs', lines 180:4-185:5
     Visibility: public -/
 def keccak.Shake.finalize (self : keccak.Shake) : RustM keccak.Shake := do
   let self1 ← keccak.Shake.xor_byte self self.pos 31#u8
@@ -544,8 +610,61 @@ def keccak.Shake.finalize (self : keccak.Shake) : RustM keccak.Shake := do
   let a ← keccak.keccak_f1600 self2.state
   ok { self2 with state := a, pos := 0#usize }
 
+/-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::xor_lane]:
+    Source: 'src/keccak.rs', lines 158:4-160:5 -/
+def keccak.Shake.xor_lane
+  (self : keccak.Shake) (i : Std.Usize) (x : Std.U64) :
+  RustM keccak.Shake
+  := do
+  let i1 ← Array.index_usize self.state i
+  let i2 ← lift (i1 ^^^ x)
+  let a ← Array.update self.state i i2
+  ok { self with state := a }
+
+/-- [ml_dsa_verified::keccak::load_lane]:
+    Source: 'src/keccak.rs', lines 89:0-98:1 -/
+def keccak.load_lane
+  (data : Slice Std.U8) (i : Std.Usize) : RustM Std.U64 := do
+  let i1 ← Slice.index_usize data i
+  let i2 ← lift (UScalar.cast .U64 i1)
+  let i3 ← i + 1#usize
+  let i4 ← Slice.index_usize data i3
+  let i5 ← lift (UScalar.cast .U64 i4)
+  let i6 ← i5 <<< 8#usize
+  let i7 ← lift (i2 ||| i6)
+  let i8 ← i + 2#usize
+  let i9 ← Slice.index_usize data i8
+  let i10 ← lift (UScalar.cast .U64 i9)
+  let i11 ← i10 <<< 16#usize
+  let i12 ← lift (i7 ||| i11)
+  let i13 ← i + 3#usize
+  let i14 ← Slice.index_usize data i13
+  let i15 ← lift (UScalar.cast .U64 i14)
+  let i16 ← i15 <<< 24#usize
+  let i17 ← lift (i12 ||| i16)
+  let i18 ← i + 4#usize
+  let i19 ← Slice.index_usize data i18
+  let i20 ← lift (UScalar.cast .U64 i19)
+  let i21 ← i20 <<< 32#usize
+  let i22 ← lift (i17 ||| i21)
+  let i23 ← i + 5#usize
+  let i24 ← Slice.index_usize data i23
+  let i25 ← lift (UScalar.cast .U64 i24)
+  let i26 ← i25 <<< 40#usize
+  let i27 ← lift (i22 ||| i26)
+  let i28 ← i + 6#usize
+  let i29 ← Slice.index_usize data i28
+  let i30 ← lift (UScalar.cast .U64 i29)
+  let i31 ← i30 <<< 48#usize
+  let i32 ← lift (i27 ||| i31)
+  let i33 ← i + 7#usize
+  let i34 ← Slice.index_usize data i33
+  let i35 ← lift (UScalar.cast .U64 i34)
+  let i36 ← i35 <<< 56#usize
+  ok (i32 ||| i36)
+
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::absorb]: loop body 0:
-    Source: 'src/keccak.rs', lines 117:8-125:9
+    Source: 'src/keccak.rs', lines 164:8-176:9
     Visibility: public -/
 @[rust_loop_body]
 def keccak.Shake.absorb_loop.body
@@ -555,21 +674,32 @@ def keccak.Shake.absorb_loop.body
   let i1 := Slice.len data
   if i < i1
   then
-    let i2 ← Slice.index_usize data i
-    let self1 ← keccak.Shake.xor_byte self self.pos i2
-    let i3 ← self1.pos + 1#usize
-    let (a, i4) ←
-      if i3 = self1.rate
-      then do
-           let a1 ← keccak.keccak_f1600 self1.state
-           ok (a1, 0#usize)
-      else ok (self1.state, i3)
-    let i5 ← i + 1#usize
-    ok (cont ({ self1 with state := a, pos := i4 }, i5))
+    let i2 := Slice.len data
+    let i3 ← i2 - i
+    let b ← keccak.Shake.lane_fits self i3
+    let (a, i4, i5, i6) ←
+      if b
+      then
+        do
+        let x ← keccak.load_lane data i
+        let i7 ← self.pos / 8#usize
+        let self1 ← keccak.Shake.xor_lane self i7 x
+        let i8 ← self1.pos + 8#usize
+        let i9 ← i + 8#usize
+        ok (self1.state, i8, self1.rate, i9)
+      else
+        do
+        let i7 ← Slice.index_usize data i
+        let self1 ← keccak.Shake.xor_byte self self.pos i7
+        let i8 ← self1.pos + 1#usize
+        let i9 ← i + 1#usize
+        ok (self1.state, i8, self1.rate, i9)
+    let self1 ← keccak.Shake.wrap { state := a, pos := i4, rate := i5 }
+    ok (cont (self1, i6))
   else ok (done self)
 
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::absorb]: loop 0:
-    Source: 'src/keccak.rs', lines 117:8-125:9
+    Source: 'src/keccak.rs', lines 164:8-176:9
     Visibility: public -/
 @[rust_loop]
 def keccak.Shake.absorb_loop
@@ -581,7 +711,7 @@ def keccak.Shake.absorb_loop
     (self, i)
 
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::absorb]:
-    Source: 'src/keccak.rs', lines 115:4-126:5
+    Source: 'src/keccak.rs', lines 162:4-177:5
     Visibility: public -/
 @[reducible]
 def keccak.Shake.absorb
@@ -589,7 +719,7 @@ def keccak.Shake.absorb
   keccak.Shake.absorb_loop self data 0#usize
 
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::shake256]:
-    Source: 'src/keccak.rs', lines 103:4-109:5
+    Source: 'src/keccak.rs', lines 131:4-137:5
     Visibility: public -/
 def keccak.Shake.shake256 : RustM keccak.Shake := do
   let a := Array.repeat 25#usize 0#u64
@@ -802,7 +932,7 @@ def sampling.coeff_from_three_bytes
   else ok none
 
 /-- [ml_dsa_verified::keccak::{ml_dsa_verified::keccak::Shake}::shake128]:
-    Source: 'src/keccak.rs', lines 96:4-102:5
+    Source: 'src/keccak.rs', lines 124:4-130:5
     Visibility: public -/
 def keccak.Shake.shake128 : RustM keccak.Shake := do
   let a := Array.repeat 25#usize 0#u64

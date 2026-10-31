@@ -85,7 +85,35 @@ pub fn keccak_f1600(a: &mut [u64; 25]) {
     }
 }
 
+/// Little-endian lane `data[i..i + 8]`. Requires `data.len() - i >= 8`.
+fn load_lane(data: &[u8], i: usize) -> u64 {
+    (data[i] as u64)
+        | ((data[i + 1] as u64) << 8usize)
+        | ((data[i + 2] as u64) << 16usize)
+        | ((data[i + 3] as u64) << 24usize)
+        | ((data[i + 4] as u64) << 32usize)
+        | ((data[i + 5] as u64) << 40usize)
+        | ((data[i + 6] as u64) << 48usize)
+        | ((data[i + 7] as u64) << 56usize)
+}
+
+/// Writes the lane `x` little-endian to `out[i..i + 8]`. Requires `out.len() - i >= 8`.
+fn store_lane(out: &mut [u8], i: usize, x: u64) {
+    out[i] = x as u8;
+    out[i + 1] = (x >> 8usize) as u8;
+    out[i + 2] = (x >> 16usize) as u8;
+    out[i + 3] = (x >> 24usize) as u8;
+    out[i + 4] = (x >> 32usize) as u8;
+    out[i + 5] = (x >> 40usize) as u8;
+    out[i + 6] = (x >> 48usize) as u8;
+    out[i + 7] = (x >> 56usize) as u8;
+}
+
 /// A SHAKE sponge with rate `rate` bytes (168 for SHAKE128, 136 for SHAKE256).
+///
+/// Absorb and squeeze move whole 8-byte lanes whenever the position is lane aligned, a whole lane still fits in the
+/// current block and at least 8 bytes of input (output) remain; otherwise they move one byte. The choice depends
+/// only on `pos`, `rate` and the public lengths, never on the data.
 pub struct Shake {
     state: [u64; 25],
     pos: usize,
@@ -112,16 +140,39 @@ impl Shake {
         self.state[i / 8] ^= (b as u64) << (8 * (i % 8));
     }
 
+    /// Whether a whole lane can be moved now: `remaining >= 8` bytes are left, the position is lane aligned and a
+    /// lane still fits in the current block. Depends only on `pos`, `rate` and the public length.
+    fn lane_fits(&self, remaining: usize) -> bool {
+        remaining >= 8 && self.pos % 8 == 0 && self.rate - self.pos >= 8
+    }
+
+    /// Permutes and restarts the block once it is full. Absorbing calls it after each step, squeezing before each
+    /// read, so the permutation after the last byte of a block is lazy when squeezing.
+    fn wrap(&mut self) {
+        if self.pos == self.rate {
+            keccak_f1600(&mut self.state);
+            self.pos = 0;
+        }
+    }
+
+    fn xor_lane(&mut self, i: usize, x: u64) {
+        self.state[i] ^= x;
+    }
+
     pub fn absorb(&mut self, data: &[u8]) {
         let mut i = 0;
         while i < data.len() {
-            self.xor_byte(self.pos, data[i]);
-            self.pos += 1;
-            if self.pos == self.rate {
-                keccak_f1600(&mut self.state);
-                self.pos = 0;
+            if self.lane_fits(data.len() - i) {
+                let x = load_lane(data, i);
+                self.xor_lane(self.pos / 8, x);
+                self.pos += 8;
+                i += 8;
+            } else {
+                self.xor_byte(self.pos, data[i]);
+                self.pos += 1;
+                i += 1;
             }
-            i += 1;
+            self.wrap();
         }
     }
 
@@ -136,13 +187,16 @@ impl Shake {
     pub fn squeeze(&mut self, out: &mut [u8]) {
         let mut i = 0;
         while i < out.len() {
-            if self.pos == self.rate {
-                keccak_f1600(&mut self.state);
-                self.pos = 0;
+            self.wrap();
+            if self.lane_fits(out.len() - i) {
+                store_lane(out, i, self.state[self.pos / 8]);
+                self.pos += 8;
+                i += 8;
+            } else {
+                out[i] = (self.state[self.pos / 8] >> (8 * (self.pos % 8))) as u8;
+                self.pos += 1;
+                i += 1;
             }
-            out[i] = (self.state[self.pos / 8] >> (8 * (self.pos % 8))) as u8;
-            self.pos += 1;
-            i += 1;
         }
     }
 }

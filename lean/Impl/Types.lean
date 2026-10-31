@@ -38,7 +38,7 @@ structure params.Params where
   two_gamma2_div_mult : Std.U64
 
 /-- [ml_dsa_verified::keccak::Shake]
-    Source: 'src/keccak.rs', lines 89:0-93:1
+    Source: 'src/keccak.rs', lines 117:0-121:1
     Visibility: public -/
 structure keccak.Shake where
   state : Array Std.U64 25#usize
