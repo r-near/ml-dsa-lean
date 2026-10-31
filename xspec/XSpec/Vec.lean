@@ -142,7 +142,7 @@ theorem mv_outer (M : Vector (Vector Poly ℓ) k) (v : Vector Poly ℓ) :
   induction n with
   | zero =>
     intro _ r hr c
-    simp only [List.range'_zero, List.foldl_nil, Nat.not_lt_zero, if_false]
+    simp only [List.range'_zero, List.foldl_nil, Nat.not_lt_zero, ite_false]
     rw [getElem!_pos _ r (by simpa using hr)]
     simp [I, Poly.zero]
     by_cases hc : c < 256
@@ -168,7 +168,7 @@ theorem mv_outer (M : Vector (Vector Poly ℓ) k) (v : Vector Poly ℓ) :
 theorem MatrixVectorNTT_I (M : Vector (Vector Poly ℓ) k) (v : Vector Poly ℓ) (r : ℕ) (hr : r < k) (c : ℕ)
     (hc : c < 256) :
     I (MatrixVectorNTT M v)[r]! c = ∑ j ∈ Finset.range ℓ, I (M[r]!)[j]! c * I v[j]! c := by
-  rw [MatrixVectorNTT_fold, mv_outer M v k le_rfl r hr c, if_pos hr]
+  rw [MatrixVectorNTT_fold, mv_outer M v k le_rfl r hr c, ite_eq_left hr]
 
 /-- **`MatrixVectorNTT` is `fipsMulMatVec`** (row `r < k`, on canonical representatives). -/
 theorem matrixVectorNTT_eq (M : Vector (Vector Poly ℓ) k) (v : Vector Poly ℓ) (r : ℕ) (hr : r < k) :
@@ -178,12 +178,12 @@ theorem matrixVectorNTT_eq (M : Vector (Vector Poly ℓ) k) (v : Vector Poly ℓ
   funext c
   simp only [toZq_canon]
   by_cases hc : c < 256
-  · simp only [if_pos hc, ofZq]
+  · simp only [ite_eq_left hc, ofZq]
     rw [← ofZq_I]
     simp only [ofZq]
     rw [MatrixVectorNTT_I M v r hr c hc]
     simp [OcamlPq.MLDSA.matrixVectorRowSpec]
-  · simp only [if_neg hc]
+  · simp only [ite_eq_right hc]
     exact canon_zero_of_ge _ (by omega)
 
 end MV

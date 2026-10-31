@@ -8,7 +8,9 @@ with `H`, `G` our SHAKE256 / SHAKE128.
 
 Their `verifyInternal` has no length checks (their decoders are total), ours returns `some false` for a key or
 signature of the wrong length (`verify_of_length_ne`); the equivalence is stated for inputs of the right
-lengths.  For those, ours returns `none` exactly when `ExpandA` or `SampleInBall` runs out of fuel, and:
+lengths.  For those, if `sigDecode σ` succeeds, ours returns `none` exactly when `ExpandA` or `SampleInBall`
+runs out of fuel (if `sigDecode σ = ⊥`, ours returns `some false` before either runs, and ocaml-pq's verdict is
+`false` too: `verify_of_sigDecode_none_both`), and:
 
 * `verifyInternal_ours_to_theirs`: if ours returns `some b`, then `b` is their verdict, and the samplers terminate
   on their side;
@@ -84,7 +86,7 @@ theorem scalarVectorNTT_get {n : ℕ} (c : Poly) (v : Vector Poly n) (r : ℕ) (
     simp [Std.Legacy.Range.forIn_eq_forIn_range', Std.Legacy.Range.size]
   rw [h, getElem!_pos _ r (by simpa using hr)]
   refine (EB.vec_fold_gen (m := n) Poly.zero (fun a => MultiplyNTT c v[a]!) n r hr).trans ?_
-  rw [if_pos hr]
+  rw [ite_eq_left hr]
 
 theorem fipsNTT_of_toZq (f : ℕ → ℤ) (u : Poly) (h : toZq f = I u) : fipsNTT f = canon (NTT u) := by
   unfold fipsNTT
@@ -462,15 +464,15 @@ theorem verify_ours_to_theirs {p : Spec.Params} (hp : Std3 p) (F : Spec.Fuel) (p
   unfold Spec.Verify at h
   unfold OcamlPq.MLDSAAlg.mldsaVerify
   by_cases hc : ctx.length > 255
-  · simp only [Id.run, hc, if_true] at h
+  · simp only [Id.run, hc, ite_true] at h
     have hc' : (u8ToBytes ctx).length > 255 := by simpa [u8ToBytes] using hc
-    simp only [hc', if_true]
+    simp only [hc', ite_true]
     have h' : some false = some b := h
     exact (Option.some.inj h').symm
-  · simp only [Id.run, hc, if_false] at h
+  · simp only [Id.run, hc, ite_false] at h
     have hl : (u8ToBytes ctx).length = ctx.length := by simp [u8ToBytes]
     have hc' : ¬ (u8ToBytes ctx).length > 255 := by rw [hl]; exact hc
-    simp only [hc', if_false]
+    simp only [hc', ite_false]
     have h' : Spec.Verify_internal p pk (IntegerToBytes 0 1 ++ IntegerToBytes ctx.length 1 ++ ctx ++ M) σ F = some b := h
     have := verifyInternal_ours_to_theirs hp F pk _ σ hpk hσ b h'
     rw [this]
@@ -500,14 +502,33 @@ theorem verify_theirs_to_ours {p : Spec.Params} (hp : Std3 p) (pk M σ ctx : Lis
   obtain ⟨b, hb, hb2⟩ := hF0 F h1 h2
   refine ⟨b, ?_, ?_⟩
   · unfold Spec.Verify
-    simp only [Id.run, show ¬ ctx.length > 255 by omega, if_false]
+    simp only [Id.run, show ¬ ctx.length > 255 by omega, ite_false]
     exact hb
   · unfold OcamlPq.MLDSAAlg.mldsaVerify
     have hl : (u8ToBytes ctx).length = ctx.length := by simp [u8ToBytes]
     have hc' : ¬ (u8ToBytes ctx).length > 255 := by rw [hl]; omega
-    simp only [hc', if_false]
+    simp only [hc', ite_false]
     rw [hb2]
     congr 2
     simp only [u8ToBytes_append, integerToBytes_alg_eq, hl, List.append_assoc]
+
+/-- A context of more than 255 bytes: both sides return `false` (ours `some false`). -/
+theorem verify_of_ctx_gt_both {p : Spec.Params} (F : Spec.Fuel) (pk M σ ctx : List UInt8)
+    (hc : ctx.length > 255) :
+    Spec.Verify p pk M σ ctx F = some false ∧
+      OcamlPq.MLDSAAlg.mldsaVerify (verifyFips (algParams p)) (algParams p) p.lam oursShake256 oursShake128
+        (u8ToBytes pk) (u8ToBytes M) (u8ToBytes σ) (u8ToBytes ctx) = false := by
+  refine ⟨verify_of_ctx_gt p F pk M σ ctx hc, ?_⟩
+  unfold OcamlPq.MLDSAAlg.mldsaVerify
+  have hc' : (u8ToBytes ctx).length > 255 := by simpa [u8ToBytes] using hc
+  simp only [hc', ite_true]
+
+/-- A malformed hint (`sigDecode = ⊥`): both sides return `false` (ours `some false`), for any lengths. -/
+theorem verify_of_sigDecode_none_both {p : Spec.Params} (hp : Std3 p) (F : Spec.Fuel) (pk M' σ : List UInt8)
+    (hsd : Spec.sigDecode p σ = none) :
+    Spec.Verify_internal p pk M' σ F = some false ∧
+      OcamlPq.MLDSAAlg.verifyInternal (verifyFips (algParams p)) (algParams p) p.lam oursShake256 oursShake128
+        (u8ToBytes pk) (u8ToBytes M') (u8ToBytes σ) = false :=
+  ⟨verify_of_sigDecode_none p F pk M' σ hsd, verifyInternal_of_none _ _ _ _ _ _ _ (fipsSigDecode_none hp hsd)⟩
 
 end XSpec

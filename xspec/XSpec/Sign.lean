@@ -185,8 +185,8 @@ theorem loopRes_accept (P : SG.Pre sp) :
     intro i ct z h hl
     unfold SG.loopRes at hl
     by_cases hg : 2 ^ 16 < i * sp.ℓ + sp.ℓ
-    · rw [if_pos hg] at hl; simp at hl
-    rw [if_neg hg] at hl
+    · rw [ite_eq_left hg] at hl; simp at hl
+    rw [ite_eq_right hg] at hl
     rcases hat : SG.attemptAt sp F P (i * sp.ℓ) with _ | ⟨ct', _ | ⟨z', h'⟩⟩
     · rw [hat] at hl; simp at hl
     · rw [hat] at hl
@@ -215,7 +215,7 @@ theorem loopRes_none (P : SG.Pre sp) :
     obtain ⟨hg, ct, hat⟩ := hall i le_rfl (by omega)
     unfold SG.loopRes
     have hg' : ¬ 2 ^ 16 < i * sp.ℓ + sp.ℓ := by rw [← Nat.add_one_mul]; omega
-    rw [if_neg hg', hat]
+    rw [ite_eq_right hg', hat]
     simp only []
     rw [← Nat.add_one_mul]
     exact ih (i + 1) (fun j h1 h2 => hall j (by omega) (by omega))
@@ -234,7 +234,7 @@ theorem loopRes_accept_of (P : SG.Pre sp) :
     unfold SG.loopRes
     have hg' : ¬ 2 ^ 16 < i * sp.ℓ + sp.ℓ := by
       rw [← Nat.add_one_mul]; have := hg i le_rfl h1; omega
-    rw [if_neg hg']
+    rw [ite_eq_right hg']
     rcases Nat.eq_or_lt_of_le h1 with rfl | hlt
     · rw [ha]
     · obtain ⟨ct', hct'⟩ := hb i le_rfl hlt
@@ -284,7 +284,7 @@ theorem alg7Loop_first {σ : Type} (l : ℕ) (em : ℕ → ℕ → OcamlPq.MLDSA
     intro i hi
     rw [OcamlPq.MLDSAAlg.alg7Loop]
     rcases Nat.eq_or_lt_of_le hi with rfl | hlt
-    · rw [hj]; simp only []; rw [if_pos (by omega)]
+    · rw [hj]; simp only []; rw [ite_eq_left (by omega)]
     · rw [hb i hlt]
       simp only []
       rw [← Nat.add_one_mul, ih (i + 1) (by omega)]
@@ -390,6 +390,41 @@ theorem core_ours_to_theirs (hp : Std3 sp) (h : Rel sp P key rho mu rhoPP) (F : 
       rw [thStep_of_attempt hp h hat']
       rfl
     exact ⟨j, by omega, fun m => thLoop_first j _ hstep hb m⟩
+
+/-- The facts behind `core_ours_to_theirs`, per attempt: the accepted attempt `a`, the rejected ones before it, and
+the termination of ocaml-pq's `SampleInBall` on every attempt up to `a`. -/
+theorem core_ours_steps (hp : Std3 sp) (h : Rel sp P key rho mu rhoPP) (F : Spec.Fuel) (n : ℕ) (σ : List UInt8)
+    (hs : SG.encodeRes sp (SG.loopRes sp F P n 0) = some σ) :
+    ∃ a, a < n ∧ thStep sp key rho mu rhoPP a = some (u8ToBytes σ) ∧
+      (∀ j, j < a → thStep sp key rho mu rhoPP j = none) ∧
+      ∀ j, j ≤ a → ∃ b, OcamlPq.MLDSAAlg.SampleInBallReturns (algParams sp).tau
+        (oursShake256 (u8ToBytes (SG.ctildeAt sp P (j * sp.ℓ)))) b := by
+  rcases hl : SG.loopRes sp F P n 0 with _ | _ | ⟨ct, z, hh⟩
+  · rw [hl] at hs; simp [SG.encodeRes] at hs
+  · rw [hl] at hs; simp [SG.encodeRes] at hs
+  · rw [hl] at hs
+    simp only [SG.encodeRes, Option.some.injEq] at hs
+    subst hs
+    have hl' : SG.loopRes sp F P n (0 * sp.ℓ) = some (some (ct, z, hh)) := by rw [Nat.zero_mul]; exact hl
+    obtain ⟨j, -, hj2, hat, hbef⟩ := loopRes_accept F P n 0 ct z hh hl'
+    refine ⟨j, by omega, ?_, ?_, ?_⟩
+    · unfold thStep
+      rw [thStep_of_attempt hp h hat]
+      rfl
+    · intro j' hj'
+      obtain ⟨ct', hat'⟩ := hbef j' (Nat.zero_le _) hj'
+      unfold thStep
+      rw [thStep_of_attempt hp h hat']
+      rfl
+    · intro j' hj'
+      have hex : ∃ ct' r, SG.attemptAt sp F P (j' * sp.ℓ) = some (ct', r) := by
+        rcases Nat.eq_or_lt_of_le hj' with rfl | hlt
+        · exact ⟨_, _, hat⟩
+        · obtain ⟨ct', hat'⟩ := hbef j' (Nat.zero_le _) hlt
+          exact ⟨_, _, hat'⟩
+      obtain ⟨ct', r, hat'⟩ := hex
+      obtain ⟨c, hc, -, -⟩ := attemptAt_some hat'
+      exact ⟨_, SB.sampleInBall_ours_to_theirs hp _ _ c hc⟩
 
 /-- **The loop, theirs to ours (accepting).**  If ocaml-pq's loop with `m` iterations produces `s`, and every
 `SampleInBall` call that the loop reaches returns on our side (for the fuel `F`), then our loop with
@@ -618,6 +653,43 @@ theorem signInternalBounded_theirs_to_ours_none {sp : Spec.Params} (hp : Std3 sp
   rw [SG.Sign_internal_bounded_eq, hP]
   exact core_theirs_to_ours_none hp (pre_rel hp hP) F m hmℓ hs hsm
 
+/-- **Our success supplies the termination hypotheses.**  If `Sign_internal_bounded` returns a signature, then
+`ExpandATerm` holds for the key's `ρ` and `SignTerm` holds for every number `m` of ocaml-pq iterations: the
+`SampleInBall` calls of ocaml-pq's loop that are reached are exactly those up to the accepted attempt, and they
+terminate because ours did. -/
+theorem signTerm_of_ours {sp : Spec.Params} (hp : Std3 sp) (B : ℕ) (sk M' rnd : List UInt8) (F : Spec.Fuel)
+    (σ : List UInt8) (h : Spec.Sign_internal_bounded sp B sk M' rnd F = some σ) :
+    ExpandATerm sp (Spec.skDecode sp sk).1 ∧ ∀ m, SignTerm sp sk M' rnd m := by
+  rw [SG.Sign_internal_bounded_eq] at h
+  rcases hpre : SG.pre sp F sk M' rnd with _ | P
+  · rw [hpre] at h; simp at h
+  · rw [hpre] at h
+    have hr := pre_rel hp hpre
+    refine ⟨?_, fun m j hj hprem => ?_⟩
+    · unfold SG.pre at hpre
+      rcases hd : Spec.skDecode sp sk with ⟨ρ, K, tr, s₁, s₂, t₀⟩
+      rw [hd] at hpre
+      simp only [] at hpre
+      rcases hA : Spec.ExpandA sp F.rejNTT ρ with _ | Â
+      · rw [hA] at hpre; simp at hpre
+      · exact (expandA_ours_to_theirs sp F.rejNTT ρ Â hA).1
+    · obtain ⟨a, -, ha, hbef, hsib⟩ := core_ours_steps hp hr F B σ h
+      have hja : j ≤ a := by
+        by_contra hgt
+        have := hprem a (by omega)
+        rw [ha] at this
+        cases this
+      obtain ⟨b, hb⟩ := hsib j hja
+      refine ⟨b, ?_⟩
+      rw [ct_eq hp hr (j * sp.ℓ)]
+      exact hb
+
+/-- The same for `Sign_internal` (`B = kappaBudget`). -/
+theorem signTerm_of_ours_internal {sp : Spec.Params} (hp : Std3 sp) (sk M' rnd : List UInt8) (F : Spec.Fuel)
+    (σ : List UInt8) (h : Spec.Sign_internal sp sk M' rnd F = some σ) :
+    ExpandATerm sp (Spec.skDecode sp sk).1 ∧ ∀ m, SignTerm sp sk M' rnd m :=
+  signTerm_of_ours hp _ sk M' rnd F σ h
+
 /-! ## The three parameter sets: `Sign_internal` and `Sign` -/
 
 theorem budget_of_std3 {sp : Spec.Params} (hp : Std3 sp) : 821 ≤ Spec.kappaBudget sp ∧ 821 * sp.ℓ ≤ 2 ^ 16 := by
@@ -632,8 +704,10 @@ theorem signInternal_ours_to_theirs {sp : Spec.Params} (hp : Std3 sp) (sk M' rnd
       (821 ≤ a → thSignInternal sp sk M' rnd 821 = none) := by
   obtain ⟨a, ha, hall⟩ := signInternalBounded_ours_to_theirs hp _ sk M' rnd F σ h
   refine ⟨a, ha, fun h1 => ?_, fun h1 => ?_⟩
-  · rw [hall 821, if_pos h1]
-  · rw [hall 821, if_neg (by omega)]
+  · rw [hall 821]
+    simp only [h1, ite_true]
+  · rw [hall 821]
+    simp only [show ¬ a < 821 by omega, ite_false]
 
 /-- **`Sign_internal`, theirs to ours** (accepting): for every large enough fuel. -/
 theorem signInternal_theirs_to_ours {sp : Spec.Params} (hp : Std3 sp) (sk M' rnd : List UInt8)
@@ -652,7 +726,7 @@ theorem thSign_of_ctx_gt (sp : Spec.Params) (sk M ctx rnd : List UInt8) (hc : ct
     thSign sp sk M ctx rnd = none := by
   unfold thSign OcamlPq.MLDSAAlg.mldsaSign
   have hc' : (u8ToBytes ctx).length > 255 := by simpa [u8ToBytes] using hc
-  simp only [hc', if_true]
+  simp only [hc', ite_true]
 
 theorem thSign_of_ctx_le (sp : Spec.Params) (sk M ctx rnd : List UInt8) (hc : ctx.length ≤ 255) :
     thSign sp sk M ctx rnd =
@@ -660,7 +734,7 @@ theorem thSign_of_ctx_le (sp : Spec.Params) (sk M ctx rnd : List UInt8) (hc : ct
   unfold thSign OcamlPq.MLDSAAlg.mldsaSign thSignInternal muTh
   have hl : (u8ToBytes ctx).length = ctx.length := by simp [u8ToBytes]
   have hc' : ¬ (u8ToBytes ctx).length > 255 := by rw [hl]; omega
-  simp only [hc', if_false]
+  simp only [hc', ite_false]
   simp only [u8ToBytes_append, integerToBytes_alg_eq, hl, List.append_assoc]
 
 theorem sign_of_ctx_gt (sp : Spec.Params) (sk M ctx rnd : List UInt8) (F : Spec.Fuel) (hc : ctx.length > 255) :
@@ -673,7 +747,7 @@ theorem sign_of_ctx_le (sp : Spec.Params) (sk M ctx rnd : List UInt8) (F : Spec.
     Spec.Sign sp sk M ctx rnd F =
       Spec.Sign_internal sp sk (IntegerToBytes 0 1 ++ IntegerToBytes ctx.length 1 ++ ctx ++ M) rnd F := by
   unfold Spec.Sign
-  simp only [Id.run, show ¬ ctx.length > 255 by omega, if_false]
+  simp only [Id.run, show ¬ ctx.length > 255 by omega, ite_false]
   rfl
 
 /-- The formatted message `M′ = 0 ‖ |ctx| ‖ ctx ‖ M` of Algorithm 2 (step 10). -/
@@ -722,32 +796,94 @@ theorem sign_of_ctx_gt_both (sp : Spec.Params) (sk M ctx rnd : List UInt8) (F : 
     Spec.Sign sp sk M ctx rnd F = none ∧ thSign sp sk M ctx rnd = none :=
   ⟨sign_of_ctx_gt sp sk M ctx rnd F hc, thSign_of_ctx_gt sp sk M ctx rnd hc⟩
 
+/-- The same for `Sign` (the message is `M′ = mPrime M ctx`). -/
+theorem signTerm_of_ours_sign {sp : Spec.Params} (hp : Std3 sp) (sk M ctx rnd : List UInt8) (F : Spec.Fuel)
+    (σ : List UInt8) (h : Spec.Sign sp sk M ctx rnd F = some σ) :
+    ExpandATerm sp (Spec.skDecode sp sk).1 ∧ ∀ m, SignTerm sp sk (mPrime M ctx) rnd m := by
+  by_cases hc : ctx.length > 255
+  · rw [sign_of_ctx_gt sp sk M ctx rnd F hc] at h; cases h
+  · rw [sign_of_ctx_le sp sk M ctx rnd F (by omega)] at h
+    exact signTerm_of_ours_internal hp sk _ rnd F σ h
+
 /-! ## The decoded key against ocaml-pq's decoder -/
+
+/-! ## The decoded key against ocaml-pq's decoder
+
+`keyOfSk_s1/s2/t0` are unconditional identities (no hypothesis on `sk`): the rows of `keyOfSk` are the `listsToVec`
+of our decoded vectors.  Together with `skDecode_eq` they give `keyOfSk_of_decode`. -/
+
+theorem rfn_default : rfn (default : RPoly) = fun _ => (0 : ℤ) := by
+  funext i
+  simp only [rfn]
+  by_cases hi : i < 256
+  · rw [getElem!_pos _ i (by simpa using hi)]
+    simp [default, Inhabited.default]
+  · rw [getElem!_neg _ i (by simpa using hi)]
+    rfl
 
 theorem getD_toList_map {n : ℕ} (v : Vector RPoly n) (r : ℕ) (hr : r < n) :
     (v.toList.map Vector.toList).getD r [] = (v[r]!).toList := by
   rw [List.getD_eq_getElem?_getD, getElem!_pos v r (by simpa using hr)]
   simp [hr]
 
-/-- On a key that ocaml-pq's decoder accepts (`skDecode_eq`: right length, `s₁`, `s₂` in `[-η, η]`), the key
-`keyOfSk` is ocaml-pq's decoded key (`listsToVec` of the decoded lists), row by row. -/
-theorem keyOfSk_s1 (sp : Spec.Params) (sk : List UInt8) (r : ℕ) (hr : r < sp.ℓ) :
-    (keyOfSk sp sk).s1 r = listsToVec ((Spec.skDecode sp sk).2.2.2.1.toList.map Vector.toList) r := by
-  unfold keyOfSk listsToVec
-  simp only []
-  rw [getD_toList_map _ r hr, listToPoly_rfn_toList]
+theorem rows_eq {n : ℕ} (v : Vector RPoly n) (r : ℕ) :
+    rfn (v[r]!) = listsToVec (v.toList.map Vector.toList) r := by
+  unfold listsToVec
+  by_cases hr : r < n
+  · rw [getD_toList_map v r hr, listToPoly_rfn_toList]
+  · have h1 : v[r]! = default := getElem!_neg v r (by simpa using hr)
+    have h2 : (v.toList.map Vector.toList).getD r [] = [] := by
+      rw [List.getD_eq_default]
+      simpa using (by omega : n ≤ r)
+    rw [h1, h2, listToPoly_nil, rfn_default]
 
-theorem keyOfSk_s2 (sp : Spec.Params) (sk : List UInt8) (r : ℕ) (hr : r < sp.k) :
-    (keyOfSk sp sk).s2 r = listsToVec ((Spec.skDecode sp sk).2.2.2.2.1.toList.map Vector.toList) r := by
-  unfold keyOfSk listsToVec
-  simp only []
-  rw [getD_toList_map _ r hr, listToPoly_rfn_toList]
+theorem keyOfSk_s1 (sp : Spec.Params) (sk : List UInt8) (r : ℕ) :
+    (keyOfSk sp sk).s1 r = listsToVec ((Spec.skDecode sp sk).2.2.2.1.toList.map Vector.toList) r :=
+  rows_eq _ r
 
-theorem keyOfSk_t0 (sp : Spec.Params) (sk : List UInt8) (r : ℕ) (hr : r < sp.k) :
-    (keyOfSk sp sk).t0 r = listsToVec ((Spec.skDecode sp sk).2.2.2.2.2.toList.map Vector.toList) r := by
-  unfold keyOfSk listsToVec
-  simp only []
-  rw [getD_toList_map _ r hr, listToPoly_rfn_toList]
+theorem keyOfSk_s2 (sp : Spec.Params) (sk : List UInt8) (r : ℕ) :
+    (keyOfSk sp sk).s2 r = listsToVec ((Spec.skDecode sp sk).2.2.2.2.1.toList.map Vector.toList) r :=
+  rows_eq _ r
+
+theorem keyOfSk_t0 (sp : Spec.Params) (sk : List UInt8) (r : ℕ) :
+    (keyOfSk sp sk).t0 r = listsToVec ((Spec.skDecode sp sk).2.2.2.2.2.toList.map Vector.toList) r :=
+  rows_eq _ r
+
+/-- **Composition with ocaml-pq's decoder.**  If ocaml-pq's `decodeSk` (their `decode_expanded_signing_key`) on the
+octets of `sk` accepts and returns `(ρ, K, tr, s₁, s₂, t₀)`, then the `ExpandedKey` that ocaml-pq builds from it
+(`⟨natToBytes ρ, natToBytes K, natToBytes tr, listsToVec s₁, listsToVec s₂, listsToVec t₀⟩`, as in their
+`decodeSk_secretsInRange`) is `keyOfSk sp sk`, in all six fields.  When it rejects (wrong length or an out-of-range
+`s₁`/`s₂`, `skDecode_eq`) there is no such key. -/
+theorem keyOfSk_of_decode {sp : Spec.Params} (hp : Std3 sp) (sk : List UInt8) {rho key tr : List ℕ}
+    {s1 s2 t0 : List (List ℤ)}
+    (h : OcamlPq.Encoding.Mldsa.decodeSk (encParams (algParams sp)) (bytesN sk) =
+      some (rho, key, tr, s1, s2, t0)) :
+    (⟨natToBytes rho, natToBytes key, natToBytes tr, listsToVec s1, listsToVec s2, listsToVec t0⟩ :
+      OcamlPq.MLDSAAlg.ExpandedKey) = keyOfSk sp sk := by
+  rw [skDecode_eq hp sk] at h
+  split_ifs at h with hc
+  simp only [Option.some.injEq, Prod.mk.injEq] at h
+  obtain ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩ := h
+  unfold keyOfSk
+  simp only [u8ToBytes_eq_natToBytes]
+  congr 1 <;> funext r
+  · exact (keyOfSk_s1 sp sk r).symm
+  · exact (keyOfSk_s2 sp sk r).symm
+  · exact (keyOfSk_t0 sp sk r).symm
+
+/-- Under the same hypothesis, `thSign` is ocaml-pq's `mldsaSign` on the key their decoder returned. -/
+theorem thSign_of_decode {sp : Spec.Params} (hp : Std3 sp) (sk M ctx rnd : List UInt8) {rho key tr : List ℕ}
+    {s1 s2 t0 : List (List ℤ)}
+    (h : OcamlPq.Encoding.Mldsa.decodeSk (encParams (algParams sp)) (bytesN sk) =
+      some (rho, key, tr, s1, s2, t0)) :
+    thSign sp sk M ctx rnd =
+      OcamlPq.MLDSAAlg.mldsaSign
+        (signFips (algParams sp) ⟨natToBytes rho, natToBytes key, natToBytes tr, listsToVec s1, listsToVec s2,
+          listsToVec t0⟩) (algParams sp) sp.lam oursShake256 oursShake128
+        ⟨natToBytes rho, natToBytes key, natToBytes tr, listsToVec s1, listsToVec s2, listsToVec t0⟩
+        (u8ToBytes M) (u8ToBytes ctx) (u8ToBytes rnd) := by
+  rw [keyOfSk_of_decode hp sk h]
+  rfl
 
 end SGB
 

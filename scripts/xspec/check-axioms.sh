@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Fail unless every theorem named in xspec/headline-theorems.txt depends only on propext, Classical.choice,
 # Quot.sound (no sorryAx, no other axiom).  Also fails on any `sorry`, `admit`, `native_decide`, `axiom`,
-# `opaque` or `implemented_by` in xspec/XSpec/ (the proof files; XSpecDiff is test-only and may use
+# `opaque`, `implemented_by`, `unsafe`, `partial`, `extern`, `macro`, `elab` or `syntax` in xspec/XSpec/ (the proof files; XSpecDiff is test-only and may use
 # `implemented_by`).  Run on the build box:  rx run -- bash scripts/xspec/check-axioms.sh
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 . "$here/env.sh"      # cd's to xspec/
-if grep -nE '\b(sorry|admit|native_decide|opaque|implemented_by)\b|^[[:space:]]*(private[[:space:]]+)?axiom\b' XSpec/*.lean \
-    | grep -vE '^\S+:[0-9]+:\s*(--|/-)' | grep -vE '`(sorry|admit|native_decide|axiom|opaque|implemented_by)`'; then
+if grep -nE '\b(sorry|admit|native_decide|opaque|implemented_by|unsafe|partial|macro|elab|syntax|extern)\b|^[[:space:]]*(private[[:space:]]+)?axiom\b' XSpec/*.lean \
+    | grep -vE '^\S+:[0-9]+:\s*(--|/-)' | grep -vE '`(sorry|admit|native_decide|axiom|opaque|implemented_by|unsafe|partial|macro|elab|syntax|extern)`'; then
   echo "BANNED TOKEN in xspec/XSpec"; exit 1
 fi
 lake build XSpec 2>&1 | tail -5

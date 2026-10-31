@@ -157,7 +157,7 @@ theorem outerT_step (S : List UInt8) (hb : List Bool) (τ fuel i : Nat) (c : RPo
     · have hj := sibFind_le S i _ _ _ _ _ h1
       simp only [h2]
       refine ⟨fun c' pos'' h => ?_, fun h => ?_⟩
-      · simp only [bStep, hp, if_true, h1] at h
+      · simp only [bStep, hp, ite_true, h1] at h
         simp only [Option.some.injEq, Prod.mk.injEq] at h
         obtain ⟨rfl, rfl⟩ := h
         simp [show ¬ i < j' by omega]
@@ -165,7 +165,7 @@ theorem outerT_step (S : List UInt8) (hb : List Bool) (τ fuel i : Nat) (c : RPo
     · generalize iterT (innerT i) 0 fuel ⟨none, ⟨S, pos + 1⟩, (S[pos]?.getD default).toNat⟩ = R at h2 ⊢
       obtain ⟨f, cx, jx⟩ := R
       refine ⟨fun c' pos'' h => ?_, fun h => ?_⟩
-      · simp only [bStep, hp, if_true, h1] at h
+      · simp only [bStep, hp, ite_true, h1] at h
         simp at h
       · cases f with
         | none =>
@@ -288,32 +288,32 @@ theorem bFind_eq (S : List UInt8) (s : ℕ → Byte)
     rw [bFind_zero, findLE_succ']
     by_cases h : (S[q]?.getD default).toNat ≤ i
     · have h' : (s q).val ≤ i := by rw [h0]; exact h
-      rw [if_pos h, if_pos h']
-      simp only [hq, if_true]
+      rw [ite_eq_left h, ite_eq_left h']
+      simp only [hq, ite_true]
       rw [h0]
     · have h' : ¬ (s q).val ≤ i := by rw [h0]; exact h
-      rw [if_neg h, if_neg h', findLE_zero']
+      rw [ite_eq_right h, ite_eq_right h', findLE_zero']
   | succ k ih =>
     intro q hq
     have h0 := hs q hq
     rw [bFind_succ, findLE_succ']
     by_cases h : (S[q]?.getD default).toNat ≤ i
     · have h' : (s q).val ≤ i := by rw [h0]; exact h
-      rw [if_pos h, if_pos h']
-      simp only [hq, if_true]
+      rw [ite_eq_left h, ite_eq_left h']
+      simp only [hq, ite_true]
       rw [h0]
     · have h' : ¬ (s q).val ≤ i := by rw [h0]; exact h
-      rw [if_neg h, if_neg h']
+      rw [ite_eq_right h, ite_eq_right h']
       by_cases hq1 : q + 1 < S.length
-      · rw [if_pos (show q + 1 + 1 ≤ S.length from hq1)]
+      · rw [ite_eq_left (show q + 1 + 1 ≤ S.length from hq1)]
         exact ih (q + 1) hq1
-      · rw [if_neg (show ¬ (q + 1 + 1 ≤ S.length) from hq1)]
+      · rw [ite_eq_right (show ¬ (q + 1 + 1 ≤ S.length) from hq1)]
         cases hf : findLE s i (k + 1) (q + 1) with
         | none => rfl
         | some p' =>
           have := findLE_ge hf
           have hn : ¬ p' < S.length := by omega
-          simp only [hn, if_false]
+          simp only [hn, ite_false]
 
 theorem sign_eq (S : List UInt8) (s : ℕ → Byte) (h8 : 8 ≤ S.length)
     (hs : ∀ q < S.length, (s q).val = (S[q]?.getD default).toNat) (k : ℕ) (hk : k < 64) :
@@ -327,7 +327,7 @@ theorem sign_eq (S : List UInt8) (s : ℕ → Byte) (h8 : 8 ≤ S.length)
     unfold bytesToBits EB.byteBit
     have hk8 : k / 8 < 8 := by omega
     rw [List.getD_eq_getElem?_getD]
-    simp only [List.getElem?_map, List.getElem?_range, hk8, if_true, Option.map_some, Option.getD_some]
+    simp only [List.getElem?_map, List.getElem?_range, hk8, ite_true, Option.map_some, Option.getD_some]
     rw [hs (k / 8) (by omega)]
     simp [List.getElem?_take, hk8]
   rw [h1, hb]
@@ -352,7 +352,7 @@ theorem bStep_eq (hs : ∀ q < S.length, (s q).val = (S[q]?.getD default).toNat)
       | none => none := by
   unfold bStep
   dsimp only
-  rw [if_pos (by omega), bFind_eq S s hs i F pos hpos]
+  rw [ite_eq_left (by omega), bFind_eq S s hs i F pos hpos]
   cases findLE s i (F + 1) pos with
   | none => rfl
   | some p' =>
@@ -379,14 +379,14 @@ theorem step_rel (hs : ∀ q < S.length, (s q).val = (S[q]?.getD default).toNat)
     have hjl : (s p').val < 256 := by omega
     simp only [Option.map_some]
     by_cases hp' : p' < S.length
-    · rw [if_pos hp']
-      simp only [Option.map_some, Option.filter_some, show p' + 1 ≤ S.length from hp', decide_true, if_true]
+    · rw [ite_eq_left hp']
+      simp only [Option.map_some, Option.filter_some, show p' + 1 ≤ S.length from hp', decide_true, ite_true]
       congr 1
       rw [RB.rfn_set _ _ hjl, RB.rfn_set _ _ hi]
       have hsg := sign_eq S s h8 hs (i + τ - 256) (by omega)
       rw [← hsg]
       simp only [rfn]
-    · rw [if_neg hp']
+    · rw [ite_eq_right hp']
       have hn : ¬ (p' + 1 ≤ S.length) := by omega
       simp only [Option.map_some, Option.filter_some, hn, decide_false]
       rfl
@@ -418,7 +418,7 @@ theorem fold_fwd (hs : ∀ q < S.length, (s q).val = (S[q]?.getD default).toNat)
         by_contra hc
         unfold bStep at h1
         simp only at h1
-        rw [if_neg (by omega)] at h1
+        rw [ite_eq_right (by omega)] at h1
         cases h1
       have hr := step_rel τ F S s hs h8 hτ a ha.1 ha.2 c pos hposS
       rw [h1] at hr
@@ -474,7 +474,7 @@ theorem fold_bwd (hs : ∀ q < S.length, (s q).val = (S[q]?.getD default).toNat)
           omega
       have hr := step_rel τ F S s hs h8 hτ a ha.1 ha.2 c pos hposS
       rw [h1] at hr
-      simp only [Option.filter, show pos1 ≤ S.length by omega, decide_true, if_true] at hr
+      simp only [Option.filter, show pos1 ≤ S.length by omega, decide_true, ite_true] at hr
       cases hb : bStep S (BytesToBits (S.take 8)) τ F (c, pos) a with
       | none => rw [hb] at hr; simp at hr
       | some st2 =>

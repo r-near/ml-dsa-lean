@@ -287,11 +287,11 @@ theorem ite_map_congr {α β γ : Type} (f : α → γ) (g : β → γ) {A B C D
     Option.map f (if A ∨ B then none else if C ∨ D then none else some z) =
       Option.map g (if A' ∨ B' then none else if C' ∨ D' then none else some z') := by
   by_cases h1 : A ∨ B
-  · rw [if_pos h1, if_pos (hAB.mp h1)]; rfl
-  · rw [if_neg h1, if_neg (fun h => h1 (hAB.mpr h))]
+  · rw [ite_eq_left h1, ite_eq_left (hAB.mp h1)]; rfl
+  · rw [ite_eq_right h1, ite_eq_right (fun h => h1 (hAB.mpr h))]
     by_cases h2 : C ∨ D
-    · rw [if_pos h2, if_pos (hCD.mp h2)]; rfl
-    · rw [if_neg h2, if_neg (fun h => h2 (hCD.mpr h))]
+    · rw [ite_eq_left h2, ite_eq_left (hCD.mp h2)]; rfl
+    · rw [ite_eq_right h2, ite_eq_right (fun h => h2 (hCD.mpr h))]
       exact congrArg some hv
 
 /-! ## The response -/
@@ -392,10 +392,10 @@ theorem respond_value {n : ℕ} (zv : Vector Poly n) (x : ℕ → ℕ → ℤ) (
       listsToVec ((mkRows n x).map (List.map fun x => OcamlPq.MLDSA.modPM x OcamlPq.MLDSA.q)) r i := by
   rw [mkRows_map, listsToVec_mkRows_trunc]
   by_cases h : r < n ∧ i < 256
-  · rw [if_pos h]
+  · rw [ite_eq_left h]
     simp only [rfn]
     rw [map_get!_lt _ _ r h.1, polyModPM_get _ i h.2, modPM_cast _ _ (hx r h.1 i h.2)]
-  · rw [if_neg h]
+  · rw [ite_eq_right h]
     by_cases hr : r < n
     · have hi : ¬ i < 256 := fun hi => h ⟨hr, hi⟩
       simp only [rfn]
@@ -419,9 +419,9 @@ theorem respond_hint_value (r i : ℕ) :
   rw [listsToVec_mkRows_trunc]
   unfold hpoly hv
   by_cases h : r < sp.k ∧ i < 256
-  · rw [if_pos h, hTh_eq P w c r h.1 i h.2]
+  · rw [ite_eq_left h, hTh_eq P w c r h.1 i h.2]
     simp [h]
-  · rw [if_neg h, if_neg (fun hh => h ⟨hh.1, hh.2.1⟩)]
+  · rw [ite_eq_right h, ite_eq_right (fun hh => h ⟨hh.1, hh.2.1⟩)]
     rfl
 
 /-- **One attempt's response is `fipsFinish`.** -/

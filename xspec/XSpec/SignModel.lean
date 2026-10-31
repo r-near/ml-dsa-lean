@@ -175,9 +175,9 @@ theorem iterG_post (sp : Spec.Params) (F : Spec.Fuel) (P : Pre sp) (g : St sp �
     intro κ c
     simp only [iterG, hg1, loopRes]
     by_cases hκ : 2 ^ 16 < κ + sp.ℓ
-    · simp only [hκ, if_true]
+    · simp only [hκ, ite_true]
       simp [postSt, encodeRes]
-    · simp only [hκ, if_false]
+    · simp only [hκ, ite_false]
       rcases hat : attemptAt sp F P κ with _ | ⟨ct, _ | ⟨z, h⟩⟩
       · simp [postSt, encodeRes]
       · simp only []
@@ -216,7 +216,7 @@ theorem Sign_internal_bounded_eq (sp : Spec.Params) (B : Nat) (sk M' rnd : List 
     case h1 =>
       intro c κ
       by_cases hκ : 2 ^ 16 < κ + sp.ℓ
-      · simp only [Option.isSome_none, Bool.false_eq_true, hκ, ↓reduceIte, if_true]
+      · simp only [Option.isSome_none, Bool.false_eq_true, hκ, ↓reduceIte, ite_true]
         rfl
       · simp only [Option.isSome_none, Bool.false_eq_true, hκ, ↓reduceIte]
         dsimp only [attemptAt, ctildeAt, commitAt, maskAt, respond, Pre.ŝ₁, Pre.ŝ₂, Pre.t₀hat, Id.run]

@@ -32,9 +32,9 @@ theorem rejNTT_theirs_to_ours_at (ρ : List UInt8) (F : ℕ) (b : ℕ → ℤ)
     ∃ a, Spec.RejNTTPoly F ρ = some a ∧ canon a = b := by
   rw [loop_eq_foldS, rel_fold ρ F F le_rfl] at h
   by_cases hfin : 256 ≤ (stA (SHAKE128 ρ (3 * F)) F).2
-  · rw [if_pos hfin] at h
+  · rw [ite_eq_left hfin] at h
     exact ⟨_, rej_some_of_fin ρ F hfin, Option.some.inj h⟩
-  · rw [if_neg hfin] at h; cases h
+  · rw [ite_eq_right hfin] at h; cases h
 
 /-- If ocaml-pq's `RejNTTPoly` returns `b` on the SHAKE128 stream of `ρ`, then ours returns `a` with `canon a = b`
 for every sufficiently large fuel. -/
@@ -59,10 +59,10 @@ theorem rejBounded_theirs_to_ours_at (p : Spec.Params) (ρ : List UInt8) (F : �
   simp only [rfn_replicate] at this
   rw [this] at h
   by_cases hfin : 256 ≤ (rbRun p.η (Spec.H ρ F) (Vector.replicate 256 0, 0) 0 F).2
-  · rw [if_pos hfin] at h
+  · rw [ite_eq_left hfin] at h
     refine ⟨_, ?_, Option.some.inj h⟩
-    rw [RejBoundedPoly_eq, if_neg (by omega)]
-  · rw [if_neg hfin] at h; cases h
+    rw [RejBoundedPoly_eq, ite_eq_right (by omega)]
+  · rw [ite_eq_right hfin] at h; cases h
 
 theorem rejBounded_eventually (p : Spec.Params) (ρ : List UInt8) (b : ℕ → ℤ)
     (h : OcamlPq.MLDSAAlg.RejBoundedReturns p.η (oursShake256 (u8ToBytes ρ)) b) :
@@ -415,7 +415,7 @@ theorem fill_forIn {β : Type} {n : Nat} (f : Nat → Option RPoly) (m : Nat) :
             simpa [Nat.add_assoc, Nat.add_comm 1 i] using this
         · intro t ht hcase
           rw [h3 t ht (by omega), set!_eq', Vector.getElem_setIfInBounds ht]
-          rw [if_neg (by omega)]
+          rw [ite_eq_right (by omega)]
       · right; rw [e]; exact h1
 
 /-- If every call succeeds, the loop finishes without an early exit. -/
