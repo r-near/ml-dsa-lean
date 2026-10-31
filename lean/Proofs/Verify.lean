@@ -250,12 +250,10 @@ theorem verify_loop_spec {K L : Usize} {k : Nat} {ip : Impl.params.Params} {sp :
     (w_approx w1 : Array (Array U32 256#usize) K) (i : Usize) (hi : i.val ≤ K.val)
     (h1 : Rows w_approx (fun r x => Repr x (NTTInvVec (AZ - ScalarVectorNTT C T))[r]!) i.val)
     (h2 : Rows w1 (W1Row sp (UseHintVec sp H (NTTInvVec (AZ - ScalarVectorNTT C T)))) i.val) :
-    verify.verify_internal_loop ip.k ip.l ip.eta ip.eta_bits ip.tau ip.beta ip.gamma1 ip.gamma1_bits ip.gamma2
-      ip.w1_bits ip.omega ip.c_tilde_len ip.two_gamma2_shift ip.two_gamma2_mult ip.two_gamma2_div_mult h az_hat
-      c_hat t1_2d_hat w_approx w1 i ⦃ o =>
+    verify.verify_core_loop ip t1_2d_hat h az_hat c_hat w_approx w1 i ⦃ o =>
       Rows o (W1Row sp (UseHintVec sp H (NTTInvVec (AZ - ScalarVectorNTT C T)))) K.val ⦄ := by
   have hN : K.val = k := hh.len
-  unfold verify.verify_internal_loop
+  unfold verify.verify_core_loop
   apply loop.spec_decr_nat
     (fun (p : Array (Array U32 256#usize) K × Array (Array U32 256#usize) K × Usize) => K.val - p.2.2.val)
     (fun p => p.2.2.val ≤ K.val ∧
@@ -263,7 +261,7 @@ theorem verify_loop_spec {K L : Usize} {k : Nat} {ip : Impl.params.Params} {sp :
       Rows p.2.1 (W1Row sp (UseHintVec sp H (NTTInvVec (AZ - ScalarVectorNTT C T)))) p.2.2.val)
   · rintro ⟨wa, w1', i⟩ ⟨hi1, hw1, hw2⟩
     dsimp only at hi1 hw1 hw2
-    simp only [verify.verify_internal_loop.body]
+    simp only [verify.verify_core_loop.body]
     split
     · rename_i hi
       have hi' : i.val < K.val := hi
@@ -296,10 +294,10 @@ theorem verify_loop_spec {K L : Usize} {k : Nat} {ip : Impl.params.Params} {sp :
         · have := ha6' c hc
           simp only [useHintVec_getElem! _ _ _ _ hik, Vector.getElem_zipWith]
           omega
-      have e16 : i16.val = i.val + 1 := i16_post
+      have e16 : i1.val = i.val + 1 := i1_post
       refine ⟨by omega, ?_, ?_, by omega⟩
       · rw [e16, hwa1]; exact hw1.set i rfl hl a5 hrW
-      · rw [e16, a7_post]; exact hw2.set i rfl hl2 a6 hrow
+      · rw [e16, a8_post]; exact hw2.set i rfl hl2 a6 hrow
     · rename_i hi
       have hi' : i.val = K.val := by scalar_tac
       simp only [WP.spec_ok]
@@ -362,6 +360,274 @@ theorem sig_len_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     omega
   rw [e]; unfold Spec.Params.sigLen; ring
 
+/-! ## The per-key / per-signature split
+
+`verify_internal` is `prepare_vk` (steps 1, 6, 7 and the key half of step 10) followed by `verify_decoded`
+(steps 8-13: `hash_mu`, SampleInBall, then `verify_core`). The pieces are proved once here and composed in
+`verify_internal_spec`; `PartialVerify.lean` and `PreparedVerify.lean` reuse them. -/
+
+/-- `tr = H(pk, 64)` (step 7). -/
+theorem hash_pk_spec (pk : Slice U8) :
+    verify.hash_pk pk ⦃ tr => bytesA tr = H (bytes pk) 64 ⦄ := by
+  unfold verify.hash_pk
+  step*
+  have hs1len : s.val.length = 64 := by rw [s_post1]; simp
+  have hs1b : bytes s1 = H (bytes pk) 64 := by
+    rw [__post2, List.drop_zero, Nat.zero_add, hs1len, List.nil_append]; rfl
+  have hs1l : s1.val.length = 64 := by
+    have h := congrArg List.length hs1b
+    simp only [bytes, List.length_map] at h
+    rw [h]; exact SHAKE256_length _ _
+  rw [s_post2, bytesA_from_slice _ _ hs1l, hs1b]
+
+/-- `μ = H(tr ‖ M′, 64)` (step 8), for `tr = H(pk, 64)`. -/
+theorem hash_mu_spec (tr : Array U8 64#usize) (m_prefix m : Slice U8) (pkb : List UInt8)
+    (htr : bytesA tr = H pkb 64) :
+    verify.hash_mu tr m_prefix m ⦃ mu =>
+      bytesA mu = H (H pkb 64 ++ (bytes m_prefix ++ bytes m)) 64 ⦄ := by
+  unfold verify.hash_mu
+  step*
+  have hsb : bytes s = H pkb 64 := by rw [s_post, bytes_to_slice]; exact htr
+  have hs1len : s1.val.length = 64 := by rw [s1_post1]; simp
+  have hmu : bytes s2 = H (H pkb 64 ++ (bytes m_prefix ++ bytes m)) 64 := by
+    have e : ([] ++ H pkb 64 ++ bytes m_prefix ++ bytes m : List UInt8) =
+        H pkb 64 ++ (bytes m_prefix ++ bytes m) := by simp
+    rw [__post2, List.drop_zero, Nat.zero_add, hs1len, hsb, e]; rfl
+  have hs2l : s2.val.length = 64 := by
+    have h := congrArg List.length hmu
+    simp only [bytes, List.length_map] at h
+    rw [h]; exact SHAKE256_length _ _
+  rw [s1_post2, bytesA_from_slice _ _ hs2l, hmu]
+
+/-- The key half of Verify: `prepare_vk` returns Â (= ExpandA(ρ), for any fuel at which the spec samples),
+NTT(t₁ · 2^d) and tr = H(pk, 64). -/
+theorem prepare_vk_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (pk : Slice U8) (hpkLen : pk.val.length = 32 + 320 * sp.k)
+    (A : Vector (Vector Spec.Poly sp.ℓ) sp.k) (F1 : Nat)
+    (hA : Spec.ExpandA sp F1 (Spec.pkDecode sp (bytes pk)).1 = some A) :
+    verify.prepare_vk K L pk ⦃ vk =>
+      ReprMat vk.a_hat A ∧
+      ReprVec vk.t1_2d_hat (NTTVec (((Spec.pkDecode sp (bytes pk)).2.map RPoly.toZq).map
+        (·.map (· * (2 ^ sp.d : Zq))))) ∧
+      bytesA vk.tr = H (bytes pk) 64 ⦄ := by
+  obtain ⟨hv, hstd⟩ := hp
+  have hK : K.val = sp.k := hv.K_eq
+  have hL : L.val = sp.ℓ := hv.L_eq
+  have hd := hstd.d_eq
+  unfold verify.prepare_vk
+  refine WP.spec_bind (pk_decode_spec_range ip sp hv pk hpkLen) ?_
+  rintro ⟨rho, t1⟩ ⟨hrho, ht1, ht1rng⟩
+  refine WP.spec_bind (expand_a_spec sp K L hK hL rho A F1 (by rw [hrho]; exact hA)) ?_
+  intro a_hat hahat
+  refine WP.spec_bind (hash_pk_spec pk) ?_
+  intro tr htr
+  refine WP.spec_bind (scale_vec_by_2d_pk_decode sp hd (bytes pk) t1 ht1) ?_
+  intro a1 ha1
+  refine WP.spec_bind (ntt_vec_spec a1 _ ha1) ?_
+  intro t1_2d_hat ht2d
+  simp only [WP.spec_ok]
+  exact ⟨hahat, ht2d, htr⟩
+
+/-- The slice `c_tilde[..n]` of the 64-byte buffer. -/
+theorem c_tilde_prefix_spec (c_tilde : Array U8 64#usize) (n : Usize) (hn : n.val ≤ 64) :
+    core.array.Array.index (core.ops.index.IndexSlice
+      (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde { «end» := n } ⦃ t =>
+      bytes t = (bytesA c_tilde).take n.val ⦄ := by
+  rw [Array.index_SliceIndexRangeToUsizeSlice]
+  apply WP.spec_mono (slice_to_bytes c_tilde.to_slice { «end» := n } (by
+    have := c_tilde.property
+    simp [Array.to_slice]
+    omega))
+  intro t ht
+  rw [ht, bytes_to_slice]
+
+/-- Steps 10-13 once `c = SampleInBall(c̃)` is known: the verdict `‖z‖∞ < γ₁ − β ∧ c̃ = c̃′`. The key enters
+through Â (`hA`), NTT(t₁ · 2^d) (`ht`) and μ (`hmu`, from `tr = H(pk, 64)`). -/
+theorem verify_core_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (vk : verify.PreparedVk K L) (mu c_tilde : Array U8 64#usize)
+    (cp : Array U32 256#usize) (z : Array (Array U32 256#usize) L) (h : Array (Array Bool 256#usize) K)
+    (pkb M' : List UInt8) (A : Vector (Vector Spec.Poly sp.ℓ) sp.k) (hA : ReprMat vk.a_hat A)
+    (ht : ReprVec vk.t1_2d_hat (NTTVec (((Spec.pkDecode sp pkb).2.map RPoly.toZq).map
+      (·.map (· * (2 ^ sp.d : Zq))))))
+    (hmu : bytesA mu = H (H pkb 64 ++ M') 64)
+    (c' : List UInt8) (z' : Vector RPoly sp.ℓ) (h' : Vector HintPoly sp.k)
+    (hc1 : (bytesA c_tilde).take (sp.lam / 4) = c') (hz : ReprIntVec z z')
+    (hzr : ∀ i : Nat, ∀ hi : i < sp.ℓ, ∀ j : Nat, ∀ hj : j < 256,
+      -(sp.γ₁ : Int) + 1 ≤ (z'[i]'hi)[j]'hj ∧ (z'[i]'hi)[j]'hj ≤ (sp.γ₁ : Int))
+    (hhh : ReprHintVec h h') (c : RPoly) (hcp : ReprInt cp c) :
+    verify.verify_core ip vk mu c_tilde cp z h ⦃ r =>
+      r = (decide (‖z'‖∞ < sp.γ₁ - sp.β) &&
+        c' == cTildePrime sp pkb M' (UseHintVec sp h' (wApprox sp A z' (Spec.pkDecode sp pkb).2 c))) ⦄ := by
+  obtain ⟨hv, hstd⟩ := hp
+  have hk8 : sp.k ≤ 8 := hstd.k_le_8
+  have hK : K.val = sp.k := hv.K_eq
+  have hL : L.val = sp.ℓ := hv.L_eq
+  have hd := hstd.d_eq
+  have hg := hstd.stdGamma2
+  have hcl : ip.c_tilde_len.val = sp.lam / 4 := hv.c_tilde_len
+  have h64 : sp.lam / 4 ≤ 64 := hstd.lam_le
+  have hK8 : K.val ≤ 8 := by omega
+  have hw1b : ip.w1_bits.val ≤ 6 := by rw [hv.w1_bits]; exact bitlen_m_le sp hg
+  have hβ : ip.beta.val ≤ ip.gamma1.val := by
+    rw [hv.beta, hv.gamma1]
+    have : sp.β ≤ 256 := by
+      have := hstd.tau_le
+      rcases hstd.eta with e | e <;> simp only [Spec.Params.β, e] <;> omega
+    rcases hstd.gamma1 with e | e <;> rw [e] <;> omega
+  unfold verify.verify_core
+  refine WP.spec_bind (ntt_vec_spec z _ hz.repr) ?_
+  intro az0 haz0
+  refine WP.spec_bind (matrix_vector_ntt_spec vk.a_hat A hA az0 _ haz0) ?_
+  intro az_hat haz
+  refine WP.spec_bind (ntt_spec cp hcp.canon) ?_
+  rintro c_hat ⟨hch1, hch2⟩
+  have hchat : Repr c_hat (NTT c.toZq) := ⟨hch1, by rw [hch2, hcp.2]⟩
+  refine WP.spec_bind (verify_loop_spec hv hg h h' hhh az_hat _ haz c_hat _ hchat vk.t1_2d_hat _ ht
+    (Array.repeat K (Array.repeat 256#usize 0#u32)) (Array.repeat K (Array.repeat 256#usize 0#u32)) 0#usize
+    (by simp) (Rows.zero _ _) (Rows.zero _ _)) ?_
+  intro w11 hw11
+  rw [hK] at hw11
+  have hw11' : Rows w11 (W1Row sp (UseHintVec sp h' (wApprox sp A z' (pkDecode sp pkb).2 c))) sp.k :=
+    hw11
+  have hw11r : ReprIntVec w11 (UseHintVec sp h' (wApprox sp A z' (pkDecode sp pkb).2 c)) :=
+    Rows.reprIntVec (Rows.mono hw11' fun r x hx => hx.1) hK
+  have hrng : ∀ (i : Nat) (hi : i < sp.k) (j : Nat) (hj : j < 256),
+      0 ≤ ((UseHintVec sp h' (wApprox sp A z' (pkDecode sp pkb).2 c))[i]'hi)[j]'hj ∧
+      ((UseHintVec sp h' (wApprox sp A z' (pkDecode sp pkb).2 c))[i]'hi)[j]'hj ≤
+        (((Spec.q - 1) / (2 * sp.γ₂) - 1 : Nat) : Int) := by
+    intro i hi j hj
+    obtain ⟨x, -, -, hr⟩ := hw11' i hi
+    have := hr j hj
+    rw [vget! _ i hi] at this
+    have hpos : 0 < sp.m := hg.m_pos
+    have hm' : (Spec.q - 1) / (2 * sp.γ₂) = sp.m := rfl
+    rw [hm']
+    omega
+  step*
+  have hslen : s.val.length = 1536 := by rw [s_post1]; simp
+  have hbitsle : bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) ≤ 6 := bitlen_m_le sp hg
+  have hL1 : 32 * sp.k * bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) ≤ s.val.length := by
+    rw [hslen]
+    calc 32 * sp.k * bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) ≤ 32 * 8 * 6 :=
+          Nat.mul_le_mul (Nat.mul_le_mul_left _ hk8) hbitsle
+      _ ≤ 1536 := by norm_num
+  refine WP.spec_bind (w1_encode_spec_long ip sp hv w11 _ hw11r hrng s hL1) ?_
+  intro s1 hs1
+  obtain ⟨hs1a, hs1len⟩ := hs1
+  step*
+  case h_fail =>
+    have h1 : i.val ≤ 256 := by scalar_tac
+    have h2 : i.val * ip.w1_bits.val ≤ 256 * 6 := Nat.mul_le_mul h1 hw1b
+    scalar_tac
+  case h =>
+    show i1.val ≤ (to_slice_mut_back s1).to_slice.length
+    have h1 : i.val ≤ 256 := by scalar_tac
+    have h2 : i1.val = i.val * ip.w1_bits.val := i1_post
+    have h3 : i.val * ip.w1_bits.val ≤ 256 * 6 := Nat.mul_le_mul h1 hw1b
+    have h4 : (to_slice_mut_back s1).to_slice.length = 1536 := by simp [Array.to_slice, Slice.length]
+    omega
+  have hs2b : bytes s2 = H (H pkb 64 ++ M') 64 := by
+    rw [s2_post, bytes_to_slice]; exact hmu
+  have hwb : ip.w1_bits.val = bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) := hv.w1_bits
+  have hi1v : i1.val = 32 * sp.k * bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) := by
+    rw [i1_post, i_post, hK, hwb]; ring
+  have he1 : bytesA (to_slice_mut_back s1) = bytes s1 := by
+    rw [s_post2, bytesA_from_slice _ _ (by simp [hs1len, hslen])]
+  have hs3b : bytes s3 = (bytes s1).take i1.val := by
+    rw [← he1]
+    simp [bytes, bytesA, s3_post1, List.slice, Array.to_slice, List.map_take]
+  have hs3 : bytes s3 = w1Encode sp (UseHintVec sp h' (wApprox sp A z' (pkDecode sp pkb).2 c)) := by
+    rw [hs3b, hi1v, hs1a]
+  have hs4len : s4.val.length = sp.lam / 4 := by
+    have h := s4_post2
+    simp only [Slice.length] at h
+    rw [h, hcl]
+  have hs5b : bytes s5 = cTildePrime sp pkb M'
+      (UseHintVec sp h' (wApprox sp A z' (pkDecode sp pkb).2 c)) := by
+    rw [__post2, List.drop_zero, Nat.zero_add, hs4len, hs2b, hs3]
+    unfold cTildePrime
+    rw [List.append_assoc, List.nil_append]
+    rfl
+  have hs5len : s5.val.length = sp.lam / 4 := by
+    have h := congrArg List.length hs5b
+    simp only [bytes, List.length_map, cTildePrime] at h
+    rw [h]; exact SHAKE256_length _ _
+  have hctp : (bytesA (index_mut_back s5)).take (sp.lam / 4) = bytes s5 := by
+    have hn : s5.val.length ≤ (Array.repeat 64#usize 0#u8).val.length := by
+      simp [hs5len]; omega
+    have e := setSlice_zero (Array.repeat 64#usize 0#u8).val s5.val hn
+    have hmap : bytesA (index_mut_back s5) =
+        ((s5.val ++ (Array.repeat 64#usize 0#u8).val.drop s5.val.length).map
+          fun x => UInt8.ofNat x.val) := by
+      simp only [bytesA, s4_post3, e]
+    rw [hmap, List.map_append, List.take_left' (by simp [hs5len])]
+    rfl
+  have hnorm : ‖z'‖∞ ≤ 4190208 := by
+    rw [infNorm_le_iff]
+    intro i hi
+    rw [infNorm_le_iff]
+    intro j hj
+    have := hzr i hi j hj
+    rw [infNorm_int]
+    rcases hstd.gamma1 with e | e <;> rw [e] at this <;> norm_num at this <;> omega
+  step with vec_infinity_norm_spec z z' hz hnorm as ⟨i2, hi2⟩
+  step as ⟨i3, hi3⟩
+  step with prefix_eq_spec c_tilde (index_mut_back s5) ip.c_tilde_len (by omega) as ⟨hok, hhok⟩
+  have hi3' : i3.val = sp.γ₁ - sp.β := by rw [hi3, hv.gamma1, hv.beta]
+  have hhok' : hok = decide (c' = cTildePrime sp pkb M'
+      (UseHintVec sp h' (wApprox sp A z' (pkDecode sp pkb).2 c))) := by
+    rw [hhok, hcl, hc1, hctp, hs5b]
+  by_cases hlt : i2 < i3
+  · have hlt' : ‖z'‖∞ < sp.γ₁ - sp.β := by
+      have : i2.val < i3.val := by scalar_tac
+      rw [hi2, hi3'] at this
+      exact this
+    rw [if_pos hlt]
+    simp only [WP.spec_ok]
+    rw [hhok']
+    simp [hlt']
+    rw [Bool.eq_iff_iff]
+    simp
+  · have hlt' : ¬ ‖z'‖∞ < sp.γ₁ - sp.β := by
+      intro h
+      apply hlt
+      have : i2.val < i3.val := by rw [hi2, hi3']; exact h
+      scalar_tac
+    rw [if_neg hlt]
+    simp only [WP.spec_ok]
+    simp [hlt']
+
+/-- Steps 8-13 for a decoded signature `(c̃, z, h)`: μ, SampleInBall (at fuel `F2`), then `verify_core`. -/
+theorem verify_decoded_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (vk : verify.PreparedVk K L) (m_prefix m : Slice U8)
+    (c_tilde : Array U8 64#usize) (z : Array (Array U32 256#usize) L) (h : Array (Array Bool 256#usize) K)
+    (pkb : List UInt8) (A : Vector (Vector Spec.Poly sp.ℓ) sp.k) (hA : ReprMat vk.a_hat A)
+    (ht : ReprVec vk.t1_2d_hat (NTTVec (((Spec.pkDecode sp pkb).2.map RPoly.toZq).map
+      (·.map (· * (2 ^ sp.d : Zq))))))
+    (htr : bytesA vk.tr = H pkb 64)
+    (c' : List UInt8) (z' : Vector RPoly sp.ℓ) (h' : Vector HintPoly sp.k)
+    (hc1 : (bytesA c_tilde).take (sp.lam / 4) = c') (hz : ReprIntVec z z')
+    (hzr : ∀ i : Nat, ∀ hi : i < sp.ℓ, ∀ j : Nat, ∀ hj : j < 256,
+      -(sp.γ₁ : Int) + 1 ≤ (z'[i]'hi)[j]'hj ∧ (z'[i]'hi)[j]'hj ≤ (sp.γ₁ : Int))
+    (hhh : ReprHintVec h h') (c : RPoly) (F2 : Nat) (hC : Spec.SampleInBall sp F2 c' = some c) :
+    verify.verify_decoded ip vk m_prefix m c_tilde z h ⦃ r =>
+      r = (decide (‖z'‖∞ < sp.γ₁ - sp.β) &&
+        c' == cTildePrime sp pkb (bytes m_prefix ++ bytes m)
+          (UseHintVec sp h' (wApprox sp A z' (Spec.pkDecode sp pkb).2 c))) ⦄ := by
+  have hv := hp.valid
+  have hstd := hp.params
+  have hcl : ip.c_tilde_len.val = sp.lam / 4 := hv.c_tilde_len
+  have h64 : sp.lam / 4 ≤ 64 := hstd.lam_le
+  unfold verify.verify_decoded
+  refine WP.spec_bind (hash_mu_spec vk.tr m_prefix m pkb htr) ?_
+  intro mu hmu
+  refine WP.spec_bind (c_tilde_prefix_spec c_tilde ip.c_tilde_len (by omega)) ?_
+  intro s hs
+  have hs' : bytes s = c' := by rw [hs, hcl, hc1]
+  refine WP.spec_bind (sample_in_ball_spec hv hstd.tau s c F2 (by rw [hs']; exact hC)) ?_
+  intro cp hcp
+  exact verify_core_spec hp vk mu c_tilde cp z h pkb _ A hA ht hmu c' z' h' hc1 hz hzr hhh c hcp
+
 end Verify
 
 open Verify
@@ -373,12 +639,9 @@ theorem verify_internal_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.
     verify.verify_internal K L ip pk m_prefix m σ ⦃ r => r = b ⦄ := by
   have hpkS := pk_len_spec hp
   have hsgS := sig_len_spec hp
+  have hp' := hp
   obtain ⟨hv, hstd⟩ := hp
-  have hk8 : sp.k ≤ 8 := hstd.k_le_8
-  have hK : K.val = sp.k := hv.K_eq
-  have hL : L.val = sp.ℓ := hv.L_eq
   have hd := hstd.d_eq
-  have hg := hstd.stdGamma2
   unfold verify.verify_internal
   dsimp only
   -- Length guard (Rust: `pk.len() != pk_len(p) || sig.len() != sig_len(p)` returns false, as in FIPS 204 Verify)
@@ -413,8 +676,6 @@ theorem verify_internal_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.
   have hpkLen : pk.val.length = 32 + 320 * sp.k := by
     have : pk.val.length = sp.pkLen := hpk
     rw [this, KeyGen.pkLen_eq sp hd]
-  refine WP.spec_bind (pk_decode_spec_range ip sp hv pk hpkLen) ?_
-  rintro ⟨rho, t1⟩ ⟨hrho, ht1, ht1rng⟩
   refine WP.spec_bind (sig_decode_spec ip sp hv hstd.stdSig σ hσ) ?_
   intro o ho
   rcases o with _ | ⟨c_tilde, z, h⟩
@@ -434,170 +695,12 @@ theorem verify_internal_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.
       have hσb : (bytes σ).length = sp.sigLen := by rw [bytes_length]; exact hσ
       obtain ⟨A, c, hA, hC, hb⟩ := verify_some sp F _ _ _ b hpkb hσb c' z' h' hsd hs
       dsimp only
-      refine WP.spec_bind (expand_a_spec sp K L hK hL rho A F.rejNTT (by rw [hrho]; exact hA)) ?_
-      intro a_hat hahat
-      have hcl : ip.c_tilde_len.val = sp.lam / 4 := hv.c_tilde_len
-      have h64 : sp.lam / 4 ≤ 64 := hstd.lam_le
-      have hK8 : K.val ≤ 8 := by omega
-      have hw1b : ip.w1_bits.val ≤ 6 := by rw [hv.w1_bits]; exact bitlen_m_le sp hg
-      have hβ : ip.beta.val ≤ ip.gamma1.val := by
-        rw [hv.beta, hv.gamma1]
-        have : sp.β ≤ 256 := by
-          have := hstd.tau_le
-          rcases hstd.eta with e | e <;> simp only [Spec.Params.β, e] <;> omega
-        rcases hstd.gamma1 with e | e <;> rw [e] <;> omega
-      step*
-      have hs1len : s.val.length = 64 := by rw [s_post1]; simp
-      have hs1raw : bytes s1 = List.drop 0 (Keccak.sponge 136 ([] ++ bytes pk) (0 + s.val.length)) := by
-        assumption
-      have hs1b : bytes s1 = H (bytes pk) 64 := by
-        rw [hs1raw, List.drop_zero, Nat.zero_add, hs1len, List.nil_append]; rfl
-      have hs1l : s1.val.length = 64 := by
-        have h := congrArg List.length hs1b
-        simp only [bytes, List.length_map] at h
-        rw [h]; exact SHAKE256_length _ _
-      have hs2b : bytes s2 = H (bytes pk) 64 := by
-        rw [s2_post, bytes_to_slice, s_post2, bytesA_from_slice _ _ hs1l, hs1b]
-      have hs3len : s3.val.length = 64 := by rw [s3_post1]; simp
-      have hmu : bytes s4 = H (H (bytes pk) 64 ++ (bytes m_prefix ++ bytes m)) 64 := by
-        have e : ([] ++ H (bytes pk) 64 ++ bytes m_prefix ++ bytes m : List UInt8) =
-            H (bytes pk) 64 ++ (bytes m_prefix ++ bytes m) := by simp
-        rw [__post2, List.drop_zero, Nat.zero_add, hs3len, hs2b, e]; rfl
-      have hs4l : s4.val.length = 64 := by
-        have h := congrArg List.length hmu
-        simp only [bytes, List.length_map] at h
-        rw [h]; exact SHAKE256_length _ _
-      have hs5 : bytes s5 = c' := by
-        rw [← hc1]
-        simp [bytes, bytesA, s5_post1, List.slice, Array.to_slice, hcl, List.map_take]
-      refine WP.spec_bind (sample_in_ball_spec hv hstd.tau s5 c F.sampleInBall (by rw [hs5]; exact hC)) ?_
-      intro cp hcp
-      refine WP.spec_bind (ntt_vec_spec z _ hz.repr) ?_
-      intro az0 haz0
-      refine WP.spec_bind (matrix_vector_ntt_spec a_hat A hahat az0 _ haz0) ?_
-      intro az_hat haz
-      refine WP.spec_bind (ntt_spec cp hcp.canon) ?_
-      rintro c_hat ⟨hch1, hch2⟩
-      have hchat : Repr c_hat (NTT c.toZq) := ⟨hch1, by rw [hch2, hcp.2]⟩
-      refine WP.spec_bind (scale_vec_by_2d_pk_decode sp hd (bytes pk) t1 ht1) ?_
-      intro a1 ha1
-      refine WP.spec_bind (ntt_vec_spec a1 _ ha1) ?_
-      intro t1_2d_hat ht2d
-      refine WP.spec_bind (verify_loop_spec hv hg h h' hhh az_hat _ haz c_hat _ hchat t1_2d_hat _ ht2d
-        (Array.repeat K (Array.repeat 256#usize 0#u32)) (Array.repeat K (Array.repeat 256#usize 0#u32)) 0#usize
-        (by simp) (Rows.zero _ _) (Rows.zero _ _)) ?_
-      intro w11 hw11
-      rw [hK] at hw11
-      have hw11' : Rows w11 (W1Row sp (UseHintVec sp h' (wApprox sp A z' (pkDecode sp (bytes pk)).2 c))) sp.k :=
-        hw11
-      have hw11r : ReprIntVec w11 (UseHintVec sp h' (wApprox sp A z' (pkDecode sp (bytes pk)).2 c)) :=
-        Rows.reprIntVec (Rows.mono hw11' fun r x hx => hx.1) hK
-      have hrng : ∀ (i : Nat) (hi : i < sp.k) (j : Nat) (hj : j < 256),
-          0 ≤ ((UseHintVec sp h' (wApprox sp A z' (pkDecode sp (bytes pk)).2 c))[i]'hi)[j]'hj ∧
-          ((UseHintVec sp h' (wApprox sp A z' (pkDecode sp (bytes pk)).2 c))[i]'hi)[j]'hj ≤
-            (((Spec.q - 1) / (2 * sp.γ₂) - 1 : Nat) : Int) := by
-        intro i hi j hj
-        obtain ⟨x, -, -, hr⟩ := hw11' i hi
-        have := hr j hj
-        rw [vget! _ i hi] at this
-        have hpos : 0 < sp.m := hg.m_pos
-        have hm' : (Spec.q - 1) / (2 * sp.γ₂) = sp.m := rfl
-        rw [hm']
-        omega
-      step*
-      have hs6len : s6.val.length = 1536 := by rw [s6_post1]; simp
-      have hbitsle : bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) ≤ 6 := bitlen_m_le sp hg
-      have hL1 : 32 * sp.k * bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) ≤ s6.val.length := by
-        rw [hs6len]
-        calc 32 * sp.k * bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) ≤ 32 * 8 * 6 :=
-              Nat.mul_le_mul (Nat.mul_le_mul_left _ hk8) hbitsle
-          _ ≤ 1536 := by norm_num
-      refine WP.spec_bind (w1_encode_spec_long ip sp hv w11 _ hw11r hrng s6 hL1) ?_
-      intro s7 hs7
-      obtain ⟨hs7a, hs7len⟩ := hs7
-      step*
-      case h_fail =>
-        have h1 : i4.val ≤ 256 := by scalar_tac
-        have h2 : i4.val * ip.w1_bits.val ≤ 256 * 6 := Nat.mul_le_mul h1 hw1b
-        scalar_tac
-      case h =>
-        show i5.val ≤ (to_slice_mut_back2 s7).to_slice.length
-        have h1 : i4.val ≤ 256 := by scalar_tac
-        have h2 : i5.val = i4.val * ip.w1_bits.val := i5_post
-        have h3 : i4.val * ip.w1_bits.val ≤ 256 * 6 := Nat.mul_le_mul h1 hw1b
-        have h4 : (to_slice_mut_back2 s7).to_slice.length = 1536 := by simp [Array.to_slice, Slice.length]
-        omega
-      have hs8b : bytes s8 = H (H (bytes pk) 64 ++ (bytes m_prefix ++ bytes m)) 64 := by
-        rw [s8_post, bytes_to_slice, s3_post2, bytesA_from_slice _ _ hs4l, hmu]
-      have hwb : ip.w1_bits.val = bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) := hv.w1_bits
-      have hi1v : i5.val = 32 * sp.k * bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) := by
-        rw [i5_post, i4_post, hK, hwb]; ring
-      have he7 : bytesA (to_slice_mut_back2 s7) = bytes s7 := by
-        rw [s6_post2, bytesA_from_slice _ _ (by simp [hs7len, hs6len])]
-      have hs9b : bytes s9 = (bytes s7).take i5.val := by
-        rw [← he7]
-        simp [bytes, bytesA, s9_post1, List.slice, Array.to_slice, List.map_take]
-      have hs9 : bytes s9 = w1Encode sp (UseHintVec sp h' (wApprox sp A z' (pkDecode sp (bytes pk)).2 c)) := by
-        rw [hs9b, hi1v, hs7a]
-      have hs10len : s10.val.length = sp.lam / 4 := by
-        have h := s10_post2
-        simp only [Slice.length] at h
-        rw [h, hcl]
-      have hs11b : bytes s11 = cTildePrime sp (bytes pk) (bytes m_prefix ++ bytes m)
-          (UseHintVec sp h' (wApprox sp A z' (pkDecode sp (bytes pk)).2 c)) := by
-        rw [__post2, List.drop_zero, Nat.zero_add, hs10len, hs8b, hs9]
-        unfold cTildePrime
-        rw [List.append_assoc, List.nil_append]
-        rfl
-      have hs11len : s11.val.length = sp.lam / 4 := by
-        have h := congrArg List.length hs11b
-        simp only [bytes, List.length_map, cTildePrime] at h
-        rw [h]; exact SHAKE256_length _ _
-      have hctp : (bytesA (index_mut_back s11)).take (sp.lam / 4) = bytes s11 := by
-        have hn : s11.val.length ≤ (Array.repeat 64#usize 0#u8).val.length := by
-          simp [hs11len]; omega
-        have e := setSlice_zero (Array.repeat 64#usize 0#u8).val s11.val hn
-        have hmap : bytesA (index_mut_back s11) =
-            ((s11.val ++ (Array.repeat 64#usize 0#u8).val.drop s11.val.length).map
-              fun x => UInt8.ofNat x.val) := by
-          simp only [bytesA, s10_post3, e]
-        rw [hmap, List.map_append, List.take_left' (by simp [hs11len])]
-        rfl
-      have hnorm : ‖z'‖∞ ≤ 4190208 := by
-        rw [infNorm_le_iff]
-        intro i hi
-        rw [infNorm_le_iff]
-        intro j hj
-        have := hzr i hi j hj
-        rw [infNorm_int]
-        rcases hstd.gamma1 with e | e <;> rw [e] at this <;> norm_num at this <;> omega
-      step with vec_infinity_norm_spec z z' hz hnorm as ⟨i2, hi2⟩
-      step as ⟨i3, hi3⟩
-      step with prefix_eq_spec c_tilde (index_mut_back s11) ip.c_tilde_len (by omega) as ⟨hok, hhok⟩
-      have hi3' : i3.val = sp.γ₁ - sp.β := by rw [hi3, hv.gamma1, hv.beta]
-      have hhok' : hok = decide (c' = cTildePrime sp (bytes pk) (bytes m_prefix ++ bytes m)
-          (UseHintVec sp h' (wApprox sp A z' (pkDecode sp (bytes pk)).2 c))) := by
-        rw [hhok, hcl, hc1, hctp, hs11b]
-      by_cases hlt : i2 < i3
-      · have hlt' : ‖z'‖∞ < sp.γ₁ - sp.β := by
-          have : i2.val < i3.val := by scalar_tac
-          rw [hi2, hi3'] at this
-          exact this
-        rw [if_pos hlt]
-        simp only [WP.spec_ok]
-        rw [hb, hhok']
-        simp [hlt']
-        rw [Bool.eq_iff_iff]
-        simp
-      · have hlt' : ¬ ‖z'‖∞ < sp.γ₁ - sp.β := by
-          intro h
-          apply hlt
-          have : i2.val < i3.val := by rw [hi2, hi3']; exact h
-          scalar_tac
-        rw [if_neg hlt]
-        simp only [WP.spec_ok]
-        rw [hb]
-        simp [hlt']
+      refine WP.spec_bind (prepare_vk_spec hp' pk hpkLen A F.rejNTT hA) ?_
+      rintro vk ⟨hvA, hvt, hvtr⟩
+      apply WP.spec_mono (verify_decoded_spec hp' vk m_prefix m c_tilde z h (bytes pk) A hvA hvt hvtr
+        c' z' h' hc1 hz hzr hhh c F.sampleInBall hC)
+      intro r hr
+      rw [hr, hb]
 
 /-- Headline form: the extracted `verify_internal` returns `ok` of the spec's verdict. -/
 theorem verify_internal_correct {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}

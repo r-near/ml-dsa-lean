@@ -326,7 +326,7 @@ theorem sign_loop_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Par
     (mu : Array U8 64#usize) (hmu : bytesA mu = P.μ)
     (rho_pp : Array U8 64#usize) (hrho : bytesA rho_pp = P.ρ'')
     (sig : Slice U8) (hsig : sig.length = sp.sigLen) (kappa : U32) (hk : kappa.val ≤ 2 ^ 16) :
-    sign.sign_internal_loop ip sig s1_hat s2_hat t0_hat a_hat mu rho_pp kappa ⦃ r =>
+    sign.sign_prepared_internal_loop ip a_hat s1_hat s2_hat t0_hat sig mu rho_pp kappa ⦃ r =>
       ∃ F2 n T, 2 ^ 16 ≤ kappa.val + n * sp.ℓ ∧
         loopRes sp { F with sampleInBall := F2 } P n kappa.val = some T ∧ LoopPost sp T sig r ⦄div := by
   obtain ⟨hv, hstd⟩ := hp
@@ -335,12 +335,12 @@ theorem sign_loop_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Par
   have hl1 := hb.ell_pos
   have hl256 : sp.ℓ < 256 := by have := hstd.kl_lt; omega
   have hτ : sp.τ ≤ 256 := by have := hstd.tau_le; omega
-  unfold sign.sign_internal_loop
+  unfold sign.sign_prepared_internal_loop
   refine loop.dspec_rel _ (fun k : U32 => k.val ≤ 2 ^ 16)
     (fun k r => ∃ F2 n T, 2 ^ 16 ≤ k.val + n * sp.ℓ ∧
         loopRes sp { F with sampleInBall := F2 } P n k.val = some T ∧ LoopPost sp T sig r) ?_ kappa hk
   intro kappa hk
-  simp only [sign.sign_internal_loop.body]
+  simp only [sign.sign_prepared_internal_loop.body]
   step as ⟨i, hi⟩
   have hiv : i.val = sp.ℓ := by
     rw [hi]; simp [UScalar.cast_val_eq]
@@ -433,34 +433,57 @@ open Sign PartialSign
 
 /-! ## `sign_internal` -/
 
-/-- **`sign_internal`, partial correctness and panic-freedom** (FIPS 204 Algorithm 7). The Rust never returns
-`fail`. If it returns `true`, the output buffer holds the spec's signature (budget `kappaBudget`) at some fuel; if it
-returns `false`, the spec is `Exhausted` at some fuel (`ExpandA` and every `SampleInBall` within fuel, all
-`kappaBudget` attempts rejected) and the output buffer is untouched. -/
-theorem sign_internal_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
-    (hp : Params.Std ip K L sp)
-    (sk m_prefix m : Slice U8) (rnd : Array U8 32#usize) (sig : Slice U8)
-    (hsk : sk.length = sp.skLen) (hsig : sig.length = sp.sigLen) :
-    sign.sign_internal K L ip sk m_prefix m rnd sig ⦃ r =>
-      (r.1 = true → ∃ F, Spec.Sign_internal_bounded sp (kappaBudget sp) (bytes sk)
-        (bytes m_prefix ++ bytes m) (bytesA rnd) F = some (bytes r.2)) ∧
-      (r.1 = false → (∃ F, Exhausted sp F (bytes sk) (bytes m_prefix ++ bytes m) (bytesA rnd)) ∧ r.2 = sig) ⦄div := by
-  have hb : SignBuf sp := StdParams.signBuf (Params.Std.params hp)
-  have hp' := hp
+/-- **The key half of Sign, partial.** `prepare_sk` never fails; if it returns, `ps` holds ŝ₁, ŝ₂, t̂₀, K and tr as
+`skDecode` gives them and Â = ExpandA(ρ) (at some fuel `F1` of the spec). It diverges exactly where ExpandA does. -/
+theorem prepare_sk_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (sk : Slice U8) (hsk : sk.length = sp.skLen)
+    (ρ Kk tr : List UInt8) (s₁ : Vector RPoly sp.ℓ) (s₂ t₀ : Vector RPoly sp.k)
+    (hd : Spec.skDecode sp (bytes sk) = (ρ, Kk, tr, s₁, s₂, t₀)) :
+    sign.prepare_sk K L ip sk ⦃ ps =>
+      ∃ (Â : Vector (Vector Poly sp.ℓ) sp.k) (F1 : Nat), Spec.ExpandA sp F1 ρ = some Â ∧
+      ReprMat ps.a_hat Â ∧ ReprVec ps.s1_hat (NTTVec (s₁.map RPoly.toZq)) ∧
+      ReprVec ps.s2_hat (NTTVec (s₂.map RPoly.toZq)) ∧ ReprVec ps.t0_hat (NTTVec (t₀.map RPoly.toZq)) ∧
+      bytesA ps.key = Kk ∧ bytesA ps.tr = tr ⦄div := by
   obtain ⟨hv, hstd⟩ := hp
   have hK : K.val = sp.k := hv.K_eq
   have hL : L.val = sp.ℓ := hv.L_eq
-  rcases hd : Spec.skDecode sp (bytes sk) with ⟨ρ, Kk, tr, s₁, s₂, t₀⟩
-  unfold sign.sign_internal
-  step with sk_decode_spec ip sp hv hstd.eta_lt sk hsk as ⟨key, hrho, hkey, htr, hs1, hs2, ht0⟩
+  unfold sign.prepare_sk
+  refine dspec_bind_of_spec (sk_decode_spec ip sp hv hstd.eta_lt sk hsk) ?_
+  intro key ⟨hrho, hkey, htr, hs1, hs2, ht0⟩
   rw [hd] at hrho hkey htr hs1 hs2 ht0
   dsimp only at hrho hkey htr hs1 hs2 ht0
-  step with ntt_vec_spec key.s1 _ hs1.repr as ⟨s1_hat, hs1h⟩
-  step with ntt_vec_spec key.s2 _ hs2.repr as ⟨s2_hat, hs2h⟩
-  step with ntt_vec_spec key.t0 _ ht0.repr as ⟨t0_hat, ht0h⟩
+  refine dspec_bind_of_spec (ntt_vec_spec key.s1 _ hs1.repr) ?_
+  intro s1_hat hs1h
+  refine dspec_bind_of_spec (ntt_vec_spec key.s2 _ hs2.repr) ?_
+  intro s2_hat hs2h
+  refine dspec_bind_of_spec (ntt_vec_spec key.t0 _ ht0.repr) ?_
+  intro t0_hat ht0h
   refine WP.dspec_bind' (expand_a_partial sp K L hK hL key.rho) ?_
   rintro a_hat ⟨Â, F1, hA, hAh⟩
   rw [hrho] at hA
+  simp only [WP.dspec_ok]
+  exact ⟨Â, F1, hA, hAh, hs1h, hs2h, ht0h, hkey, htr⟩
+
+/-- **Steps 6-33 on a prepared key, partial.** For a prepared key holding the values of `skDecode skb`, Â =
+ExpandA(ρ) at fuel `F1`, ŝ₁, ŝ₂, t̂₀: the Rust never returns `fail`; a `true` result is the spec's signature (budget
+`kappaBudget`) at some fuel, a `false` result means the spec is `Exhausted` at some fuel and the buffer is untouched. -/
+theorem sign_prepared_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (hb : SignBuf sp)
+    (ps : sign.PreparedSk K L) (m_prefix m : Slice U8) (rnd : Array U8 32#usize) (sig : Slice U8)
+    (hsig : sig.length = sp.sigLen)
+    (skb : List UInt8) (ρ Kk tr : List UInt8) (s₁ : Vector RPoly sp.ℓ) (s₂ t₀ : Vector RPoly sp.k)
+    (hd : Spec.skDecode sp skb = (ρ, Kk, tr, s₁, s₂, t₀))
+    (Â : Vector (Vector Poly sp.ℓ) sp.k) (F1 : Nat) (hA1 : Spec.ExpandA sp F1 ρ = some Â)
+    (hAh : ReprMat ps.a_hat Â) (hs1h : ReprVec ps.s1_hat (NTTVec (s₁.map RPoly.toZq)))
+    (hs2h : ReprVec ps.s2_hat (NTTVec (s₂.map RPoly.toZq))) (ht0h : ReprVec ps.t0_hat (NTTVec (t₀.map RPoly.toZq)))
+    (hkey : bytesA ps.key = Kk) (htr : bytesA ps.tr = tr) :
+    sign.sign_prepared_internal ip ps m_prefix m rnd sig ⦃ r =>
+      (r.1 = true → ∃ F, Spec.Sign_internal_bounded sp (kappaBudget sp) skb
+        (bytes m_prefix ++ bytes m) (bytesA rnd) F = some (bytes r.2)) ∧
+      (r.1 = false → (∃ F, Exhausted sp F skb (bytes m_prefix ++ bytes m) (bytesA rnd)) ∧ r.2 = sig) ⦄div := by
+  have hp' := hp
+  obtain ⟨hv, hstd⟩ := hp
+  unfold sign.sign_prepared_internal
   step*
   rename' to_slice_mut_back => s1_post1
   obtain ⟨s1, tsmb0⟩ := s1
@@ -511,14 +534,14 @@ theorem sign_internal_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec
   have hrho' : bytesA (tsmb1 s7) =
       H (Kk ++ bytesA rnd ++ H (tr ++ (bytes m_prefix ++ bytes m)) 64) 64 := by
     rw [s6_post2, bytesA_from_slice _ _ hs7l, hs7b]
-  have hpre : ∀ F : Spec.Fuel, F.rejNTT = F1 → pre sp F (bytes sk) (bytes m_prefix ++ bytes m) (bytesA rnd) =
+  have hpre : ∀ F : Spec.Fuel, F.rejNTT = F1 → pre sp F skb (bytes m_prefix ++ bytes m) (bytesA rnd) =
       some ⟨s₁, s₂, t₀, Â, H (tr ++ (bytes m_prefix ++ bytes m)) 64,
         H (Kk ++ bytesA rnd ++ H (tr ++ (bytes m_prefix ++ bytes m)) 64) 64⟩ := by
     intro F hF
-    exact pre_of_decode F _ _ _ ρ Kk tr s₁ s₂ t₀ hd Â (by rw [hF]; exact hA)
+    exact pre_of_decode F _ _ _ ρ Kk tr s₁ s₂ t₀ hd Â (by rw [hF]; exact hA1)
   have hl1 := hb.ell_pos
   refine WP.dspec_mono' (sign_loop_partial hp' hb { rejNTT := F1 } ⟨s₁, s₂, t₀, Â, H (tr ++ (bytes m_prefix ++ bytes m)) 64,
-      H (Kk ++ bytesA rnd ++ H (tr ++ (bytes m_prefix ++ bytes m)) 64) 64⟩ a_hat hAh s1_hat hs1h s2_hat hs2h t0_hat ht0h
+      H (Kk ++ bytesA rnd ++ H (tr ++ (bytes m_prefix ++ bytes m)) 64) 64⟩ ps.a_hat hAh ps.s1_hat hs1h ps.s2_hat hs2h ps.t0_hat ht0h
       (tsmb0 s2) hmu (tsmb1 s7) hrho' sig hsig 0#u32 (by simp)) ?_
   rintro r ⟨F2, n, T, hn, hT, hpost⟩
   have e0 : (0#u32).val = 0 := by simp
@@ -540,6 +563,25 @@ theorem sign_internal_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec
     rw [Sign_internal_bounded_eq, hP']
     simp only [hT', encodeRes, hr2]
 
+/-- **`sign_internal`, partial correctness and panic-freedom** (FIPS 204 Algorithm 7). The Rust never returns
+`fail`. If it returns `true`, the output buffer holds the spec's signature (budget `kappaBudget`) at some fuel; if it
+returns `false`, the spec is `Exhausted` at some fuel (`ExpandA` and every `SampleInBall` within fuel, all
+`kappaBudget` attempts rejected) and the output buffer is untouched. -/
+theorem sign_internal_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp)
+    (sk m_prefix m : Slice U8) (rnd : Array U8 32#usize) (sig : Slice U8)
+    (hsk : sk.length = sp.skLen) (hsig : sig.length = sp.sigLen) :
+    sign.sign_internal K L ip sk m_prefix m rnd sig ⦃ r =>
+      (r.1 = true → ∃ F, Spec.Sign_internal_bounded sp (kappaBudget sp) (bytes sk)
+        (bytes m_prefix ++ bytes m) (bytesA rnd) F = some (bytes r.2)) ∧
+      (r.1 = false → (∃ F, Exhausted sp F (bytes sk) (bytes m_prefix ++ bytes m) (bytesA rnd)) ∧ r.2 = sig) ⦄div := by
+  have hb : SignBuf sp := StdParams.signBuf (Params.Std.params hp)
+  rcases hd : Spec.skDecode sp (bytes sk) with ⟨ρ, Kk, tr, s₁, s₂, t₀⟩
+  unfold sign.sign_internal
+  refine WP.dspec_bind' (prepare_sk_partial hp sk hsk ρ Kk tr s₁ s₂ t₀ hd) ?_
+  rintro ps ⟨Â, F1, hA1, hAh, hs1h, hs2h, ht0h, hkey, htr⟩
+  exact sign_prepared_partial hp hb ps m_prefix m rnd sig hsig (bytes sk) ρ Kk tr s₁ s₂ t₀ hd Â F1 hA1 hAh hs1h hs2h
+    ht0h hkey htr
 
 /-! ## Public API bodies -/
 

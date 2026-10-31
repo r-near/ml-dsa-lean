@@ -792,18 +792,18 @@ theorem sign_loop_spec {ip K L sp} (hp : Params.Std ip K L sp) (hb : SignBuf sp)
     (T : Option (List UInt8 × Vector Poly sp.ℓ × Vector HintPoly sp.k))
     (kappa : U32) (hk : kappa.val ≤ 2 ^ 16) (n : Nat) (hn : 2 ^ 16 ≤ n + kappa.val)
     (hT : loopRes sp F P n kappa.val = some T) :
-    sign.sign_internal_loop ip sig s1_hat s2_hat t0_hat a_hat mu rho_pp kappa ⦃ r => LoopPost sp T sig r ⦄ := by
+    sign.sign_prepared_internal_loop ip a_hat s1_hat s2_hat t0_hat sig mu rho_pp kappa ⦃ r => LoopPost sp T sig r ⦄ := by
   obtain ⟨hv, hstd⟩ := hp
   have hp : Params.Std ip K L sp := ⟨hv, hstd⟩
   have hL : L.val = sp.ℓ := hv.L_eq
   have hl1 := hb.ell_pos
   have hl256 : sp.ℓ < 256 := by have := hstd.kl_lt; omega
-  unfold sign.sign_internal_loop
+  unfold sign.sign_prepared_internal_loop
   apply loop.spec_decr_nat
     (fun (k : U32) => 2 ^ 16 - k.val)
     (fun k => k.val ≤ 2 ^ 16 ∧ ∃ n, 2 ^ 16 ≤ n + k.val ∧ loopRes sp F P n k.val = some T)
   · rintro kappa ⟨hk, n, hn, hT⟩
-    simp only [sign.sign_internal_loop.body]
+    simp only [sign.sign_prepared_internal_loop.body]
     step as ⟨i, hi⟩
     have hiv : i.val = sp.ℓ := by
       rw [hi]; simp [UScalar.cast_val_eq]
@@ -1061,6 +1061,85 @@ theorem loopRes_accept_iff (sp : Spec.Params) (F : Spec.Fuel) (P : Pre sp) :
 
 /-! ## Part 7: `sign_internal` -/
 
+/-- **The key half of Sign (steps 1-5).** `prepare_sk` returns ŝ₁, ŝ₂, t̂₀ (the NTTs of the decoded `s₁`, `s₂`, `t₀`),
+Â = ExpandA(ρ) (for any fuel at which the spec samples), K and tr, all as `skDecode` of the key bytes gives them. -/
+theorem prepare_sk_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (sk : Slice U8) (hsk : sk.length = sp.skLen)
+    (ρ Kk tr : List UInt8) (s₁ : Vector RPoly sp.ℓ) (s₂ t₀ : Vector RPoly sp.k)
+    (hd : Spec.skDecode sp (bytes sk) = (ρ, Kk, tr, s₁, s₂, t₀))
+    (Â : Vector (Vector Poly sp.ℓ) sp.k) (F1 : Nat) (hA : Spec.ExpandA sp F1 ρ = some Â) :
+    sign.prepare_sk K L ip sk ⦃ ps =>
+      ReprMat ps.a_hat Â ∧ ReprVec ps.s1_hat (NTTVec (s₁.map RPoly.toZq)) ∧
+      ReprVec ps.s2_hat (NTTVec (s₂.map RPoly.toZq)) ∧ ReprVec ps.t0_hat (NTTVec (t₀.map RPoly.toZq)) ∧
+      bytesA ps.key = Kk ∧ bytesA ps.tr = tr ⦄ := by
+  obtain ⟨hv, hstd⟩ := hp
+  have hK : K.val = sp.k := hv.K_eq
+  have hL : L.val = sp.ℓ := hv.L_eq
+  unfold sign.prepare_sk
+  refine WP.spec_bind (sk_decode_spec ip sp hv hstd.eta_lt sk hsk) ?_
+  intro key ⟨hrho, hkey, htr, hs1, hs2, ht0⟩
+  rw [hd] at hrho hkey htr hs1 hs2 ht0
+  dsimp only at hrho hkey htr hs1 hs2 ht0
+  refine WP.spec_bind (ntt_vec_spec key.s1 _ hs1.repr) ?_
+  intro s1_hat hs1h
+  refine WP.spec_bind (ntt_vec_spec key.s2 _ hs2.repr) ?_
+  intro s2_hat hs2h
+  refine WP.spec_bind (ntt_vec_spec key.t0 _ ht0.repr) ?_
+  intro t0_hat ht0h
+  refine WP.spec_bind (expand_a_spec sp K L hK hL key.rho Â F1 (by rw [hrho]; exact hA)) ?_
+  intro a_hat hAh
+  simp only [WP.spec_ok]
+  exact ⟨hAh, hs1h, hs2h, ht0h, hkey, htr⟩
+
+/-- Steps 6-33 on a prepared key (the Rust `sign_prepared_internal`): if `ps` holds the spec's pre-loop values
+(`P.Â`, `P.ŝ₁`, `P.ŝ₂`, `P.t̂₀`, with `P.μ = H(tr ‖ M′, 64)` and `P.ρ'' = H(K ‖ rnd ‖ μ, 64)` for the `K`, `tr` held in
+`ps`) and the spec loop (with a budget large enough to cover the whole counter range) returns `T`, so does the Rust
+function. -/
+theorem sign_prepared_core {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (hb : SignBuf sp)
+    (ps : sign.PreparedSk K L) (m_prefix m : Slice U8) (rnd : Array U8 32#usize) (sig : Slice U8)
+    (hsig : sig.length = sp.sigLen) (F : Spec.Fuel) (P : Pre sp)
+    (hA : ReprMat ps.a_hat P.Â) (hs1 : ReprVec ps.s1_hat P.ŝ₁) (hs2 : ReprVec ps.s2_hat P.ŝ₂)
+    (ht0 : ReprVec ps.t0_hat P.t₀hat)
+    (hmu : P.μ = H (bytesA ps.tr ++ (bytes m_prefix ++ bytes m)) 64)
+    (hrho : P.ρ'' = H (bytesA ps.key ++ bytesA rnd ++ P.μ) 64)
+    (T : Option (List UInt8 × Vector Poly sp.ℓ × Vector HintPoly sp.k)) (n : Nat) (hn : 2 ^ 16 ≤ n)
+    (hT : loopRes sp F P n 0 = some T) :
+    sign.sign_prepared_internal ip ps m_prefix m rnd sig ⦃ r => LoopPost sp T sig r ⦄ := by
+  have hp' := hp
+  obtain ⟨hv, hstd⟩ := hp
+  unfold sign.sign_prepared_internal
+  step*
+  have hsb : bytes s = bytesA ps.tr := by rw [s_post, bytes_to_slice]
+  have hs1l : s1.val.length = 64 := by rw [s1_post1]; simp
+  have hs2b : bytes s2 = H (bytesA ps.tr ++ (bytes m_prefix ++ bytes m)) 64 := by
+    rw [‹bytes s2 = _›, List.drop_zero, Nat.zero_add, hs1l, hsb]
+    simp only [List.nil_append, List.append_assoc]
+    rfl
+  have hs2l : s2.val.length = 64 := by
+    have h := congrArg List.length hs2b
+    simp only [bytes, List.length_map] at h
+    rw [h]; exact SHAKE256_length _ _
+  have hmu' : bytesA (to_slice_mut_back s2) = P.μ := by
+    rw [s1_post2, bytesA_from_slice _ _ hs2l, hs2b, hmu]
+  have hs3b : bytes s3 = bytesA ps.key := by rw [s3_post, bytes_to_slice]
+  have hs4b : bytes s4 = bytesA rnd := by rw [s4_post, bytes_to_slice]
+  have hs5b : bytes s5 = P.μ := by
+    rw [s5_post, bytes_to_slice, hmu']
+  have hs6l : s6.val.length = 64 := by rw [s6_post1]; simp
+  have hs7b : bytes s7 = H (bytesA ps.key ++ bytesA rnd ++ P.μ) 64 := by
+    rw [‹bytes s7 = _›, List.drop_zero, Nat.zero_add, hs6l, hs3b, hs4b, hs5b]
+    simp only [List.nil_append]
+    rfl
+  have hs7l : s7.val.length = 64 := by
+    have h := congrArg List.length hs7b
+    simp only [bytes, List.length_map] at h
+    rw [h]; exact SHAKE256_length _ _
+  have hrho' : bytesA (to_slice_mut_back1 s7) = P.ρ'' := by
+    rw [s6_post2, bytesA_from_slice _ _ hs7l, hs7b, hrho]
+  exact sign_loop_spec hp' hb F P ps.a_hat hA ps.s1_hat hs1 ps.s2_hat hs2 ps.t0_hat ht0 (to_slice_mut_back s2) hmu'
+    (to_slice_mut_back1 s7) hrho' sig hsig T 0#u32 (by simp) n (by simp; omega) (by simpa using hT)
+
 /-- The Rust prelude (steps 1-7) followed by the loop: if the spec's pre-loop values are `P` and the spec loop
 (with a budget large enough to cover the whole counter range) returns `T`, so does the Rust function. -/
 theorem sign_internal_core {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
@@ -1071,52 +1150,15 @@ theorem sign_internal_core {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Pa
     (T : Option (List UInt8 × Vector Poly sp.ℓ × Vector HintPoly sp.k)) (n : Nat) (hn : 2 ^ 16 ≤ n)
     (hT : loopRes sp F P n 0 = some T) :
     sign.sign_internal K L ip sk m_prefix m rnd sig ⦃ r => LoopPost sp T sig r ⦄ := by
-  have hp' := hp
-  obtain ⟨hv, hstd⟩ := hp
-  have hK : K.val = sp.k := hv.K_eq
-  have hL : L.val = sp.ℓ := hv.L_eq
   rcases hd : Spec.skDecode sp (bytes sk) with ⟨ρ, Kk, tr, s₁, s₂, t₀⟩
   obtain ⟨Â, hA, rfl⟩ := pre_some hP ρ Kk tr s₁ s₂ t₀ hd
   unfold sign.sign_internal
-  step with sk_decode_spec ip sp hv hstd.eta_lt sk hsk as ⟨key, hrho, hkey, htr, hs1, hs2, ht0⟩
-  rw [hd] at hrho hkey htr hs1 hs2 ht0
-  dsimp only at hrho hkey htr hs1 hs2 ht0
-  step with ntt_vec_spec key.s1 _ hs1.repr as ⟨s1_hat, hs1h⟩
-  step with ntt_vec_spec key.s2 _ hs2.repr as ⟨s2_hat, hs2h⟩
-  step with ntt_vec_spec key.t0 _ ht0.repr as ⟨t0_hat, ht0h⟩
-  step with expand_a_spec sp K L hK hL key.rho Â F.rejNTT (by rw [hrho]; exact hA) as ⟨a_hat, hAh⟩
-  step*
-  have hsb : bytes s = tr := by rw [s_post, bytes_to_slice, htr]
-  have hs1l : s1.val.length = 64 := by rw [s1_post1]; simp
-  have hs2b : bytes s2 = H (tr ++ (bytes m_prefix ++ bytes m)) 64 := by
-    rw [‹bytes s2 = _›, List.drop_zero, Nat.zero_add, hs1l, hsb]
-    simp only [List.nil_append, List.append_assoc]
-    rfl
-  have hs2l : s2.val.length = 64 := by
-    have h := congrArg List.length hs2b
-    simp only [bytes, List.length_map] at h
-    rw [h]; exact SHAKE256_length _ _
-  have hmu : bytesA (to_slice_mut_back s2) = H (tr ++ (bytes m_prefix ++ bytes m)) 64 := by
-    rw [s1_post2, bytesA_from_slice _ _ hs2l, hs2b]
-  have hs3b : bytes s3 = Kk := by rw [s3_post, bytes_to_slice, hkey]
-  have hs4b : bytes s4 = bytesA rnd := by rw [s4_post, bytes_to_slice]
-  have hs5b : bytes s5 = H (tr ++ (bytes m_prefix ++ bytes m)) 64 := by
-    rw [s5_post, bytes_to_slice, hmu]
-  have hs6l : s6.val.length = 64 := by rw [s6_post1]; simp
-  have hs7b : bytes s7 = H (Kk ++ bytesA rnd ++ H (tr ++ (bytes m_prefix ++ bytes m)) 64) 64 := by
-    rw [‹bytes s7 = _›, List.drop_zero, Nat.zero_add, hs6l, hs3b, hs4b, hs5b]
-    simp only [List.nil_append]
-    rfl
-  have hs7l : s7.val.length = 64 := by
-    have h := congrArg List.length hs7b
-    simp only [bytes, List.length_map] at h
-    rw [h]; exact SHAKE256_length _ _
-  have hrho' : bytesA (to_slice_mut_back1 s7) =
-      H (Kk ++ bytesA rnd ++ H (tr ++ (bytes m_prefix ++ bytes m)) 64) 64 := by
-    rw [s6_post2, bytesA_from_slice _ _ hs7l, hs7b]
-  exact sign_loop_spec hp' hb F ⟨s₁, s₂, t₀, Â, H (tr ++ (bytes m_prefix ++ bytes m)) 64,
-      H (Kk ++ bytesA rnd ++ H (tr ++ (bytes m_prefix ++ bytes m)) 64) 64⟩ a_hat hAh s1_hat hs1h s2_hat hs2h t0_hat ht0h (to_slice_mut_back s2) hmu
-    (to_slice_mut_back1 s7) hrho' sig hsig T 0#u32 (by simp) n (by simp; omega) (by simpa using hT)
+  refine WP.spec_bind (prepare_sk_spec hp sk hsk ρ Kk tr s₁ s₂ t₀ hd Â F.rejNTT hA) ?_
+  rintro ps ⟨hAh, hs1h, hs2h, ht0h, hkey, htr⟩
+  exact sign_prepared_core hp hb ps m_prefix m rnd sig hsig F
+    ⟨s₁, s₂, t₀, Â, H (tr ++ (bytes m_prefix ++ bytes m)) 64,
+      H (Kk ++ bytesA rnd ++ H (tr ++ (bytes m_prefix ++ bytes m)) 64) 64⟩ hAh hs1h hs2h ht0h
+    (by dsimp only; rw [htr]) (by dsimp only; rw [hkey]) T n hn hT
 
 /-- **`Sign_internal` refinement, success case.** If the bounded spec (any attempt budget `B`) returns the
 signature `σ`, the extracted Rust `sign_internal` returns `true` and writes exactly `σ` into the output buffer.

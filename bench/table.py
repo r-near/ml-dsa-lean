@@ -9,7 +9,7 @@ Usage: table.py headline FILE            one table per parameter set (microsecon
 import collections
 import sys
 
-ORDER = ["ours", "rustcrypto", "rustcrypto+cached-sk", "rustcrypto+cached-vk", "libcrux-portable", "libcrux-avx2",
+ORDER = ["ours", "ours+prepared-vk", "ours+prepared-sk", "rustcrypto", "rustcrypto+cached-sk", "rustcrypto+cached-vk", "libcrux-portable", "libcrux-avx2",
          "mldsa-native-portable", "mldsa-native-avx2"]
 OPS = ["keygen", "sign-det", "sign-hedged", "verify"]
 

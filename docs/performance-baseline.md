@@ -526,6 +526,26 @@ deployment (wasm32, threads) in mind.
 Projected results of batch 1 (estimates from the measurements above, not implemented), ML-DSA-87: verify 244 us to
 about 210 us uncached or about 78 us cached; sign 809 us to about 735 us; keygen 234 us to about 200 us.
 
+### Status: prepared keys implemented
+
+Items 1 and 10 are implemented and proved (`api::verifying_key_NN`, `verify_prepared_NN`, `verify_internal_prepared_NN`;
+`api::signing_key_NN`, `sign_prepared_NN`, `sign_internal_prepared_NN`; Lean in `Proofs/PreparedVerify.lean` and
+`Proofs/PreparedSign.lean`). Measured with the method of section 9 (nearcore-default, pinned to one CPU, medians; the
+CPU was one with no other job on it or its sibling), microseconds:
+
+| set | verify | verify, prepared key | sign-det | sign-det, prepared key | sign-hedged | sign-hedged, prepared key |
+|---|---|---|---|---|---|---|
+| ML-DSA-44 | 93.2 | 39.0 (0.42x) | 408.6 | 343.0 (0.84x) | 388.7 | 324.1 (0.83x) |
+| ML-DSA-65 | 150.4 | 55.1 (0.37x) | 650.4 | 539.7 (0.83x) | 630.9 | 520.1 (0.82x) |
+| ML-DSA-87 | 248.5 | 78.7 (0.32x) | 816.6 | 624.6 (0.76x) | 731.2 | 539.8 (0.74x) |
+
+Prepared object sizes: verifying key 20,544 / 36,928 / 65,600 bytes, signing key 28,768 / 48,224 / 80,992 bytes
+(ML-DSA-44 / 65 / 87). The crate is `no_std` without `alloc`, so callers `Box` them. Signing keys hold secrets; with the
+`zeroize` feature, dropping a `SigningKeyNN` wipes ŝ1, ŝ2, t̂0 and K. That `Drop` impl is `cfg`-gated and outside the
+extraction (Aeneas models neither `Drop` nor volatile writes), so the Lean theorems are about the code without it. The
+prepared signing path performs the operations of `sign_NN` in the same order and adds no branch on secret data; the
+only change is that skDecode, the three NTTs and ExpandA run in `signing_key_NN` instead of on every call.
+
 Second batch: items 4 and 5 (lazy NTT with its contract unchanged, plus a vectorized build or dispatch). Projected:
 cached verify-87 about 40 us (below every uncached AVX2 figure here), uncached verify-87 about 155 us, sign-87 about
 430 us, keygen-87 about 160 us. Third batch: item 6 (4-way SHAKE) if sign and keygen need to approach the AVX2
