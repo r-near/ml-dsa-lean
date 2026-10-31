@@ -5,7 +5,7 @@ use crate::encode::SecretKey;
 use crate::encode::{sig_encode, sk_decode, w1_encode};
 use crate::field::{add, neg};
 use crate::keccak::Shake;
-use crate::ntt::{matrix_vector_ntt, ntt, ntt_inverse, ntt_vec, scalar_vector_ntt_inverse, sub_poly};
+use crate::ntt::{matrix_vector_ntt, ntt, ntt_inverse, ntt_vec, ntt_vec_into, scalar_vector_ntt_inverse, sub_poly};
 use crate::params::Params;
 use crate::rounding::{make_hint, poly_high_bits, poly_low_bits, vec_infinity_norm};
 use crate::sampling::{expand_a, expand_mask, sample_in_ball};
@@ -107,6 +107,13 @@ fn attempt<const K: usize, const L: usize>(
     h.absorb(&w1_enc[..K * 32 * p.w1_bits]);
     h.finalize();
     h.squeeze(&mut c_tilde[..p.c_tilde_len]);
+    // w1 comes from the secret mask y, and c̃ is only published if the attempt is accepted.
+    #[cfg(feature = "zeroize")]
+    {
+        use zeroize::Zeroize;
+        h.wipe();
+        w1_enc.zeroize();
+    }
     // 16–17: c ← SampleInBall(c̃); ĉ ← NTT(c)
     let c_hat = ntt(&sample_in_ball(p, &c_tilde[..p.c_tilde_len]));
     // 18–21: z, w − ⟨⟨cs2⟩⟩, r0
@@ -147,6 +154,41 @@ pub struct PreparedSk<const K: usize, const L: usize> {
     pub(crate) tr: [u8; 64],
 }
 
+/// For `tests/zeroize.rs` (feature `internals`): the secret fields as (pointer, length in bytes) pairs, in the order
+/// ŝ1, ŝ2, t̂0, K. The pointers stay valid as long as `self` is not moved or freed, which is what the test needs to
+/// read the bytes back after the key has been dropped in place.
+#[cfg(feature = "internals")]
+impl<const K: usize, const L: usize> PreparedSk<K, L> {
+    pub fn secret_regions(&self) -> [(*const u8, usize); 4] {
+        [
+            (self.s1_hat.as_ptr() as *const u8, core::mem::size_of_val(&self.s1_hat)),
+            (self.s2_hat.as_ptr() as *const u8, core::mem::size_of_val(&self.s2_hat)),
+            (self.t0_hat.as_ptr() as *const u8, core::mem::size_of_val(&self.t0_hat)),
+            (self.key.as_ptr(), core::mem::size_of_val(&self.key)),
+        ]
+    }
+}
+
+/// The same for the `api` key objects (`inner` is crate-private).
+#[cfg(feature = "internals")]
+impl crate::api::SigningKey44 {
+    pub fn secret_regions(&self) -> [(*const u8, usize); 4] {
+        self.inner.secret_regions()
+    }
+}
+#[cfg(feature = "internals")]
+impl crate::api::SigningKey65 {
+    pub fn secret_regions(&self) -> [(*const u8, usize); 4] {
+        self.inner.secret_regions()
+    }
+}
+#[cfg(feature = "internals")]
+impl crate::api::SigningKey87 {
+    pub fn secret_regions(&self) -> [(*const u8, usize); 4] {
+        self.inner.secret_regions()
+    }
+}
+
 #[cfg(feature = "zeroize")]
 impl<const K: usize, const L: usize> Drop for PreparedSk<K, L> {
     /// Wipes ŝ1, ŝ2, t̂0 and K (Â and tr are public). Outside the Lean proof: Aeneas models neither `Drop` nor
@@ -160,25 +202,57 @@ impl<const K: usize, const L: usize> Drop for PreparedSk<K, L> {
     }
 }
 
+impl<const K: usize, const L: usize> PreparedSk<K, L> {
+    /// The all-zero value: the destination `prepare_sk_into` fills in place. Not a valid key.
+    pub(crate) fn zeroed() -> PreparedSk<K, L> {
+        PreparedSk {
+            a_hat: [[[0u32; 256]; L]; K],
+            s1_hat: [[0u32; 256]; L],
+            s2_hat: [[0u32; 256]; K],
+            t0_hat: [[0u32; 256]; K],
+            key: [0u8; 32],
+            tr: [0u8; 64],
+        }
+    }
+}
+
 /// Steps 1-5 of Algorithm 7: skDecode, the three NTTs and ExpandA. Everything that depends on `sk` alone.
-/// With the `zeroize` feature the decoded s1, s2, t0 and K are wiped before returning.
+/// Returns the prepared key by value; `prepare_sk_into` is the same computation writing into a caller-provided
+/// destination, which is what `signing_key_*` and `sign_internal` use (see there for why).
+///
+/// Precondition: `sk.len() == sk_len(p)` and `p` agrees with `K` and `L`. The decoders index `sk` by those, so
+/// other inputs panic (the same as `sign_internal`, ISSUES E-1). The `api` functions pass fixed-size arrays and
+/// consistent parameters; this function is public only for the `internals` feature (tests, fuzzing, the
+/// constant-time probes of `checkct/`), so it cannot be reached from outside the crate otherwise.
 pub fn prepare_sk<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> PreparedSk<K, L> {
+    let mut out = PreparedSk::<K, L>::zeroed();
+    prepare_sk_into::<K, L>(p, sk, &mut out);
+    out
+}
+
+/// Steps 1-5 of Algorithm 7, written into `out` (any value; every field is overwritten): skDecode, the three NTTs
+/// and ExpandA. With the `zeroize` feature the decoded s1, s2, t0 and K are wiped before returning.
+///
+/// The secrets ŝ1, ŝ2, t̂0 and K are assigned to `out`'s fields and nowhere else, so with the `zeroize` feature the
+/// `Drop` of `out` is the only wipe they need: there is no by-value `PreparedSk` local whose copy would outlive it.
+/// Same precondition as `prepare_sk`.
+pub fn prepare_sk_into<const K: usize, const L: usize>(p: &Params, sk: &[u8], out: &mut PreparedSk<K, L>) {
     // 1: (ρ, K, tr, s1, s2, t0) ← skDecode(sk)
     #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
     let mut key = sk_decode::<K, L>(p, sk);
     // 2–4: ŝ1, ŝ2, t̂0
-    let s1_hat = ntt_vec(&key.s1);
-    let s2_hat = ntt_vec(&key.s2);
-    let t0_hat = ntt_vec(&key.t0);
+    ntt_vec_into(&key.s1, &mut out.s1_hat);
+    ntt_vec_into(&key.s2, &mut out.s2_hat);
+    ntt_vec_into(&key.t0, &mut out.t0_hat);
     // 5: Â ← ExpandA(ρ)
-    let a_hat = expand_a::<K, L>(&key.rho);
-    let out = PreparedSk { a_hat, s1_hat, s2_hat, t0_hat, key: key.key, tr: key.tr };
+    out.a_hat = expand_a::<K, L>(&key.rho);
+    out.key = key.key;
+    out.tr = key.tr;
     #[cfg(feature = "zeroize")]
     wipe_decoded::<K, L>(&mut key);
-    out
 }
 
-/// Zeroizes the decoded secret key of `prepare_sk` (K, s1, s2, t0). Only compiled with the `zeroize` feature.
+/// Zeroizes the decoded secret key of `prepare_sk_into` (K, s1, s2, t0). Only compiled with the `zeroize` feature.
 /// Outside the Lean proof (see `PreparedSk`'s `Drop`).
 #[cfg(feature = "zeroize")]
 fn wipe_decoded<const K: usize, const L: usize>(key: &mut SecretKey<K, L>) {
@@ -218,6 +292,9 @@ pub fn sign_prepared_internal<const K: usize, const L: usize>(
     h.absorb(&mu);
     h.finalize();
     h.squeeze(&mut rho_pp);
+    // The sponge absorbed K and holds ρ″.
+    #[cfg(feature = "zeroize")]
+    h.wipe();
     // 8–32: rejection loop, κ ← κ + ℓ
     let mut kappa: u32 = 0;
     while kappa + (L as u32) - 1 <= 0xFFFF {
@@ -248,7 +325,7 @@ fn wipe_rho_pp(rho_pp: &mut [u8; 64]) {
 /// Algorithm 7 ML-DSA.Sign_internal(sk, M′, rnd) with M′ = `m_prefix` ‖ `m` (the external API passes
 /// 0 ‖ |ctx| ‖ ctx as the prefix; the internal interface passes an empty prefix). Writes σ to `sig` and
 /// returns true, or returns false when the κ budget (all complete ExpandMask batches below 2^16) is exhausted.
-/// It is `prepare_sk` followed by `sign_prepared_internal`; with the `zeroize` feature the prepared key is
+/// It is `prepare_sk_into` followed by `sign_prepared_internal`; with the `zeroize` feature the prepared key is
 /// wiped when it goes out of scope.
 pub fn sign_internal<const K: usize, const L: usize>(
     p: &Params,
@@ -258,6 +335,7 @@ pub fn sign_internal<const K: usize, const L: usize>(
     rnd: &[u8; 32],
     sig: &mut [u8],
 ) -> bool {
-    let ps = prepare_sk::<K, L>(p, sk);
+    let mut ps = PreparedSk::<K, L>::zeroed();
+    prepare_sk_into::<K, L>(p, sk, &mut ps);
     sign_prepared_internal::<K, L>(p, &ps, m_prefix, m, rnd, sig)
 }

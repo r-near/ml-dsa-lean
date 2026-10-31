@@ -71,6 +71,9 @@ pub fn keygen_internal<const K: usize, const L: usize>(p: &Params, xi: &[u8; 32]
     h.finalize();
     let mut expanded = [0u8; 128];
     h.squeeze(&mut expanded);
+    // The sponge absorbed ξ and holds (ρ, ρ′, K).
+    #[cfg(feature = "zeroize")]
+    h.wipe();
     let mut rho = [0u8; 32];
     let mut rho_prime = [0u8; 64];
     let mut key = [0u8; 32];

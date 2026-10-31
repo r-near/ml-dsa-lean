@@ -184,6 +184,16 @@ impl Shake {
         self.pos = 0;
     }
 
+    /// Zeroizes the sponge: the 25 state lanes and the position. Only compiled with the `zeroize` feature; outside
+    /// the Lean proof (Aeneas models no volatile writes). Code that absorbs or squeezes a secret calls it after the
+    /// sponge's last use. A `Drop` impl would do the same, but Aeneas does not model `Drop`, so the call is explicit.
+    #[cfg(feature = "zeroize")]
+    pub fn wipe(&mut self) {
+        use zeroize::Zeroize;
+        self.state.zeroize();
+        self.pos.zeroize();
+    }
+
     pub fn squeeze(&mut self, out: &mut [u8]) {
         let mut i = 0;
         while i < out.len() {

@@ -98,13 +98,26 @@ pub fn expand_mask<const L: usize>(p: &Params, rho: &[u8; 64], mu: u16) -> [[u32
         ctx.absorb(&[nonce as u8, (nonce >> 8) as u8]); // IntegerToBytes(μ + r, 2)
         ctx.finalize();
         ctx.squeeze(&mut v[..32 * c]);
-        let z = bit_unpack(&v[..32 * c], c);
+        #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+        let mut z = bit_unpack(&v[..32 * c], c);
         let mut i = 0;
         while i < 256 {
             y[r][i] = sub(p.gamma1, z[i]); // BitUnpack(v, γ1 − 1, γ1): b − z
             i += 1;
         }
+        // The sponge absorbed ρ″ and holds y's bits, as do `v` and `z`; y itself is returned and is the caller's.
+        #[cfg(feature = "zeroize")]
+        {
+            use zeroize::Zeroize;
+            ctx.wipe();
+            z.zeroize();
+        }
         r += 1;
+    }
+    #[cfg(feature = "zeroize")]
+    {
+        use zeroize::Zeroize;
+        v.zeroize();
     }
     y
 }
@@ -150,6 +163,10 @@ pub fn rej_bounded_poly(p: &Params, rho: &[u8; 66]) -> [u32; 256] {
             }
         }
     }
+    // The sponge absorbed the seed (ρ′ for ExpandS) and holds the sampled bytes; this function does not know
+    // whether they are secret.
+    #[cfg(feature = "zeroize")]
+    ctx.wipe();
     a
 }
 
@@ -182,6 +199,12 @@ pub fn expand_s<const K: usize, const L: usize>(
         seed[65] = 0;
         s2[r] = rej_bounded_poly(p, &seed);
         r += 1;
+    }
+    // `seed` holds ρ′. The returned s1 and s2 are the caller's.
+    #[cfg(feature = "zeroize")]
+    {
+        use zeroize::Zeroize;
+        seed.zeroize();
     }
     (s1, s2)
 }
