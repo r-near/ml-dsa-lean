@@ -42,7 +42,10 @@ fn compute_t<const K: usize, const L: usize>(
 /// Zeroizes the secret temporaries of `keygen_internal`: the SHAKE output holding ρ′ and K, ρ′, K, s1, s2
 /// and t0. Only compiled with the `zeroize` feature. This is outside the Lean proof (Aeneas models
 /// neither `Drop` nor volatile writes); the feature-on build differs from the proved code only by the call
-/// to this function, which runs after pk and sk are written. Copies the compiler makes are not wiped.
+/// to this function, which runs after pk and sk are written, plus `Shake::wipe` on the sponge that absorbed ξ and the
+/// wipes inside `expand_s`. Not wiped: t0 in the tuple `vec_power2round` returns by value, one copy of K, and other
+/// copies the compiler makes (`tests/zeroize.rs` finds both; the secret-key array returned by `api::keygen_*` is the
+/// caller's).
 #[cfg(feature = "zeroize")]
 fn wipe_keygen<const K: usize, const L: usize>(
     expanded: &mut [u8; 128],

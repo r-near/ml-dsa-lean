@@ -9,9 +9,9 @@
 //!    caller's concern, as `PreparedSk`'s documentation says.
 //! 3. `shake_wipe_zeroes_the_sponge`: `Shake::wipe` zeroes the sponge.
 //!
-//! What the stack scan does not find in KeyGen is listed in `KEYGEN_KNOWN` and in the documentation of
-//! `keygen_internal`: the decoded K and t0 survive in by-value temporaries (`vec_power2round`'s tuple, the arguments
-//! of `sk_encode`). The scan asserts everything else.
+//! What the stack scan still finds is listed in `KEYGEN_KNOWN` and `PK_FROM_SK_KNOWN` and in the documentation of
+//! `keygen_internal` and `pk_from_sk`: t0 survives in a by-value temporary (`vec_power2round`'s tuple), and in KeyGen
+//! one copy of K. The scan asserts everything else, including all of Sign and `signing_key_*`.
 //!
 //! Needs `--features zeroize` (and `internals`, which the crate's self dev-dependency turns on). The stack scan
 //! reads memory the abstract machine considers uninitialized, with volatile loads; it is a test of what the machine
@@ -30,6 +30,8 @@ use std::ptr;
 
 /// Labels the KeyGen stack scan is known to find (not wiped, see the module comment).
 const KEYGEN_KNOWN: &[&str] = &["K", "t0[0]", "t0[1]", "t0[2]", "t0[3]", "t0[4]", "t0[5]", "t0[6]", "t0[7]"];
+/// The same for `pk_from_sk`: only the recomputed t0 (the tuple `vec_power2round` returns by value).
+const PK_FROM_SK_KNOWN: &[&str] = &["t0[0]", "t0[1]", "t0[2]", "t0[3]", "t0[4]", "t0[5]", "t0[6]", "t0[7]"];
 
 fn read_bytes(ptr: *const u8, len: usize) -> Vec<u8> {
     // SAFETY: callers pass a pointer into a live (possibly already dropped, but not freed) object of `len` bytes.
@@ -128,7 +130,7 @@ fn report(name: &str, hits: &[(String, usize)]) -> Vec<String> {
 
 macro_rules! residue_tests {
     ($set:ident, $p:expr, $k:literal, $l:literal, $keygen:ident, $signing_key:ident, $sign:ident, $sign_prepared:ident,
-     $SK:literal, $SKT:ty) => {
+     $SK:literal, $SKT:ty, $pk_from_sk:ident) => {
         mod $set {
             use super::*;
 
@@ -165,6 +167,25 @@ macro_rules! residue_tests {
                 let hits = scan(needles);
                 black_box(&r);
                 hits
+            }
+
+            #[inline(never)]
+            fn exp_pk_from_sk(sk: &[u8; $SK], needles: &[Needle]) -> Vec<(String, usize)> {
+                paint();
+                let r = black_box($pk_from_sk(sk));
+                let hits = scan(needles);
+                black_box(&r);
+                hits
+            }
+
+            #[test]
+            fn stack_residue_pk_from_sk() {
+                let (_pk, sk) = $keygen(&xi(5));
+                let needles = sk_needles::<$k, $l>(&$p, &sk);
+                let hits = exp_pk_from_sk(&sk, &needles);
+                let bad = report(concat!(stringify!($set), " pk_from_sk"), &hits);
+                let unexpected: Vec<_> = bad.iter().filter(|l| !PK_FROM_SK_KNOWN.contains(&l.as_str())).collect();
+                assert!(unexpected.is_empty(), "secret residue on the stack after pk_from_sk: {unexpected:?}");
             }
 
             #[test]
@@ -253,9 +274,9 @@ macro_rules! residue_tests {
     };
 }
 
-residue_tests!(ml_dsa_44, ML_DSA_44, 4, 4, keygen_44, signing_key_44, sign_44, sign_prepared_44, 2560, SigningKey44);
-residue_tests!(ml_dsa_65, ML_DSA_65, 6, 5, keygen_65, signing_key_65, sign_65, sign_prepared_65, 4032, SigningKey65);
-residue_tests!(ml_dsa_87, ML_DSA_87, 8, 7, keygen_87, signing_key_87, sign_87, sign_prepared_87, 4896, SigningKey87);
+residue_tests!(ml_dsa_44, ML_DSA_44, 4, 4, keygen_44, signing_key_44, sign_44, sign_prepared_44, 2560, SigningKey44, pk_from_sk_44);
+residue_tests!(ml_dsa_65, ML_DSA_65, 6, 5, keygen_65, signing_key_65, sign_65, sign_prepared_65, 4032, SigningKey65, pk_from_sk_65);
+residue_tests!(ml_dsa_87, ML_DSA_87, 8, 7, keygen_87, signing_key_87, sign_87, sign_prepared_87, 4896, SigningKey87, pk_from_sk_87);
 
 #[test]
 fn shake_wipe_zeroes_the_sponge() {

@@ -9,7 +9,11 @@ license = "MIT OR Apache-2.0"
 description = "Proof-first ML-DSA (FIPS 204): one Rust function per algorithm, plain arrays and loops, extracted to Lean"
 
 [dependencies]
-# Optional: wipes secret temporaries at the end of sign_internal/keygen_internal. Not part of the Lean proof.
+# Optional: wipes the secret material the library handles. Dropping a prepared signing key wipes it; keygen, sign and the
+# key constructors wipe the decoded or derived secrets in their locals (K, s1, s2, t0, rho', rho'', the decoded key) and
+# the SHAKE states that absorbed a secret, before they return. The `api` module docs list what is not covered (moves of
+# the returned objects, the per-attempt vectors of Sign, t0 and one K in KeyGen). Not part of the Lean proof: the
+# extracted code is the code without this feature.
 zeroize = { version = "1", default-features = false, optional = true }
 
 [features]

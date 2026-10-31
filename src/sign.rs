@@ -136,7 +136,9 @@ fn attempt<const K: usize, const L: usize>(
 /// private to the crate; the `api` module wraps this type per parameter set.
 ///
 /// Secret material: ŝ1, ŝ2, t̂0 and K. With the `zeroize` feature, dropping it wipes them (the `Drop` impl is
-/// `cfg`-gated, so it is outside the Lean model, which has no `Drop`).
+/// `cfg`-gated, so it is outside the Lean model, which has no `Drop`). Not wiped: Â and tr (public). Copies the
+/// compiler makes when this value is moved are not wiped and are the caller's concern; `prepare_sk_into` builds the
+/// secrets in place, so there is no copy inside the library.
 ///
 /// Size: (K·L + L + 2K) KiB + 96 bytes (28,768 / 48,224 / 80,992 bytes for ML-DSA-44 / 65 / 87).
 pub struct PreparedSk<const K: usize, const L: usize> {
@@ -224,6 +226,7 @@ impl<const K: usize, const L: usize> PreparedSk<K, L> {
 /// other inputs panic (the same as `sign_internal`, ISSUES E-1). The `api` functions pass fixed-size arrays and
 /// consistent parameters; this function is public only for the `internals` feature (tests, fuzzing, the
 /// constant-time probes of `checkct/`), so it cannot be reached from outside the crate otherwise.
+#[cfg_attr(not(feature = "internals"), allow(dead_code))]
 pub fn prepare_sk<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> PreparedSk<K, L> {
     let mut out = PreparedSk::<K, L>::zeroed();
     prepare_sk_into::<K, L>(p, sk, &mut out);
@@ -315,7 +318,8 @@ pub fn sign_prepared_internal<const K: usize, const L: usize>(
 }
 
 /// Zeroizes ρ″ (Algorithm 7 step 7). Only compiled with the `zeroize` feature; outside the Lean proof.
-/// Not wiped: the per-attempt vectors y, cs1, cs2, ct0 (locals of `attempt`), and any copies the compiler makes.
+/// Not wiped: the per-attempt vectors y, cs1, cs2, ct0, w (locals of `attempt` and its callees, returned by value),
+/// and any copies the compiler makes of them.
 #[cfg(feature = "zeroize")]
 fn wipe_rho_pp(rho_pp: &mut [u8; 64]) {
     use zeroize::Zeroize;
