@@ -1,0 +1,25 @@
+# Equivalence theorems between lean/Spec (vendored as `Spec`) and ocaml-pq, one fully qualified name per line
+# (read by scripts/xspec/check-axioms.sh).  Each must depend only on propext, Classical.choice, Quot.sound.
+import XSpec.Rounding
+XSpec.modPM_eq
+XSpec.power2Round_eq
+XSpec.decompose_eq
+XSpec.highBits_eq
+XSpec.lowBits_eq
+XSpec.makeHint_eq
+XSpec.useHint_eq
+import XSpec.Coeff
+XSpec.coeffFromHalfByte_eq
+XSpec.coeffFromThreeBytes_eq
+import XSpec.NTTOps
+XSpec.multiplyNTT_eq
+XSpec.addNTT_eq
+import XSpec.NTT
+XSpec.nttSpec_eq
+import XSpec.NTTInv
+XSpec.invNttSpec_eq
+import XSpec.Arith
+XSpec.fipsNTT_eq
+XSpec.fipsNTTinv_eq
+XSpec.fipsMulNTT_eq
+XSpec.fipsAddPoly_eq

@@ -1,0 +1,40 @@
+name = "XSpec"
+version = "0.1.0"
+defaultTargets = ["XSpec"]
+
+# Cross-check of this repository's FIPS 204 specification (`lean/Spec`, vendored below as `Spec`) against the
+# independent Lean transcription in ocaml-pq (the `OcamlPq` package, pinned by revision).  The toolchain is
+# the one ocaml-pq pins (Lean v4.34.0 / Mathlib v4.34.0); `lean/` stays on its own toolchain.
+
+[leanOptions]
+autoImplicit = false
+relaxedAutoImplicit = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.34.0"
+
+[[require]]
+name = "OcamlPq"
+git = "https://github.com/thevilledev/ocaml-pq"
+rev = "ceeb2782e033148fc2bf773c2053752f7de5a1cd"
+subDir = "formal/lean"
+
+# Our specification, byte-identical to lean/Spec unless xspec/PORT-NOTES.md lists a change (scripts/xspec/sync-ours.sh).
+[[lean_lib]]
+name = "Spec"
+
+# Adapters and equivalence proofs.
+[[lean_lib]]
+name = "XSpec"
+globs = ["XSpec.+"]
+
+# Compiled differential (not a default target): scripts/xspec/run-diff.sh.
+[[lean_lib]]
+name = "XSpecDiff"
+globs = ["XSpecDiff.+"]
+
+[[lean_exe]]
+name = "xspec-diff"
+root = "XSpecDiff.Main"
