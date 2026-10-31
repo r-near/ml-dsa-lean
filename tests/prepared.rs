@@ -8,6 +8,10 @@
 //! signatures); each also with a wrong message and a wrong context; 3 random public keys with 10 random signatures.
 //! Every result of the prepared function is compared with the unprepared one, so a disagreement in either
 //! direction fails (the valid signatures must also verify).
+//!
+//! The second half of the file does the same for prepared signing keys (`SigningKey*`): signatures must be
+//! byte-identical to `sign_*` and `sign_internal_*`, including `None` for |ctx| > 255 and for keys that exhaust
+//! the kappa budget.
 use ml_dsa_verified::api::*;
 
 const SCALE: usize = if cfg!(debug_assertions) { 10 } else { 1 };
