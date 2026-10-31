@@ -43,11 +43,24 @@ no default features. See `scripts/extract.py` and `scripts/setup-tools.sh`.
   unrelated proof by changing the module's shape. This is expected behavior, but it makes proofs brittle under
   refactoring. An option to keep all `pub(crate)` items would help. Evidence: STATUS.md, proof mutation testing row
   (M28). Status: not a bug, possible feature request.
+- **U-7 (2026-10-31): no model for `u64::from_le_bytes` / `to_le_bytes`.** The lane-wise sponge assembles lanes
+  with shifts instead, because the conversion isn't modeled (reported by the agent that wrote it; not yet checked
+  against the Aeneas standard library at the pin). Impact: slightly less idiomatic Rust in `src/keccak.rs`
+  (`load_lane`, `store_lane`). Status: open (check first; possibly a small library contribution).
+- **U-8 (2026-10-31): `core::arch` intrinsics extract as one opaque axiom each.** For example
+  `core.core_arch.x86.avx2._mm256_add_epi32`. Expected behavior, not a bug. SymCrypt's verified branch avoids it by
+  redirecting the names to Rust shims over lane arrays. A shared, tested model library for common AVX2/NEON
+  intrinsics would help every Aeneas user doing SIMD. Evidence: `experiments/simd/README.md`. Status: not a bug,
+  possible feature request.
 
 ## Charon
 
-- No Charon-specific issues so far, separate from the Aeneas items above. U-3 to U-5 may involve Charon; check
-  where each is triggered before filing.
+- U-3 to U-5 may involve Charon; check where each is triggered before filing.
+- **U-10 (2026-10-31): raw-pointer casts between non-literal pointee types fail.** Loading through
+  `ptr as *const __m256i` (from an `[i32; 8]` or `[u32]` pointer) makes Charon error with "Raw ptr casts are only
+  supported between pointers to literal types". Impact: SIMD loads and stores can't be extracted as written; the
+  SIMD study used value-level shims instead. Evidence: `experiments/simd/README.md`, `experiments/simd/evidence/`.
+  Status: open (probably a known limitation; check the tracker).
 
 ## RustCrypto `ml-dsa` (rev a3690c4)
 
