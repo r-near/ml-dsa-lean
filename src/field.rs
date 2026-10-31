@@ -1,6 +1,8 @@
 //! Arithmetic in Z_q, q = 8380417, on canonical representatives `0 <= x < q`.
 //! `small_reduce`/`barrett_reduce` keep the module-lattice 0.2.3 expressions (ARITH-02/03) with the
-//! macro parameters substituted.
+//! macro parameters substituted. The NTT hot paths use `mul_shoup` (fixed twiddle) and `mul_mont` (two variable
+//! operands), which need only 32 x 32 -> 64 bit multiplies and so vectorize; `mul` (Barrett, one u64 x u128
+//! multiply) is the reference they are tested against.
 
 pub const Q: u32 = 8_380_417;
 const BARRETT_SHIFT: u32 = 46; // 2 * (ilog2(Q) + 1)
@@ -30,8 +32,38 @@ pub fn sub(a: u32, b: u32) -> u32 {
 pub fn neg(a: u32) -> u32 {
     small_reduce(Q - a)
 }
+/// Reference product. The NTT code uses `mul_shoup` and `mul_mont`; this one has no vector instruction (the u128
+/// multiply), so it is kept as the specification the fast products are tested against.
+#[allow(dead_code)]
 pub fn mul(a: u32, b: u32) -> u32 {
     barrett_reduce((a as u64) * (b as u64))
+}
+
+/// Shoup multiplication: `z * x mod q` for a fixed `z < q`, its companion `zp = floor(z * 2^32 / q)` and any `x`.
+/// With `hi = floor(x * zp / 2^32)` the exact quotient satisfies `hi <= floor(z * x / q) <= hi + 1`, so
+/// `z * x - hi * q` lies in `[0, 2q)` and fits in a u32; the wrapping u32 arithmetic below computes it exactly. One
+/// `small_reduce` (a mask, no branch) finishes. Only 32 x 32 -> 64 multiplies.
+pub fn mul_shoup(z: u32, zp: u32, x: u32) -> u32 {
+    let hi = (((x as u64) * (zp as u64)) >> 32) as u32;
+    small_reduce(z.wrapping_mul(x).wrapping_sub(hi.wrapping_mul(Q)))
+}
+
+/// -q^-1 mod 2^32.
+const QNEG: u32 = 4_236_238_847;
+/// 2^64 mod q.
+const R2: u64 = 2_365_951;
+
+/// Montgomery reduction with R = 2^32: `a * 2^-32 mod q`, in `[0, 2q)`, for `a < 2^32 * q`.
+pub fn mont_reduce(a: u64) -> u32 {
+    let m = (a as u32).wrapping_mul(QNEG);
+    ((a + (m as u64) * (Q as u64)) >> 32) as u32
+}
+
+/// `a * b mod q` for canonical `a`, `b`, with two Montgomery reductions: the first leaves `a * b * 2^-32`, the second
+/// multiplies by `2^64 mod q` to cancel it. Only 32 x 32 -> 64 multiplies.
+pub fn mul_mont(a: u32, b: u32) -> u32 {
+    let p = mont_reduce((a as u64) * (b as u64));
+    small_reduce(mont_reduce((p as u64) * R2))
 }
 
 /// Optimization barrier: the identity, but opaque to LLVM, so that the mask idioms below are not turned back

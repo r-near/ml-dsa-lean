@@ -33,3 +33,5 @@ ml_dsa_verified::api::sk_is_well_formed_87
 ml_dsa_verified::api::pk_from_sk_44
 ml_dsa_verified::api::pk_from_sk_65
 ml_dsa_verified::api::pk_from_sk_87
+# The Barrett reference product; no longer reachable from the API (the NTT uses mul_shoup and mul_mont), kept for Field.lean and the impl-eval differential.
+ml_dsa_verified::field::mul
