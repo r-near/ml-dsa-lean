@@ -376,6 +376,24 @@ Proofs.keygen_87_div_iff
 Proofs.sign_internal_87_div_iff
 Proofs.sign_87_div_iff
 Proofs.pk_from_sk_87_div_iff
+Proofs.verifying_key_44_div_iff
+Proofs.signing_key_44_div_iff
+Proofs.verify_prepared_44_div_iff
+Proofs.verify_internal_prepared_44_div_iff
+Proofs.sign_prepared_44_div_iff
+Proofs.sign_internal_prepared_44_div_iff
+Proofs.verifying_key_65_div_iff
+Proofs.signing_key_65_div_iff
+Proofs.verify_prepared_65_div_iff
+Proofs.verify_internal_prepared_65_div_iff
+Proofs.sign_prepared_65_div_iff
+Proofs.sign_internal_prepared_65_div_iff
+Proofs.verifying_key_87_div_iff
+Proofs.signing_key_87_div_iff
+Proofs.verify_prepared_87_div_iff
+Proofs.verify_internal_prepared_87_div_iff
+Proofs.sign_prepared_87_div_iff
+Proofs.sign_internal_prepared_87_div_iff
 import Proofs.PreparedVerify
 Proofs.Verify.hash_pk_spec
 Proofs.Verify.hash_mu_spec

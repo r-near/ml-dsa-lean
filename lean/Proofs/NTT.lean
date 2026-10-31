@@ -245,13 +245,26 @@ theorem NTT_eq_layers (w : Poly) :
 
 attribute [step] layer_spec
 
-theorem ntt_spec (w : Array U32 256#usize) (hw : Canonical w) :
-    ntt.ntt w ⦃ r => Canonical r ∧ toZq r = Spec.NTT (toZq w) ⦄ := by
-  unfold ntt.ntt ntt.dispatch.ntt ntt.ntt_body
+/-- The shared in-place body (`ntt_body_mut`, extracted as a function of the array it transforms). -/
+theorem ntt_body_mut_spec (w : Array U32 256#usize) (hw : Canonical w) :
+    ntt.ntt_body_mut w ⦃ r => Canonical r ∧ toZq r = Spec.NTT (toZq w) ⦄ := by
+  unfold ntt.ntt_body_mut
   step*
   refine ⟨w8_post1, ?_⟩
   simp only [NTT_eq_layers, ← w1_post3, ← w2_post3, ← w3_post3, ← w4_post3, ← w5_post3,
     ← w6_post3, ← w7_post3, ← w8_post3]
+
+theorem ntt_spec (w : Array U32 256#usize) (hw : Canonical w) :
+    ntt.ntt w ⦃ r => Canonical r ∧ toZq r = Spec.NTT (toZq w) ⦄ := by
+  unfold ntt.ntt ntt.dispatch.ntt ntt.ntt_body
+  exact ntt_body_mut_spec w hw
+
+/-- The in-place entry point `ntt_in_place` (the Rust takes `&mut [u32; 256]`; the extraction passes the array in and
+returns the updated one) satisfies the same spec as `ntt`. -/
+theorem ntt_in_place_spec (w : Array U32 256#usize) (hw : Canonical w) :
+    ntt.ntt_in_place w ⦃ r => Canonical r ∧ toZq r = Spec.NTT (toZq w) ⦄ := by
+  unfold ntt.ntt_in_place ntt.dispatch.ntt_in_place
+  exact ntt_body_mut_spec w hw
 
 /-- **Headline theorem.** On canonical input the extracted `ntt` returns, without failing or diverging,
 a canonical array whose coefficients are those of FIPS 204 Algorithm 41 applied to the input. -/
