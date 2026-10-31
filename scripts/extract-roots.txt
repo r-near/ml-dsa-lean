@@ -51,3 +51,5 @@ ml_dsa_verified::api::sign_internal_prepared_65
 ml_dsa_verified::api::signing_key_87
 ml_dsa_verified::api::sign_prepared_87
 ml_dsa_verified::api::sign_internal_prepared_87
+# The Barrett reference product; no longer reachable from the API (the NTT uses mul_shoup and mul_mont), kept for Field.lean and the impl-eval differential.
+ml_dsa_verified::field::mul

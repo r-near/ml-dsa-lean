@@ -1,6 +1,12 @@
 # Headline theorems, one fully qualified name per line (read by scripts/check-axioms.sh).
 # Each must depend only on propext, Classical.choice, Quot.sound.
+import Proofs.FieldFast
+Proofs.mul_shoup_spec
+Proofs.mont_reduce_spec
+Proofs.mul_mont_spec
 import Proofs.NTT
+Proofs.shoup_tables
+Proofs.f_shoup_eq
 import Proofs.NTTInverse
 Proofs.ntt_correct
 Proofs.ntt_inverse_correct

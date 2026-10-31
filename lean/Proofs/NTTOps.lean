@@ -158,16 +158,16 @@ theorem sub_poly_loop_spec (a b : Array U32 256#usize) (ha : Canonical a) (hb : 
   · exact ⟨canonical_repeat_zero, by simp, by simp [toZq_repeat_zero]⟩
 
 theorem multiply_ntt_loop_spec (a b : Array U32 256#usize) (ha : Canonical a) (hb : Canonical b) :
-    ntt.multiply_ntt_loop a b (Array.repeat 256#usize 0#u32) 0#usize ⦃ c => Canonical c ∧
+    ntt.multiply_ntt_body_loop a b (Array.repeat 256#usize 0#u32) 0#usize ⦃ c => Canonical c ∧
       toZq c = (List.range' 0 256).foldl (pwF (· * ·) (toZq a) (toZq b)) Poly.zero ⦄ := by
-  unfold ntt.multiply_ntt_loop
+  unfold ntt.multiply_ntt_body_loop
   apply loop.spec_decr_nat
     (fun (p : Array U32 256#usize × Usize) => 256 - p.2.val)
     (fun p => Canonical p.1 ∧ p.2.val ≤ 256 ∧
        toZq p.1 = (List.range' 0 p.2.val).foldl (pwF (· * ·) (toZq a) (toZq b)) Poly.zero)
   · rintro ⟨c, i⟩ ⟨hc, h1, h2⟩
     dsimp only at hc h1 h2
-    simp only [ntt.multiply_ntt_loop.body]
+    simp only [ntt.multiply_ntt_body_loop.body]
     split
     · rename_i hi
       have hi' : i.val < 256 := hi
@@ -222,7 +222,7 @@ theorem sub_poly_spec (a b : Array U32 256#usize) (A B : Poly) (ha : Repr a A) (
 @[step]
 theorem multiply_ntt_spec (a b : Array U32 256#usize) (A B : Poly) (ha : Repr a A) (hb : Repr b B) :
     ntt.multiply_ntt a b ⦃ r => Repr r (Spec.MultiplyNTT A B) ⦄ := by
-  unfold ntt.multiply_ntt
+  unfold ntt.multiply_ntt ntt.dispatch.multiply_ntt ntt.multiply_ntt_body
   apply WP.spec_mono (multiply_ntt_loop_spec a b ha.canon hb.canon)
   rintro r ⟨hr1, hr2⟩
   exact ⟨hr1, by rw [hr2, MultiplyNTT_eq_fold, ha.eq, hb.eq]⟩

@@ -5,6 +5,8 @@
 //! free functions only: no iterator adapters, closures, operator-trait impls, `hybrid-array` or
 //! `module-lattice`. Parameter sets are a `Params` value plus `K`/`L` const generics.
 #![no_std]
+// The only `unsafe` is the optional AVX2 dispatch shim (feature `avx2`, src/ntt.rs).
+#![cfg_attr(not(feature = "avx2"), forbid(unsafe_code))]
 #![allow(clippy::many_single_char_names, clippy::needless_range_loop)]
 
 // Only `api` is public. The other modules hold panicking internals (`sign::sign_internal` and

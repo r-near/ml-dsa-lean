@@ -25,6 +25,8 @@ required-features = ["prof"]
 # Exposes every module of ml-dsa-verified. Never enabled for the headline numbers (`bench` is built without it).
 internals = ["ml-dsa-verified/internals"]
 prof = ["dep:pprof"]
+# Runtime AVX2 dispatch of the NTT (opt-in in the crate; see its Cargo.toml).
+avx2 = ["ml-dsa-verified/avx2"]
 
 [dependencies]
 # The crate under test (public `api` only unless `internals` is on).

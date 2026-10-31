@@ -83,6 +83,12 @@ One end-to-end Lean proof, readable top-down:
   Rust's cap κ + ℓ ≤ 2¹⁶ is the same as `kappaBudget`; it is an implementation bound FIPS 204 allows (κ is encoded
   in 16 bits by ExpandMask), not a divergence from FIPS. Divergence happens only when no fuel lets ExpandA and the
   SampleInBall calls of the attempts that run terminate (`Proofs/Divergence.lean`).
+- Prepared keys (`Proofs/PreparedVerify.lean`, `PreparedSign.lean`): `verifying_key_NN` / `signing_key_NN` never
+  `fail` (they diverge only where ExpandA does), and for every key they return, `verify_prepared_NN vk … =
+  verify_NN pk …` and `sign_prepared_NN ssk … = sign_NN sk …` as computations (including `fail` and divergence),
+  with `*_exact` theorems against `Spec.Verify` / `Spec.Sign` in the same shape as above. The structs have private
+  fields and are only built by those functions, so the premise `verifying_key_NN pk = ok vk` holds for every value a
+  caller can hold.
 - These partial theorems restrict what the Rust may return; they give no positive guarantee for a concrete input.
   That the spec returns `some` for a given input still has no kernel witness at the top level (see below).
 - Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`. **Done** (`Proofs/Correctness.lean`).
@@ -116,6 +122,11 @@ Not covered by any theorem:
   `Params` inconsistent with its `K`/`L` (the decoders index by `K`/`L`, so it can panic), and `sign_internal` /
   `keygen_internal` with wrong-length slices (E-1). Without the feature the public surface is `api` only, and every
   `api` function has a theorem; they pass fixed-size arrays and consistent parameters.
+- The opt-in `avx2` feature (x86_64): a runtime CPUID check picks between two compilations of the same proved NTT
+  bodies (portable and `#[target_feature(enable = "avx2")]`). The shim is the crate's only `unsafe`
+  (`forbid(unsafe_code)` without the feature); BINSEC 0.11.3 cannot lift the AVX2 copy, which is covered by a static
+  scan and `tests/dispatch.rs` only (`docs/object-code-assurance.md` §3.5). Off by default; `-C
+  target-cpu=x86-64-v3` gives the same speed with no `unsafe` and no dispatch.
 - The `zeroize` build (the proved code is extracted with it off; the wipes come after the outputs are written) and
   stack use. Measured worst case (`tools/stack/`, release, statically and by stack painting): Sign 115/167/239 KB,
   Verify 59/87/131 KB, KeyGen 58/90/134 KB for 44/65/87 on x86_64; other targets within 4%. The earlier "60 KB" was wrong.
@@ -123,7 +134,7 @@ Not covered by any theorem:
 Trusted base: spec fidelity of `lean/Spec` (three independent reviews, ACVP and Wycheproof cross-checks, a component
 differential against VCVio's independent formalization, and equivalence proofs against ocaml-pq's independent Lean transcription
 of every algorithm from the arithmetic leaves up to KeyGen, Sign and Verify, with our SHAKE in both; see Progress), Charon/Aeneas translation
-(pins below; differentially tested, see Progress), rustc/LLVM, the Lean kernel with `propext`, `Classical.choice`, `Quot.sound`. Zeroize and anything above
+(pins below; differentially tested, see Progress), rustc/LLVM, the Lean kernel with `propext`, `Classical.choice`, `Quot.sound`. Zeroize, the opt-in AVX2 dispatch shim and anything above
 `api` are outside the proof.
 
 ## Decisions
@@ -192,7 +203,7 @@ Spec-level `Verify(pk, M, Sign(sk, M)) = true`, transferred through the three to
 | zeroize | optional, off by default and during extraction; wipes sign/keygen secrets | `src/{sign,keygen}.rs` |
 | Extraction (current) | 278 defs, gate clean, standard axioms on all defs | `lean/Impl/extract-report.json` |
 | Constant time (BINSEC) | 74 probes per target, release builds: every function that touches secret data in KeyGen and Sign, including `sk_is_well_formed`, ExpandS, NTT of s1, t, Power2Round, skEncode/Decode, the Sign steps, plus a whole-`sign_internal` census and a positive control (insecure everywhere, as it should be). "Secure" means BINSEC explored the compiled probe to completion and found no secret-dependent branch, memory address or division operand, for all secret values; the lifter and constant instruction latency are trusted. Results at HEAD: x86_64 64 secure / 3 insecure / 4 unknown, thumbv7em 69/2/0, riscv32imac 66/3/2; the expected insecure ones are RejBoundedPoly (branches on its public accept pattern) and the standalone riscv `ct_lt_mask`. **One real leak, fixed: CT-2** (Decompose edge select on x86_64, 069b439); after the fix every x86_64 signing-step probe is secure in the default and nearcore-like profiles. AArch64 (own script, BINSEC 0.11.3): scalar build all secure; the NEON build's vectorized probes can't be lifted (`umax`/`umin`). The whole-Sign census never completes (it reaches public sampler branches) | `checkct/` |
-| Bench (box, release) | keygen 0.57–0.62×, sign 1.10–1.21×, verify 2.2–2.9× upstream. Verify re-runs ExpandA per call; upstream's `VerifyingKey` caches Â | `examples/bench.rs` |
+| Bench (box, nearcore profile, 2026-10-31) | ML-DSA-87, µs, default / `avx2` feature / x86-64-v3: keygen 229 / 193 / 180, sign-det 714 / 466 / 429 (prepared key 543 / 312 / 285), verify 235 / 189 / 175 (prepared key 82 / 39 / 35). Baseline before batch 1: 233 / 798 / 242 µs. Prepared-key verify with AVX2 is below every uncached AVX2 verify measured (mldsa-native 55 µs); uncached sign/verify still 2–4× behind the AVX2 implementations | `docs/performance-baseline.md` §7, `bench/` |
 | Aeneas translation (differential) | the extracted `Impl` compiled and run against the native Rust on the same inputs: 345,360 cases, 100% agreement (Keccak, field, NTT, rounding, samplers, codecs, and the full public API incl. 225 ACVP-derived cases); 4 injected bugs all detected | `scripts/impl-eval.sh`, `lean/SpecTests/ImplEval.lean`, `examples/impl_eval.rs` |
 | Wycheproof (C2SP, d17cc89) | Rust: 1063 vectors pass, 0 fail, 6 known (E-4: out-of-range secret keys), 69 skipped (external-μ only, out of scope); Lean spec: 928/928 agree (631 verify, 236 sign, 61 keygen) | `tests/wycheproof.rs`, `lean/SpecTests/Wycheproof.lean` |
 | Third spec review (FIPS 204/202 PDFs) | every `lean/Spec` def checked step by step against the PDFs and NIST's potential-updates list; whole-domain rounding check against a FIPS-literal Python reference; SHAKE vs hashlib around the rate; no transcription errors | review notes (not committed) |

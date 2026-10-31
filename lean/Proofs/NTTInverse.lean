@@ -56,10 +56,11 @@ theorem toZq_ibfly (w : Array U32 256#usize) (LEN : Nat) (z : Zq) (j i1 : Usize)
   rw [h6, h5, h3, hW1, hW2]
 
 @[step]
-theorem inner_loop_inv (LEN start : Usize) (z : U32) (hz : z.val < Spec.q)
+theorem inner_loop_inv (LEN start : Usize) (z zp : U32)
+    (hzp : zp.val = z.val * 4294967296 / 8380417)
     (hLEN : 0 < LEN.val) (hfit : start.val + 2 * LEN.val ≤ 256)
     (w0 : Array U32 256#usize) (hw0 : Canonical w0) :
-    ntt.ntt_inverse_layer_loop0_loop0 LEN w0 start z start ⦃ w =>
+    ntt.ntt_inverse_layer_loop0_loop0 LEN w0 start z zp start ⦃ w =>
       Canonical w ∧
       toZq w = (List.range' start.val LEN.val).foldl (ibfly LEN.val (z.val : Zq)) (toZq w0) ⦄ := by
   unfold ntt.ntt_inverse_layer_loop0_loop0
@@ -147,6 +148,8 @@ theorem outer_loop_inv (LEN ITER : Usize) (hLEN : 0 < LEN.val) (hprod : LEN.val 
       step*
       all_goals try first
         | exact (zetas_get m1 (by omega) ‹_› _ ‹_›).1
+        | exact z_post1
+        | exact zetas_neg_shoup_get m1 (by omega) ‹_› ‹_› _ _ _ ‹_› ‹_› z_post1 z_post2
         | (rw [start_post, i1_post]; omega)
         | (rw [i1_post]; scalar_tac)
       obtain ⟨_, hzeta⟩ := zetas_get m1 (by omega) ‹_› _ ‹_›
@@ -189,20 +192,21 @@ attribute [step] layer_inv_spec
 def scaleF (b : Poly) (a : Nat) : Poly := Vector.set! b a (8347681 * b[a]!)
 
 theorem scale_loop (w0 : Array U32 256#usize) (hw0 : Canonical w0) :
-    ntt.ntt_inverse_loop w0 0#usize ⦃ w => Canonical w ∧
+    ntt.ntt_inverse_body_loop w0 0#usize ⦃ w => Canonical w ∧
       toZq w = (List.range' 0 256).foldl scaleF (toZq w0) ⦄ := by
-  unfold ntt.ntt_inverse_loop
+  unfold ntt.ntt_inverse_body_loop
   apply loop.spec_decr_nat
     (fun (p : Array U32 256#usize × Usize) => 256 - p.2.val)
     (fun p => Canonical p.1 ∧ p.2.val ≤ 256 ∧
        toZq p.1 = (List.range' 0 p.2.val).foldl scaleF (toZq w0))
   · rintro ⟨w, j⟩ ⟨hc, h1, h2⟩
     dsimp only at hc h1 h2
-    simp only [ntt.ntt_inverse_loop.body]
+    simp only [ntt.ntt_inverse_body_loop.body]
     step*
     all_goals try subst_vars
     all_goals try first
       | exact canon_get hc _
+      | exact f_shoup_eq
       | scalar_tac
     have hj : j.val < 256 := by scalar_tac
     refine ⟨canonical_set _ _ _ hc i1_post1, by omega, ?_, by omega⟩
@@ -229,7 +233,7 @@ theorem NTTInv_eq_layers (w : Poly) :
 
 theorem ntt_inverse_spec (w : Array U32 256#usize) (hw : Canonical w) :
     ntt.ntt_inverse w ⦃ r => Canonical r ∧ toZq r = Spec.NTTInv (toZq w) ⦄ := by
-  unfold ntt.ntt_inverse
+  unfold ntt.ntt_inverse ntt.dispatch.ntt_inverse ntt.ntt_inverse_body
   step*
   apply WP.spec_mono (scale_loop w_hat8 w_hat8_post1)
   rintro r ⟨hr1, hr2⟩

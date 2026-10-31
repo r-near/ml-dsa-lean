@@ -546,6 +546,43 @@ extraction (Aeneas models neither `Drop` nor volatile writes), so the Lean theor
 prepared signing path performs the operations of `sign_NN` in the same order and adds no branch on secret data; the
 only change is that skDecode, the three NTTs and ExpandA run in `signing_key_NN` instead of on every call.
 
+### Status after batch 1 (2026-10-31): prepared keys, lane-wise sponge, Shoup/Montgomery NTT, optional AVX2 dispatch
+
+Also merged: item 2 (8-byte-lane absorb and squeeze, 2–4% overall) and the NTT rewrite from `experiments/simd/`
+(Shoup butterflies with precomputed ζ·2³²/q, two-step Montgomery pointwise product, values canonical between layers,
+only 32×32→64-bit multiplies so LLVM vectorizes them). Every theorem statement is unchanged; the new field lemmas
+are in `Proofs/FieldFast.lean`. The runtime AVX2 dispatch is the opt-in `avx2` feature (see the crate's
+`Cargo.toml` and `docs/object-code-assurance.md` §3.5).
+
+`bench/compare.sh merged 8` at main after the merge: nearcore profile, pinned to cpu 8 (sibling idle), load average
+2.2–2.5 on 60 threads, medians in microseconds. `default` = generic x86_64, `avx2` = generic x86_64 with the `avx2`
+feature (runtime dispatch), `v3` = `-C target-cpu=x86-64-v3` (static AVX2, no dispatch, no `unsafe`).
+
+| set | op | default | avx2 feature | v3 | baseline (section 2, default) |
+|---|---|---|---|---|---|
+| 44 | keygen | 79.5 | 66.2 | 62.2 | 84.2 |
+| 44 | sign-det | 342.1 | 228.5 | 213.2 | 406.7 |
+| 44 | sign-det, prepared key | 286.3 | 180.0 | 166.2 | |
+| 44 | verify | 84.0 | 66.5 | 62.4 | 90.9 |
+| 44 | verify, prepared key | 35.6 | 20.1 | 19.1 | |
+| 65 | keygen | 151.8 | 129.9 | 119.6 | |
+| 65 | sign-det | 557.3 | 360.9 | 332.6 | |
+| 65 | sign-det, prepared key | 458.5 | 273.5 | 251.9 | |
+| 65 | verify | 139.7 | 111.5 | 101.3 | |
+| 65 | verify, prepared key | 52.6 | 27.7 | 25.0 | |
+| 87 | keygen | 229.4 | 192.8 | 179.6 | 232.9 |
+| 87 | sign-det | 713.5 | 466.4 | 429.1 | 798.3 |
+| 87 | sign-det, prepared key | 542.6 | 311.7 | 285.2 | |
+| 87 | verify | 234.6 | 188.7 | 175.4 | 242.1 |
+| 87 | verify, prepared key | 81.6 | 38.8 | 34.9 | |
+
+For comparison (section 2, same profile, uncached keys): ML-DSA-87 sign-det 218.8 / 121.6 us and verify 109.3 /
+55.3 us for libcrux AVX2 / mldsa-native AVX2; RustCrypto's cached-key verify-87 is 96.7 us. A prepared-key verify
+is not the same operation as an uncached one: it skips pk decoding, ExpandA and the NTT of t1, which is what a
+validator verifying many signatures under stored keys can do. Uncached verify and sign are still 2–4× behind the
+AVX2 C and Rust implementations; the remaining gap is ExpandA (scalar SHAKE128, item 6) and the scalar parts of the
+signing loop.
+
 Second batch: items 4 and 5 (lazy NTT with its contract unchanged, plus a vectorized build or dispatch). Projected:
 cached verify-87 about 40 us (below every uncached AVX2 figure here), uncached verify-87 about 155 us, sign-87 about
 430 us, keygen-87 about 160 us. Third batch: item 6 (4-way SHAKE) if sign and keygen need to approach the AVX2

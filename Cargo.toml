@@ -13,6 +13,12 @@ zeroize = { version = "1", default-features = false, optional = true }
 [features]
 default = []
 zeroize = ["dep:zeroize"]
+# Optional, x86_64 only: runtime AVX2 dispatch of the NTT bodies (src/ntt.rs, "Dispatch"). The proved source body
+# is compiled twice, once for the build's target features and once with AVX2, and a cached CPUID check picks one.
+# The dispatch shim is outside the Lean proof, it is the crate's only `unsafe`, and BINSEC cannot lift the AVX2 copy
+# (docs/object-code-assurance.md section 3.5). Without it, building with `-C target-cpu=x86-64-v3` gives the same
+# speed statically, with no `unsafe`.
+avx2 = []
 # Tests and fuzzing only; exposes unproved internals.
 # Makes every module public (keygen::keygen_internal, sign::sign_internal and verify::verify_internal
 # panic on wrong-length slices or a Params inconsistent with K/L). The default public surface is `api` only.
@@ -28,6 +34,11 @@ ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd8
 flate2 = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# Compares the portable and AVX2 compilations; only meaningful with the dispatch.
+[[test]]
+name = "dispatch"
+required-features = ["avx2"]
 
 [profile.release]
 debug = false
