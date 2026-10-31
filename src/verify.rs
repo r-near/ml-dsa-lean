@@ -56,6 +56,16 @@ pub struct PreparedVk<const K: usize, const L: usize> {
     pub(crate) tr: [u8; 64],
 }
 
+/// Step 7: tr ← H(pk, 64).
+fn hash_pk(pk: &[u8]) -> [u8; 64] {
+    let mut tr = [0u8; 64];
+    let mut hash = Shake::shake256();
+    hash.absorb(pk);
+    hash.finalize();
+    hash.squeeze(&mut tr);
+    tr
+}
+
 /// Steps 1, 6, 7 and the key-dependent half of step 10 of Algorithm 8: (ρ, t1) ← pkDecode(pk);
 /// Â ← ExpandA(ρ); tr ← H(pk, 64); NTT(t1 · 2^d).
 ///
@@ -67,11 +77,7 @@ pub(crate) fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedV
     // 6: Â ← ExpandA(ρ)
     let a_hat = expand_a::<K, L>(&rho);
     // 7: tr ← H(pk, 64)
-    let mut tr = [0u8; 64];
-    let mut hash = Shake::shake256();
-    hash.absorb(pk);
-    hash.finalize();
-    hash.squeeze(&mut tr);
+    let tr = hash_pk(pk);
     // 10 (key half): NTT(t1 · 2^d)
     let t1_2d_hat = ntt_vec(&scale_vec_by_2d(&t1));
     PreparedVk { a_hat, t1_2d_hat, tr }

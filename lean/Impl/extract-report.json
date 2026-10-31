@@ -45,7 +45,7 @@
   "ml_dsa_verified::api::verify_prepared_87",
   "ml_dsa_verified::api::verify_internal_prepared_87"
  ],
- "src_sha256": "348d0676cd330f2f4a81b9250238710fc97ec245474932829e8f4cb8a43820ba",
+ "src_sha256": "b929387a0389cbf5586041444a24b23c29c8dc1e990942f1fb0bd1ebeebaecfd",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -54,7 +54,7 @@
   "lean": "v4.31.0"
  },
  "rename_changes": 0,
- "llbc_fun_decls": 165,
+ "llbc_fun_decls": 166,
  "llbc_opaque_funs": [
   "core::array::{impl}::index",
   "core::array::{impl}::index_mut",
@@ -84,5 +84,5 @@
  "aeneas_name_clashes": 0,
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
- "lean_defs": 312
+ "lean_defs": 313
 }

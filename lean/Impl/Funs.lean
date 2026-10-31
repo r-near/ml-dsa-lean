@@ -3942,7 +3942,7 @@ def rounding.poly_use_hint
   rounding.poly_use_hint_loop p h r out 0#usize
 
 /-- [ml_dsa_verified::verify::verify_decoded]: loop body 0:
-    Source: 'src/verify.rs', lines 110:4-116:5 -/
+    Source: 'src/verify.rs', lines 116:4-122:5 -/
 @[rust_loop_body]
 def verify.verify_decoded_loop.body
   {K : Std.Usize} (i : Std.Usize) (i1 : Std.Usize) (i2 : Std.U32)
@@ -3992,7 +3992,7 @@ def verify.verify_decoded_loop.body
   else ok (done w1)
 
 /-- [ml_dsa_verified::verify::verify_decoded]: loop 0:
-    Source: 'src/verify.rs', lines 110:4-116:5 -/
+    Source: 'src/verify.rs', lines 116:4-122:5 -/
 @[rust_loop]
 def verify.verify_decoded_loop
   {K : Std.Usize} (i : Std.Usize) (i1 : Std.Usize) (i2 : Std.U32)
@@ -4012,7 +4012,7 @@ def verify.verify_decoded_loop
     (w_approx, w1, i15)
 
 /-- [ml_dsa_verified::verify::verify_decoded]:
-    Source: 'src/verify.rs', lines 85:0-130:1 -/
+    Source: 'src/verify.rs', lines 91:0-136:1 -/
 def verify.verify_decoded
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
@@ -4074,6 +4074,17 @@ def verify.verify_decoded
   if i2 < i3
   then ok hash_ok
   else ok false
+
+/-- [ml_dsa_verified::verify::hash_pk]:
+    Source: 'src/verify.rs', lines 60:0-67:1 -/
+def verify.hash_pk (pk : Slice Std.U8) : RustM (Array Std.U8 64#usize) := do
+  let tr := Array.repeat 64#usize 0#u8
+  let hash ← keccak.Shake.shake256
+  let hash1 ← keccak.Shake.absorb hash pk
+  let hash2 ← keccak.Shake.finalize hash1
+  let (s, to_slice_mut_back) ← lift (Array.to_slice_mut tr)
+  let (_, s1) ← keccak.Shake.squeeze hash2 s
+  ok (to_slice_mut_back s1)
 
 /-- [ml_dsa_verified::verify::scale_by_2d]: loop body 0:
     Source: 'src/verify.rs', lines 15:4-18:5 -/
@@ -4234,23 +4245,17 @@ def encode.pk_decode
   ok (rho1, t11)
 
 /-- [ml_dsa_verified::verify::prepare_vk]:
-    Source: 'src/verify.rs', lines 64:0-78:1 -/
+    Source: 'src/verify.rs', lines 74:0-84:1 -/
 def verify.prepare_vk
   (K : Std.Usize) (L : Std.Usize) (pk : Slice Std.U8) :
   RustM (verify.PreparedVk K L)
   := do
   let (rho, t1) ← encode.pk_decode K pk
   let a_hat ← sampling.expand_a K L rho
-  let tr := Array.repeat 64#usize 0#u8
-  let hash ← keccak.Shake.shake256
-  let hash1 ← keccak.Shake.absorb hash pk
-  let hash2 ← keccak.Shake.finalize hash1
-  let (s, to_slice_mut_back) ← lift (Array.to_slice_mut tr)
-  let (_, s1) ← keccak.Shake.squeeze hash2 s
+  let tr ← verify.hash_pk pk
   let a ← verify.scale_vec_by_2d t1
   let t1_2d_hat ← ntt.ntt_vec a
-  let tr1 := to_slice_mut_back s1
-  ok { a_hat, t1_2d_hat, tr := tr1 }
+  ok { a_hat, t1_2d_hat, tr }
 
 /-- [ml_dsa_verified::params::sig_len]:
     Source: 'src/params.rs', lines 87:0-89:1
@@ -4524,7 +4529,7 @@ def encode.sig_decode
   | some h => ok (some (c_tilde1, z1, h))
 
 /-- [ml_dsa_verified::verify::verify_internal]:
-    Source: 'src/verify.rs', lines 142:0-163:1
+    Source: 'src/verify.rs', lines 148:0-169:1
     Visibility: public -/
 def verify.verify_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
@@ -4615,7 +4620,7 @@ def api.verifying_key_44
   ok { inner := pv }
 
 /-- [ml_dsa_verified::verify::verify_prepared_internal]:
-    Source: 'src/verify.rs', lines 169:0-186:1
+    Source: 'src/verify.rs', lines 175:0-192:1
     Visibility: public -/
 def verify.verify_prepared_internal
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
