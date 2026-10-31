@@ -1,0 +1,74 @@
+[package]
+name = "ml-dsa-bench"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "Timing and profiling harness: ml-dsa-verified vs RustCrypto ml-dsa, libcrux-ml-dsa (portable, AVX2) and mldsa-native (C portable, AVX2)"
+
+[[bin]]
+name = "bench"
+path = "src/bin/bench.rs"
+
+# Step-level microbenchmarks and a stepwise replica of sign/verify. Needs the crate's `internals` feature.
+[[bin]]
+name = "micro"
+path = "src/bin/micro.rs"
+required-features = ["internals"]
+
+# Sampling profiler (SIGPROF) over the public APIs.
+[[bin]]
+name = "prof"
+path = "src/bin/prof.rs"
+required-features = ["prof"]
+
+[features]
+# Exposes every module of ml-dsa-verified. Never enabled for the headline numbers (`bench` is built without it).
+internals = ["ml-dsa-verified/internals"]
+prof = ["dep:pprof"]
+
+[dependencies]
+# The crate under test (public `api` only unless `internals` is on).
+ml-dsa-verified = { path = ".." }
+
+# Reuses crosscheck's build of mldsa-native v2.0.0 (portable C and, on x86_64 Linux, AVX2): its build.rs compiles the
+# vendored sources and emits the link directives. This crate declares the C entry points itself (src/lib.rs) so that
+# no allocation happens inside a timed call.
+ml-dsa-crosscheck = { path = "../crosscheck" }
+
+# Same pins as crosscheck/Cargo.toml (the lockfile is a copy of crosscheck's, so there is one copy of each).
+libcrux-ml-dsa = { version = "=0.0.11", default-features = false, features = ["std", "mldsa44", "mldsa65", "mldsa87"] }
+ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e", default-features = false, features = ["alloc"] }
+
+# Keccak references for the micro benchmark: libcrux's SHA-3 (portable and 4-way AVX2) and the keccak crate's
+# portable permutation. Versions as in the lockfile.
+libcrux-sha3 = { version = "=0.0.11", default-features = false }
+keccak = "=0.2.2"
+
+[target.'cfg(target_arch = "x86_64")'.dependencies]
+libcrux-ml-dsa = { version = "=0.0.11", default-features = false, features = ["simd256"] }
+libcrux-sha3 = { version = "=0.0.11", default-features = false, features = ["simd256"] }
+
+[dependencies.pprof]
+version = "0.15"
+default-features = false
+optional = true
+
+# Own workspace: not a member of the main crate's workspace.
+[workspace]
+
+# Default release profile.
+[profile.release]
+debug = false
+
+# What a node would likely ship: opt-level 3, fat LTO, one codegen unit, abort on panic.
+[profile.nearcore]
+inherits = "release"
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+# Release plus symbols and frame pointers, for the sampling profiler.
+[profile.profiling]
+inherits = "release"
+debug = true
