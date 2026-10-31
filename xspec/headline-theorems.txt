@@ -61,3 +61,47 @@ XSpec.RN.rejNTT_ours_to_theirs
 XSpec.RN.rejNTT_theirs_to_ours
 XSpec.RB.rejBounded_ours_to_theirs
 XSpec.RB.rejBounded_theirs_to_ours
+import XSpec.SampleBall
+XSpec.SB.sampleInBall_ours_to_theirs
+XSpec.SB.sampleInBall_theirs_to_ours
+import XSpec.Expand
+XSpec.expandA_ours_to_theirs
+XSpec.expandA_theirs_to_ours
+XSpec.expandS_ours_to_theirs
+XSpec.expandS_theirs_to_ours
+import XSpec.Vec
+XSpec.matrixVectorNTT_eq
+import XSpec.KeyGen
+XSpec.keyGen_ours_to_theirs
+XSpec.keyGen_theirs_to_ours
+XSpec.keyGen_eq_internal
+import XSpec.Verify
+XSpec.verifyInternal_ours_to_theirs
+XSpec.verifyInternal_theirs_to_ours
+XSpec.verify_ours_to_theirs
+XSpec.verify_theirs_to_ours
+XSpec.verify_of_ctx_gt
+XSpec.verify_of_length_ne
+XSpec.verify_of_sigDecode_none
+import XSpec.SignModel
+XSpec.SG.Sign_internal_bounded_eq
+import XSpec.SignStep
+XSpec.respond_eq_fipsFinish
+import XSpec.Sign
+XSpec.SGB.step_eq
+XSpec.SGB.core_ours_to_theirs
+XSpec.SGB.core_theirs_to_ours
+XSpec.SGB.core_theirs_to_ours_none
+XSpec.SGB.signInternalBounded_ours_to_theirs
+XSpec.SGB.signInternalBounded_theirs_to_ours
+XSpec.SGB.signInternalBounded_theirs_to_ours_none
+XSpec.SGB.signInternal_ours_to_theirs
+XSpec.SGB.signInternal_theirs_to_ours
+XSpec.SGB.sign_ours_to_theirs
+XSpec.SGB.sign_theirs_to_ours
+XSpec.SGB.sign_theirs_to_ours_none
+XSpec.SGB.sign_of_ctx_gt_both
+XSpec.SGB.keyOfSk_s1
+XSpec.SGB.keyOfSk_s2
+XSpec.SGB.keyOfSk_t0
+XSpec.SGB.budget_of_std3

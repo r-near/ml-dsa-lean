@@ -68,10 +68,81 @@ Sampler bridge statements (`F` is our fuel; ocaml-pq's `…Returns` has an exist
   `RejBoundedReturns p.η (oursShake256 (u8ToBytes ρ))`, with `rfn a` in place of `canon a`.
 * `expandMask_eq`: `ExpandMask` is total in both, so it is a plain equality (entry `r < ℓ`).
 
-Remaining (not done): `SampleInBall`, the `ExpandA`/`ExpandS` wrappers (nested `forIn` in `Option`; the plan is to
-port `forIn_opt`/`expandA_eq` and apply `forIn_opt` to the real loop bodies by unification), `KeyGen_internal`,
-`Sign_internal` (our `Sign_internal_bounded` κ budget against ocaml-pq's 821-iteration bound), `Verify_internal`
-and the external `KeyGen`/`Sign`/`Verify` with context, and the Keccak equality above.
+### SampleInBall, ExpandA, ExpandS (`SampleBall`, `Expand`, `Vec`)
+
+* `SB.sampleInBall_ours_to_theirs : SampleInBall p F ρ = some c → SampleInBallReturns p.τ (oursShake256 (u8ToBytes ρ)) (rfn c)`
+  and `SB.sampleInBall_theirs_to_ours` (`∃ F0, ∀ F ≥ F0, ∃ c, SampleInBall p F ρ = some c ∧ rfn c = b`).  Fuel: ours at `F`
+  is theirs at `F + 1`.  ocaml-pq's `sampleInBall` is total (a default when the sampler does not return), so the
+  statements about it carry a termination hypothesis (`SampleInBallReturns`) and "eventually in the fuel".
+* `ExpandATerm p ρ` (every `RejNTTPoly` call of ocaml-pq's `ExpandA` returns) and `ExpandSTerm` are the termination
+  premises; `expandA_ours_to_theirs` (ours `some A` gives `ExpandATerm` and entrywise `canon A[r][s] = expandA ..`),
+  `expandA_theirs_to_ours` (`ExpandATerm` gives `∃ F0, ∀ F ≥ F0, ∃ A, ExpandA p F ρ = some A`), `expandS_*` likewise.
+* `Vec.lean`: `matrixVectorNTT_eq` and entrywise lemmas for `NTTVec`, `NTTInvVec`, `+`, `-`.
+* Lean 4.34 detail: a `for` loop with early `return` inside `Option` ends in `Break.runK`; the loop state of
+  Algorithm 7 is `(early-return flag, κ, (z,h), c̃)` as nested `Prod`.
+
+### KeyGen (`KeyGen`)
+
+`keyGen_ours_to_theirs`, `keyGen_theirs_to_ours` (under `ExpandATerm` and `ExpandSTerm`, for all large fuel),
+`keyGen_eq_internal`: `Spec.KeyGen_internal p ξ F = some (pk, sk)` iff ocaml-pq's `keyGenInternal` (with our SHAKE)
+gives `(u8ToBytes pk, u8ToBytes sk)`.
+
+### Verify (`Verify`)
+
+`verifyInternal_ours_to_theirs` (`pk`, `σ` of the right length): ours `some b` gives `b = verifyInternal ..`;
+`verifyInternal_theirs_to_ours` (under `ExpandATerm` and `SampleInBallReturns` for the decoded `c̃`): eventually in the
+fuel, ours returns `some b` with the same `b`.  A wrong length gives `some false` on ours (`verify_of_length_ne`, a
+step-0 check absent from ocaml-pq's `verifyInternal`, which is why the length hypotheses are there), a failed
+`sigDecode` gives `some false` on both (`verify_of_sigDecode_none`).  External `Verify`: `verify_ours_to_theirs`,
+`verify_theirs_to_ours`, and `verify_of_ctx_gt` (`|ctx| > 255` gives `some false` on ours, as in `mldsaVerify`).
+Technique: lemmas about an abstract `VerifyFips` bundle (`verifyInternal_of_decode`, `wApproxV`) specialized by `rfl`,
+because `rfl` on the concrete bundle hits the maximum recursion depth.
+
+### Sign (`SignModel`, `SignStep`, `Sign`)
+
+* `SignModel.lean`: `Sign_internal_bounded` as a pure function (`pre`, `attemptAt`, `loopRes`, `encodeRes`);
+  `SG.Sign_internal_bounded_eq` unfolds Lean 4.34's `do` loop (this is the model of `Proofs/Sign.lean`, part 1, redone
+  because the loop state is a `Prod` in a different order).
+* `SignStep.lean`: `respond_eq_fipsFinish`, one attempt's rejection tests, `z`, `h` against ocaml-pq's `fipsFinish`
+  (`signAttemptSpec`): the norm tests (`N1`-`N3`: `‖v‖∞ ≥ B` against `infNormGe` of the integer lifts, with
+  `coeffNorm` depending only on the residue), the hint weight (`N4`), `LowBits`/`MakeHint` against `lowBits`/`makeHintSpec`
+  (`lowBits_cast`, `makeHint_cast`).  No range hypothesis on the secret key is needed: everything is a statement
+  about residues mod `q`.
+* `Sign.lean`: `step_eq` (one attempt of ocaml-pq's `alg7Step` is our `respond`, encoded with `sigEncode_eq`),
+  `core_*` (the loop: `alg7Loop_eq`, `loopRes_accept`, `loopRes_none`, `loopRes_accept_of`), and the top level.
+
+Bridging statement.  `keyOfSk sp sk` is ocaml-pq's `ExpandedKey` built from OUR `skDecode` (`ρ`, `K`, `tr`, `s₁`, `s₂`,
+`t₀`).  ocaml-pq's `mldsaSign` takes a decoded key, so there is no decoder in the signing statement.
+`skDecode_eq` says that on keys of the right length with `s₁`, `s₂` in `[-η, η]` ocaml-pq's decoder returns exactly
+these six components (and `keyOfSk_s1/s2/t0` show `keyOfSk` is the `listsToVec` of those lists); on any other key
+ocaml-pq's decoder returns `none`, ours does not, and the statements below still hold for the key ours decodes.
+`thSignInternal sp sk M' rnd m` is `signInternalMu` with `μ = H(tr ‖ M′)` and `m` iterations, `thSign` is `mldsaSign`
+(821 iterations).
+
+* Ours is `Sign_internal_bounded sp B` (at most `B` attempts, `κ = 0, ℓ, 2ℓ, ..`, and `none` if an attempt would need
+  `κ + ℓ > 2^16`); `Sign_internal` has `B = kappaBudget sp ∈ {16384, 13107, 9362}`.  ocaml-pq has 821 iterations
+  (a proved bound for its own parameter sets).
+* `signInternalBounded_ours_to_theirs`: if ours returns `σ`, it accepted at some attempt `a < B`, and for every `m`,
+  `thSignInternal .. m = if a < m then some (u8ToBytes σ) else none`.  Hence (`signInternal_ours_to_theirs`,
+  `sign_ours_to_theirs`) the two agree iff `a < 821`, and ocaml-pq returns `none` iff `821 ≤ a`: this is the only way
+  they differ (our extra attempts beyond 821, which FIPS 204 allows).  No hypothesis other than `Std3`.
+* `signInternalBounded_theirs_to_ours` (and `signInternal_theirs_to_ours`, `sign_theirs_to_ours`): if `thSignInternal m`
+  returns `s` (`m ≤ B`, `m ℓ ≤ 2^16`; for `Sign` `m = 821`), `ExpandATerm` holds for `ρ`, and `SignTerm` (every
+  `SampleInBall` that ocaml-pq's loop reaches, i.e. after only rejected attempts, returns), then eventually in the
+  fuel ours returns `σ` with `u8ToBytes σ = s`.  `signInternalBounded_theirs_to_ours_none`/`sign_theirs_to_ours_none`:
+  if ocaml-pq's `m` iterations are exhausted, ours with `m` attempts returns `none`.
+* `sign_of_ctx_gt_both`: `|ctx| > 255` gives `none` on both sides.
+* The termination hypotheses are real: ocaml-pq's `expandA`/`sampleInBall` are total and return a default when
+  their rejection loop does not terminate, so without them the statement would be about the default value.
+  `SignTerm` is stated in ocaml-pq's terms (`alg7CT`), so it needs no reference to our fuel.
+
+### Remaining
+
+* Keccak: `oursShake* = ocamlShake*` (the two Keccak-f[1600] transcriptions) is not proved; every statement is about
+  ocaml-pq's algorithms instantiated with our SHAKE (`oursShake128`, `oursShake256`).
+* The termination hypotheses (`ExpandATerm`, `ExpandSTerm`, `SampleInBallReturns`/`SignTerm`) are not discharged; they
+  hold for every concrete input of the standard parameter sets (probabilistically) but are not proved to hold always.
+* The divergence between ours and ocaml-pq at attempt `a ≥ 821` is characterized, not eliminated.
 
 ## Compiled differential (`xspec/XSpecDiff`, `scripts/xspec/`)
 
