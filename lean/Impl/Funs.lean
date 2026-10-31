@@ -98,7 +98,7 @@ def params.ML_DSA_44 : RustM params.Params := do
 @[global_simps, irreducible] def field.Q : Std.U32 := 8380417#u32
 
 /-- [ml_dsa_verified::field::small_reduce]:
-    Source: 'src/field.rs', lines 12:0-15:1
+    Source: 'src/field.rs', lines 17:0-20:1
     Visibility: public -/
 def field.small_reduce (x : Std.U32) : RustM Std.U32 := do
   let i ← lift (UScalar.cast_fromBool .U32 (x >= field.Q))
@@ -107,7 +107,7 @@ def field.small_reduce (x : Std.U32) : RustM Std.U32 := do
   x - i1
 
 /-- [ml_dsa_verified::field::sub]:
-    Source: 'src/field.rs', lines 29:0-31:1
+    Source: 'src/field.rs', lines 36:0-38:1
     Visibility: public -/
 def field.sub (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   let i ← a + field.Q
@@ -1102,7 +1102,7 @@ def ntt.ZETAS : Array Std.U32 256#usize :=
     ]
 
 /-- [ml_dsa_verified::field::mul_shoup]:
-    Source: 'src/field.rs', lines 46:0-49:1
+    Source: 'src/field.rs', lines 54:0-57:1
     Visibility: public -/
 def field.mul_shoup
   (z : Std.U32) (zp : Std.U32) (x : Std.U32) : RustM Std.U32 := do
@@ -1117,14 +1117,14 @@ def field.mul_shoup
   field.small_reduce i6
 
 /-- [ml_dsa_verified::field::add]:
-    Source: 'src/field.rs', lines 26:0-28:1
+    Source: 'src/field.rs', lines 32:0-34:1
     Visibility: public -/
 def field.add (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   let i ← a + b
   field.small_reduce i
 
 /-- [ml_dsa_verified::ntt::ntt_layer]: loop body 1:
-    Source: 'src/ntt.rs', lines 108:8-113:9 -/
+    Source: 'src/ntt.rs', lines 109:8-114:9 -/
 @[rust_loop_body]
 def ntt.ntt_layer_loop0_loop0.body
   (LEN : Std.Usize) (start : Std.Usize) (z : Std.U32) (zp : Std.U32)
@@ -1149,7 +1149,7 @@ def ntt.ntt_layer_loop0_loop0.body
   else ok (done w)
 
 /-- [ml_dsa_verified::ntt::ntt_layer]: loop 1:
-    Source: 'src/ntt.rs', lines 108:8-113:9 -/
+    Source: 'src/ntt.rs', lines 109:8-114:9 -/
 @[rust_loop]
 def ntt.ntt_layer_loop0_loop0
   (LEN : Std.Usize) (w : Array Std.U32 256#usize) (start : Std.Usize)
@@ -1161,7 +1161,7 @@ def ntt.ntt_layer_loop0_loop0
     (w, j)
 
 /-- [ml_dsa_verified::ntt::ntt_layer]: loop body 0:
-    Source: 'src/ntt.rs', lines 102:4-115:5 -/
+    Source: 'src/ntt.rs', lines 103:4-116:5 -/
 @[rust_loop_body]
 def ntt.ntt_layer_loop0.body
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -1182,7 +1182,7 @@ def ntt.ntt_layer_loop0.body
   else ok (done (w, m))
 
 /-- [ml_dsa_verified::ntt::ntt_layer]: loop 0:
-    Source: 'src/ntt.rs', lines 102:4-115:5 -/
+    Source: 'src/ntt.rs', lines 103:4-116:5 -/
 @[rust_loop]
 def ntt.ntt_layer_loop0
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -1194,7 +1194,7 @@ def ntt.ntt_layer_loop0
     (w, m, i)
 
 /-- [ml_dsa_verified::ntt::ntt_layer]:
-    Source: 'src/ntt.rs', lines 100:0-116:1 -/
+    Source: 'src/ntt.rs', lines 101:0-117:1 -/
 @[reducible]
 def ntt.ntt_layer
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -1203,10 +1203,9 @@ def ntt.ntt_layer
   := do
   ntt.ntt_layer_loop0 LEN ITERATIONS w m 0#usize
 
-/-- [ml_dsa_verified::ntt::ntt]:
-    Source: 'src/ntt.rs', lines 137:0-149:1
-    Visibility: public -/
-def ntt.ntt
+/-- [ml_dsa_verified::ntt::ntt_body]:
+    Source: 'src/ntt.rs', lines 140:0-152:1 -/
+def ntt.ntt_body
   (w : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
   let (w1, m) ← ntt.ntt_layer 128#usize 1#usize w 0#usize
   let (w2, m1) ← ntt.ntt_layer 64#usize 2#usize w1 m
@@ -1218,8 +1217,22 @@ def ntt.ntt
   let (w8, _) ← ntt.ntt_layer 1#usize 128#usize w7 m6
   ok w8
 
+/-- [ml_dsa_verified::ntt::dispatch::ntt]:
+    Source: 'src/ntt.rs', lines 214:4-216:5
+    Visibility: public -/
+def ntt.dispatch.ntt
+  (w : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
+  ntt.ntt_body w
+
+/-- [ml_dsa_verified::ntt::ntt]:
+    Source: 'src/ntt.rs', lines 324:0-326:1
+    Visibility: public -/
+def ntt.ntt
+  (w : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
+  ntt.dispatch.ntt w
+
 /-- [ml_dsa_verified::ntt::ntt_vec]: loop body 0:
-    Source: 'src/ntt.rs', lines 237:4-240:5
+    Source: 'src/ntt.rs', lines 407:4-410:5
     Visibility: public -/
 @[rust_loop_body]
 def ntt.ntt_vec_loop.body
@@ -1238,7 +1251,7 @@ def ntt.ntt_vec_loop.body
   else ok (done out)
 
 /-- [ml_dsa_verified::ntt::ntt_vec]: loop 0:
-    Source: 'src/ntt.rs', lines 237:4-240:5
+    Source: 'src/ntt.rs', lines 407:4-410:5
     Visibility: public -/
 @[rust_loop]
 def ntt.ntt_vec_loop
@@ -1251,7 +1264,7 @@ def ntt.ntt_vec_loop
     (out, i)
 
 /-- [ml_dsa_verified::ntt::ntt_vec]:
-    Source: 'src/ntt.rs', lines 234:0-242:1
+    Source: 'src/ntt.rs', lines 404:0-412:1
     Visibility: public -/
 def ntt.ntt_vec
   {N : Std.Usize} (v : Array (Array Std.U32 256#usize) N) :
@@ -1262,7 +1275,7 @@ def ntt.ntt_vec
   ntt.ntt_vec_loop v out 0#usize
 
 /-- [ml_dsa_verified::ntt::add_poly]: loop body 0:
-    Source: 'src/ntt.rs', lines 187:4-190:5
+    Source: 'src/ntt.rs', lines 357:4-360:5
     Visibility: public -/
 @[rust_loop_body]
 def ntt.add_poly_loop.body
@@ -1282,7 +1295,7 @@ def ntt.add_poly_loop.body
   else ok (done c)
 
 /-- [ml_dsa_verified::ntt::add_poly]: loop 0:
-    Source: 'src/ntt.rs', lines 187:4-190:5
+    Source: 'src/ntt.rs', lines 357:4-360:5
     Visibility: public -/
 @[rust_loop]
 def ntt.add_poly_loop
@@ -1295,7 +1308,7 @@ def ntt.add_poly_loop
     (c, i)
 
 /-- [ml_dsa_verified::ntt::add_poly]:
-    Source: 'src/ntt.rs', lines 184:0-192:1
+    Source: 'src/ntt.rs', lines 354:0-362:1
     Visibility: public -/
 def ntt.add_poly
   (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) :
@@ -1305,11 +1318,11 @@ def ntt.add_poly
   ntt.add_poly_loop a b c 0#usize
 
 /-- [ml_dsa_verified::field::QNEG]
-    Source: 'src/field.rs', lines 52:0-52:32 -/
+    Source: 'src/field.rs', lines 60:0-60:32 -/
 @[global_simps, irreducible] def field.QNEG : Std.U32 := 4236238847#u32
 
 /-- [ml_dsa_verified::field::mont_reduce]:
-    Source: 'src/field.rs', lines 57:0-60:1
+    Source: 'src/field.rs', lines 66:0-69:1
     Visibility: public -/
 def field.mont_reduce (a : Std.U64) : RustM Std.U32 := do
   let i ← lift (UScalar.cast .U32 a)
@@ -1322,11 +1335,11 @@ def field.mont_reduce (a : Std.U64) : RustM Std.U32 := do
   ok (UScalar.cast .U32 i5)
 
 /-- [ml_dsa_verified::field::R2]
-    Source: 'src/field.rs', lines 54:0-54:26 -/
+    Source: 'src/field.rs', lines 62:0-62:26 -/
 @[global_simps, irreducible] def field.R2 : Std.U64 := 2365951#u64
 
 /-- [ml_dsa_verified::field::mul_mont]:
-    Source: 'src/field.rs', lines 64:0-67:1
+    Source: 'src/field.rs', lines 74:0-77:1
     Visibility: public -/
 def field.mul_mont (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   let i ← lift (UScalar.cast .U64 a)
@@ -1338,11 +1351,10 @@ def field.mul_mont (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   let i5 ← field.mont_reduce i4
   field.small_reduce i5
 
-/-- [ml_dsa_verified::ntt::multiply_ntt]: loop body 0:
-    Source: 'src/ntt.rs', lines 176:4-179:5
-    Visibility: public -/
+/-- [ml_dsa_verified::ntt::multiply_ntt_body]: loop body 0:
+    Source: 'src/ntt.rs', lines 181:4-184:5 -/
 @[rust_loop_body]
-def ntt.multiply_ntt_loop.body
+def ntt.multiply_ntt_body_loop.body
   (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize)
   (c : Array Std.U32 256#usize) (i : Std.Usize) :
   RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize) (Array Std.U32
@@ -1358,31 +1370,47 @@ def ntt.multiply_ntt_loop.body
     ok (cont (a1, i4))
   else ok (done c)
 
-/-- [ml_dsa_verified::ntt::multiply_ntt]: loop 0:
-    Source: 'src/ntt.rs', lines 176:4-179:5
-    Visibility: public -/
+/-- [ml_dsa_verified::ntt::multiply_ntt_body]: loop 0:
+    Source: 'src/ntt.rs', lines 181:4-184:5 -/
 @[rust_loop]
-def ntt.multiply_ntt_loop
+def ntt.multiply_ntt_body_loop
   (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize)
   (c : Array Std.U32 256#usize) (i : Std.Usize) :
   RustM (Array Std.U32 256#usize)
   := do
   loop
-    (fun (c1, i1) => ntt.multiply_ntt_loop.body a b c1 i1)
+    (fun (c1, i1) => ntt.multiply_ntt_body_loop.body a b c1 i1)
     (c, i)
 
+/-- [ml_dsa_verified::ntt::multiply_ntt_body]:
+    Source: 'src/ntt.rs', lines 178:0-186:1 -/
+def ntt.multiply_ntt_body
+  (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) :
+  RustM (Array Std.U32 256#usize)
+  := do
+  let c := Array.repeat 256#usize 0#u32
+  ntt.multiply_ntt_body_loop a b c 0#usize
+
+/-- [ml_dsa_verified::ntt::dispatch::multiply_ntt]:
+    Source: 'src/ntt.rs', lines 220:4-222:5
+    Visibility: public -/
+def ntt.dispatch.multiply_ntt
+  (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) :
+  RustM (Array Std.U32 256#usize)
+  := do
+  ntt.multiply_ntt_body a b
+
 /-- [ml_dsa_verified::ntt::multiply_ntt]:
-    Source: 'src/ntt.rs', lines 173:0-181:1
+    Source: 'src/ntt.rs', lines 334:0-336:1
     Visibility: public -/
 def ntt.multiply_ntt
   (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) :
   RustM (Array Std.U32 256#usize)
   := do
-  let c := Array.repeat 256#usize 0#u32
-  ntt.multiply_ntt_loop a b c 0#usize
+  ntt.dispatch.multiply_ntt a b
 
 /-- [ml_dsa_verified::ntt::matrix_vector_ntt]: loop body 1:
-    Source: 'src/ntt.rs', lines 224:8-227:9
+    Source: 'src/ntt.rs', lines 394:8-397:9
     Visibility: public -/
 @[rust_loop_body]
 def ntt.matrix_vector_ntt_loop0_loop0.body
@@ -1407,7 +1435,7 @@ def ntt.matrix_vector_ntt_loop0_loop0.body
   else ok (done w)
 
 /-- [ml_dsa_verified::ntt::matrix_vector_ntt]: loop 1:
-    Source: 'src/ntt.rs', lines 224:8-227:9
+    Source: 'src/ntt.rs', lines 394:8-397:9
     Visibility: public -/
 @[rust_loop]
 def ntt.matrix_vector_ntt_loop0_loop0
@@ -1422,7 +1450,7 @@ def ntt.matrix_vector_ntt_loop0_loop0
     (w, j)
 
 /-- [ml_dsa_verified::ntt::matrix_vector_ntt]: loop body 0:
-    Source: 'src/ntt.rs', lines 222:4-229:5
+    Source: 'src/ntt.rs', lines 392:4-399:5
     Visibility: public -/
 @[rust_loop_body]
 def ntt.matrix_vector_ntt_loop0.body
@@ -1441,7 +1469,7 @@ def ntt.matrix_vector_ntt_loop0.body
   else ok (done w)
 
 /-- [ml_dsa_verified::ntt::matrix_vector_ntt]: loop 0:
-    Source: 'src/ntt.rs', lines 222:4-229:5
+    Source: 'src/ntt.rs', lines 392:4-399:5
     Visibility: public -/
 @[rust_loop]
 def ntt.matrix_vector_ntt_loop0
@@ -1456,7 +1484,7 @@ def ntt.matrix_vector_ntt_loop0
     (w, i)
 
 /-- [ml_dsa_verified::ntt::matrix_vector_ntt]:
-    Source: 'src/ntt.rs', lines 216:0-231:1
+    Source: 'src/ntt.rs', lines 386:0-401:1
     Visibility: public -/
 def ntt.matrix_vector_ntt
   {K : Std.Usize} {L : Std.Usize}
@@ -1541,7 +1569,7 @@ def ntt.ZETAS_NEG_SHOUP : Array Std.U32 256#usize :=
     ]
 
 /-- [ml_dsa_verified::ntt::ntt_inverse_layer]: loop body 1:
-    Source: 'src/ntt.rs', lines 126:8-131:9 -/
+    Source: 'src/ntt.rs', lines 128:8-133:9 -/
 @[rust_loop_body]
 def ntt.ntt_inverse_layer_loop0_loop0.body
   (LEN : Std.Usize) (start : Std.Usize) (z : Std.U32) (zp : Std.U32)
@@ -1566,7 +1594,7 @@ def ntt.ntt_inverse_layer_loop0_loop0.body
   else ok (done w)
 
 /-- [ml_dsa_verified::ntt::ntt_inverse_layer]: loop 1:
-    Source: 'src/ntt.rs', lines 126:8-131:9 -/
+    Source: 'src/ntt.rs', lines 128:8-133:9 -/
 @[rust_loop]
 def ntt.ntt_inverse_layer_loop0_loop0
   (LEN : Std.Usize) (w : Array Std.U32 256#usize) (start : Std.Usize)
@@ -1579,7 +1607,7 @@ def ntt.ntt_inverse_layer_loop0_loop0
     (w, j)
 
 /-- [ml_dsa_verified::ntt::ntt_inverse_layer]: loop body 0:
-    Source: 'src/ntt.rs', lines 120:4-133:5 -/
+    Source: 'src/ntt.rs', lines 122:4-135:5 -/
 @[rust_loop_body]
 def ntt.ntt_inverse_layer_loop0.body
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -1601,7 +1629,7 @@ def ntt.ntt_inverse_layer_loop0.body
   else ok (done (w, m))
 
 /-- [ml_dsa_verified::ntt::ntt_inverse_layer]: loop 0:
-    Source: 'src/ntt.rs', lines 120:4-133:5 -/
+    Source: 'src/ntt.rs', lines 122:4-135:5 -/
 @[rust_loop]
 def ntt.ntt_inverse_layer_loop0
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -1614,7 +1642,7 @@ def ntt.ntt_inverse_layer_loop0
     (w, m, i)
 
 /-- [ml_dsa_verified::ntt::ntt_inverse_layer]:
-    Source: 'src/ntt.rs', lines 118:0-134:1 -/
+    Source: 'src/ntt.rs', lines 120:0-136:1 -/
 @[reducible]
 def ntt.ntt_inverse_layer
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -1628,11 +1656,10 @@ def ntt.ntt_inverse_layer
     Visibility: public -/
 @[global_simps, irreducible] def ntt.F_SHOUP : Std.U32 := 4278190082#u32
 
-/-- [ml_dsa_verified::ntt::ntt_inverse]: loop body 0:
-    Source: 'src/ntt.rs', lines 165:4-168:5
-    Visibility: public -/
+/-- [ml_dsa_verified::ntt::ntt_inverse_body]: loop body 0:
+    Source: 'src/ntt.rs', lines 169:4-172:5 -/
 @[rust_loop_body]
-def ntt.ntt_inverse_loop.body
+def ntt.ntt_inverse_body_loop.body
   (w : Array Std.U32 256#usize) (j : Std.Usize) :
   RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize) (Array Std.U32
     256#usize))
@@ -1646,22 +1673,20 @@ def ntt.ntt_inverse_loop.body
     ok (cont (a, j1))
   else ok (done w)
 
-/-- [ml_dsa_verified::ntt::ntt_inverse]: loop 0:
-    Source: 'src/ntt.rs', lines 165:4-168:5
-    Visibility: public -/
+/-- [ml_dsa_verified::ntt::ntt_inverse_body]: loop 0:
+    Source: 'src/ntt.rs', lines 169:4-172:5 -/
 @[rust_loop]
-def ntt.ntt_inverse_loop
+def ntt.ntt_inverse_body_loop
   (w : Array Std.U32 256#usize) (j : Std.Usize) :
   RustM (Array Std.U32 256#usize)
   := do
   loop
-    (fun (w1, j1) => ntt.ntt_inverse_loop.body w1 j1)
+    (fun (w1, j1) => ntt.ntt_inverse_body_loop.body w1 j1)
     (w, j)
 
-/-- [ml_dsa_verified::ntt::ntt_inverse]:
-    Source: 'src/ntt.rs', lines 152:0-170:1
-    Visibility: public -/
-def ntt.ntt_inverse
+/-- [ml_dsa_verified::ntt::ntt_inverse_body]:
+    Source: 'src/ntt.rs', lines 156:0-174:1 -/
+def ntt.ntt_inverse_body
   (w_hat : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
   let (w_hat1, m) ← ntt.ntt_inverse_layer 1#usize 128#usize w_hat 256#usize
   let (w_hat2, m1) ← ntt.ntt_inverse_layer 2#usize 64#usize w_hat1 m
@@ -1671,7 +1696,21 @@ def ntt.ntt_inverse
   let (w_hat6, m5) ← ntt.ntt_inverse_layer 32#usize 4#usize w_hat5 m4
   let (w_hat7, m6) ← ntt.ntt_inverse_layer 64#usize 2#usize w_hat6 m5
   let (w_hat8, _) ← ntt.ntt_inverse_layer 128#usize 1#usize w_hat7 m6
-  ntt.ntt_inverse_loop w_hat8 0#usize
+  ntt.ntt_inverse_body_loop w_hat8 0#usize
+
+/-- [ml_dsa_verified::ntt::dispatch::ntt_inverse]:
+    Source: 'src/ntt.rs', lines 217:4-219:5
+    Visibility: public -/
+def ntt.dispatch.ntt_inverse
+  (w_hat : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
+  ntt.ntt_inverse_body w_hat
+
+/-- [ml_dsa_verified::ntt::ntt_inverse]:
+    Source: 'src/ntt.rs', lines 329:0-331:1
+    Visibility: public -/
+def ntt.ntt_inverse
+  (w_hat : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
+  ntt.dispatch.ntt_inverse w_hat
 
 /-- [ml_dsa_verified::keygen::compute_t]: loop body 0:
     Source: 'src/keygen.rs', lines 35:4-38:5 -/
@@ -1722,12 +1761,12 @@ def keygen.compute_t
   keygen.compute_t_loop s2 prod t 0#usize
 
 /-- [ml_dsa_verified::field::barrier_u32]:
-    Source: 'src/field.rs', lines 88:0-90:1 -/
+    Source: 'src/field.rs', lines 98:0-100:1 -/
 def field.barrier_u32 (x : Std.U32) : RustM Std.U32 := do
   ok x
 
 /-- [ml_dsa_verified::field::ct_select]:
-    Source: 'src/field.rs', lines 97:0-99:1
+    Source: 'src/field.rs', lines 107:0-109:1
     Visibility: public -/
 def field.ct_select
   (if_false : Std.U32) (if_true : Std.U32) (mask : Std.U32) :
@@ -1739,12 +1778,12 @@ def field.ct_select
   ok (if_false ^^^ i2)
 
 /-- [ml_dsa_verified::field::barrier_u64]:
-    Source: 'src/field.rs', lines 80:0-82:1 -/
+    Source: 'src/field.rs', lines 90:0-92:1 -/
 def field.barrier_u64 (x : Std.U64) : RustM Std.U64 := do
   ok x
 
 /-- [ml_dsa_verified::field::ct_lt_mask]:
-    Source: 'src/field.rs', lines 93:0-95:1
+    Source: 'src/field.rs', lines 103:0-105:1
     Visibility: public -/
 def field.ct_lt_mask (a : Std.U64) (b : Std.U64) : RustM Std.U64 := do
   let i ← lift (core.num.U64.wrapping_sub a b)
@@ -2417,7 +2456,7 @@ def api.keygen_44
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::field::opaque_u32]:
-    Source: 'src/field.rs', lines 110:0-112:1
+    Source: 'src/field.rs', lines 120:0-122:1
     Visibility: public -/
 def field.opaque_u32 (x : Std.U32) : RustM Std.U32 := do
   ok x
@@ -2465,7 +2504,7 @@ def rounding.make_hint
   ok (r1 != v1)
 
 /-- [ml_dsa_verified::ntt::scalar_vector_ntt_inverse]: loop body 0:
-    Source: 'src/ntt.rs', lines 208:4-211:5
+    Source: 'src/ntt.rs', lines 378:4-381:5
     Visibility: public -/
 @[rust_loop_body]
 def ntt.scalar_vector_ntt_inverse_loop.body
@@ -2486,7 +2525,7 @@ def ntt.scalar_vector_ntt_inverse_loop.body
   else ok (done out)
 
 /-- [ml_dsa_verified::ntt::scalar_vector_ntt_inverse]: loop 0:
-    Source: 'src/ntt.rs', lines 208:4-211:5
+    Source: 'src/ntt.rs', lines 378:4-381:5
     Visibility: public -/
 @[rust_loop]
 def ntt.scalar_vector_ntt_inverse_loop
@@ -2501,7 +2540,7 @@ def ntt.scalar_vector_ntt_inverse_loop
     (out, i)
 
 /-- [ml_dsa_verified::ntt::scalar_vector_ntt_inverse]:
-    Source: 'src/ntt.rs', lines 205:0-213:1
+    Source: 'src/ntt.rs', lines 375:0-383:1
     Visibility: public -/
 def ntt.scalar_vector_ntt_inverse
   {N : Std.Usize} (c_hat : Array Std.U32 256#usize)
@@ -2513,7 +2552,7 @@ def ntt.scalar_vector_ntt_inverse
   ntt.scalar_vector_ntt_inverse_loop c_hat v_hat out 0#usize
 
 /-- [ml_dsa_verified::field::neg]:
-    Source: 'src/field.rs', lines 32:0-34:1
+    Source: 'src/field.rs', lines 39:0-41:1
     Visibility: public -/
 def field.neg (a : Std.U32) : RustM Std.U32 := do
   let i ← field.Q - a
@@ -2666,7 +2705,7 @@ def rounding.poly_low_bits
   rounding.poly_low_bits_loop p w out 0#usize
 
 /-- [ml_dsa_verified::ntt::sub_poly]: loop body 0:
-    Source: 'src/ntt.rs', lines 197:4-200:5
+    Source: 'src/ntt.rs', lines 367:4-370:5
     Visibility: public -/
 @[rust_loop_body]
 def ntt.sub_poly_loop.body
@@ -2686,7 +2725,7 @@ def ntt.sub_poly_loop.body
   else ok (done c)
 
 /-- [ml_dsa_verified::ntt::sub_poly]: loop 0:
-    Source: 'src/ntt.rs', lines 197:4-200:5
+    Source: 'src/ntt.rs', lines 367:4-370:5
     Visibility: public -/
 @[rust_loop]
 def ntt.sub_poly_loop
@@ -2699,7 +2738,7 @@ def ntt.sub_poly_loop
     (c, i)
 
 /-- [ml_dsa_verified::ntt::sub_poly]:
-    Source: 'src/ntt.rs', lines 194:0-202:1
+    Source: 'src/ntt.rs', lines 364:0-372:1
     Visibility: public -/
 def ntt.sub_poly
   (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) :
@@ -5343,7 +5382,7 @@ def field.BARRETT_MULTIPLIER : RustM Std.U128 := do
   i / i1
 
 /-- [ml_dsa_verified::field::barrett_reduce]:
-    Source: 'src/field.rs', lines 18:0-24:1
+    Source: 'src/field.rs', lines 23:0-29:1
     Visibility: public -/
 def field.barrett_reduce (x : Std.U64) : RustM Std.U32 := do
   let x1 ← lift (UScalar.cast .U128 x)
@@ -5357,7 +5396,7 @@ def field.barrett_reduce (x : Std.U64) : RustM Std.U32 := do
   field.small_reduce i3
 
 /-- [ml_dsa_verified::field::mul]:
-    Source: 'src/field.rs', lines 38:0-40:1
+    Source: 'src/field.rs', lines 45:0-47:1
     Visibility: public -/
 def field.mul (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   let i ← lift (UScalar.cast .U64 a)

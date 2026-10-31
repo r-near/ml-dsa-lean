@@ -247,7 +247,7 @@ attribute [step] layer_spec
 
 theorem ntt_spec (w : Array U32 256#usize) (hw : Canonical w) :
     ntt.ntt w ⦃ r => Canonical r ∧ toZq r = Spec.NTT (toZq w) ⦄ := by
-  unfold ntt.ntt
+  unfold ntt.ntt ntt.dispatch.ntt ntt.ntt_body
   step*
   refine ⟨w8_post1, ?_⟩
   simp only [NTT_eq_layers, ← w1_post3, ← w2_post3, ← w3_post3, ← w4_post3, ← w5_post3,
