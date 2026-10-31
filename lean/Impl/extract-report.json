@@ -43,9 +43,18 @@
   "ml_dsa_verified::api::verify_internal_prepared_65",
   "ml_dsa_verified::api::verifying_key_87",
   "ml_dsa_verified::api::verify_prepared_87",
-  "ml_dsa_verified::api::verify_internal_prepared_87"
+  "ml_dsa_verified::api::verify_internal_prepared_87",
+  "ml_dsa_verified::api::signing_key_44",
+  "ml_dsa_verified::api::sign_prepared_44",
+  "ml_dsa_verified::api::sign_internal_prepared_44",
+  "ml_dsa_verified::api::signing_key_65",
+  "ml_dsa_verified::api::sign_prepared_65",
+  "ml_dsa_verified::api::sign_internal_prepared_65",
+  "ml_dsa_verified::api::signing_key_87",
+  "ml_dsa_verified::api::sign_prepared_87",
+  "ml_dsa_verified::api::sign_internal_prepared_87"
  ],
- "src_sha256": "f16037baadcea5ef8336e4a43faf460f6421161350cc98acad4b2934cf16817d",
+ "src_sha256": "6845af77a9bf95f0edac139cc8551eb0a0405102152b4ea54bea04a7e0677642",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -54,7 +63,7 @@
   "lean": "v4.31.0"
  },
  "rename_changes": 0,
- "llbc_fun_decls": 168,
+ "llbc_fun_decls": 179,
  "llbc_opaque_funs": [
   "core::array::{impl}::index",
   "core::array::{impl}::index_mut",
@@ -84,5 +93,5 @@
  "aeneas_name_clashes": 0,
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
- "lean_defs": 315
+ "lean_defs": 326
 }
