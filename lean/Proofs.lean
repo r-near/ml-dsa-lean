@@ -39,3 +39,4 @@ import Proofs.PartialKeyGen
 import Proofs.PartialSign
 import Proofs.PkFromSk
 import Proofs.Divergence
+import Proofs.PreparedVerify

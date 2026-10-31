@@ -110,8 +110,8 @@ macro_rules! mld_cells {
 }
 
 macro_rules! define_set {
-    ($build:ident, $cellsfn:ident, $lvl:literal, $P:ty, $kg:ident, $sg:ident, $vf:ident, $pk:literal, $sk:literal, $sig:literal,
-     $m:ident, $LSK:ident, $LVK:ident, $LSIG:ident) => {
+    ($build:ident, $cellsfn:ident, $lvl:literal, $P:ty, $kg:ident, $sg:ident, $vf:ident, $vkf:ident, $vpf:ident,
+     $pk:literal, $sk:literal, $sig:literal, $m:ident, $LSK:ident, $LVK:ident, $LSIG:ident) => {
         pub fn $build() -> SetData {
             SetData::build(
                 $lvl,
@@ -138,6 +138,15 @@ macro_rules! define_set {
                 let s: &[u8; $sig] = d.sig_det[i].as_slice().try_into().unwrap();
                 api::$vf(pk_a, &d.msgs[i], CTX, s) as u64
             });
+
+            // prepared verifying key (Â, NTT(t1 * 2^d), tr computed once; boxed like a caller would)
+            {
+                let vk = Box::new(api::$vkf(pk_a));
+                cell(cells, "ours+prepared-vk", "verify", NMSG, move |i| {
+                    let s: &[u8; $sig] = d.sig_det[i].as_slice().try_into().unwrap();
+                    api::$vpf(&vk, &d.msgs[i], CTX, s) as u64
+                });
+            }
 
             // ---- RustCrypto ml-dsa a3690c4 ---------------------------------------------------
             {
@@ -213,11 +222,11 @@ macro_rules! define_set {
     };
 }
 
-define_set!(build_44, cells_44, 44, ml_dsa::MlDsa44, keygen_44, sign_44, verify_44, 1312, 2560, 2420,
+define_set!(build_44, cells_44, 44, ml_dsa::MlDsa44, keygen_44, sign_44, verify_44, verifying_key_44, verify_prepared_44, 1312, 2560, 2420,
     ml_dsa_44, MLDSA44SigningKey, MLDSA44VerificationKey, MLDSA44Signature);
-define_set!(build_65, cells_65, 65, ml_dsa::MlDsa65, keygen_65, sign_65, verify_65, 1952, 4032, 3309,
+define_set!(build_65, cells_65, 65, ml_dsa::MlDsa65, keygen_65, sign_65, verify_65, verifying_key_65, verify_prepared_65, 1952, 4032, 3309,
     ml_dsa_65, MLDSA65SigningKey, MLDSA65VerificationKey, MLDSA65Signature);
-define_set!(build_87, cells_87, 87, ml_dsa::MlDsa87, keygen_87, sign_87, verify_87, 2592, 4896, 4627,
+define_set!(build_87, cells_87, 87, ml_dsa::MlDsa87, keygen_87, sign_87, verify_87, verifying_key_87, verify_prepared_87, 2592, 4896, 4627,
     ml_dsa_87, MLDSA87SigningKey, MLDSA87VerificationKey, MLDSA87Signature);
 
 
