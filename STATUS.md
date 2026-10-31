@@ -88,7 +88,13 @@ One end-to-end Lean proof, readable top-down:
   verify_NN pk …` and `sign_prepared_NN ssk … = sign_NN sk …` as computations (including `fail` and divergence),
   with `*_exact` theorems against `Spec.Verify` / `Spec.Sign` in the same shape as above. The structs have private
   fields and are only built by those functions, so the premise `verifying_key_NN pk = ok vk` holds for every value a
-  caller can hold.
+  caller can hold. The refactor that split `verify_internal` / `sign_internal` into prepare + core changed three
+  supporting headline statements, `Verify.verify_loop_spec`, `Sign.sign_loop_spec` and
+  `PartialSign.sign_loop_partial`. Their loop functions were renamed (`verify_core_loop`,
+  `sign_prepared_internal_loop`) and take their arguments in a different order. The conclusions (`Rows … W1Row`,
+  `LoopPost`) and every top-level statement are unchanged. The constant-time probes for the prepared signing key are
+  `prepare_sk_*` and `signing_key_*` in `checkct/README.md`: secure on x86_64 and thumbv7em; on riscv32imac secure
+  for 65, unknown for 44 and 87 (timeout, no leak found).
 - These partial theorems restrict what the Rust may return; they give no positive guarantee for a concrete input.
   That the spec returns `some` for a given input still has no kernel witness at the top level (see below).
 - Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`. **Done** (`Proofs/Correctness.lean`).
