@@ -3,7 +3,7 @@
 //! messages, random public keys, and every context length class including 255 (largest valid), 256 (rejected).
 //!
 //! Counts per parameter set (release; debug uses `SCALE` = 10x fewer of the bulk cases):
-//! 6 key pairs x 12 messages with a context from {0, 1, 2, 100, 255, 256, 300} bytes; for every valid signature:
+//! 20 key pairs x 20 messages with a context from {0, 1, 2, 100, 255, 256, 300} bytes; for every valid signature:
 //! 20 mutated copies (bit flips in c~, z and the hint region; truncation is impossible with fixed arrays; all-random
 //! signatures); each also with a wrong message and a wrong context; 3 random public keys with 10 random signatures.
 //! Every result of the prepared function is compared with the unprepared one, so a disagreement in either
@@ -72,12 +72,12 @@ macro_rules! prepared_tests {
             #[test]
             fn prepared_equals_unprepared() {
                 let mut r = Rng($seed);
-                for _ in 0..6 {
+                for _ in 0..20 {
                     let (pk, sk) = $keygen(&r.arr32());
                     let vk = Box::new($vk(&pk));
                     let (pk2, _) = $keygen(&r.arr32());
                     let vk2 = Box::new($vk(&pk2));
-                    for _ in 0..12 {
+                    for _ in 0..20 {
                         let m = r.bytes_below(300);
                         let ctx_len = r.pick(&CTX_LENS);
                         let ctx = r.bytes(ctx_len);
