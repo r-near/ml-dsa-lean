@@ -301,19 +301,24 @@ into one symbol that cargo-checkct lists twice. I did not edit the README.
 
 `src/ntt.rs` ("Dispatch") compiles the NTT, inverse NTT and pointwise-product bodies twice on x86_64 and picks one at run
 time, **only with the opt-in `avx2` cargo feature**. The default build has a single portable compilation, no `unsafe`
-(`forbid(unsafe_code)`), and is the build every BINSEC result above refers to. This section records what the feature
-does to the claims above.
+(`forbid(unsafe_code)`). This section records what the feature does to the claims above.
+
+**Status (2026-10-31): the results in this section predate the merge that made the dispatch opt-in.** They were measured on
+a tree where x86_64 always had the dispatch and the forced inlining. At the merge (6e25e52) the checkct driver includes
+`src/` without the `avx2` feature, so it never compiles the dispatch: the cache pre-set, `select-ntt.sh dispatch` and the
+static scan do nothing there. A full sweep of the merged tree, default build and `avx2` build, is pending; until then the
+table below is evidence about the code shape it was measured on, not about HEAD.
 
 **Trust argument.** The Lean proofs (`Proofs/NTT.lean`, `NTTInverse.lean`, `NTTOps.lean`) are about the source of the shared
-`#[inline(always)]` bodies `ntt_body`, `ntt_inverse_body` and `multiply_ntt_body`. Extraction runs with `--cfg miri`, where the
+bodies `ntt_body`, `ntt_inverse_body` and `multiply_ntt_body`. Extraction runs with `--cfg miri`, where the
 public entry points are the bodies themselves: the proved model contains no dispatch, no atomic and no `unsafe`. In a normal
 build the dispatch picks one of two compilations of that same body: the crate's baseline target features, or a
-`#[target_feature(enable = "avx2")]` wrapper in which LLVM vectorizes the 32 x 32 -> 64 bit butterflies. The shim (CPUID leaf 7,
-OSXSAVE, XCR0 bits 1 and 2, a relaxed `AtomicU8` cache) is outside the proof, in the same class as the zeroize code and the
-`black_box` barriers. It reads only the CPU model. A wrong answer cannot change a result (both copies compute the same
+`#[target_feature(enable = "avx2")]` wrapper in which LLVM vectorizes the 32 x 32 -> 64 bit butterflies. The shim (CPUID leaf 1 XSAVE/OSXSAVE/AVX,
+leaf 7 AVX2, XCR0 bits 1 and 2, a relaxed `AtomicU8` cache) is outside the proof. It reads only the CPU model. A wrong answer cannot change a result (both copies compute the same
 function); it can only cause SIGILL (AVX2 reported but unusable) or a slower run. `tests/dispatch.rs` compares the two
-compilations on random and edge polynomials. What stays assumed is that LLVM compiles both copies faithfully, which is the
-assumption already made for the portable copy.
+compilations on random and edge polynomials. What stays assumed is that LLVM compiles both copies faithfully. That assumption is made for the
+portable copy too, but the AVX2 copy is a separate vectorizer run over the whole arithmetic core with less evidence behind it:
+no BINSEC verdict, and functional evidence from `tests/dispatch.rs` and the KAT suites run with `--features avx2` only.
 
 **What BINSEC covers.**
 - cargo-checkct models `cpuid` as "no optional features" (`docs/upstream-issues.md` U-32). The dispatch cache is a `static` in `.bss`, which

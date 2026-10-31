@@ -1,6 +1,9 @@
 //! The portable and the AVX2 compilation of the NTT bodies agree (they are the same source), and the dispatching entry
 //! points agree with both. On a CPU without AVX2 (or a build that is statically AVX2 or not x86_64) there is only one
 //! compilation and the comparison is skipped.
+// Only meaningful with the dispatch compiled in (feature `avx2`). Not a `[[test]] required-features` entry, because
+// scripts/extract.py copies only src/ and Cargo.toml.
+#![cfg(feature = "avx2")]
 use ml_dsa_verified::field::Q;
 use ml_dsa_verified::ntt;
 

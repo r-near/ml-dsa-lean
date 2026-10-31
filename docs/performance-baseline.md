@@ -579,8 +579,8 @@ feature (runtime dispatch), `v3` = `-C target-cpu=x86-64-v3` (static AVX2, no di
 For comparison (section 2, same profile, uncached keys): ML-DSA-87 sign-det 218.8 / 121.6 us and verify 109.3 /
 55.3 us for libcrux AVX2 / mldsa-native AVX2; RustCrypto's cached-key verify-87 is 96.7 us. A prepared-key verify
 is not the same operation as an uncached one: it skips pk decoding, ExpandA and the NTT of t1, which is what a
-validator verifying many signatures under stored keys can do. Uncached verify and sign are still 2–4× behind the
-AVX2 C and Rust implementations; the remaining gap is ExpandA (scalar SHAKE128, item 6) and the scalar parts of the
+validator verifying many signatures under stored keys can do. Uncached verify and sign are still 1.7–3.8× behind the
+AVX2 C and Rust implementations (avx2 column against section 2); the remaining gap is ExpandA (scalar SHAKE128, item 6) and the scalar parts of the
 signing loop.
 
 Second batch: items 4 and 5 (lazy NTT with its contract unchanged, plus a vectorized build or dispatch). Projected:

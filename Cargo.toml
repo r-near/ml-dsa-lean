@@ -2,6 +2,8 @@
 name = "ml-dsa-verified"
 version = "0.0.0"
 edition = "2024"
+# Safe `#[target_feature]` functions (the optional `avx2` feature) need 1.86.
+rust-version = "1.86"
 publish = false
 license = "MIT OR Apache-2.0"
 description = "Proof-first ML-DSA (FIPS 204): one Rust function per algorithm, plain arrays and loops, extracted to Lean"
@@ -13,11 +15,12 @@ zeroize = { version = "1", default-features = false, optional = true }
 [features]
 default = []
 zeroize = ["dep:zeroize"]
-# Optional, x86_64 only: runtime AVX2 dispatch of the NTT bodies (src/ntt.rs, "Dispatch"). The proved source body
-# is compiled twice, once for the build's target features and once with AVX2, and a cached CPUID check picks one.
-# The dispatch shim is outside the Lean proof, it is the crate's only `unsafe`, and BINSEC cannot lift the AVX2 copy
-# (docs/object-code-assurance.md section 3.5). Without it, building with `-C target-cpu=x86-64-v3` gives the same
-# speed statically, with no `unsafe`.
+# Optional, x86_64 only (not SGX): runtime AVX2 dispatch of the NTT bodies (src/ntt.rs, "Dispatch"). The proved
+# source body is compiled twice, once for the build's target features and once with AVX2, and a cached CPUID check
+# picks one. The dispatch shim is outside the Lean proof, it is the crate's only `unsafe`, and BINSEC cannot lift the
+# AVX2 copy (docs/object-code-assurance.md section 3.5). Alternative without `unsafe`: build with
+# `-C target-cpu=x86-64-v3` (4-9% faster again, but the binary then requires AVX2, and BINSEC cannot lift its vector
+# code either).
 avx2 = []
 # Tests and fuzzing only; exposes unproved internals.
 # Makes every module public (keygen::keygen_internal, sign::sign_internal and verify::verify_internal
@@ -34,11 +37,6 @@ ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd8
 flate2 = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-
-# Compares the portable and AVX2 compilations; only meaningful with the dispatch.
-[[test]]
-name = "dispatch"
-required-features = ["avx2"]
 
 [profile.release]
 debug = false

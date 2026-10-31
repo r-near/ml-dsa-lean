@@ -191,17 +191,19 @@ fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
 // Opt-in: the dispatch exists only with the `avx2` cargo feature on x86_64. Without it (the default) the entry points
 // below are the portable body and the crate has no `unsafe` (`forbid(unsafe_code)` in lib.rs).
 // `ntt`, `ntt_inverse` and `multiply_ntt` are the only entry points the rest of the crate (and the proofs) use.
-// Each has one shared body (`#[inline(always)]` where this dispatch has a second compilation, see `field.rs`), proved against FIPS 204 (`Proofs/NTT.lean`, `NTTInverse.lean`,
+// Each has one shared body (`#[inline(always)]` only in the build that has the second compilation, see `field.rs`), proved against FIPS 204 (`Proofs/NTT.lean`, `NTTInverse.lean`,
 // `NTTOps.lean`). On x86_64 the body is compiled twice: once with the crate's target features, and once inside a
 // `#[target_feature(enable = "avx2")]` wrapper, where LLVM vectorizes the 32 x 32 -> 64 bit butterflies with
 // 256-bit vectors. A cached CPUID/XGETBV check picks one of the two compilations of the SAME source body.
 //   * Extraction runs with `--cfg miri` (scripts/extract.py). There the entry point is just the body: the proved
 //     model has no dispatch, no atomic and no `unsafe`.
 //   * What the proof does not cover: that the shim picks a compilation the CPU can run (the AVX2 check below), and
-//     that rustc/LLVM compile both copies of the body faithfully. The second is the trust already placed in the
-//     compiler for the portable copy; the first is a few lines of public-data feature detection, in the same class
-//     as the zeroize code and the `core::hint::black_box` barriers. The choice is a function of the CPU only,
-//     never of secret data.
+//     that rustc/LLVM compile both copies of the body faithfully. The compiler is trusted for the portable copy too,
+//     but the AVX2 copy is a separate run of the vectorizer over the whole arithmetic core, and it has less
+//     evidence behind it: BINSEC cannot lift it, so its constant-time check is a static instruction scan, and its
+//     functional check is `tests/dispatch.rs` (random and edge inputs against the portable copy) plus the KAT
+//     suites run with `--features avx2` on an AVX2 machine. The choice is a function of the CPU only, never of
+//     secret data.
 //   * A wrong answer from the check can only be "AVX2 reported but unusable" (SIGILL) or "AVX2 usable but not
 //     reported" (portable body, slower); it cannot change a result, because both copies compute the same
 //     function. `tests/dispatch.rs` compares them on random and edge inputs.
@@ -225,6 +227,7 @@ mod dispatch {
 }
 
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")))]
+#[allow(unsafe_code)]
 mod dispatch {
     use super::{multiply_ntt_body, ntt_body, ntt_inverse_body};
     use core::sync::atomic::{AtomicU8, Ordering};
@@ -242,7 +245,8 @@ mod dispatch {
         multiply_ntt_body(a, b)
     }
 
-    /// CPUID leaf 7 EBX bit 5 (AVX2), plus OSXSAVE and XCR0 bits 1 and 2 (the OS saves XMM and YMM state).
+    /// CPUID leaf 7 EBX bit 5 (AVX2), plus leaf 1 XSAVE, OSXSAVE and AVX, and XCR0 bits 1 and 2 (the OS saves XMM
+    /// and YMM state). Not for SGX enclaves, where CPUID faults; the `avx2` feature does not support them.
     /// Public data (the CPU model), no secret input. CPUID traps to the hypervisor on virtual machines
     /// (microseconds), so the answer is cached.
     fn detect_avx2() -> bool {
@@ -253,7 +257,8 @@ mod dispatch {
             if __cpuid(0).eax < 7 {
                 return false;
             }
-            if (__cpuid(1).ecx >> 27) & 1 == 0 {
+            // Leaf 1 ECX: bit 26 XSAVE, bit 27 OSXSAVE (the OS enabled XSAVE), bit 28 AVX.
+            if (__cpuid(1).ecx >> 26) & 0b111 != 0b111 {
                 return false;
             }
             if _xgetbv(0) & 0b110 != 0b110 {

@@ -5,7 +5,7 @@ Usage: python3 -I scripts/gen-ntt-tables.py [--check]
   default  rewrite the generated block of src/ntt.rs (between the BEGIN/END GENERATED markers)
   --check  exit 1 if the block in src/ntt.rs differs from what would be generated
 
-The tables are not trusted: lean/Proofs/NTTTables.lean proves each entry by `decide +kernel`
+The tables are not trusted: `shoup_tables` and `f_shoup_eq` in lean/Proofs/NTT.lean check every entry by `decide +kernel`
 (ZETAS_SHOUP[k] = ZETAS[k] * 2^32 / q, ZETAS_NEG_SHOUP[k] = (q - ZETAS[k]) * 2^32 / q, F_SHOUP likewise).
 """
 import re

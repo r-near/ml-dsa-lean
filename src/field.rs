@@ -51,7 +51,8 @@ pub fn mul(a: u32, b: u32) -> u32 {
 /// Shoup multiplication: `z * x mod q` for a fixed `z < q`, its companion `zp = floor(z * 2^32 / q)` and any `x`.
 /// With `hi = floor(x * zp / 2^32)` the exact quotient satisfies `hi <= floor(z * x / q) <= hi + 1`, so
 /// `z * x - hi * q` lies in `[0, 2q)` and fits in a u32; the wrapping u32 arithmetic below computes it exactly. One
-/// `small_reduce` (a mask, no branch) finishes. Only 32 x 32 -> 64 multiplies.
+/// `small_reduce` (a mask in the source; that the compiled code has no branch is a per-target BINSEC result,
+/// see checkct/README.md and ISSUES.md CT-1) finishes. Only 32 x 32 -> 64 multiplies.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn mul_shoup(z: u32, zp: u32, x: u32) -> u32 {
     let hi = (((x as u64) * (zp as u64)) >> 32) as u32;
