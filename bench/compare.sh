@@ -2,7 +2,8 @@
 # Build the nearcore-profile `bench` at the default target and at x86-64-v3 from the current tree, pick the idlest
 # physical core (cpu i and its hyper-thread sibling i+30 both idle), and run both pinned. Run on the build box from
 # the repository root:
-#   rx submit ntt-bench -- 'set -o pipefail; bash bench/compare.sh LABEL 2>&1 | tee bench-LABEL.log'
+#   rx submit ntt-bench -- 'set -o pipefail; bash bench/compare.sh LABEL [CPU] 2>&1 | tee bench-LABEL.log'
+# CPU (default: the idlest core, chosen at run time) pins both runs; pass the same CPU to compare two trees.
 # Output: $HOME/rx/scratch/ntt-bench-LABEL/{default,v3}.cpuN.tsv (same TSV as bench/run.sh).
 # Check `uptime` and `rx ps` first: the numbers are only comparable when the box is otherwise quiet.
 set -o pipefail
@@ -31,7 +32,7 @@ done
 cd "$root" || exit 1
 uptime
 ps -eo pcpu,psr,comm --sort=-pcpu | head -6
-CPU=$(python3 - <<'PY'
+CPU=${2:-$(python3 - <<'PY'
 import time
 def snap():
     d = {}
@@ -43,7 +44,7 @@ a = snap(); time.sleep(2); b = snap()
 busy = {n: 1 - (b[n][1] - a[n][1]) / max(1, (b[n][0] - a[n][0])) for n in a}
 print(min(range(1, 30), key=lambda i: busy[i] + busy[i + 30]))
 PY
-)
+)}
 echo "pinned cpu $CPU (sibling $((CPU + 30)))"
 for v in default v3; do
   echo "== $v $(date -u +%H:%M:%S) load $(cut -d' ' -f1-3 /proc/loadavg)"
