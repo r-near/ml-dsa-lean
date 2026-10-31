@@ -5,7 +5,8 @@
 #   ONLY     extended regex over the entrypoint names (driver__module__probe); required
 #   TIMEOUT  seconds per probe (default 7200)
 #   TARGETS  space separated target list (default: all three)
-#   JOBS     parallel BINSEC instances (default 16; a probe killed at the memory cap reports "error", never "secure")
+#   JOBS     parallel BINSEC instances (default 4: they share the container cap, and 16 at 64g got large probes killed).
+#            A probe killed at the cap reports "error", never "secure"; check `journalctl -k -g "Killed process"` (ISSUES T-8)
 #   OUT      as in run.sh (copies the compiled drivers)
 #   PROFILE  as in run.sh (nearcore = opt-level 3, fat LTO, one codegen unit), plus the dispatch profiles:
 #            dispatch          the checkct profile with the driver's `avx2` cargo feature, which turns on the crate's
@@ -25,7 +26,7 @@ set -o pipefail
 TIMEOUT="${TIMEOUT:-7200}"
 NAME="${NAME:-ct-select}"
 TARGETS="${TARGETS:-riscv32imac-unknown-none-elf thumbv7em-none-eabihf x86_64-unknown-linux-gnu}"
-JOBS="${JOBS:-16}"
+JOBS="${JOBS:-4}"
 MOUNT=""
 if [ -n "$OUT" ]; then
   mkdir -p "$OUT" && chmod 777 "$OUT" && MOUNT="-v $OUT:/out"

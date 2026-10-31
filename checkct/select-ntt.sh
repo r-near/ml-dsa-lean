@@ -19,13 +19,13 @@ mode="${1:-default}"
 case "$mode" in
   avx2)
     export TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}" PROFILE="${PROFILE:-avx2}"
-    export OUT="${OUT:-$HOME/rx/scratch/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-16}" ;;
+    export OUT="${OUT:-$HOME/rx/scratch/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-4}" ;;
   nearcore-avx2)
     export TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}" PROFILE=nearcore-avx2
-    export OUT="${OUT:-$HOME/rx/scratch/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-16}" ;;
+    export OUT="${OUT:-$HOME/rx/scratch/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-4}" ;;
   dispatch|nearcore-dispatch)
     export TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}" PROFILE="$mode"
-    export OUT="${OUT:-$HOME/rx/scratch/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-16}" ;;
+    export OUT="${OUT:-$HOME/rx/scratch/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-4}" ;;
   *)
     export OUT="${OUT:-$HOME/rx/scratch/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-24}" ;;
 esac
