@@ -5,10 +5,12 @@
 #   ONLY     extended regex over the entrypoint names (driver__module__probe); required
 #   TIMEOUT  seconds per probe (default 7200)
 #   TARGETS  space separated target list (default: all three)
-#   JOBS     parallel BINSEC instances (default 30)
+#   JOBS     parallel BINSEC instances (default 16; a probe killed at the memory cap reports "error", never "secure")
 #   OUT      as in run.sh (copies the compiled drivers)
 #   PROFILE  as in run.sh (nearcore = opt-level 3, fat LTO, one codegen unit)
 #   NAME     container name (default ct-select)
+#   CT_MEMORY / CT_CPUS  docker --memory / --cpus caps for the container (default 64g / 24). BINSEC runs can grow to
+#            tens of GB each; without a cap they have pushed the box out of memory and killed unrelated Lean builds.
 # Builds the drivers and generates the BINSEC scripts through `cargo-checkct run --timeout 1`, then runs BINSEC
 # on the matching scripts with the same command line cargo-checkct uses. Prints a "Summary:" block in the same
 # shape as run.sh, so checkct/leaks.sh can map the leak addresses to source lines.
@@ -17,7 +19,7 @@ set -o pipefail
 TIMEOUT="${TIMEOUT:-7200}"
 NAME="${NAME:-ct-select}"
 TARGETS="${TARGETS:-riscv32imac-unknown-none-elf thumbv7em-none-eabihf x86_64-unknown-linux-gnu}"
-JOBS="${JOBS:-30}"
+JOBS="${JOBS:-16}"
 MOUNT=""
 if [ -n "$OUT" ]; then
   mkdir -p "$OUT" && chmod 777 "$OUT" && MOUNT="-v $OUT:/out"
@@ -40,7 +42,7 @@ if [ "$PROFILE" = avx2 ] || [ "$PROFILE" = nearcore-avx2 ]; then
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+avx2"
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
-docker run --rm --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
+docker run --rm --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
   -v "$PWD":/src:ro ct-binsec bash -c '
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
   rm -rf /home/opam/w/checkct/target && cd /home/opam/w && eval $(opam env) &&
