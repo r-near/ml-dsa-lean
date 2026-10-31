@@ -39,7 +39,7 @@ anywhere with the toolchain: `cd checkct && cargo build --release -p driver --ta
 `checkct_macros/src/lib.rs` and `.cargo/config.toml` are copied from upstream (Apache-2.0 OR MIT), as
 `cargo-checkct init` generates them. `driver/src/rng.rs` is the same hook pair without the `rand_core` impls.
 
-## Probes (74 entrypoints x 3 targets: riscv32imac-unknown-none-elf, thumbv7em-none-eabihf, x86_64-unknown-linux-gnu)
+## Probes (85 entrypoints x 3 targets: riscv32imac-unknown-none-elf, thumbv7em-none-eabihf, x86_64-unknown-linux-gnu)
 
 Already present before this round (40, `probes.rs` and `signing.rs`):
 
@@ -74,6 +74,54 @@ Coverage of the secret paths:
 - Sign: skDecode (`sk_decode_*`, `sk_is_well_formed_*`), rho'' hash, ExpandMask, NTT/NTT^-1 (`ntt*`), `response`, `hint_step`.
 - Not probed on purpose: the accept/reject branching of ExpandA (`z < q`) and SampleInBall (public outcome, inputs
   public or hash outputs), and the two rejection `if`s of `attempt`.
+
+### Prepared signing key (`prepared.rs`, 11 probes; HEAD 2668aa9 plus the probes)
+
+`api::signing_key_NN` computes the secret-key half of Sign once (`sign::prepare_sk`: skDecode, three NTTs, ExpandA).
+Secret = the secret key bytes K (32..64) and the packed s1, s2, t0 (128..); rho (0..32) and tr (64..128) are fixed
+public constants (`black_box`ed, so ExpandA stays concrete but is not folded away; `prepare_sk` does not check
+consistency, so they need not come from a real key). Making rho secret would only report ExpandA's rejection test, a
+public-outcome branch. m, ctx and rnd are public in the census.
+
+| probes | what is analyzed |
+|---|---|
+| `prepare_sk_{44,65,87}` | `sign::prepare_sk::<K, L>` |
+| `signing_key_{44,65,87}` | `api::signing_key_NN` end to end (a wrapper: identical instruction counts and check counts to `prepare_sk_NN` on x86_64 and thumbv7em) |
+| `prepare_sk_1x1_{44,65}` | one-polynomial split (K = L = 1) of `prepare_sk`, for the eta = 2 / eta = 4 sets, for riscv32imac where the full-size 44 and 87 probes do not finish |
+| `census_sign_prepared_44` | `signing_key_44` then `sign_prepared_44`; the mirror of `census_sign_internal_44`. There is no per-attempt probe of `sign_prepared_internal` to mirror: `attempt` is private to `sign.rs`, and its secret halves are the unchanged `response_*` and `hint_step_*`. |
+| `control_prepared_branch_44`, `control_prepared_index_44` | positive controls: `prepare_sk_44`, then a branch on a bit of ŝ1, resp. a table lookup indexed by a byte of ŝ1. Must be `insecure` |
+
+Results (BINSEC 0.11.3, checkct profile, 3000 s per probe unless noted; targets run one at a time, containers capped at
+64 GB):
+
+| probe | x86_64 | thumbv7em | riscv32imac |
+|---|---|---|---|
+| `prepare_sk_44` / `65` / `87` | secure / secure / secure | secure / secure / secure | unknown / secure / unknown |
+| `signing_key_44` / `65` / `87` | secure / secure / secure | secure / secure / secure | unknown / secure / unknown |
+| `prepare_sk_1x1_44` / `65` | not run | not run | secure / secure |
+| `census_sign_prepared_44` | insecure (see below) | error (see below) | not run |
+| `control_prepared_branch_44` | insecure | secure (invalid control, see below) | insecure |
+| `control_prepared_index_44` | insecure | insecure | insecure |
+
+- Full-size secure verdicts are not vacuous: 0 pending paths, and for example `prepare_sk_87` on x86_64 visits 3,166,803
+  instructions with 207,975 control-flow and 1,038,098 memory-access checks passing; all of them pass in every secure row.
+- riscv32imac `prepare_sk_44`/`87` (and `signing_key_44`/`87`, identical numbers) are `unknown`: BINSEC stops with one
+  pending path after 457,732 / 641,714 instructions, with no leak found (51,988 / 90,633 control-flow checks, all
+  passing), at the 3000 s timeout. This is the solver-capacity pattern seen for `vec_power2round_*` on this target, not a
+  finding. The eta = 4 set (`65`) finishes and is secure, and the one-polynomial splits for both eta sets are secure.
+- `control_prepared_branch_44` is `secure` on thumbv7em because the compiler turns `if bit {1} else {2}` into a
+  conditional select; it is a valid control only where it reports `insecure` (x86_64, riscv32imac). The index control
+  cannot be compiled away and is `insecure` on all three targets (memory-access leak), so these probes can see a leak
+  in this context.
+- `census_sign_prepared_44`: x86_64 `insecure`, first leak `src/sampling.rs:35` (`sample_in_ball`'s accept test, a
+  public-outcome branch) at 0x22b638, then one pending path and no verdict; the only leak reported. thumbv7em `error`
+  (no `Program status` line): first leak at 0x043db2, again `src/sampling.rs:35`, after 51 s; unchanged when rerun with the
+  container cap raised to 120 GB, so it is not an out-of-memory kill. Same behavior as `census_sign_internal_44` above.
+  A census cannot prove anything, as before; the secret halves of an attempt are covered by `response_*` and
+  `hint_step_*`. riscv32imac census not run (the unprepared census was `unknown` there).
+
+Run with `rx submit pk-ct -- bash checkct/run-prepared.sh '<regex>' '<targets>' <timeout> [<memory>]` or
+`checkct/prepared-leaks.sh` (same arguments; also maps leak addresses to source lines).
 
 Expected-insecure probes. `rej_bounded_poly_eta{2,4}` leak by design: the loop branches on whether a sampled
 nibble is accepted, and which positions are rejected is public (it only changes how many XOF bytes are consumed).

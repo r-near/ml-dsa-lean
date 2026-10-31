@@ -39,6 +39,7 @@ mod verify;
 mod api;
 
 mod extra;
+mod prepared;
 mod probes;
 mod rng;
 mod signing;
