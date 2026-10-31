@@ -23,7 +23,7 @@ noncomputable section
 namespace Impl
 
 /-- [ml_dsa_verified::api::ctx_prefix]: loop body 0:
-    Source: 'src/api.rs', lines 53:4-56:5 -/
+    Source: 'src/api.rs', lines 82:4-85:5 -/
 @[rust_loop_body]
 def api.ctx_prefix_loop.body
   (ctx : Slice Std.U8) («prefix» : Array Std.U8 257#usize) (i : Std.Usize) :
@@ -41,7 +41,7 @@ def api.ctx_prefix_loop.body
   else ok (done «prefix»)
 
 /-- [ml_dsa_verified::api::ctx_prefix]: loop 0:
-    Source: 'src/api.rs', lines 53:4-56:5 -/
+    Source: 'src/api.rs', lines 82:4-85:5 -/
 @[rust_loop]
 def api.ctx_prefix_loop
   (ctx : Slice Std.U8) («prefix» : Array Std.U8 257#usize) (i : Std.Usize) :
@@ -52,7 +52,7 @@ def api.ctx_prefix_loop
     («prefix», i)
 
 /-- [ml_dsa_verified::api::ctx_prefix]:
-    Source: 'src/api.rs', lines 45:0-58:1 -/
+    Source: 'src/api.rs', lines 74:0-87:1 -/
 def api.ctx_prefix
   (ctx : Slice Std.U8) : RustM (Option (Array Std.U8 257#usize)) := do
   let i := Slice.len ctx
@@ -2462,7 +2462,7 @@ def encode.pk_encode
   encode.pk_encode_loop1 t1 out1 0#usize
 
 /-- [ml_dsa_verified::keygen::keygen_internal]: loop body 0:
-    Source: 'src/keygen.rs', lines 81:4-85:5
+    Source: 'src/keygen.rs', lines 84:4-88:5
     Visibility: public -/
 @[rust_loop_body]
 def keygen.keygen_internal_loop0.body
@@ -2483,7 +2483,7 @@ def keygen.keygen_internal_loop0.body
   else ok (done (rho, key))
 
 /-- [ml_dsa_verified::keygen::keygen_internal]: loop 0:
-    Source: 'src/keygen.rs', lines 81:4-85:5
+    Source: 'src/keygen.rs', lines 84:4-88:5
     Visibility: public -/
 @[rust_loop]
 def keygen.keygen_internal_loop0
@@ -2497,7 +2497,7 @@ def keygen.keygen_internal_loop0
     (rho, key, i)
 
 /-- [ml_dsa_verified::keygen::keygen_internal]: loop body 1:
-    Source: 'src/keygen.rs', lines 87:4-90:5
+    Source: 'src/keygen.rs', lines 90:4-93:5
     Visibility: public -/
 @[rust_loop_body]
 def keygen.keygen_internal_loop1.body
@@ -2516,7 +2516,7 @@ def keygen.keygen_internal_loop1.body
   else ok (done rho_prime)
 
 /-- [ml_dsa_verified::keygen::keygen_internal]: loop 1:
-    Source: 'src/keygen.rs', lines 87:4-90:5
+    Source: 'src/keygen.rs', lines 90:4-93:5
     Visibility: public -/
 @[rust_loop]
 def keygen.keygen_internal_loop1
@@ -2530,7 +2530,7 @@ def keygen.keygen_internal_loop1
     (rho_prime, i)
 
 /-- [ml_dsa_verified::keygen::keygen_internal]:
-    Source: 'src/keygen.rs', lines 65:0-113:1
+    Source: 'src/keygen.rs', lines 68:0-116:1
     Visibility: public -/
 def keygen.keygen_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params)
@@ -2575,7 +2575,7 @@ def keygen.keygen_internal
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::keygen_44]:
-    Source: 'src/api.rs', lines 66:0-71:1
+    Source: 'src/api.rs', lines 95:0-100:1
     Visibility: public -/
 def api.keygen_44
   (xi : Array Std.U8 32#usize) :
@@ -3818,7 +3818,7 @@ def encode.sig_encode
   ok (index_mut_back s1)
 
 /-- [ml_dsa_verified::sign::sign_prepared_internal]: loop body 0:
-    Source: 'src/sign.rs', lines 300:4-315:1
+    Source: 'src/sign.rs', lines 303:4-318:1
     Visibility: public -/
 @[rust_loop_body]
 def sign.sign_prepared_internal_loop.body
@@ -3851,7 +3851,7 @@ def sign.sign_prepared_internal_loop.body
   else ok (done (false, sig))
 
 /-- [ml_dsa_verified::sign::sign_prepared_internal]: loop 0:
-    Source: 'src/sign.rs', lines 300:4-315:1
+    Source: 'src/sign.rs', lines 303:4-318:1
     Visibility: public -/
 @[rust_loop]
 def sign.sign_prepared_internal_loop
@@ -3870,7 +3870,7 @@ def sign.sign_prepared_internal_loop
     kappa
 
 /-- [ml_dsa_verified::sign::sign_prepared_internal]:
-    Source: 'src/sign.rs', lines 270:0-315:1
+    Source: 'src/sign.rs', lines 273:0-318:1
     Visibility: public -/
 def sign.sign_prepared_internal
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -4200,7 +4200,7 @@ def encode.sk_decode
   ok { rho := a9, key := a10, tr := a11, s1 := a12, s2 := a13, t0 := a14 }
 
 /-- [ml_dsa_verified::sign::prepare_sk_into]:
-    Source: 'src/sign.rs', lines 239:0-253:1
+    Source: 'src/sign.rs', lines 242:0-256:1
     Visibility: public -/
 def sign.prepare_sk_into
   {K : Std.Usize} {L : Std.Usize} (p : params.Params) (sk : Slice Std.U8)
@@ -4223,7 +4223,7 @@ def sign.prepare_sk_into
     }
 
 /-- [ml_dsa_verified::sign::{ml_dsa_verified::sign::PreparedSk<K, L>}::zeroed]:
-    Source: 'src/sign.rs', lines 207:4-216:5 -/
+    Source: 'src/sign.rs', lines 209:4-218:5 -/
 def sign.PreparedSk.zeroed
   (K : Std.Usize) (L : Std.Usize) : RustM (sign.PreparedSk K L) := do
   let a := Array.repeat 256#usize 0#u32
@@ -4248,7 +4248,7 @@ def sign.PreparedSk.zeroed
     }
 
 /-- [ml_dsa_verified::sign::sign_internal]:
-    Source: 'src/sign.rs', lines 330:0-341:1
+    Source: 'src/sign.rs', lines 334:0-345:1
     Visibility: public -/
 def sign.sign_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (sk : Slice Std.U8)
@@ -4261,7 +4261,7 @@ def sign.sign_internal
   sign.sign_prepared_internal p ps1 m_prefix m rnd sig
 
 /-- [ml_dsa_verified::api::sign_44]:
-    Source: 'src/api.rs', lines 75:0-86:1
+    Source: 'src/api.rs', lines 104:0-115:1
     Visibility: public -/
 def api.sign_44
   (sk : Array Std.U8 2560#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5004,7 +5004,7 @@ def verify.verify_internal
         verify.verify_decoded p vk m_prefix m c_tilde z h
 
 /-- [ml_dsa_verified::api::verify_44]:
-    Source: 'src/api.rs', lines 89:0-95:1
+    Source: 'src/api.rs', lines 118:0-124:1
     Visibility: public -/
 def api.verify_44
   (pk : Array Std.U8 1312#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5027,7 +5027,7 @@ def api.verify_44
     verify.verify_internal 4#usize 4#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_44]:
-    Source: 'src/api.rs', lines 98:0-105:1
+    Source: 'src/api.rs', lines 127:0-134:1
     Visibility: public -/
 def api.sign_internal_44
   (sk : Array Std.U8 2560#usize) (m_prime : Slice Std.U8)
@@ -5046,7 +5046,7 @@ def api.sign_internal_44
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_44]:
-    Source: 'src/api.rs', lines 108:0-110:1
+    Source: 'src/api.rs', lines 137:0-139:1
     Visibility: public -/
 def api.verify_internal_44
   (pk : Array Std.U8 1312#usize) (m_prime : Slice Std.U8)
@@ -5060,7 +5060,7 @@ def api.verify_internal_44
   verify.verify_internal 4#usize 4#usize p s s1 m_prime s2
 
 /-- [ml_dsa_verified::api::verifying_key_44]:
-    Source: 'src/api.rs', lines 131:0-133:1
+    Source: 'src/api.rs', lines 160:0-162:1
     Visibility: public -/
 def api.verifying_key_44
   (pk : Array Std.U8 1312#usize) : RustM api.VerifyingKey44 := do
@@ -5090,7 +5090,7 @@ def verify.verify_prepared_internal
       verify.verify_decoded p vk m_prefix m c_tilde z h
 
 /-- [ml_dsa_verified::api::verify_prepared_44]:
-    Source: 'src/api.rs', lines 137:0-143:1
+    Source: 'src/api.rs', lines 166:0-172:1
     Visibility: public -/
 def api.verify_prepared_44
   (vk : api.VerifyingKey44) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5112,7 +5112,7 @@ def api.verify_prepared_44
     verify.verify_prepared_internal p vk.inner s m s1
 
 /-- [ml_dsa_verified::api::verify_internal_prepared_44]:
-    Source: 'src/api.rs', lines 147:0-149:1
+    Source: 'src/api.rs', lines 176:0-178:1
     Visibility: public -/
 def api.verify_internal_prepared_44
   (vk : api.VerifyingKey44) (m_prime : Slice Std.U8)
@@ -5125,7 +5125,7 @@ def api.verify_internal_prepared_44
   verify.verify_prepared_internal p vk.inner s m_prime s1
 
 /-- [ml_dsa_verified::api::signing_key_44]:
-    Source: 'src/api.rs', lines 170:0-174:1
+    Source: 'src/api.rs', lines 199:0-203:1
     Visibility: public -/
 def api.signing_key_44
   (sk : Array Std.U8 2560#usize) : RustM api.SigningKey44 := do
@@ -5139,7 +5139,7 @@ def api.signing_key_44
   ok sk1
 
 /-- [ml_dsa_verified::api::sign_prepared_44]:
-    Source: 'src/api.rs', lines 179:0-190:1
+    Source: 'src/api.rs', lines 208:0-219:1
     Visibility: public -/
 def api.sign_prepared_44
   (ssk : api.SigningKey44) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5166,7 +5166,7 @@ def api.sign_prepared_44
     else ok none
 
 /-- [ml_dsa_verified::api::sign_internal_prepared_44]:
-    Source: 'src/api.rs', lines 194:0-201:1
+    Source: 'src/api.rs', lines 223:0-230:1
     Visibility: public -/
 def api.sign_internal_prepared_44
   (ssk : api.SigningKey44) (m_prime : Slice Std.U8)
@@ -5308,7 +5308,7 @@ def encode.sk_is_well_formed
     true 0#usize
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_44]:
-    Source: 'src/api.rs', lines 213:0-215:1
+    Source: 'src/api.rs', lines 242:0-244:1
     Visibility: public -/
 def api.sk_is_well_formed_44 (sk : Array Std.U8 2560#usize) : RustM Bool := do
   let p ← params.ML_DSA_44
@@ -5316,7 +5316,7 @@ def api.sk_is_well_formed_44 (sk : Array Std.U8 2560#usize) : RustM Bool := do
   encode.sk_is_well_formed 4#usize 4#usize p s
 
 /-- [ml_dsa_verified::keygen::poly_diff]: loop body 0:
-    Source: 'src/keygen.rs', lines 119:4-122:5 -/
+    Source: 'src/keygen.rs', lines 122:4-125:5 -/
 @[rust_loop_body]
 def keygen.poly_diff_loop.body
   (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) (diff : Std.U32)
@@ -5334,7 +5334,7 @@ def keygen.poly_diff_loop.body
   else ok (done diff)
 
 /-- [ml_dsa_verified::keygen::poly_diff]: loop 0:
-    Source: 'src/keygen.rs', lines 119:4-122:5 -/
+    Source: 'src/keygen.rs', lines 122:4-125:5 -/
 @[rust_loop]
 def keygen.poly_diff_loop
   (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) (diff : Std.U32)
@@ -5346,7 +5346,7 @@ def keygen.poly_diff_loop
     (diff, i)
 
 /-- [ml_dsa_verified::keygen::poly_diff]:
-    Source: 'src/keygen.rs', lines 116:0-124:1 -/
+    Source: 'src/keygen.rs', lines 119:0-127:1 -/
 @[reducible]
 def keygen.poly_diff
   (a : Array Std.U32 256#usize) (b : Array Std.U32 256#usize) :
@@ -5355,7 +5355,7 @@ def keygen.poly_diff
   keygen.poly_diff_loop a b 0#u32 0#usize
 
 /-- [ml_dsa_verified::keygen::vec_diff]: loop body 0:
-    Source: 'src/keygen.rs', lines 130:4-133:5 -/
+    Source: 'src/keygen.rs', lines 133:4-136:5 -/
 @[rust_loop_body]
 def keygen.vec_diff_loop.body
   {K : Std.Usize} (a : Array (Array Std.U32 256#usize) K)
@@ -5373,7 +5373,7 @@ def keygen.vec_diff_loop.body
   else ok (done diff)
 
 /-- [ml_dsa_verified::keygen::vec_diff]: loop 0:
-    Source: 'src/keygen.rs', lines 130:4-133:5 -/
+    Source: 'src/keygen.rs', lines 133:4-136:5 -/
 @[rust_loop]
 def keygen.vec_diff_loop
   {K : Std.Usize} (a : Array (Array Std.U32 256#usize) K)
@@ -5385,7 +5385,7 @@ def keygen.vec_diff_loop
     (diff, i)
 
 /-- [ml_dsa_verified::keygen::vec_diff]:
-    Source: 'src/keygen.rs', lines 127:0-135:1 -/
+    Source: 'src/keygen.rs', lines 130:0-138:1 -/
 @[reducible]
 def keygen.vec_diff
   {K : Std.Usize} (a : Array (Array Std.U32 256#usize) K)
@@ -5395,7 +5395,7 @@ def keygen.vec_diff
   keygen.vec_diff_loop a b 0#u32 0#usize
 
 /-- [ml_dsa_verified::keygen::pk_check]:
-    Source: 'src/keygen.rs', lines 152:0-179:1 -/
+    Source: 'src/keygen.rs', lines 155:0-182:1 -/
 def keygen.pk_check
   {K : Std.Usize} {L : Std.Usize}
   (a_hat : Array (Array (Array Std.U32 256#usize) L) K)
@@ -5425,7 +5425,7 @@ def keygen.pk_check
   else ok (false, pk1)
 
 /-- [ml_dsa_verified::keygen::pk_from_sk]:
-    Source: 'src/keygen.rs', lines 192:0-206:1
+    Source: 'src/keygen.rs', lines 195:0-209:1
     Visibility: public -/
 def keygen.pk_from_sk
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (sk : Slice Std.U8)
@@ -5441,7 +5441,7 @@ def keygen.pk_from_sk
   else ok (false, pk)
 
 /-- [ml_dsa_verified::api::pk_from_sk_44]:
-    Source: 'src/api.rs', lines 233:0-240:1
+    Source: 'src/api.rs', lines 262:0-269:1
     Visibility: public -/
 def api.pk_from_sk_44
   (sk : Array Std.U8 2560#usize) :
@@ -5483,7 +5483,7 @@ def params.ML_DSA_65 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_65]:
-    Source: 'src/api.rs', lines 248:0-253:1
+    Source: 'src/api.rs', lines 277:0-282:1
     Visibility: public -/
 def api.keygen_65
   (xi : Array Std.U8 32#usize) :
@@ -5500,7 +5500,7 @@ def api.keygen_65
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_65]:
-    Source: 'src/api.rs', lines 257:0-268:1
+    Source: 'src/api.rs', lines 286:0-297:1
     Visibility: public -/
 def api.sign_65
   (sk : Array Std.U8 4032#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5528,7 +5528,7 @@ def api.sign_65
     else ok none
 
 /-- [ml_dsa_verified::api::verify_65]:
-    Source: 'src/api.rs', lines 271:0-277:1
+    Source: 'src/api.rs', lines 300:0-306:1
     Visibility: public -/
 def api.verify_65
   (pk : Array Std.U8 1952#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5551,7 +5551,7 @@ def api.verify_65
     verify.verify_internal 6#usize 5#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_65]:
-    Source: 'src/api.rs', lines 280:0-287:1
+    Source: 'src/api.rs', lines 309:0-316:1
     Visibility: public -/
 def api.sign_internal_65
   (sk : Array Std.U8 4032#usize) (m_prime : Slice Std.U8)
@@ -5570,7 +5570,7 @@ def api.sign_internal_65
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_65]:
-    Source: 'src/api.rs', lines 290:0-292:1
+    Source: 'src/api.rs', lines 319:0-321:1
     Visibility: public -/
 def api.verify_internal_65
   (pk : Array Std.U8 1952#usize) (m_prime : Slice Std.U8)
@@ -5584,7 +5584,7 @@ def api.verify_internal_65
   verify.verify_internal 6#usize 5#usize p s s1 m_prime s2
 
 /-- [ml_dsa_verified::api::verifying_key_65]:
-    Source: 'src/api.rs', lines 313:0-315:1
+    Source: 'src/api.rs', lines 342:0-344:1
     Visibility: public -/
 def api.verifying_key_65
   (pk : Array Std.U8 1952#usize) : RustM api.VerifyingKey65 := do
@@ -5593,7 +5593,7 @@ def api.verifying_key_65
   ok { inner := pv }
 
 /-- [ml_dsa_verified::api::verify_prepared_65]:
-    Source: 'src/api.rs', lines 319:0-325:1
+    Source: 'src/api.rs', lines 348:0-354:1
     Visibility: public -/
 def api.verify_prepared_65
   (vk : api.VerifyingKey65) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5615,7 +5615,7 @@ def api.verify_prepared_65
     verify.verify_prepared_internal p vk.inner s m s1
 
 /-- [ml_dsa_verified::api::verify_internal_prepared_65]:
-    Source: 'src/api.rs', lines 329:0-331:1
+    Source: 'src/api.rs', lines 358:0-360:1
     Visibility: public -/
 def api.verify_internal_prepared_65
   (vk : api.VerifyingKey65) (m_prime : Slice Std.U8)
@@ -5628,7 +5628,7 @@ def api.verify_internal_prepared_65
   verify.verify_prepared_internal p vk.inner s m_prime s1
 
 /-- [ml_dsa_verified::api::signing_key_65]:
-    Source: 'src/api.rs', lines 352:0-356:1
+    Source: 'src/api.rs', lines 381:0-385:1
     Visibility: public -/
 def api.signing_key_65
   (sk : Array Std.U8 4032#usize) : RustM api.SigningKey65 := do
@@ -5642,7 +5642,7 @@ def api.signing_key_65
   ok sk1
 
 /-- [ml_dsa_verified::api::sign_prepared_65]:
-    Source: 'src/api.rs', lines 361:0-372:1
+    Source: 'src/api.rs', lines 390:0-401:1
     Visibility: public -/
 def api.sign_prepared_65
   (ssk : api.SigningKey65) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5669,7 +5669,7 @@ def api.sign_prepared_65
     else ok none
 
 /-- [ml_dsa_verified::api::sign_internal_prepared_65]:
-    Source: 'src/api.rs', lines 376:0-383:1
+    Source: 'src/api.rs', lines 405:0-412:1
     Visibility: public -/
 def api.sign_internal_prepared_65
   (ssk : api.SigningKey65) (m_prime : Slice Std.U8)
@@ -5687,7 +5687,7 @@ def api.sign_internal_prepared_65
   else ok none
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_65]:
-    Source: 'src/api.rs', lines 395:0-397:1
+    Source: 'src/api.rs', lines 424:0-426:1
     Visibility: public -/
 def api.sk_is_well_formed_65 (sk : Array Std.U8 4032#usize) : RustM Bool := do
   let p ← params.ML_DSA_65
@@ -5695,7 +5695,7 @@ def api.sk_is_well_formed_65 (sk : Array Std.U8 4032#usize) : RustM Bool := do
   encode.sk_is_well_formed 6#usize 5#usize p s
 
 /-- [ml_dsa_verified::api::pk_from_sk_65]:
-    Source: 'src/api.rs', lines 415:0-422:1
+    Source: 'src/api.rs', lines 444:0-451:1
     Visibility: public -/
 def api.pk_from_sk_65
   (sk : Array Std.U8 4032#usize) :
@@ -5737,7 +5737,7 @@ def params.ML_DSA_87 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_87]:
-    Source: 'src/api.rs', lines 430:0-435:1
+    Source: 'src/api.rs', lines 459:0-464:1
     Visibility: public -/
 def api.keygen_87
   (xi : Array Std.U8 32#usize) :
@@ -5754,7 +5754,7 @@ def api.keygen_87
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_87]:
-    Source: 'src/api.rs', lines 439:0-450:1
+    Source: 'src/api.rs', lines 468:0-479:1
     Visibility: public -/
 def api.sign_87
   (sk : Array Std.U8 4896#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5782,7 +5782,7 @@ def api.sign_87
     else ok none
 
 /-- [ml_dsa_verified::api::verify_87]:
-    Source: 'src/api.rs', lines 453:0-459:1
+    Source: 'src/api.rs', lines 482:0-488:1
     Visibility: public -/
 def api.verify_87
   (pk : Array Std.U8 2592#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5805,7 +5805,7 @@ def api.verify_87
     verify.verify_internal 8#usize 7#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_87]:
-    Source: 'src/api.rs', lines 462:0-469:1
+    Source: 'src/api.rs', lines 491:0-498:1
     Visibility: public -/
 def api.sign_internal_87
   (sk : Array Std.U8 4896#usize) (m_prime : Slice Std.U8)
@@ -5824,7 +5824,7 @@ def api.sign_internal_87
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_87]:
-    Source: 'src/api.rs', lines 472:0-474:1
+    Source: 'src/api.rs', lines 501:0-503:1
     Visibility: public -/
 def api.verify_internal_87
   (pk : Array Std.U8 2592#usize) (m_prime : Slice Std.U8)
@@ -5838,7 +5838,7 @@ def api.verify_internal_87
   verify.verify_internal 8#usize 7#usize p s s1 m_prime s2
 
 /-- [ml_dsa_verified::api::verifying_key_87]:
-    Source: 'src/api.rs', lines 495:0-497:1
+    Source: 'src/api.rs', lines 524:0-526:1
     Visibility: public -/
 def api.verifying_key_87
   (pk : Array Std.U8 2592#usize) : RustM api.VerifyingKey87 := do
@@ -5847,7 +5847,7 @@ def api.verifying_key_87
   ok { inner := pv }
 
 /-- [ml_dsa_verified::api::verify_prepared_87]:
-    Source: 'src/api.rs', lines 501:0-507:1
+    Source: 'src/api.rs', lines 530:0-536:1
     Visibility: public -/
 def api.verify_prepared_87
   (vk : api.VerifyingKey87) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5869,7 +5869,7 @@ def api.verify_prepared_87
     verify.verify_prepared_internal p vk.inner s m s1
 
 /-- [ml_dsa_verified::api::verify_internal_prepared_87]:
-    Source: 'src/api.rs', lines 511:0-513:1
+    Source: 'src/api.rs', lines 540:0-542:1
     Visibility: public -/
 def api.verify_internal_prepared_87
   (vk : api.VerifyingKey87) (m_prime : Slice Std.U8)
@@ -5882,7 +5882,7 @@ def api.verify_internal_prepared_87
   verify.verify_prepared_internal p vk.inner s m_prime s1
 
 /-- [ml_dsa_verified::api::signing_key_87]:
-    Source: 'src/api.rs', lines 534:0-538:1
+    Source: 'src/api.rs', lines 563:0-567:1
     Visibility: public -/
 def api.signing_key_87
   (sk : Array Std.U8 4896#usize) : RustM api.SigningKey87 := do
@@ -5896,7 +5896,7 @@ def api.signing_key_87
   ok sk1
 
 /-- [ml_dsa_verified::api::sign_prepared_87]:
-    Source: 'src/api.rs', lines 543:0-554:1
+    Source: 'src/api.rs', lines 572:0-583:1
     Visibility: public -/
 def api.sign_prepared_87
   (ssk : api.SigningKey87) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5923,7 +5923,7 @@ def api.sign_prepared_87
     else ok none
 
 /-- [ml_dsa_verified::api::sign_internal_prepared_87]:
-    Source: 'src/api.rs', lines 558:0-565:1
+    Source: 'src/api.rs', lines 587:0-594:1
     Visibility: public -/
 def api.sign_internal_prepared_87
   (ssk : api.SigningKey87) (m_prime : Slice Std.U8)
@@ -5941,7 +5941,7 @@ def api.sign_internal_prepared_87
   else ok none
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_87]:
-    Source: 'src/api.rs', lines 577:0-579:1
+    Source: 'src/api.rs', lines 606:0-608:1
     Visibility: public -/
 def api.sk_is_well_formed_87 (sk : Array Std.U8 4896#usize) : RustM Bool := do
   let p ← params.ML_DSA_87
@@ -5949,7 +5949,7 @@ def api.sk_is_well_formed_87 (sk : Array Std.U8 4896#usize) : RustM Bool := do
   encode.sk_is_well_formed 8#usize 7#usize p s
 
 /-- [ml_dsa_verified::api::pk_from_sk_87]:
-    Source: 'src/api.rs', lines 597:0-604:1
+    Source: 'src/api.rs', lines 626:0-633:1
     Visibility: public -/
 def api.pk_from_sk_87
   (sk : Array Std.U8 4896#usize) :
