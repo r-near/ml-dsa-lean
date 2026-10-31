@@ -65,7 +65,7 @@ fn on_thread(body: impl FnOnce() + Send + 'static) -> usize {
 
 macro_rules! set {
     ($tag:literal, $keygen:ident, $sign:ident, $verify:ident, $sign_i:ident, $verify_i:ident, $wf:ident,
-     $out:ident) => {{
+     $vkey:ident, $vprep:ident, $vprep_i:ident, $skey:ident, $sprep:ident, $sprep_i:ident, $out:ident) => {{
         let xi = [0x42u8; 32];
         let (pk, sk) = api::$keygen(&xi);
         let rnd = [0u8; 32];
@@ -84,6 +84,21 @@ macro_rules! set {
         $out.push((concat!("sign_internal_", $tag), rep(&|| { let (sk, msg) = (sk, msg.clone()); on_thread(move || { mark(); black_box(api::$sign_i(black_box(&sk), &msg, &rnd)); }) })));
         $out.push((concat!("verify_internal_", $tag), rep(&|| { let (pk, sig_i, msg) = (pk, sig_i, msg.clone()); on_thread(move || { mark(); black_box(api::$verify_i(black_box(&pk), &msg, &sig_i)); }) })));
         $out.push((concat!("sk_is_well_formed_", $tag), rep(&|| { let sk = sk; on_thread(move || { mark(); black_box(api::$wf(black_box(&sk))); }) })));
+        // Prepared keys. The constructors return 20-81 KB by value; the result slot is in the caller's frame, above
+        // the mark, so these numbers are the callee's stack only (the README adds the result slot).
+        let vk = api::$vkey(&pk);
+        let ssk0 = api::$skey(&sk);
+        assert!(api::$vprep(&vk, &msg, &ctx, &sig));
+        assert_eq!(api::$sprep(&ssk0, &msg, &ctx, &rnd), Some(sig));
+        assert!(api::$vprep_i(&vk, &msg, &sig_i));
+        assert_eq!(api::$sprep_i(&ssk0, &msg, &rnd), Some(sig_i));
+        drop(ssk0);
+        $out.push((concat!("verifying_key_", $tag), rep(&|| { let pk = pk; on_thread(move || { mark(); black_box(api::$vkey(black_box(&pk))); }) })));
+        $out.push((concat!("signing_key_", $tag), rep(&|| { let sk = sk; on_thread(move || { mark(); black_box(api::$skey(black_box(&sk))); }) })));
+        $out.push((concat!("verify_prepared_", $tag), rep(&|| { let (vk, sig, msg, ctx) = (vk.clone(), sig, msg.clone(), ctx.clone()); on_thread(move || { mark(); black_box(api::$vprep(black_box(&vk), &msg, &ctx, &sig)); }) })));
+        $out.push((concat!("verify_internal_prepared_", $tag), rep(&|| { let (vk, sig_i, msg) = (vk.clone(), sig_i, msg.clone()); on_thread(move || { mark(); black_box(api::$vprep_i(black_box(&vk), &msg, &sig_i)); }) })));
+        $out.push((concat!("sign_prepared_", $tag), rep(&|| { let (ssk, msg, ctx) = (api::$skey(&sk), msg.clone(), ctx.clone()); on_thread(move || { mark(); black_box(api::$sprep(black_box(&ssk), &msg, &ctx, &rnd)); }) })));
+        $out.push((concat!("sign_internal_prepared_", $tag), rep(&|| { let (ssk, msg) = (api::$skey(&sk), msg.clone()); on_thread(move || { mark(); black_box(api::$sprep_i(black_box(&ssk), &msg, &rnd)); }) })));
     }};
 }
 
@@ -92,9 +107,15 @@ fn main() {
     // Baseline: a thread that does nothing between mark and return.
     let base = (0..3).map(|_| on_thread(|| { mark(); black_box(0u8); })).max().unwrap();
     println!("dyn baseline {base}");
-    set!("44", keygen_44, sign_44, verify_44, sign_internal_44, verify_internal_44, sk_is_well_formed_44, out);
-    set!("65", keygen_65, sign_65, verify_65, sign_internal_65, verify_internal_65, sk_is_well_formed_65, out);
-    set!("87", keygen_87, sign_87, verify_87, sign_internal_87, verify_internal_87, sk_is_well_formed_87, out);
+    set!("44", keygen_44, sign_44, verify_44, sign_internal_44, verify_internal_44, sk_is_well_formed_44,
+        verifying_key_44, verify_prepared_44, verify_internal_prepared_44, signing_key_44, sign_prepared_44,
+        sign_internal_prepared_44, out);
+    set!("65", keygen_65, sign_65, verify_65, sign_internal_65, verify_internal_65, sk_is_well_formed_65,
+        verifying_key_65, verify_prepared_65, verify_internal_prepared_65, signing_key_65, sign_prepared_65,
+        sign_internal_prepared_65, out);
+    set!("87", keygen_87, sign_87, verify_87, sign_internal_87, verify_internal_87, sk_is_well_formed_87,
+        verifying_key_87, verify_prepared_87, verify_internal_prepared_87, signing_key_87, sign_prepared_87,
+        sign_internal_prepared_87, out);
     for (name, bytes) in out {
         println!("dyn {name} {bytes}");
     }

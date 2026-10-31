@@ -341,6 +341,50 @@ theorem ntt_vec_spec {N : Usize} {k : Nat} (v : Array (Array U32 256#usize) N) (
   intro r hr
   rwa [NTTVec_eq]
 
+/-! ## `ntt_vec_into` (the same loop writing into a caller-provided array) -/
+
+theorem ntt_vec_into_loop_spec {N : Usize} {k : Nat} (v : Array (Array U32 256#usize) N) (V : Vector Poly k)
+    (hv : ReprVec v V) :
+    ntt.ntt_vec_into_loop v (Array.repeat N (Array.repeat 256#usize 0#u32)) 0#usize ⦃ r =>
+      ReprVec r ((List.range' 0 k).foldl (nttVecF V) (Vector.replicate k Poly.zero)) ⦄ := by
+  have hN : N.val = k := hv.len
+  unfold ntt.ntt_vec_into_loop
+  apply loop.spec_decr_nat
+    (fun (p : Array (Array U32 256#usize) N × Usize) => N.val - p.2.val)
+    (fun p => p.2.val ≤ N.val ∧
+       ReprVec p.1 ((List.range' 0 p.2.val).foldl (nttVecF V) (Vector.replicate k Poly.zero)))
+  · rintro ⟨out, i⟩ ⟨h1, h2⟩
+    dsimp only at h1 h2
+    simp only [ntt.ntt_vec_into_loop.body]
+    split
+    · rename_i hi
+      have hi' : i.val < N.val := hi
+      have hik : i.val < k := by omega
+      step with hv.index_spec i hik as ⟨t, ht⟩
+      step with ntt_in_place_spec t ht.canon as ⟨t1, ht1, ht2⟩
+      step*
+      have e : i1.val = i.val + 1 := by scalar_tac
+      rw [e, fold_step_range]
+      have hr : Repr t1 (NTT V[i.val]!) := ⟨ht1, by rw [ht2, ht.eq, vget! V i.val hik]⟩
+      rw [a_post]
+      exact ⟨by scalar_tac, h2.set i t1 _ hr hik, by scalar_tac⟩
+    · rename_i hi
+      have hi' : i.val = N.val := by scalar_tac
+      simp only [WP.spec_ok]
+      rw [hi', hN] at h2
+      exact h2
+  · exact ⟨by simp, by simpa using ReprVec_repeat_zero N k hN⟩
+
+/-- `ntt_vec_into v out` (whatever `out` held) represents `NTTVec V`. -/
+@[step]
+theorem ntt_vec_into_spec {N : Usize} {k : Nat} (v : Array (Array U32 256#usize) N) (out : Array (Array U32 256#usize) N)
+    (V : Vector Poly k) (hv : ReprVec v V) :
+    ntt.ntt_vec_into v out ⦃ r => ReprVec r (Spec.NTTVec V) ⦄ := by
+  unfold ntt.ntt_vec_into
+  apply WP.spec_mono (ntt_vec_into_loop_spec v V hv)
+  intro r hr
+  rwa [NTTVec_eq]
+
 theorem ntt_vec_correct {N : Usize} {k : Nat} (v : Array (Array U32 256#usize) N) (V : Vector Poly k)
     (hv : ReprVec v V) :
     ∃ r, ntt.ntt_vec v = ok r ∧ ReprVec r (Spec.NTTVec V) :=

@@ -15,9 +15,11 @@ tr); `api.sign_prepared_NN` and `api.sign_internal_prepared_NN` sign with it. Pr
 * `sign_prepared_NN_exact`, `sign_internal_prepared_NN_exact`: the prepared functions agree exactly with the
   unbounded FIPS 204 Algorithm 2 (resp. 7) on the key bytes `ssk` was built from, in the style of `sign_NN_exact`.
 
-The equality is a rewrite: the extracted `sign_internal` is `prepare_sk` followed by `sign_prepared_internal`, and
-`sign_prepared_NN` is `sign_NN` with the first half replaced by the key it was handed. The pieces are proved in
-`Proofs/Sign.lean` (`prepare_sk_spec`, `sign_prepared_core`) and `Proofs/PartialSign.lean` (`prepare_sk_partial`,
+The equality is a rewrite: the extracted `sign_internal` is `prepSk` (`prepare_sk_into` on the all-zero `PreparedSk`;
+see `Proofs/Sign.lean`) followed by `sign_prepared_internal`, and `sign_prepared_NN` is `sign_NN` with the first half
+replaced by the key it was handed. `signing_key_NN` is the same `prepSk`, returned through `core.mem.replace` (the
+Rust uses it so that the constructor's frame keeps no copy of the key). The pieces are proved in `Proofs/Sign.lean`
+(`prepare_sk_spec`, `sign_prepared_core`) and `Proofs/PartialSign.lean` (`prepare_sk_partial`,
 `sign_prepared_partial`).
 
 Not covered by the Lean model: the `Drop` impl of `PreparedSk` under the `zeroize` feature (Aeneas models neither
@@ -93,20 +95,20 @@ theorem sign_internal_prepared_87_def (ssk : api.SigningKey87) (m : Slice U8) (r
     api.sign_internal_prepared_87 ssk m rnd =
       signInternalPreparedAPI 4627#usize 8#usize 7#usize params.ML_DSA_87 ssk.inner m rnd := rfl
 
-/-! ## `sign_internal = prepare_sk ; sign_prepared_internal` -/
+/-! ## `sign_internal = prepSk ; sign_prepared_internal` -/
 
-/-- For a key `ps` that `prepare_sk` returns for `sk`, the unprepared `sign_internal` and the prepared
+/-- For a key `ps` that `prepSk` returns for `sk`, the unprepared `sign_internal` and the prepared
 `sign_prepared_internal` are the same computation. -/
 theorem sign_internal_prepared_eq {ip : Impl.params.Params} {K L : Usize}
     (sk m_prefix m : Slice U8) (rnd : Array U8 32#usize) (sig : Slice U8)
-    (ps : sign.PreparedSk K L) (hps : sign.prepare_sk K L ip sk = ok ps) :
+    (ps : sign.PreparedSk K L) (hps : prepSk K L ip sk = ok ps) :
     sign.sign_internal K L ip sk m_prefix m rnd sig = sign.sign_prepared_internal ip ps m_prefix m rnd sig := by
-  unfold sign.sign_internal
-  simp [hps]
+  rw [sign_internal_eq_prep, hps]
+  rfl
 
 /-- The API bodies: `signPreparedAPI` on a prepared key equals `signAPI` on the key bytes. -/
 theorem signPreparedAPI_eq {ip : Impl.params.Params} {K L : Usize} (n N : Usize) (sk : Array U8 n)
-    (ps : sign.PreparedSk K L) (hps : sign.prepare_sk K L ip (Array.to_slice sk) = ok ps)
+    (ps : sign.PreparedSk K L) (hps : prepSk K L ip (Array.to_slice sk) = ok ps)
     (m ctx : Slice U8) (rnd : Array U8 32#usize) :
     signPreparedAPI N K L (ok ip) ps m ctx rnd = signAPI n N K L (ok ip) sk m ctx rnd := by
   have key : ∀ s1 m' s2, sign.sign_internal K L ip (Array.to_slice sk) s1 m' rnd s2 =
@@ -118,7 +120,7 @@ theorem signPreparedAPI_eq {ip : Impl.params.Params} {K L : Usize} (n N : Usize)
   rfl
 
 theorem signInternalPreparedAPI_eq {ip : Impl.params.Params} {K L : Usize} (n N : Usize) (sk : Array U8 n)
-    (ps : sign.PreparedSk K L) (hps : sign.prepare_sk K L ip (Array.to_slice sk) = ok ps)
+    (ps : sign.PreparedSk K L) (hps : prepSk K L ip (Array.to_slice sk) = ok ps)
     (m : Slice U8) (rnd : Array U8 32#usize) :
     signInternalPreparedAPI N K L (ok ip) ps m rnd = signInternalAPI n N K L (ok ip) sk m rnd := by
   have key : ∀ s1 m' s2, sign.sign_internal K L ip (Array.to_slice sk) s1 m' rnd s2 =
@@ -129,30 +131,54 @@ theorem signInternalPreparedAPI_eq {ip : Impl.params.Params} {K L : Usize} (n N 
 
 /-! ## `signing_key_NN` -/
 
+/-- `signing_key_44` is `prepSk` (the zero destination and `prepare_sk_into`) wrapped in the key object. -/
+theorem signing_key_44_eq (sk : Array U8 2560#usize) :
+    api.signing_key_44 sk = (do
+      let p ← params.ML_DSA_44
+      let ps ← prepSk 4#usize 4#usize p (Array.to_slice sk)
+      ok ({ inner := ps } : api.SigningKey44)) := by
+  unfold api.signing_key_44 prepSk
+  simp only [lift, sign.PreparedSk.zeroed, core.mem.replace, Std.bind_tc_ok] <;> rfl
+
 theorem signing_key_44_prepare (sk : Array U8 2560#usize) (ssk : api.SigningKey44)
     (h : api.signing_key_44 sk = ok ssk) (ip : Impl.params.Params) (hip : params.ML_DSA_44 = ok ip) :
-    sign.prepare_sk 4#usize 4#usize ip (Array.to_slice sk) = ok ssk.inner := by
-  unfold api.signing_key_44 at h
-  rw [hip] at h
-  rcases hv : sign.prepare_sk 4#usize 4#usize ip (Array.to_slice sk) with e | pv | _ <;> simp [lift, hv] at h
+    prepSk 4#usize 4#usize ip (Array.to_slice sk) = ok ssk.inner := by
+  rw [signing_key_44_eq, hip] at h
+  rcases hv : prepSk 4#usize 4#usize ip (Array.to_slice sk) with e | pv | _ <;> simp [hv] at h
   subst h
   rfl
+
+/-- `signing_key_65` is `prepSk` (the zero destination and `prepare_sk_into`) wrapped in the key object. -/
+theorem signing_key_65_eq (sk : Array U8 4032#usize) :
+    api.signing_key_65 sk = (do
+      let p ← params.ML_DSA_65
+      let ps ← prepSk 6#usize 5#usize p (Array.to_slice sk)
+      ok ({ inner := ps } : api.SigningKey65)) := by
+  unfold api.signing_key_65 prepSk
+  simp only [lift, sign.PreparedSk.zeroed, core.mem.replace, Std.bind_tc_ok] <;> rfl
 
 theorem signing_key_65_prepare (sk : Array U8 4032#usize) (ssk : api.SigningKey65)
     (h : api.signing_key_65 sk = ok ssk) (ip : Impl.params.Params) (hip : params.ML_DSA_65 = ok ip) :
-    sign.prepare_sk 6#usize 5#usize ip (Array.to_slice sk) = ok ssk.inner := by
-  unfold api.signing_key_65 at h
-  rw [hip] at h
-  rcases hv : sign.prepare_sk 6#usize 5#usize ip (Array.to_slice sk) with e | pv | _ <;> simp [lift, hv] at h
+    prepSk 6#usize 5#usize ip (Array.to_slice sk) = ok ssk.inner := by
+  rw [signing_key_65_eq, hip] at h
+  rcases hv : prepSk 6#usize 5#usize ip (Array.to_slice sk) with e | pv | _ <;> simp [hv] at h
   subst h
   rfl
 
+/-- `signing_key_87` is `prepSk` (the zero destination and `prepare_sk_into`) wrapped in the key object. -/
+theorem signing_key_87_eq (sk : Array U8 4896#usize) :
+    api.signing_key_87 sk = (do
+      let p ← params.ML_DSA_87
+      let ps ← prepSk 8#usize 7#usize p (Array.to_slice sk)
+      ok ({ inner := ps } : api.SigningKey87)) := by
+  unfold api.signing_key_87 prepSk
+  simp only [lift, sign.PreparedSk.zeroed, core.mem.replace, Std.bind_tc_ok] <;> rfl
+
 theorem signing_key_87_prepare (sk : Array U8 4896#usize) (ssk : api.SigningKey87)
     (h : api.signing_key_87 sk = ok ssk) (ip : Impl.params.Params) (hip : params.ML_DSA_87 = ok ip) :
-    sign.prepare_sk 8#usize 7#usize ip (Array.to_slice sk) = ok ssk.inner := by
-  unfold api.signing_key_87 at h
-  rw [hip] at h
-  rcases hv : sign.prepare_sk 8#usize 7#usize ip (Array.to_slice sk) with e | pv | _ <;> simp [lift, hv] at h
+    prepSk 8#usize 7#usize ip (Array.to_slice sk) = ok ssk.inner := by
+  rw [signing_key_87_eq, hip] at h
+  rcases hv : prepSk 8#usize 7#usize ip (Array.to_slice sk) with e | pv | _ <;> simp [hv] at h
   subst h
   rfl
 
@@ -171,7 +197,7 @@ def PreparedSkOf (sp : Spec.Params) {K L : Usize} (skb : List UInt8) (ps : sign.
 
 theorem prepare_sk_partial' {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (n : Usize) (hn : n.val = sp.skLen) (sk : Array U8 n) :
-    sign.prepare_sk K L ip (Array.to_slice sk) ⦃ ps => PreparedSkOf sp (bytesA sk) ps ⦄div := by
+    prepSk K L ip (Array.to_slice sk) ⦃ ps => PreparedSkOf sp (bytesA sk) ps ⦄div := by
   have hsk : (Array.to_slice sk).length = sp.skLen := by
     have := sk.property
     show (Array.to_slice sk).val.length = sp.skLen
@@ -189,8 +215,7 @@ It diverges only where ExpandA does. -/
 theorem signing_key_44_partial (sk : Array U8 2560#usize) :
     api.signing_key_44 sk ⦃ ssk => PreparedSkOf Spec.ML_DSA_44 (bytesA sk) ssk.inner ⦄div := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_44_std
-  unfold api.signing_key_44
-  rw [hip]
+  rw [signing_key_44_eq, hip]
   simp only [lift, Std.bind_tc_ok]
   refine WP.dspec_bind' (prepare_sk_partial' hp 2560#usize
     (by rw [show Spec.ML_DSA_44.skLen = 2560 by decide +kernel]; rfl) sk) ?_
@@ -204,8 +229,7 @@ theorem signing_key_44_not_fail (sk : Array U8 2560#usize) : ∀ e, api.signing_
 theorem signing_key_65_partial (sk : Array U8 4032#usize) :
     api.signing_key_65 sk ⦃ ssk => PreparedSkOf Spec.ML_DSA_65 (bytesA sk) ssk.inner ⦄div := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_65_std
-  unfold api.signing_key_65
-  rw [hip]
+  rw [signing_key_65_eq, hip]
   simp only [lift, Std.bind_tc_ok]
   refine WP.dspec_bind' (prepare_sk_partial' hp 4032#usize
     (by rw [show Spec.ML_DSA_65.skLen = 4032 by decide +kernel]; rfl) sk) ?_
@@ -219,8 +243,7 @@ theorem signing_key_65_not_fail (sk : Array U8 4032#usize) : ∀ e, api.signing_
 theorem signing_key_87_partial (sk : Array U8 4896#usize) :
     api.signing_key_87 sk ⦃ ssk => PreparedSkOf Spec.ML_DSA_87 (bytesA sk) ssk.inner ⦄div := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_87_std
-  unfold api.signing_key_87
-  rw [hip]
+  rw [signing_key_87_eq, hip]
   simp only [lift, Std.bind_tc_ok]
   refine WP.dspec_bind' (prepare_sk_partial' hp 4896#usize
     (by rw [show Spec.ML_DSA_87.skLen = 4896 by decide +kernel]; rfl) sk) ?_

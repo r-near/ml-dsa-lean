@@ -2,8 +2,8 @@
 
 STATUS.md says Sign for ML-DSA-87 "keeps roughly 60 KB of arrays on the stack". Measured: **about 239 KB** in a
 release build (the 60 KB figure is just the expanded matrix Â; see "Biggest frames"). This directory measures every
-public `api` function (keygen / sign / verify / sign_internal / verify_internal / sk_is_well_formed for 44, 65, 87)
-two independent ways and checks that they agree.
+public `api` function (keygen / sign / verify / sign_internal / verify_internal / sk_is_well_formed and the prepared-key
+constructors and calls for 44, 65, 87) two independent ways and checks that they agree.
 
 It is its own workspace (`[workspace]` in `Cargo.toml`), not a member of the main crate's. `src/` is not edited.
 
@@ -37,7 +37,8 @@ number is measured from the stack pointer at the call instruction, so it include
 the function calls, but not the caller's frame or the caller's result slot. Valid inputs are used (real key from
 `keygen`, real signature), so Sign and Verify run the full path. Best of three runs.
 
-**Agreement.** For the same binary, static and painted agree to within 40 bytes for all 18 functions (for example
+**Agreement.** For the same binary, static and painted agree to within 40 bytes for the 18 one-shot functions and to within 120 bytes (panic-path frames)
+for the 18 prepared-key ones (for example
 `sign_87`: 238,656 static from the std harness's own `.stack_sizes`, 238,696 painted; the no_std harness gives 238,664).
 The static walk of the std harness binary treats its calls through the GOT as libc leaf functions (`memcpy`, `memset`,
 `memmove`, `bcmp`); the painting confirms nothing hides there.
@@ -51,46 +52,96 @@ column only. `-Zemit-stack-sizes` does not change code generation; the plain bui
 
 ## Results (bytes, default release profile)
 
-The x86_64 static column includes up to about 120 bytes of panic-path frames (Verify, `sk_is_well_formed`) that the
-painting never runs; otherwise static and painted agree to 50 bytes. The dev profile column is x86_64 painted at opt-level 0 with debug assertions (`cargo test` without
-`--release`).
+The x86_64 static column includes up to about 120 bytes of panic-path frames (Verify, `sk_is_well_formed`, the
+key constructors) that the painting never runs; otherwise static and painted agree to 50 bytes. The dev profile
+column is x86_64 painted at opt-level 0 with debug assertions (`cargo test` without `--release`).
+
+Re-measured on the tree that has the prepared-key API and the in-place `prepare_sk_into`; the first 18 rows are
+the same functions as before. `verify_*` grew (for example `verify_87` from 131 KB to 159 KB) because `verify_*`
+now builds a `VerifyingKey` in its own frame (the 57 KB Â plus the t1 NTT form) and `prepare_vk` has a frame of
+its own on top of that; the `*_prepared` rows below are what a caller who keeps the key pays per call.
 
 | function | x86_64 static | x86_64 painted | thumbv7em | riscv32imac | wasm32 (shadow stack) | x86_64 dev profile (painted) |
 |---|---|---|---|---|---|---|
-| `keygen_44` | 57,992 | 58,008 | 58,040 | 57,968 | 57,856 | 93,440 |
-| `keygen_65` | 89,800 | 89,816 | 89,864 | 89,808 | 89,696 | 143,008 |
-| `keygen_87` | 134,312 | 134,328 | 125,692 | 125,680 | 134,272 | 221,792 |
-| `sign_44` | 114,584 | 114,632 | 114,576 | 114,448 | 114,160 | 174,896 |
-| `sign_65` | 166,696 | 166,728 | 166,768 | 166,656 | 166,272 | 244,768 |
-| `sign_87` | 238,664 | 238,696 | 230,696 | 231,632 | 238,320 | 340,080 |
-| `sign_internal_44` | 114,056 | 114,104 | 114,056 | 113,920 | 113,648 | 174,080 |
-| `sign_internal_65` | 166,168 | 166,200 | 166,240 | 166,128 | 165,760 | 243,968 |
-| `sign_internal_87` | 238,136 | 238,168 | 230,168 | 231,120 | 237,808 | 339,264 |
-| `verify_44` | 58,728 | 58,616 | 58,632 | 58,592 | 58,512 | 102,000 |
-| `verify_65` | 87,416 | 87,304 | 87,288 | 87,280 | 87,088 | 151,664 |
-| `verify_87` | 131,448 | 131,336 | 131,328 | 131,328 | 131,120 | 231,024 |
-| `verify_internal_44` | 58,176 | 58,056 | 58,088 | 58,048 | 58,000 | 101,136 |
-| `verify_internal_65` | 86,864 | 86,744 | 86,744 | 86,736 | 86,576 | 150,800 |
-| `verify_internal_87` | 130,896 | 130,776 | 130,784 | 130,784 | 130,608 | 230,160 |
+| `keygen_44` | 64,184 | 64,184 | 64,264 | 64,176 | 63,872 | 93,440 |
+| `keygen_65` | 98,040 | 98,040 | 98,144 | 98,064 | 97,728 | 143,072 |
+| `keygen_87` | 142,616 | 142,616 | 142,688 | 142,640 | 142,304 | 221,856 |
+| `sign_44` | 115,704 | 115,736 | 115,768 | 115,680 | 115,168 | 163,728 |
+| `sign_65` | 167,816 | 167,848 | 167,952 | 167,888 | 167,248 | 228,480 |
+| `sign_87` | 239,784 | 239,816 | 240,032 | 240,000 | 239,232 | 317,648 |
+| `sign_internal_44` | 115,176 | 115,208 | 115,248 | 115,152 | 114,656 | 162,912 |
+| `sign_internal_65` | 167,288 | 167,320 | 167,424 | 167,360 | 166,736 | 227,680 |
+| `sign_internal_87` | 239,256 | 239,288 | 239,504 | 239,488 | 238,720 | 316,832 |
+| `verify_44` | 57,400 | 57,288 | 58,480 | 58,400 | 58,144 | 95,648 |
+| `verify_65` | 95,800 | 95,720 | 96,904 | 96,832 | 96,544 | 154,528 |
+| `verify_87` | 158,904 | 158,792 | 159,848 | 159,808 | 159,520 | 254,368 |
+| `verify_internal_44` | 56,888 | 56,776 | 57,960 | 57,872 | 57,632 | 94,784 |
+| `verify_internal_65` | 95,288 | 95,208 | 96,384 | 96,304 | 96,032 | 153,664 |
+| `verify_internal_87` | 158,392 | 158,280 | 159,328 | 159,280 | 159,008 | 253,504 |
 | `sk_is_well_formed_44` | 2,288 | 2,168 | 2,216 | 2,224 | 2,112 | 4,712 |
 | `sk_is_well_formed_65` | 2,288 | 2,168 | 2,216 | 2,240 | 2,112 | 4,712 |
 | `sk_is_well_formed_87` | 2,288 | 2,168 | 2,216 | 2,256 | 2,112 | 4,920 |
+| `verifying_key_44` | 31,112 | 31,000 | 32,176 | 32,128 | 31,904 | 79,008 |
+| `verifying_key_65` | 51,592 | 51,512 | 52,680 | 52,640 | 52,384 | 133,280 |
+| `verifying_key_87` | 83,464 | 83,352 | 84,392 | 84,384 | 84,128 | 225,440 |
+| `verify_prepared_44` | 34,216 | 34,248 | 34,320 | 34,256 | 33,984 | 53,264 |
+| `verify_prepared_65` | 45,480 | 45,512 | 45,592 | 45,520 | 45,248 | 66,064 |
+| `verify_prepared_87` | 58,792 | 58,824 | 58,912 | 58,864 | 58,560 | 83,984 |
+| `verify_internal_prepared_44` | 33,704 | 33,720 | 33,800 | 33,728 | 33,472 | 52,400 |
+| `verify_internal_prepared_65` | 44,968 | 44,984 | 45,072 | 44,992 | 44,736 | 65,200 |
+| `verify_internal_prepared_87` | 58,280 | 58,296 | 58,392 | 58,336 | 58,048 | 83,120 |
+| `signing_key_44` | 59,960 | 59,848 | 59,864 | 59,840 | 59,680 | 179,176 |
+| `signing_key_65` | 98,872 | 98,760 | 98,768 | 98,768 | 98,592 | 286,696 |
+| `signing_key_87` | 164,424 | 164,312 | 164,320 | 164,320 | 164,128 | 474,688 |
+| `sign_prepared_44` | 73,384 | 73,416 | 73,504 | 73,376 | 72,960 | 134,768 |
+| `sign_prepared_65` | 100,920 | 100,952 | 101,104 | 100,992 | 100,464 | 180,064 |
+| `sign_prepared_87` | 133,976 | 134,008 | 134,272 | 134,192 | 133,536 | 236,464 |
+| `sign_internal_prepared_44` | 72,856 | 72,888 | 72,976 | 72,864 | 72,448 | 133,952 |
+| `sign_internal_prepared_65` | 100,392 | 100,424 | 100,584 | 100,480 | 99,952 | 179,248 |
+| `sign_internal_prepared_87` | 133,448 | 133,480 | 133,752 | 133,680 | 133,024 | 235,648 |
 
 The same with `codegen-units = 1` and fat LTO (static column is the exported wrapper, so it also includes the result
-array, up to 4.6 KB for sign):
+array, up to 4.6 KB for sign; for the key constructors the wrapper also holds the returned key, 20 to 81 KB):
 
 | function | x86_64 static | thumbv7em | riscv32imac | wasm32 |
 |---|---|---|---|---|
-| `keygen_44` / `65` / `87` | 64,072 / 89,736 / 143,464 | 64,124 / 89,788 / 134,880 | 64,080 / 89,776 / 134,864 | 64,000 / 89,696 / 143,488 |
-| `sign_44` / `65` / `87` | 116,856 / 169,768 / 243,080 | 116,924 / 169,892 / 234,576 | 116,864 / 169,840 / 236,048 | 116,656 / 169,760 / 243,184 |
-| `verify_44` / `65` / `87` | 55,448 / 83,576 / 125,016 | 55,436 / 83,580 / 116,392 | 55,360 / 83,504 / 116,320 | 55,424 / 83,488 / 125,008 |
-| `sk_is_well_formed_44` / `65` / `87` | 2,136 / 2,136 / 2,136 | 2,136 / 2,120 / 2,136 | 2,112 / 2,128 / 2,112 | 2,048 / 2,048 / 2,064 |
+| `keygen_44` / `65` / `87` | 64,056 / 89,720 / 134,688 | 64,116 / 89,796 / 134,856 | 64,096 / 89,776 / 134,848 | 63,888 / 89,552 / 134,320 |
+| `sign_44` / `65` / `87` | 102,120 / 149,016 / 207,752 | 102,180 / 149,156 / 205,796 | 102,144 / 149,120 / 205,744 | 101,808 / 148,704 / 207,376 |
+| `sign_internal_44` / `65` / `87` | 101,592 / 148,488 / 207,240 | 101,660 / 148,628 / 205,268 | 101,632 / 148,608 / 205,232 | 101,280 / 148,192 / 206,848 |
+| `verify_44` / `65` / `87` | 54,624 / 90,992 / 152,960 | 58,928 / 97,336 / 161,344 | 58,832 / 97,248 / 161,248 | 58,352 / 96,752 / 160,768 |
+| `verify_internal_44` / `65` / `87` | 54,096 / 90,464 / 152,432 | 58,408 / 96,816 / 160,824 | 58,304 / 96,736 / 160,736 | 57,840 / 96,240 / 160,240 |
+| `sk_is_well_formed_44` / `65` / `87` | 2,136 / 2,136 / 2,136 | 2,136 / 2,120 / 2,136 | 2,112 / 2,128 / 2,144 | 2,048 / 2,048 / 2,064 |
+| `verifying_key_44` / `65` / `87` | 48,864 / 83,696 / 143,104 | 53,184 / 90,056 / 151,504 | 53,104 / 89,984 / 151,424 | 52,640 / 89,504 / 150,960 |
+| `verify_prepared_44` / `65` / `87` | 34,232 / 45,496 / 50,632 | 34,292 / 45,556 / 50,692 | 34,240 / 45,488 / 50,608 | 34,000 / 45,264 / 50,384 |
+| `verify_internal_prepared_44` / `65` / `87` | 33,704 / 44,968 / 50,120 | 33,772 / 45,036 / 50,172 | 33,712 / 44,976 / 50,096 | 33,488 / 44,752 / 49,872 |
+| `signing_key_44` / `65` / `87` | 60,224 / 99,136 / 164,688 | 60,464 / 99,392 / 164,896 | 60,384 / 99,296 / 164,816 | 59,872 / 98,784 / 164,336 |
+| `sign_prepared_44` / `65` / `87` | 75,768 / 104,088 / 131,384 | 75,836 / 104,244 / 129,428 | 75,808 / 104,208 / 129,392 | 75,456 / 103,792 / 131,008 |
+| `sign_internal_prepared_44` / `65` / `87` | 75,240 / 103,560 / 130,856 | 75,316 / 103,716 / 128,900 | 75,280 / 103,680 / 128,864 | 74,944 / 103,280 / 130,480 |
 
-Read: Sign ≈ 115 / 167 / 239 KB, Verify ≈ 59 / 87 / 131 KB, KeyGen ≈ 58 / 90 / 134 KB for 44 / 65 / 87. `sign_*` and
+Read: Sign ≈ 116 / 168 / 240 KB, Verify ≈ 57 / 96 / 159 KB, KeyGen ≈ 64 / 98 / 143 KB for 44 / 65 / 87. `sign_*` and
 `sign_internal_*` differ by the 257-byte context prefix plus the result slot. Inlining moves the totals by a few percent
 between toolchains, targets and profiles; treat each number as ±5%. None of the paths has recursion, function pointers
 or indirect calls. The caller additionally holds the inputs and outputs (for `sign_87`: sk 4,896 B, signature 4,627 B,
 and the `Option` result).
+
+### Prepared-key API
+
+`verifying_key_*`, `signing_key_*`, `verify_prepared_*`, `verify_internal_prepared_*`, `sign_prepared_*` and
+`sign_internal_prepared_*` are measured the same way (the stackbin wrappers read the key from a zeroed static; the
+painting harness builds real keys and asserts that the prepared calls agree with the one-shot ones).
+
+- **The constructors return the key by value, and the number above is the callee only.** The result slot is in the
+  caller's frame, on top: `VerifyingKey44/65/87` is 20,544 / 36,928 / 65,600 bytes and `SigningKey44/65/87` is
+  28,768 / 48,224 / 80,992 bytes (the `a_hat` matrix, the NTT forms, K and tr). `signing_key_*` also keeps a
+  working copy `out` of that size in its own frame and moves it into the result slot with `mem::replace`, which
+  leaves zeros behind (that is the zeroize design, see `src/api.rs`), so the peak for `signing_key_87` is about
+  164 KB below the caller's frame plus the 81 KB result slot, and for `verifying_key_87` about 83 KB plus 66 KB.
+  Keep the returned key out of a small stack by moving it to a `Box` right away (it is moved once more there).
+- **Using a prepared key is cheaper than the one-shot call.** `sign_prepared_87` is 134 KB against 240 KB for
+  `sign_87`; `verify_prepared_87` is 59 KB against 159 KB for `verify_87`. The key itself is held by the caller (heap
+  or static) and is not part of these numbers.
+- Dev profile (opt-level 0): `signing_key_87` painted at 475 KB, the largest of any function, still about 4x under the
+  2 MiB default thread stack.
 
 ## Biggest frames
 

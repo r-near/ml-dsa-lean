@@ -1061,35 +1061,65 @@ theorem loopRes_accept_iff (sp : Spec.Params) (F : Spec.Fuel) (P : Pre sp) :
 
 /-! ## Part 7: `sign_internal` -/
 
-/-- **The key half of Sign (steps 1-5).** `prepare_sk` returns ŝ₁, ŝ₂, t̂₀ (the NTTs of the decoded `s₁`, `s₂`, `t₀`),
-Â = ExpandA(ρ) (for any fuel at which the spec samples), K and tr, all as `skDecode` of the key bytes gives them. -/
-theorem prepare_sk_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
-    (hp : Params.Std ip K L sp) (sk : Slice U8) (hsk : sk.length = sp.skLen)
+/-- The key half of Sign as `sign_internal` and `signing_key_NN` run it: `prepare_sk_into` on the all-zero
+`PreparedSk` (the Rust `prepare_sk`, which is not itself extracted because nothing in the extraction closure calls
+it). -/
+def prepSk (K L : Usize) (p : Impl.params.Params) (sk : Slice U8) : RustM (sign.PreparedSk K L) := do
+  let z ← sign.PreparedSk.zeroed K L
+  sign.prepare_sk_into p sk z
+
+/-- **The key half of Sign (steps 1-5).** `prepare_sk_into` returns, for any destination `out`, ŝ₁, ŝ₂, t̂₀ (the NTTs
+of the decoded `s₁`, `s₂`, `t₀`), Â = ExpandA(ρ) (for any fuel at which the spec samples), K and tr, all as `skDecode`
+of the key bytes gives them. -/
+theorem prepare_sk_into_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (sk : Slice U8) (hsk : sk.length = sp.skLen) (out : sign.PreparedSk K L)
     (ρ Kk tr : List UInt8) (s₁ : Vector RPoly sp.ℓ) (s₂ t₀ : Vector RPoly sp.k)
     (hd : Spec.skDecode sp (bytes sk) = (ρ, Kk, tr, s₁, s₂, t₀))
     (Â : Vector (Vector Poly sp.ℓ) sp.k) (F1 : Nat) (hA : Spec.ExpandA sp F1 ρ = some Â) :
-    sign.prepare_sk K L ip sk ⦃ ps =>
+    sign.prepare_sk_into ip sk out ⦃ ps =>
       ReprMat ps.a_hat Â ∧ ReprVec ps.s1_hat (NTTVec (s₁.map RPoly.toZq)) ∧
       ReprVec ps.s2_hat (NTTVec (s₂.map RPoly.toZq)) ∧ ReprVec ps.t0_hat (NTTVec (t₀.map RPoly.toZq)) ∧
       bytesA ps.key = Kk ∧ bytesA ps.tr = tr ⦄ := by
   obtain ⟨hv, hstd⟩ := hp
   have hK : K.val = sp.k := hv.K_eq
   have hL : L.val = sp.ℓ := hv.L_eq
-  unfold sign.prepare_sk
+  unfold sign.prepare_sk_into
   refine WP.spec_bind (sk_decode_spec ip sp hv hstd.eta_lt sk hsk) ?_
   intro key ⟨hrho, hkey, htr, hs1, hs2, ht0⟩
   rw [hd] at hrho hkey htr hs1 hs2 ht0
   dsimp only at hrho hkey htr hs1 hs2 ht0
-  refine WP.spec_bind (ntt_vec_spec key.s1 _ hs1.repr) ?_
+  refine WP.spec_bind (ntt_vec_into_spec key.s1 out.s1_hat _ hs1.repr) ?_
   intro s1_hat hs1h
-  refine WP.spec_bind (ntt_vec_spec key.s2 _ hs2.repr) ?_
+  refine WP.spec_bind (ntt_vec_into_spec key.s2 out.s2_hat _ hs2.repr) ?_
   intro s2_hat hs2h
-  refine WP.spec_bind (ntt_vec_spec key.t0 _ ht0.repr) ?_
+  refine WP.spec_bind (ntt_vec_into_spec key.t0 out.t0_hat _ ht0.repr) ?_
   intro t0_hat ht0h
   refine WP.spec_bind (expand_a_spec sp K L hK hL key.rho Â F1 (by rw [hrho]; exact hA)) ?_
   intro a_hat hAh
   simp only [WP.spec_ok]
   exact ⟨hAh, hs1h, hs2h, ht0h, hkey, htr⟩
+
+/-- **The key half of Sign (steps 1-5), from the zero destination**: the same statement for `prepSk`. -/
+theorem prepare_sk_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (sk : Slice U8) (hsk : sk.length = sp.skLen)
+    (ρ Kk tr : List UInt8) (s₁ : Vector RPoly sp.ℓ) (s₂ t₀ : Vector RPoly sp.k)
+    (hd : Spec.skDecode sp (bytes sk) = (ρ, Kk, tr, s₁, s₂, t₀))
+    (Â : Vector (Vector Poly sp.ℓ) sp.k) (F1 : Nat) (hA : Spec.ExpandA sp F1 ρ = some Â) :
+    prepSk K L ip sk ⦃ ps =>
+      ReprMat ps.a_hat Â ∧ ReprVec ps.s1_hat (NTTVec (s₁.map RPoly.toZq)) ∧
+      ReprVec ps.s2_hat (NTTVec (s₂.map RPoly.toZq)) ∧ ReprVec ps.t0_hat (NTTVec (t₀.map RPoly.toZq)) ∧
+      bytesA ps.key = Kk ∧ bytesA ps.tr = tr ⦄ := by
+  unfold prepSk
+  simp only [sign.PreparedSk.zeroed, Std.bind_tc_ok]
+  exact prepare_sk_into_spec hp sk hsk _ ρ Kk tr s₁ s₂ t₀ hd Â F1 hA
+
+/-- `sign_internal` is `prepSk` followed by `sign_prepared_internal`. -/
+theorem sign_internal_eq_prep {ip : Impl.params.Params} {K L : Usize}
+    (sk m_prefix m : Slice U8) (rnd : Array U8 32#usize) (sig : Slice U8) :
+    sign.sign_internal K L ip sk m_prefix m rnd sig =
+      (do let ps ← prepSk K L ip sk; sign.sign_prepared_internal ip ps m_prefix m rnd sig) := by
+  unfold sign.sign_internal prepSk
+  simp only [sign.PreparedSk.zeroed, Std.bind_tc_ok] <;> rfl
 
 /-- Steps 6-33 on a prepared key (the Rust `sign_prepared_internal`): if `ps` holds the spec's pre-loop values
 (`P.Â`, `P.ŝ₁`, `P.ŝ₂`, `P.t̂₀`, with `P.μ = H(tr ‖ M′, 64)` and `P.ρ'' = H(K ‖ rnd ‖ μ, 64)` for the `K`, `tr` held in
@@ -1152,7 +1182,7 @@ theorem sign_internal_core {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Pa
     sign.sign_internal K L ip sk m_prefix m rnd sig ⦃ r => LoopPost sp T sig r ⦄ := by
   rcases hd : Spec.skDecode sp (bytes sk) with ⟨ρ, Kk, tr, s₁, s₂, t₀⟩
   obtain ⟨Â, hA, rfl⟩ := pre_some hP ρ Kk tr s₁ s₂ t₀ hd
-  unfold sign.sign_internal
+  rw [sign_internal_eq_prep]
   refine WP.spec_bind (prepare_sk_spec hp sk hsk ρ Kk tr s₁ s₂ t₀ hd Â F.rejNTT hA) ?_
   rintro ps ⟨hAh, hs1h, hs2h, ht0h, hkey, htr⟩
   exact sign_prepared_core hp hb ps m_prefix m rnd sig hsig F

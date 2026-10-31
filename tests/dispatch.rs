@@ -44,6 +44,8 @@ fn compilations_agree() {
             assert_eq!(pairs[0].0, pairs[0].1, "ntt");
             assert_eq!(pairs[1].0, pairs[1].1, "ntt_inverse");
             assert_eq!(pairs[2].0, pairs[2].1, "multiply_ntt");
+            assert_eq!(pairs[3].0, pairs[3].1, "ntt_in_place");
+            assert_eq!(pairs[3].0, want_ntt);
             assert_eq!(pairs[0].0, want_ntt);
             assert_eq!(pairs[1].0, want_inv);
             assert_eq!(pairs[2].0, want_mul);

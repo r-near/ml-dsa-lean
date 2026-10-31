@@ -433,13 +433,14 @@ open Sign PartialSign
 
 /-! ## `sign_internal` -/
 
-/-- **The key half of Sign, partial.** `prepare_sk` never fails; if it returns, `ps` holds ŝ₁, ŝ₂, t̂₀, K and tr as
-`skDecode` gives them and Â = ExpandA(ρ) (at some fuel `F1` of the spec). It diverges exactly where ExpandA does. -/
-theorem prepare_sk_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
-    (hp : Params.Std ip K L sp) (sk : Slice U8) (hsk : sk.length = sp.skLen)
+/-- **The key half of Sign, partial.** `prepare_sk_into` never fails (whatever the destination `out` holds); if it
+returns, `ps` holds ŝ₁, ŝ₂, t̂₀, K and tr as `skDecode` gives them and Â = ExpandA(ρ) (at some fuel `F1` of the spec).
+It diverges exactly where ExpandA does. -/
+theorem prepare_sk_into_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (sk : Slice U8) (hsk : sk.length = sp.skLen) (out : sign.PreparedSk K L)
     (ρ Kk tr : List UInt8) (s₁ : Vector RPoly sp.ℓ) (s₂ t₀ : Vector RPoly sp.k)
     (hd : Spec.skDecode sp (bytes sk) = (ρ, Kk, tr, s₁, s₂, t₀)) :
-    sign.prepare_sk K L ip sk ⦃ ps =>
+    sign.prepare_sk_into ip sk out ⦃ ps =>
       ∃ (Â : Vector (Vector Poly sp.ℓ) sp.k) (F1 : Nat), Spec.ExpandA sp F1 ρ = some Â ∧
       ReprMat ps.a_hat Â ∧ ReprVec ps.s1_hat (NTTVec (s₁.map RPoly.toZq)) ∧
       ReprVec ps.s2_hat (NTTVec (s₂.map RPoly.toZq)) ∧ ReprVec ps.t0_hat (NTTVec (t₀.map RPoly.toZq)) ∧
@@ -447,22 +448,37 @@ theorem prepare_sk_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Pa
   obtain ⟨hv, hstd⟩ := hp
   have hK : K.val = sp.k := hv.K_eq
   have hL : L.val = sp.ℓ := hv.L_eq
-  unfold sign.prepare_sk
+  unfold sign.prepare_sk_into
   refine dspec_bind_of_spec (sk_decode_spec ip sp hv hstd.eta_lt sk hsk) ?_
   intro key ⟨hrho, hkey, htr, hs1, hs2, ht0⟩
   rw [hd] at hrho hkey htr hs1 hs2 ht0
   dsimp only at hrho hkey htr hs1 hs2 ht0
-  refine dspec_bind_of_spec (ntt_vec_spec key.s1 _ hs1.repr) ?_
+  refine dspec_bind_of_spec (ntt_vec_into_spec key.s1 out.s1_hat _ hs1.repr) ?_
   intro s1_hat hs1h
-  refine dspec_bind_of_spec (ntt_vec_spec key.s2 _ hs2.repr) ?_
+  refine dspec_bind_of_spec (ntt_vec_into_spec key.s2 out.s2_hat _ hs2.repr) ?_
   intro s2_hat hs2h
-  refine dspec_bind_of_spec (ntt_vec_spec key.t0 _ ht0.repr) ?_
+  refine dspec_bind_of_spec (ntt_vec_into_spec key.t0 out.t0_hat _ ht0.repr) ?_
   intro t0_hat ht0h
   refine WP.dspec_bind' (expand_a_partial sp K L hK hL key.rho) ?_
   rintro a_hat ⟨Â, F1, hA, hAh⟩
   rw [hrho] at hA
   simp only [WP.dspec_ok]
   exact ⟨Â, F1, hA, hAh, hs1h, hs2h, ht0h, hkey, htr⟩
+
+/-- **The key half of Sign, partial, from the zero destination** (`prepSk`: what `sign_internal` and `signing_key_NN`
+run). -/
+theorem prepare_sk_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (sk : Slice U8) (hsk : sk.length = sp.skLen)
+    (ρ Kk tr : List UInt8) (s₁ : Vector RPoly sp.ℓ) (s₂ t₀ : Vector RPoly sp.k)
+    (hd : Spec.skDecode sp (bytes sk) = (ρ, Kk, tr, s₁, s₂, t₀)) :
+    prepSk K L ip sk ⦃ ps =>
+      ∃ (Â : Vector (Vector Poly sp.ℓ) sp.k) (F1 : Nat), Spec.ExpandA sp F1 ρ = some Â ∧
+      ReprMat ps.a_hat Â ∧ ReprVec ps.s1_hat (NTTVec (s₁.map RPoly.toZq)) ∧
+      ReprVec ps.s2_hat (NTTVec (s₂.map RPoly.toZq)) ∧ ReprVec ps.t0_hat (NTTVec (t₀.map RPoly.toZq)) ∧
+      bytesA ps.key = Kk ∧ bytesA ps.tr = tr ⦄div := by
+  unfold prepSk
+  simp only [sign.PreparedSk.zeroed, Std.bind_tc_ok]
+  exact prepare_sk_into_partial hp sk hsk _ ρ Kk tr s₁ s₂ t₀ hd
 
 /-- **Steps 6-33 on a prepared key, partial.** For a prepared key holding the values of `skDecode skb`, Â =
 ExpandA(ρ) at fuel `F1`, ŝ₁, ŝ₂, t̂₀: the Rust never returns `fail`; a `true` result is the spec's signature (budget
@@ -577,7 +593,7 @@ theorem sign_internal_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec
       (r.1 = false → (∃ F, Exhausted sp F (bytes sk) (bytes m_prefix ++ bytes m) (bytesA rnd)) ∧ r.2 = sig) ⦄div := by
   have hb : SignBuf sp := StdParams.signBuf (Params.Std.params hp)
   rcases hd : Spec.skDecode sp (bytes sk) with ⟨ρ, Kk, tr, s₁, s₂, t₀⟩
-  unfold sign.sign_internal
+  rw [sign_internal_eq_prep]
   refine WP.dspec_bind' (prepare_sk_partial hp sk hsk ρ Kk tr s₁ s₂ t₀ hd) ?_
   rintro ps ⟨Â, F1, hA1, hAh, hs1h, hs2h, ht0h, hkey, htr⟩
   exact sign_prepared_partial hp hb ps m_prefix m rnd sig hsig (bytes sk) ρ Kk tr s₁ s₂ t₀ hd Â F1 hA1 hAh hs1h hs2h

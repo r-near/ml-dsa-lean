@@ -135,20 +135,26 @@ fn ntt_inverse_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 25
     }
 }
 
-/// Algorithm 41 NTT(w), the shared body (see "Dispatch" below).
+/// Algorithm 41 NTT(w) in place, the shared body (see "Dispatch" below).
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
+fn ntt_body_mut(w: &mut [u32; 256]) {
+    let mut m = 0;
+    ntt_layer::<128, 1>(w, &mut m);
+    ntt_layer::<64, 2>(w, &mut m);
+    ntt_layer::<32, 4>(w, &mut m);
+    ntt_layer::<16, 8>(w, &mut m);
+    ntt_layer::<8, 16>(w, &mut m);
+    ntt_layer::<4, 32>(w, &mut m);
+    ntt_layer::<2, 64>(w, &mut m);
+    ntt_layer::<1, 128>(w, &mut m);
+}
+
+/// Algorithm 41 NTT(w), the shared body: a copy of `w`, transformed in place.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_body(w: &[u32; 256]) -> [u32; 256] {
-    let mut w = *w;
-    let mut m = 0;
-    ntt_layer::<128, 1>(&mut w, &mut m);
-    ntt_layer::<64, 2>(&mut w, &mut m);
-    ntt_layer::<32, 4>(&mut w, &mut m);
-    ntt_layer::<16, 8>(&mut w, &mut m);
-    ntt_layer::<8, 16>(&mut w, &mut m);
-    ntt_layer::<4, 32>(&mut w, &mut m);
-    ntt_layer::<2, 64>(&mut w, &mut m);
-    ntt_layer::<1, 128>(&mut w, &mut m);
-    w
+    let mut o = *w;
+    ntt_body_mut(&mut o);
+    o
 }
 
 /// Algorithm 42 NTT⁻¹(ŵ), the shared body.
@@ -214,9 +220,12 @@ fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
 
 #[cfg(any(not(feature = "avx2"), miri, not(target_arch = "x86_64"), target_feature = "avx2"))]
 mod dispatch {
-    use super::{multiply_ntt_body, ntt_body, ntt_inverse_body};
+    use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body};
     pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
         ntt_body(w)
+    }
+    pub fn ntt_in_place(w: &mut [u32; 256]) {
+        ntt_body_mut(w)
     }
     pub fn ntt_inverse(w_hat: &[u32; 256]) -> [u32; 256] {
         ntt_inverse_body(w_hat)
@@ -229,12 +238,16 @@ mod dispatch {
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")))]
 #[allow(unsafe_code)]
 mod dispatch {
-    use super::{multiply_ntt_body, ntt_body, ntt_inverse_body};
+    use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body};
     use core::sync::atomic::{AtomicU8, Ordering};
 
     #[target_feature(enable = "avx2")]
     fn ntt_avx2(w: &[u32; 256]) -> [u32; 256] {
         ntt_body(w)
+    }
+    #[target_feature(enable = "avx2")]
+    fn ntt_in_place_avx2(w: &mut [u32; 256]) {
+        ntt_body_mut(w)
     }
     #[target_feature(enable = "avx2")]
     fn ntt_inverse_avx2(w_hat: &[u32; 256]) -> [u32; 256] {
@@ -291,6 +304,14 @@ mod dispatch {
             ntt_body(w)
         }
     }
+    pub fn ntt_in_place(w: &mut [u32; 256]) {
+        if has_avx2() {
+            // SAFETY: as above.
+            unsafe { ntt_in_place_avx2(w) }
+        } else {
+            ntt_body_mut(w)
+        }
+    }
     pub fn ntt_inverse(w_hat: &[u32; 256]) -> [u32; 256] {
         if has_avx2() {
             // SAFETY: as above.
@@ -311,17 +332,22 @@ mod dispatch {
     /// The portable and the AVX2 compilation of each body on `w` (and `w` against NTT(w) for the product), for
     /// `tests/dispatch.rs`; `None` without AVX2.
     #[cfg(feature = "internals")]
-    pub fn both(w: &[u32; 256]) -> Option<[([u32; 256], [u32; 256]); 3]> {
+    pub fn both(w: &[u32; 256]) -> Option<[([u32; 256], [u32; 256]); 4]> {
         if !has_avx2() {
             return None;
         }
         let v = ntt_body(w);
+        let mut p = *w;
+        ntt_body_mut(&mut p);
+        let mut a = *w;
         // SAFETY: checked above.
         unsafe {
+            ntt_in_place_avx2(&mut a);
             Some([
                 (ntt_body(w), ntt_avx2(w)),
                 (ntt_inverse_body(w), ntt_inverse_avx2(w)),
                 (multiply_ntt_body(w, &v), multiply_ntt_avx2(w, &v)),
+                (p, a),
             ])
         }
     }
@@ -330,6 +356,12 @@ mod dispatch {
 /// Algorithm 41 NTT(w).
 pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
     dispatch::ntt(w)
+}
+
+/// Algorithm 41 NTT(w), in place: `w` ← NTT(w). The same body as `ntt`, without the second 1 KiB buffer a by-value
+/// result needs, so a secret polynomial is transformed where it lies and no copy of the result is left behind.
+pub fn ntt_in_place(w: &mut [u32; 256]) {
+    dispatch::ntt_in_place(w)
 }
 
 /// Algorithm 42 NTT⁻¹(ŵ).
@@ -342,10 +374,10 @@ pub fn multiply_ntt(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
     dispatch::multiply_ntt(a, b)
 }
 
-/// For `tests/dispatch.rs`: (portable, AVX2) results of NTT, NTT⁻¹ and the product on `w`, or `None` if this CPU
-/// has no AVX2 or the build has no second compilation.
+/// For `tests/dispatch.rs`: (portable, AVX2) results of NTT, NTT⁻¹, the product and the in-place NTT on `w`, or `None`
+/// if this CPU has no AVX2 or the build has no second compilation.
 #[cfg(feature = "internals")]
-pub fn compare_compilations(w: &[u32; 256]) -> Option<[([u32; 256], [u32; 256]); 3]> {
+pub fn compare_compilations(w: &[u32; 256]) -> Option<[([u32; 256], [u32; 256]); 4]> {
     #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")))]
     {
         dispatch::both(w)
@@ -416,4 +448,25 @@ pub fn ntt_vec<const N: usize>(v: &[[u32; 256]; N]) -> [[u32; 256]; N] {
         i += 1;
     }
     out
+}
+
+/// `ntt_vec` written into `out` instead of returned: `out` ← NTT of every entry of `v`. Every entry of `out` is
+/// overwritten, so the result does not depend on its previous contents (the zeroing below makes that explicit). The
+/// secret callers (`sign::prepare_sk_into`) pass a field of the object the secrets are to live in, so the result is
+/// never in a returned temporary; each entry is copied into the local `t`, transformed there in place, and copied
+/// to `out`, and with the `zeroize` feature `t` is wiped.
+pub fn ntt_vec_into<const N: usize>(v: &[[u32; 256]; N], out: &mut [[u32; 256]; N]) {
+    *out = [[0u32; 256]; N];
+    let mut i = 0;
+    while i < N {
+        let mut t = v[i];
+        ntt_in_place(&mut t);
+        out[i] = t;
+        #[cfg(feature = "zeroize")]
+        {
+            use zeroize::Zeroize;
+            t.zeroize();
+        }
+        i += 1;
+    }
 }

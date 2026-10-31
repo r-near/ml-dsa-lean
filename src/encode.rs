@@ -57,12 +57,19 @@ fn pack_signed(w: &[u32; 256], b: u32, c: usize, out: &mut [u8]) {
     bit_pack(&t, c, out);
 }
 fn unpack_signed(v: &[u8], b: u32, c: usize) -> [u32; 256] {
-    let z = bit_unpack(v, c);
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+    let mut z = bit_unpack(v, c);
     let mut w = [0u32; 256];
     let mut i = 0;
     while i < 256 {
         w[i] = sub(b, z[i]);
         i += 1;
+    }
+    // `z` holds the raw bit fields of a secret coefficient vector; `w`, the decoded polynomial, is returned.
+    #[cfg(feature = "zeroize")]
+    {
+        use zeroize::Zeroize;
+        z.zeroize();
     }
     w
 }

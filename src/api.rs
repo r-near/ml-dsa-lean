@@ -1,7 +1,9 @@
 //! Public API: FIPS 204 Algorithms 1, 2 and 3, one set of functions per parameter set.
 //!
-//! Stateless and allocation free: keys and signatures are fixed-size arrays, and each function is
-//! the literal algorithm. In every function below K = `p.k` and L = `p.l` of the named parameter set
+//! Allocation free. The one-shot functions are stateless: keys and signatures are fixed-size arrays, and each
+//! function is the literal algorithm. The prepared-key objects (`VerifyingKey*`, `SigningKey*`, below) are fixed-size
+//! structs built by one constructor each and then only read; the crate holds no other state (the opt-in `avx2`
+//! feature caches one CPU-feature flag). In every function below K = `p.k` and L = `p.l` of the named parameter set
 //! (44: 4, 4; 65: 6, 5; 87: 8, 7).
 //!
 //! The RNG stays above this API:
@@ -27,6 +29,35 @@
 //! are 28,768 / 48,224 / 80,992 bytes and contain secrets: keep them in a `Box`, do not copy them. With the
 //! `zeroize` feature, dropping one wipes ŝ1, ŝ2, t̂0 and K (the `Drop` impl is not part of the Lean model).
 //!
+//! Stack, worst case below the caller's frame in a release build (`tools/stack/`, measured on x86_64, thumbv7em,
+//! riscv32imac and wasm32, which agree within 4%; ML-DSA-44 / 65 / 87, in KB): `verifying_key_*` 31 / 52 / 83 and
+//! `signing_key_*` 60 / 99 / 164, plus the returned key in the caller's frame (20.5 / 36.9 / 65.6 and 28.8 / 48.2 / 81.0);
+//! `verify_prepared_*` and `verify_internal_prepared_*` 34 / 45 / 59; `sign_prepared_*` and `sign_internal_prepared_*`
+//! 73 / 101 / 134. For comparison the one-shot `verify_*` take 57 / 96 / 159 and `sign_*` 116 / 168 / 240. Results
+//! vary by about 5% with the toolchain and inlining; `tools/stack/README.md` has the full tables.
+//!
+//! Zeroize coverage (feature `zeroize`; outside the Lean model, which has no `Drop` and no volatile writes, so the
+//! theorems are about the code without it). What it wipes: dropping a `SigningKey*`; in `keygen_*`, `sign_*`,
+//! `sign_prepared_*`, `signing_key_*` and `pk_from_sk_*`, the decoded or derived secrets held in locals (the decoded
+//! key, ρ′, K, ρ″, the raw bit fields behind y, s1 and s2) and the SHAKE states that absorbed a secret (ξ, ρ′, ρ″,
+//! K ‖ rnd ‖ μ, w1; `Shake::wipe`). `signing_key_*` and `sign_*` build ŝ1, ŝ2, t̂0 and K directly in the key object
+//! (`sign::prepare_sk_into`, `ntt::ntt_vec_into`: the secret vectors are transformed in place) and `signing_key_*`
+//! returns the object through `mem::replace`, so that no copy is left in the dead stack frames below the call.
+//! `tests/zeroize.rs` checks this: it scans the stack below each call for K, s1, s2, t0, their NTT forms and ρ″, and
+//! reads a dropped key back. What remains:
+//!
+//! - Copies the compiler makes when it moves a returned value are in the caller's frame and are the caller's concern:
+//!   a `SigningKey*` (keep it in a `Box`, build it there, and do not move it), and the secret-key array `keygen_*`
+//!   returns. The key bytes passed in (`sk`) are the caller's too.
+//! - `sign_*`: the per-attempt vectors y, cs1, cs2, ct0, w and their intermediates are locals of `attempt`,
+//!   `response` and `hint_step`, returned by value. They are not wiped, and the stack scan does not look for them. y and
+//!   the NTT of y pass through `ntt_vec`, whose result temporaries are not wiped either.
+//! - `keygen_*` and `pk_from_sk_*`: t0 survives in the tuple `vec_power2round` returns by value, and `keygen_*` leaves
+//!   one copy of K (the scan finds both, `tests/zeroize.rs`, `KEYGEN_KNOWN`). s1, s2, ξ, ρ′ and the expanded seed are
+//!   wiped.
+//! - A panic or `mem::forget` skips the wipes. Registers, spills the compiler placed in unnamed temporaries, and
+//!   anything the operating system copied (swap, core dumps) are out of reach.
+//!
 //! `sk_is_well_formed_*` is an optional range check on a stored secret key (s₁, s₂ within [−η, η]); `sign_*` does
 //! not call it. `pk_from_sk_*` is a stronger optional check (not a FIPS step): it recomputes the public key from
 //! a stored secret key and rejects keys that are inconsistent. HashML-DSA (Algorithms 4 and 5) and external μ are out of scope.
@@ -34,7 +65,7 @@
 use crate::encode::sk_is_well_formed;
 use crate::keygen::{keygen_internal, pk_from_sk};
 use crate::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
-use crate::sign::{prepare_sk, sign_internal, sign_prepared_internal, PreparedSk};
+use crate::sign::{prepare_sk_into, sign_internal, sign_prepared_internal, PreparedSk};
 use crate::verify::{prepare_vk, verify_internal, verify_prepared_internal, PreparedVk};
 
 /// Builds the prefix 0 ‖ |ctx| ‖ ctx of M′ = IntegerToBytes(0, 1) ‖ IntegerToBytes(|ctx|, 1) ‖ ctx ‖ M.
@@ -123,8 +154,8 @@ pub struct VerifyingKey44 {
 /// (Algorithm 8 steps 1, 6, 7 and the key half of step 10). Cost: about one `verify_44` call minus the
 /// per-signature work (dominated by ExpandA).
 ///
-/// Never fails: every byte string of 1312 bytes decodes. Like `verify_44` it diverges only where FIPS 204's
-/// unbounded ExpandA would (probability about 2^-thousands per key). Returns by value (20,544 bytes); with a
+/// Never fails: every byte string of 1312 bytes decodes. Like `verify_44` it diverges only if the SHAKE output never
+/// completes ExpandA (Proofs/Divergence.lean). Returns by value (20,544 bytes); with a
 /// `Box`, write `Box::new(verifying_key_44(&pk))`.
 pub fn verifying_key_44(pk: &[u8; 1312]) -> VerifyingKey44 {
     VerifyingKey44 { inner: prepare_vk::<4, 4>(pk) }
@@ -156,17 +187,19 @@ pub fn verify_internal_prepared_44(vk: &VerifyingKey44, m_prime: &[u8], sig: &[u
 /// long-lived structure rather than on a small stack; moving it copies it (the copy is not wiped). The fields are
 /// private: the only way to obtain one is `signing_key_44`, which fixes the relation to the key bytes.
 pub struct SigningKey44 {
-    inner: PreparedSk<4, 4>,
+    pub(crate) inner: PreparedSk<4, 4>,
 }
 
 /// Prepares a secret key for ML-DSA-44 signing: skDecode, the three NTTs and ExpandA (Algorithm 7 steps 1-5) once.
 /// Cost: about the key-dependent share of one `sign_44` call, dominated by ExpandA.
 ///
-/// Like `sign_44` it does not validate the key (see `sk_is_well_formed_44`) and diverges only where FIPS 204's
-/// unbounded ExpandA would. Returns by value (28,768 bytes); with a `Box`, write
+/// Like `sign_44` it does not validate the key (see `sk_is_well_formed_44`) and diverges only if the SHAKE output
+/// never completes ExpandA (Proofs/Divergence.lean). Returns by value (28,768 bytes); with a `Box`, write
 /// `Box::new(signing_key_44(&sk))`.
 pub fn signing_key_44(sk: &[u8; 2560]) -> SigningKey44 {
-    SigningKey44 { inner: prepare_sk::<4, 4>(&ML_DSA_44, sk) }
+    let mut out = SigningKey44 { inner: PreparedSk::<4, 4>::zeroed() };
+    prepare_sk_into::<4, 4>(&ML_DSA_44, sk, &mut out.inner);
+    core::mem::replace(&mut out, SigningKey44 { inner: PreparedSk::<4, 4>::zeroed() })
 }
 
 /// Algorithm 2 ML-DSA.Sign for ML-DSA-44 with a prepared key. For `ssk = signing_key_44(sk)` it returns exactly
@@ -303,8 +336,8 @@ pub struct VerifyingKey65 {
 /// (Algorithm 8 steps 1, 6, 7 and the key half of step 10). Cost: about one `verify_65` call minus the
 /// per-signature work (dominated by ExpandA).
 ///
-/// Never fails: every byte string of 1952 bytes decodes. Like `verify_65` it diverges only where FIPS 204's
-/// unbounded ExpandA would (probability about 2^-thousands per key). Returns by value (36,928 bytes); with a
+/// Never fails: every byte string of 1952 bytes decodes. Like `verify_65` it diverges only if the SHAKE output never
+/// completes ExpandA (Proofs/Divergence.lean). Returns by value (36,928 bytes); with a
 /// `Box`, write `Box::new(verifying_key_65(&pk))`.
 pub fn verifying_key_65(pk: &[u8; 1952]) -> VerifyingKey65 {
     VerifyingKey65 { inner: prepare_vk::<6, 5>(pk) }
@@ -336,17 +369,19 @@ pub fn verify_internal_prepared_65(vk: &VerifyingKey65, m_prime: &[u8], sig: &[u
 /// long-lived structure rather than on a small stack; moving it copies it (the copy is not wiped). The fields are
 /// private: the only way to obtain one is `signing_key_65`, which fixes the relation to the key bytes.
 pub struct SigningKey65 {
-    inner: PreparedSk<6, 5>,
+    pub(crate) inner: PreparedSk<6, 5>,
 }
 
 /// Prepares a secret key for ML-DSA-65 signing: skDecode, the three NTTs and ExpandA (Algorithm 7 steps 1-5) once.
 /// Cost: about the key-dependent share of one `sign_65` call, dominated by ExpandA.
 ///
-/// Like `sign_65` it does not validate the key (see `sk_is_well_formed_65`) and diverges only where FIPS 204's
-/// unbounded ExpandA would. Returns by value (48,224 bytes); with a `Box`, write
+/// Like `sign_65` it does not validate the key (see `sk_is_well_formed_65`) and diverges only if the SHAKE output
+/// never completes ExpandA (Proofs/Divergence.lean). Returns by value (48,224 bytes); with a `Box`, write
 /// `Box::new(signing_key_65(&sk))`.
 pub fn signing_key_65(sk: &[u8; 4032]) -> SigningKey65 {
-    SigningKey65 { inner: prepare_sk::<6, 5>(&ML_DSA_65, sk) }
+    let mut out = SigningKey65 { inner: PreparedSk::<6, 5>::zeroed() };
+    prepare_sk_into::<6, 5>(&ML_DSA_65, sk, &mut out.inner);
+    core::mem::replace(&mut out, SigningKey65 { inner: PreparedSk::<6, 5>::zeroed() })
 }
 
 /// Algorithm 2 ML-DSA.Sign for ML-DSA-65 with a prepared key. For `ssk = signing_key_65(sk)` it returns exactly
@@ -483,8 +518,8 @@ pub struct VerifyingKey87 {
 /// (Algorithm 8 steps 1, 6, 7 and the key half of step 10). Cost: about one `verify_87` call minus the
 /// per-signature work (dominated by ExpandA).
 ///
-/// Never fails: every byte string of 2592 bytes decodes. Like `verify_87` it diverges only where FIPS 204's
-/// unbounded ExpandA would (probability about 2^-thousands per key). Returns by value (65,600 bytes); with a
+/// Never fails: every byte string of 2592 bytes decodes. Like `verify_87` it diverges only if the SHAKE output never
+/// completes ExpandA (Proofs/Divergence.lean). Returns by value (65,600 bytes); with a
 /// `Box`, write `Box::new(verifying_key_87(&pk))`.
 pub fn verifying_key_87(pk: &[u8; 2592]) -> VerifyingKey87 {
     VerifyingKey87 { inner: prepare_vk::<8, 7>(pk) }
@@ -516,17 +551,19 @@ pub fn verify_internal_prepared_87(vk: &VerifyingKey87, m_prime: &[u8], sig: &[u
 /// long-lived structure rather than on a small stack; moving it copies it (the copy is not wiped). The fields are
 /// private: the only way to obtain one is `signing_key_87`, which fixes the relation to the key bytes.
 pub struct SigningKey87 {
-    inner: PreparedSk<8, 7>,
+    pub(crate) inner: PreparedSk<8, 7>,
 }
 
 /// Prepares a secret key for ML-DSA-87 signing: skDecode, the three NTTs and ExpandA (Algorithm 7 steps 1-5) once.
 /// Cost: about the key-dependent share of one `sign_87` call, dominated by ExpandA.
 ///
-/// Like `sign_87` it does not validate the key (see `sk_is_well_formed_87`) and diverges only where FIPS 204's
-/// unbounded ExpandA would. Returns by value (80,992 bytes); with a `Box`, write
+/// Like `sign_87` it does not validate the key (see `sk_is_well_formed_87`) and diverges only if the SHAKE output
+/// never completes ExpandA (Proofs/Divergence.lean). Returns by value (80,992 bytes); with a `Box`, write
 /// `Box::new(signing_key_87(&sk))`.
 pub fn signing_key_87(sk: &[u8; 4896]) -> SigningKey87 {
-    SigningKey87 { inner: prepare_sk::<8, 7>(&ML_DSA_87, sk) }
+    let mut out = SigningKey87 { inner: PreparedSk::<8, 7>::zeroed() };
+    prepare_sk_into::<8, 7>(&ML_DSA_87, sk, &mut out.inner);
+    core::mem::replace(&mut out, SigningKey87 { inner: PreparedSk::<8, 7>::zeroed() })
 }
 
 /// Algorithm 2 ML-DSA.Sign for ML-DSA-87 with a prepared key. For `ssk = signing_key_87(sk)` it returns exactly
