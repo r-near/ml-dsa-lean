@@ -40,3 +40,4 @@ import Proofs.PartialSign
 import Proofs.PkFromSk
 import Proofs.Divergence
 import Proofs.PreparedVerify
+import Proofs.PreparedSign

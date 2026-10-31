@@ -397,3 +397,27 @@ Proofs.verify_prepared_87_eq
 Proofs.verify_internal_prepared_87_eq
 Proofs.verify_prepared_87_exact
 Proofs.verify_internal_prepared_87_exact
+import Proofs.PreparedSign
+Proofs.Sign.prepare_sk_spec
+Proofs.Sign.sign_prepared_core
+Proofs.prepare_sk_partial
+Proofs.sign_prepared_partial
+Proofs.sign_internal_prepared_eq
+Proofs.signing_key_44_partial
+Proofs.signing_key_44_not_fail
+Proofs.sign_prepared_44_eq
+Proofs.sign_internal_prepared_44_eq
+Proofs.sign_prepared_44_exact
+Proofs.sign_internal_prepared_44_exact
+Proofs.signing_key_65_partial
+Proofs.signing_key_65_not_fail
+Proofs.sign_prepared_65_eq
+Proofs.sign_internal_prepared_65_eq
+Proofs.sign_prepared_65_exact
+Proofs.sign_internal_prepared_65_exact
+Proofs.signing_key_87_partial
+Proofs.signing_key_87_not_fail
+Proofs.sign_prepared_87_eq
+Proofs.sign_internal_prepared_87_eq
+Proofs.sign_prepared_87_exact
+Proofs.sign_internal_prepared_87_exact
