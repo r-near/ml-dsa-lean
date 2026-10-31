@@ -23,3 +23,41 @@ XSpec.fipsNTT_eq
 XSpec.fipsNTTinv_eq
 XSpec.fipsMulNTT_eq
 XSpec.fipsAddPoly_eq
+import XSpec.Bits
+XSpec.bitlen_eq_size
+XSpec.integerToBits_eq
+XSpec.bitsToInteger_eq
+XSpec.integerToBytes_eq
+XSpec.bytesToBits_eq
+XSpec.bitsToBytes_eq
+import XSpec.Pack
+XSpec.simpleBitPack_eq
+XSpec.bitPack_eq
+XSpec.simpleBitUnpack_eq
+XSpec.bitUnpack_eq
+import XSpec.Hint
+XSpec.hintBitUnpack_eq
+XSpec.hintBitPack_eq
+import XSpec.Keys
+XSpec.pkEncode_eq
+XSpec.pkDecode_eq
+XSpec.skEncode_eq
+XSpec.w1Encode_eq
+import XSpec.Sig
+XSpec.sigEncode_eq
+XSpec.sigDecode_eq
+XSpec.skDecode_eq
+import XSpec.Hash
+XSpec.oursShake128_squeeze
+XSpec.oursShake256_squeeze
+XSpec.oursShake128_val
+XSpec.oursShake256_val
+XSpec.G_eq
+XSpec.H_eq
+XSpec.integerToBytes_alg_eq
+XSpec.expandMask_eq
+import XSpec.Samplers
+XSpec.RN.rejNTT_ours_to_theirs
+XSpec.RN.rejNTT_theirs_to_ours
+XSpec.RB.rejBounded_ours_to_theirs
+XSpec.RB.rejBounded_theirs_to_ours
