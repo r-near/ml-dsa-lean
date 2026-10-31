@@ -23,7 +23,7 @@ noncomputable section
 namespace Impl
 
 /-- [ml_dsa_verified::api::ctx_prefix]: loop body 0:
-    Source: 'src/api.rs', lines 36:4-39:5 -/
+    Source: 'src/api.rs', lines 43:4-46:5 -/
 @[rust_loop_body]
 def api.ctx_prefix_loop.body
   (ctx : Slice Std.U8) («prefix» : Array Std.U8 257#usize) (i : Std.Usize) :
@@ -41,7 +41,7 @@ def api.ctx_prefix_loop.body
   else ok (done «prefix»)
 
 /-- [ml_dsa_verified::api::ctx_prefix]: loop 0:
-    Source: 'src/api.rs', lines 36:4-39:5 -/
+    Source: 'src/api.rs', lines 43:4-46:5 -/
 @[rust_loop]
 def api.ctx_prefix_loop
   (ctx : Slice Std.U8) («prefix» : Array Std.U8 257#usize) (i : Std.Usize) :
@@ -52,7 +52,7 @@ def api.ctx_prefix_loop
     («prefix», i)
 
 /-- [ml_dsa_verified::api::ctx_prefix]:
-    Source: 'src/api.rs', lines 28:0-41:1 -/
+    Source: 'src/api.rs', lines 35:0-48:1 -/
 def api.ctx_prefix
   (ctx : Slice Std.U8) : RustM (Option (Array Std.U8 257#usize)) := do
   let i := Slice.len ctx
@@ -2235,7 +2235,7 @@ def keygen.keygen_internal
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::keygen_44]:
-    Source: 'src/api.rs', lines 49:0-54:1
+    Source: 'src/api.rs', lines 56:0-61:1
     Visibility: public -/
 def api.keygen_44
   (xi : Array Std.U8 32#usize) :
@@ -3806,7 +3806,7 @@ def sign.sign_internal
   sign.sign_internal_loop p sig s1_hat s2_hat t0_hat a_hat mu1 rho_pp1 0#u32
 
 /-- [ml_dsa_verified::api::sign_44]:
-    Source: 'src/api.rs', lines 58:0-69:1
+    Source: 'src/api.rs', lines 65:0-76:1
     Visibility: public -/
 def api.sign_44
   (sk : Array Std.U8 2560#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -3871,6 +3871,209 @@ def verify.prefix_eq
   := do
   let diff ← verify.prefix_eq_loop a b len 0#u8 0#usize
   ok (diff = 0#u8)
+
+/-- [ml_dsa_verified::rounding::use_hint]:
+    Source: 'src/rounding.rs', lines 104:0-121:1
+    Visibility: public -/
+def rounding.use_hint
+  (p : params.Params) (h : Bool) (r : Std.U32) : RustM Std.U32 := do
+  let i ← field.Q - 1#u32
+  let i1 ← 2#u32 * p.gamma2
+  let m ← i / i1
+  let (r1, r0) ← rounding.decompose p r
+  if h
+  then
+    if r0 != 0#u32
+    then
+      let i2 ← field.Q >>> 1#i32
+      if r0 <= i2
+      then let i3 ← r1 + 1#u32
+           i3 % m
+      else let i3 ← r1 + m
+           let i4 ← i3 - 1#u32
+           i4 % m
+    else let i2 ← r1 + m
+         let i3 ← i2 - 1#u32
+         i3 % m
+  else ok r1
+
+/-- [ml_dsa_verified::rounding::poly_use_hint]: loop body 0:
+    Source: 'src/rounding.rs', lines 127:4-130:5
+    Visibility: public -/
+@[rust_loop_body]
+def rounding.poly_use_hint_loop.body
+  (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)
+  (out : Array Std.U32 256#usize) (j : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize) (Array Std.U32
+    256#usize))
+  := do
+  if j < 256#usize
+  then
+    let b ← Array.index_usize h j
+    let i ← Array.index_usize r j
+    let i1 ← rounding.use_hint p b i
+    let a ← Array.update out j i1
+    let j1 ← j + 1#usize
+    ok (cont (a, j1))
+  else ok (done out)
+
+/-- [ml_dsa_verified::rounding::poly_use_hint]: loop 0:
+    Source: 'src/rounding.rs', lines 127:4-130:5
+    Visibility: public -/
+@[rust_loop]
+def rounding.poly_use_hint_loop
+  (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)
+  (out : Array Std.U32 256#usize) (j : Std.Usize) :
+  RustM (Array Std.U32 256#usize)
+  := do
+  loop
+    (fun (out1, j1) => rounding.poly_use_hint_loop.body p h r out1 j1)
+    (out, j)
+
+/-- [ml_dsa_verified::rounding::poly_use_hint]:
+    Source: 'src/rounding.rs', lines 124:0-132:1
+    Visibility: public -/
+def rounding.poly_use_hint
+  (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)
+  :
+  RustM (Array Std.U32 256#usize)
+  := do
+  let out := Array.repeat 256#usize 0#u32
+  rounding.poly_use_hint_loop p h r out 0#usize
+
+/-- [ml_dsa_verified::verify::verify_decoded]: loop body 0:
+    Source: 'src/verify.rs', lines 110:4-116:5 -/
+@[rust_loop_body]
+def verify.verify_decoded_loop.body
+  {K : Std.Usize} (i : Std.Usize) (i1 : Std.Usize) (i2 : Std.U32)
+  (i3 : Std.Usize) (i4 : Std.Usize) (i5 : Std.U32) (i6 : Std.U32)
+  (i7 : Std.Usize) (i8 : Std.U32) (i9 : Std.Usize) (i10 : Std.Usize)
+  (i11 : Std.Usize) (i12 : Std.U32) (i13 : Std.U64) (i14 : Std.U64)
+  (a : Array (Array Std.U32 256#usize) K) (h : Array (Array Bool 256#usize) K)
+  (az_hat : Array (Array Std.U32 256#usize) K)
+  (c_hat : Array Std.U32 256#usize)
+  (w_approx : Array (Array Std.U32 256#usize) K)
+  (w1 : Array (Array Std.U32 256#usize) K) (i15 : Std.Usize) :
+  RustM (ControlFlow ((Array (Array Std.U32 256#usize) K) × (Array (Array
+    Std.U32 256#usize) K) × Std.Usize) (Array (Array Std.U32 256#usize) K))
+  := do
+  if i15 < K
+  then
+    let a1 ← Array.index_usize a i15
+    let ct1_hat ← ntt.multiply_ntt c_hat a1
+    let a2 ← Array.index_usize az_hat i15
+    let a3 ← ntt.sub_poly a2 ct1_hat
+    let a4 ← ntt.ntt_inverse a3
+    let w_approx1 ← Array.update w_approx i15 a4
+    let a5 ← Array.index_usize h i15
+    let a6 ← Array.index_usize w_approx1 i15
+    let a7 ←
+      rounding.poly_use_hint
+        {
+          k := i,
+          l := i1,
+          eta := i2,
+          eta_bits := i3,
+          tau := i4,
+          beta := i5,
+          gamma1 := i6,
+          gamma1_bits := i7,
+          gamma2 := i8,
+          w1_bits := i9,
+          omega := i10,
+          c_tilde_len := i11,
+          two_gamma2_shift := i12,
+          two_gamma2_mult := i13,
+          two_gamma2_div_mult := i14
+        } a5 a6
+    let a8 ← Array.update w1 i15 a7
+    let i16 ← i15 + 1#usize
+    ok (cont (w_approx1, a8, i16))
+  else ok (done w1)
+
+/-- [ml_dsa_verified::verify::verify_decoded]: loop 0:
+    Source: 'src/verify.rs', lines 110:4-116:5 -/
+@[rust_loop]
+def verify.verify_decoded_loop
+  {K : Std.Usize} (i : Std.Usize) (i1 : Std.Usize) (i2 : Std.U32)
+  (i3 : Std.Usize) (i4 : Std.Usize) (i5 : Std.U32) (i6 : Std.U32)
+  (i7 : Std.Usize) (i8 : Std.U32) (i9 : Std.Usize) (i10 : Std.Usize)
+  (i11 : Std.Usize) (i12 : Std.U32) (i13 : Std.U64) (i14 : Std.U64)
+  (a : Array (Array Std.U32 256#usize) K) (h : Array (Array Bool 256#usize) K)
+  (az_hat : Array (Array Std.U32 256#usize) K)
+  (c_hat : Array Std.U32 256#usize)
+  (w_approx : Array (Array Std.U32 256#usize) K)
+  (w1 : Array (Array Std.U32 256#usize) K) (i15 : Std.Usize) :
+  RustM (Array (Array Std.U32 256#usize) K)
+  := do
+  loop
+    (fun (w_approx1, w11, i16) => verify.verify_decoded_loop.body i i1 i2 i3 i4
+      i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 a h az_hat c_hat w_approx1 w11 i16)
+    (w_approx, w1, i15)
+
+/-- [ml_dsa_verified::verify::verify_decoded]:
+    Source: 'src/verify.rs', lines 85:0-130:1 -/
+def verify.verify_decoded
+  {K : Std.Usize} {L : Std.Usize} (p : params.Params)
+  (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
+  (c_tilde : Array Std.U8 64#usize) (z : Array (Array Std.U32 256#usize) L)
+  (h : Array (Array Bool 256#usize) K) :
+  RustM Bool
+  := do
+  let mu := Array.repeat 64#usize 0#u8
+  let hash ← keccak.Shake.shake256
+  let s ← lift (Array.to_slice vk.tr)
+  let hash1 ← keccak.Shake.absorb hash s
+  let hash2 ← keccak.Shake.absorb hash1 m_prefix
+  let hash3 ← keccak.Shake.absorb hash2 m
+  let hash4 ← keccak.Shake.finalize hash3
+  let (s1, to_slice_mut_back) ← lift (Array.to_slice_mut mu)
+  let (_, s2) ← keccak.Shake.squeeze hash4 s1
+  let s3 ←
+    core.array.Array.index (core.ops.index.IndexSlice
+      (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde
+      { «end» := p.c_tilde_len }
+  let c ← sampling.sample_in_ball p s3
+  let a ← ntt.ntt_vec z
+  let az_hat ← ntt.matrix_vector_ntt vk.a_hat a
+  let c_hat ← ntt.ntt c
+  let a1 := Array.repeat 256#usize 0#u32
+  let w_approx := Array.repeat K a1
+  let a2 := Array.repeat 256#usize 0#u32
+  let w1 := Array.repeat K a2
+  let mu1 := to_slice_mut_back s2
+  let w11 ←
+    verify.verify_decoded_loop p.k p.l p.eta p.eta_bits p.tau p.beta 
+      p.gamma1 p.gamma1_bits p.gamma2 p.w1_bits p.omega p.c_tilde_len
+      p.two_gamma2_shift p.two_gamma2_mult p.two_gamma2_div_mult vk.t1_2d_hat h
+      az_hat c_hat w_approx w1 0#usize
+  let w1_enc := Array.repeat 1536#usize 0#u8
+  let (s4, to_slice_mut_back1) ← lift (Array.to_slice_mut w1_enc)
+  let s5 ← encode.w1_encode p w11 s4
+  let c_tilde_prime := Array.repeat 64#usize 0#u8
+  let s6 ← lift (Array.to_slice mu1)
+  let hash5 ← keccak.Shake.absorb hash s6
+  let w1_enc1 := to_slice_mut_back1 s5
+  let i ← K * 32#usize
+  let i1 ← i * p.w1_bits
+  let s7 ←
+    core.array.Array.index (core.ops.index.IndexSlice
+      (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) w1_enc1
+      { «end» := i1 }
+  let hash6 ← keccak.Shake.absorb hash5 s7
+  let hash7 ← keccak.Shake.finalize hash6
+  let (s8, index_mut_back) ←
+    core.array.Array.index_mut (core.ops.index.IndexMutSlice
+      (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde_prime
+      { «end» := p.c_tilde_len }
+  let (_, s9) ← keccak.Shake.squeeze hash7 s8
+  let i2 ← rounding.vec_infinity_norm z
+  let i3 ← p.gamma1 - p.beta
+  let c_tilde_prime1 := index_mut_back s9
+  let hash_ok ← verify.prefix_eq c_tilde c_tilde_prime1 p.c_tilde_len
+  if i2 < i3
+  then ok hash_ok
+  else ok false
 
 /-- [ml_dsa_verified::verify::scale_by_2d]: loop body 0:
     Source: 'src/verify.rs', lines 15:4-18:5 -/
@@ -3949,74 +4152,105 @@ def verify.scale_vec_by_2d
   let out := Array.repeat N a
   verify.scale_vec_by_2d_loop t1 out 0#usize
 
-/-- [ml_dsa_verified::rounding::use_hint]:
-    Source: 'src/rounding.rs', lines 104:0-121:1
-    Visibility: public -/
-def rounding.use_hint
-  (p : params.Params) (h : Bool) (r : Std.U32) : RustM Std.U32 := do
-  let i ← field.Q - 1#u32
-  let i1 ← 2#u32 * p.gamma2
-  let m ← i / i1
-  let (r1, r0) ← rounding.decompose p r
-  if h
-  then
-    if r0 != 0#u32
-    then
-      let i2 ← field.Q >>> 1#i32
-      if r0 <= i2
-      then let i3 ← r1 + 1#u32
-           i3 % m
-      else let i3 ← r1 + m
-           let i4 ← i3 - 1#u32
-           i4 % m
-    else let i2 ← r1 + m
-         let i3 ← i2 - 1#u32
-         i3 % m
-  else ok r1
-
-/-- [ml_dsa_verified::rounding::poly_use_hint]: loop body 0:
-    Source: 'src/rounding.rs', lines 127:4-130:5
+/-- [ml_dsa_verified::encode::pk_decode]: loop body 0:
+    Source: 'src/encode.rs', lines 237:4-240:5
     Visibility: public -/
 @[rust_loop_body]
-def rounding.poly_use_hint_loop.body
-  (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)
-  (out : Array Std.U32 256#usize) (j : Std.Usize) :
-  RustM (ControlFlow ((Array Std.U32 256#usize) × Std.Usize) (Array Std.U32
-    256#usize))
+def encode.pk_decode_loop0.body
+  (pk : Slice Std.U8) (rho : Array Std.U8 32#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U8 32#usize) × Std.Usize) (Array Std.U8
+    32#usize))
   := do
-  if j < 256#usize
+  if i < 32#usize
   then
-    let b ← Array.index_usize h j
-    let i ← Array.index_usize r j
-    let i1 ← rounding.use_hint p b i
-    let a ← Array.update out j i1
-    let j1 ← j + 1#usize
-    ok (cont (a, j1))
-  else ok (done out)
+    let i1 ← Slice.index_usize pk i
+    let a ← Array.update rho i i1
+    let i2 ← i + 1#usize
+    ok (cont (a, i2))
+  else ok (done rho)
 
-/-- [ml_dsa_verified::rounding::poly_use_hint]: loop 0:
-    Source: 'src/rounding.rs', lines 127:4-130:5
+/-- [ml_dsa_verified::encode::pk_decode]: loop 0:
+    Source: 'src/encode.rs', lines 237:4-240:5
     Visibility: public -/
 @[rust_loop]
-def rounding.poly_use_hint_loop
-  (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)
-  (out : Array Std.U32 256#usize) (j : Std.Usize) :
-  RustM (Array Std.U32 256#usize)
+def encode.pk_decode_loop0
+  (pk : Slice Std.U8) (rho : Array Std.U8 32#usize) (i : Std.Usize) :
+  RustM (Array Std.U8 32#usize)
   := do
   loop
-    (fun (out1, j1) => rounding.poly_use_hint_loop.body p h r out1 j1)
-    (out, j)
+    (fun (rho1, i1) => encode.pk_decode_loop0.body pk rho1 i1)
+    (rho, i)
 
-/-- [ml_dsa_verified::rounding::poly_use_hint]:
-    Source: 'src/rounding.rs', lines 124:0-132:1
+/-- [ml_dsa_verified::encode::pk_decode]: loop body 1:
+    Source: 'src/encode.rs', lines 243:4-246:5
     Visibility: public -/
-def rounding.poly_use_hint
-  (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)
-  :
-  RustM (Array Std.U32 256#usize)
+@[rust_loop_body]
+def encode.pk_decode_loop1.body
+  {K : Std.Usize} (pk : Slice Std.U8) (t1 : Array (Array Std.U32 256#usize) K)
+  (i : Std.Usize) :
+  RustM (ControlFlow ((Array (Array Std.U32 256#usize) K) × Std.Usize) (Array
+    (Array Std.U32 256#usize) K))
   := do
-  let out := Array.repeat 256#usize 0#u32
-  rounding.poly_use_hint_loop p h r out 0#usize
+  if i < K
+  then
+    let i1 ← i * 320#usize
+    let i2 ← 32#usize + i1
+    let i3 ← i + 1#usize
+    let i4 ← i3 * 320#usize
+    let i5 ← 32#usize + i4
+    let s ←
+      core.slice.index.Slice.index (core.slice.index.SliceIndexRangeUsizeSlice
+        Std.U8) pk { start := i2, «end» := i5 }
+    let a ← encode.bit_unpack s 10#usize
+    let a1 ← Array.update t1 i a
+    ok (cont (a1, i3))
+  else ok (done t1)
+
+/-- [ml_dsa_verified::encode::pk_decode]: loop 1:
+    Source: 'src/encode.rs', lines 243:4-246:5
+    Visibility: public -/
+@[rust_loop]
+def encode.pk_decode_loop1
+  {K : Std.Usize} (pk : Slice Std.U8) (t1 : Array (Array Std.U32 256#usize) K)
+  (i : Std.Usize) :
+  RustM (Array (Array Std.U32 256#usize) K)
+  := do
+  loop
+    (fun (t11, i1) => encode.pk_decode_loop1.body pk t11 i1)
+    (t1, i)
+
+/-- [ml_dsa_verified::encode::pk_decode]:
+    Source: 'src/encode.rs', lines 234:0-248:1
+    Visibility: public -/
+def encode.pk_decode
+  (K : Std.Usize) (pk : Slice Std.U8) :
+  RustM ((Array Std.U8 32#usize) × (Array (Array Std.U32 256#usize) K))
+  := do
+  let rho := Array.repeat 32#usize 0#u8
+  let rho1 ← encode.pk_decode_loop0 pk rho 0#usize
+  let a := Array.repeat 256#usize 0#u32
+  let t1 := Array.repeat K a
+  let t11 ← encode.pk_decode_loop1 pk t1 0#usize
+  ok (rho1, t11)
+
+/-- [ml_dsa_verified::verify::prepare_vk]:
+    Source: 'src/verify.rs', lines 64:0-78:1 -/
+def verify.prepare_vk
+  (K : Std.Usize) (L : Std.Usize) (pk : Slice Std.U8) :
+  RustM (verify.PreparedVk K L)
+  := do
+  let (rho, t1) ← encode.pk_decode K pk
+  let a_hat ← sampling.expand_a K L rho
+  let tr := Array.repeat 64#usize 0#u8
+  let hash ← keccak.Shake.shake256
+  let hash1 ← keccak.Shake.absorb hash pk
+  let hash2 ← keccak.Shake.finalize hash1
+  let (s, to_slice_mut_back) ← lift (Array.to_slice_mut tr)
+  let (_, s1) ← keccak.Shake.squeeze hash2 s
+  let a ← verify.scale_vec_by_2d t1
+  let t1_2d_hat ← ntt.ntt_vec a
+  let tr1 := to_slice_mut_back s1
+  ok { a_hat, t1_2d_hat, tr := tr1 }
 
 /-- [ml_dsa_verified::params::sig_len]:
     Source: 'src/params.rs', lines 87:0-89:1
@@ -4289,164 +4523,8 @@ def encode.sig_decode
   | none => ok none
   | some h => ok (some (c_tilde1, z1, h))
 
-/-- [ml_dsa_verified::encode::pk_decode]: loop body 0:
-    Source: 'src/encode.rs', lines 237:4-240:5
-    Visibility: public -/
-@[rust_loop_body]
-def encode.pk_decode_loop0.body
-  (pk : Slice Std.U8) (rho : Array Std.U8 32#usize) (i : Std.Usize) :
-  RustM (ControlFlow ((Array Std.U8 32#usize) × Std.Usize) (Array Std.U8
-    32#usize))
-  := do
-  if i < 32#usize
-  then
-    let i1 ← Slice.index_usize pk i
-    let a ← Array.update rho i i1
-    let i2 ← i + 1#usize
-    ok (cont (a, i2))
-  else ok (done rho)
-
-/-- [ml_dsa_verified::encode::pk_decode]: loop 0:
-    Source: 'src/encode.rs', lines 237:4-240:5
-    Visibility: public -/
-@[rust_loop]
-def encode.pk_decode_loop0
-  (pk : Slice Std.U8) (rho : Array Std.U8 32#usize) (i : Std.Usize) :
-  RustM (Array Std.U8 32#usize)
-  := do
-  loop
-    (fun (rho1, i1) => encode.pk_decode_loop0.body pk rho1 i1)
-    (rho, i)
-
-/-- [ml_dsa_verified::encode::pk_decode]: loop body 1:
-    Source: 'src/encode.rs', lines 243:4-246:5
-    Visibility: public -/
-@[rust_loop_body]
-def encode.pk_decode_loop1.body
-  {K : Std.Usize} (pk : Slice Std.U8) (t1 : Array (Array Std.U32 256#usize) K)
-  (i : Std.Usize) :
-  RustM (ControlFlow ((Array (Array Std.U32 256#usize) K) × Std.Usize) (Array
-    (Array Std.U32 256#usize) K))
-  := do
-  if i < K
-  then
-    let i1 ← i * 320#usize
-    let i2 ← 32#usize + i1
-    let i3 ← i + 1#usize
-    let i4 ← i3 * 320#usize
-    let i5 ← 32#usize + i4
-    let s ←
-      core.slice.index.Slice.index (core.slice.index.SliceIndexRangeUsizeSlice
-        Std.U8) pk { start := i2, «end» := i5 }
-    let a ← encode.bit_unpack s 10#usize
-    let a1 ← Array.update t1 i a
-    ok (cont (a1, i3))
-  else ok (done t1)
-
-/-- [ml_dsa_verified::encode::pk_decode]: loop 1:
-    Source: 'src/encode.rs', lines 243:4-246:5
-    Visibility: public -/
-@[rust_loop]
-def encode.pk_decode_loop1
-  {K : Std.Usize} (pk : Slice Std.U8) (t1 : Array (Array Std.U32 256#usize) K)
-  (i : Std.Usize) :
-  RustM (Array (Array Std.U32 256#usize) K)
-  := do
-  loop
-    (fun (t11, i1) => encode.pk_decode_loop1.body pk t11 i1)
-    (t1, i)
-
-/-- [ml_dsa_verified::encode::pk_decode]:
-    Source: 'src/encode.rs', lines 234:0-248:1
-    Visibility: public -/
-def encode.pk_decode
-  (K : Std.Usize) (pk : Slice Std.U8) :
-  RustM ((Array Std.U8 32#usize) × (Array (Array Std.U32 256#usize) K))
-  := do
-  let rho := Array.repeat 32#usize 0#u8
-  let rho1 ← encode.pk_decode_loop0 pk rho 0#usize
-  let a := Array.repeat 256#usize 0#u32
-  let t1 := Array.repeat K a
-  let t11 ← encode.pk_decode_loop1 pk t1 0#usize
-  ok (rho1, t11)
-
-/-- [ml_dsa_verified::verify::verify_internal]: loop body 0:
-    Source: 'src/verify.rs', lines 94:4-100:5
-    Visibility: public -/
-@[rust_loop_body]
-def verify.verify_internal_loop.body
-  {K : Std.Usize} (i : Std.Usize) (i1 : Std.Usize) (i2 : Std.U32)
-  (i3 : Std.Usize) (i4 : Std.Usize) (i5 : Std.U32) (i6 : Std.U32)
-  (i7 : Std.Usize) (i8 : Std.U32) (i9 : Std.Usize) (i10 : Std.Usize)
-  (i11 : Std.Usize) (i12 : Std.U32) (i13 : Std.U64) (i14 : Std.U64)
-  (h : Array (Array Bool 256#usize) K)
-  (az_hat : Array (Array Std.U32 256#usize) K)
-  (c_hat : Array Std.U32 256#usize)
-  (t1_2d_hat : Array (Array Std.U32 256#usize) K)
-  (w_approx : Array (Array Std.U32 256#usize) K)
-  (w1 : Array (Array Std.U32 256#usize) K) (i15 : Std.Usize) :
-  RustM (ControlFlow ((Array (Array Std.U32 256#usize) K) × (Array (Array
-    Std.U32 256#usize) K) × Std.Usize) (Array (Array Std.U32 256#usize) K))
-  := do
-  if i15 < K
-  then
-    let a ← Array.index_usize t1_2d_hat i15
-    let ct1_hat ← ntt.multiply_ntt c_hat a
-    let a1 ← Array.index_usize az_hat i15
-    let a2 ← ntt.sub_poly a1 ct1_hat
-    let a3 ← ntt.ntt_inverse a2
-    let w_approx1 ← Array.update w_approx i15 a3
-    let a4 ← Array.index_usize h i15
-    let a5 ← Array.index_usize w_approx1 i15
-    let a6 ←
-      rounding.poly_use_hint
-        {
-          k := i,
-          l := i1,
-          eta := i2,
-          eta_bits := i3,
-          tau := i4,
-          beta := i5,
-          gamma1 := i6,
-          gamma1_bits := i7,
-          gamma2 := i8,
-          w1_bits := i9,
-          omega := i10,
-          c_tilde_len := i11,
-          two_gamma2_shift := i12,
-          two_gamma2_mult := i13,
-          two_gamma2_div_mult := i14
-        } a4 a5
-    let a7 ← Array.update w1 i15 a6
-    let i16 ← i15 + 1#usize
-    ok (cont (w_approx1, a7, i16))
-  else ok (done w1)
-
-/-- [ml_dsa_verified::verify::verify_internal]: loop 0:
-    Source: 'src/verify.rs', lines 94:4-100:5
-    Visibility: public -/
-@[rust_loop]
-def verify.verify_internal_loop
-  {K : Std.Usize} (i : Std.Usize) (i1 : Std.Usize) (i2 : Std.U32)
-  (i3 : Std.Usize) (i4 : Std.Usize) (i5 : Std.U32) (i6 : Std.U32)
-  (i7 : Std.Usize) (i8 : Std.U32) (i9 : Std.Usize) (i10 : Std.Usize)
-  (i11 : Std.Usize) (i12 : Std.U32) (i13 : Std.U64) (i14 : Std.U64)
-  (h : Array (Array Bool 256#usize) K)
-  (az_hat : Array (Array Std.U32 256#usize) K)
-  (c_hat : Array Std.U32 256#usize)
-  (t1_2d_hat : Array (Array Std.U32 256#usize) K)
-  (w_approx : Array (Array Std.U32 256#usize) K)
-  (w1 : Array (Array Std.U32 256#usize) K) (i15 : Std.Usize) :
-  RustM (Array (Array Std.U32 256#usize) K)
-  := do
-  loop
-    (fun (w_approx1, w11, i16) => verify.verify_internal_loop.body i i1 i2 i3
-      i4 i5 i6 i7 i8 i9 i10 i11 i12 i13 i14 h az_hat c_hat t1_2d_hat w_approx1
-      w11 i16)
-    (w_approx, w1, i15)
-
 /-- [ml_dsa_verified::verify::verify_internal]:
-    Source: 'src/verify.rs', lines 50:0-114:1
+    Source: 'src/verify.rs', lines 142:0-163:1
     Visibility: public -/
 def verify.verify_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
@@ -4463,78 +4541,16 @@ def verify.verify_internal
     if i2 != i3
     then ok false
     else
-      let (rho, t1) ← encode.pk_decode K pk
       let o ← encode.sig_decode K L p sig
       match o with
       | none => ok false
       | some parts =>
         let (c_tilde, z, h) := parts
-        let a_hat ← sampling.expand_a K L rho
-        let tr := Array.repeat 64#usize 0#u8
-        let hash ← keccak.Shake.shake256
-        let hash1 ← keccak.Shake.absorb hash pk
-        let hash2 ← keccak.Shake.finalize hash1
-        let (s, to_slice_mut_back) ← lift (Array.to_slice_mut tr)
-        let (_, s1) ← keccak.Shake.squeeze hash2 s
-        let mu := Array.repeat 64#usize 0#u8
-        let tr1 := to_slice_mut_back s1
-        let s2 ← lift (Array.to_slice tr1)
-        let hash3 ← keccak.Shake.absorb hash s2
-        let hash4 ← keccak.Shake.absorb hash3 m_prefix
-        let hash5 ← keccak.Shake.absorb hash4 m
-        let hash6 ← keccak.Shake.finalize hash5
-        let (s3, to_slice_mut_back1) ← lift (Array.to_slice_mut mu)
-        let (_, s4) ← keccak.Shake.squeeze hash6 s3
-        let s5 ←
-          core.array.Array.index (core.ops.index.IndexSlice
-            (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) c_tilde
-            { «end» := p.c_tilde_len }
-        let c ← sampling.sample_in_ball p s5
-        let a ← ntt.ntt_vec z
-        let az_hat ← ntt.matrix_vector_ntt a_hat a
-        let c_hat ← ntt.ntt c
-        let a1 ← verify.scale_vec_by_2d t1
-        let t1_2d_hat ← ntt.ntt_vec a1
-        let a2 := Array.repeat 256#usize 0#u32
-        let w_approx := Array.repeat K a2
-        let a3 := Array.repeat 256#usize 0#u32
-        let w1 := Array.repeat K a3
-        let mu1 := to_slice_mut_back1 s4
-        let w11 ←
-          verify.verify_internal_loop p.k p.l p.eta p.eta_bits p.tau 
-            p.beta p.gamma1 p.gamma1_bits p.gamma2 p.w1_bits p.omega
-            p.c_tilde_len p.two_gamma2_shift p.two_gamma2_mult
-            p.two_gamma2_div_mult h az_hat c_hat t1_2d_hat w_approx w1 0#usize
-        let w1_enc := Array.repeat 1536#usize 0#u8
-        let (s6, to_slice_mut_back2) ← lift (Array.to_slice_mut w1_enc)
-        let s7 ← encode.w1_encode p w11 s6
-        let c_tilde_prime := Array.repeat 64#usize 0#u8
-        let s8 ← lift (Array.to_slice mu1)
-        let hash7 ← keccak.Shake.absorb hash s8
-        let w1_enc1 := to_slice_mut_back2 s7
-        let i4 ← K * 32#usize
-        let i5 ← i4 * p.w1_bits
-        let s9 ←
-          core.array.Array.index (core.ops.index.IndexSlice
-            (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) w1_enc1
-            { «end» := i5 }
-        let hash8 ← keccak.Shake.absorb hash7 s9
-        let hash9 ← keccak.Shake.finalize hash8
-        let (s10, index_mut_back) ←
-          core.array.Array.index_mut (core.ops.index.IndexMutSlice
-            (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8))
-            c_tilde_prime { «end» := p.c_tilde_len }
-        let (_, s11) ← keccak.Shake.squeeze hash9 s10
-        let i6 ← rounding.vec_infinity_norm z
-        let i7 ← p.gamma1 - p.beta
-        let c_tilde_prime1 := index_mut_back s11
-        let hash_ok ← verify.prefix_eq c_tilde c_tilde_prime1 p.c_tilde_len
-        if i6 < i7
-        then ok hash_ok
-        else ok false
+        let vk ← verify.prepare_vk K L pk
+        verify.verify_decoded p vk m_prefix m c_tilde z h
 
 /-- [ml_dsa_verified::api::verify_44]:
-    Source: 'src/api.rs', lines 72:0-78:1
+    Source: 'src/api.rs', lines 79:0-85:1
     Visibility: public -/
 def api.verify_44
   (pk : Array Std.U8 1312#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4557,7 +4573,7 @@ def api.verify_44
     verify.verify_internal 4#usize 4#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_44]:
-    Source: 'src/api.rs', lines 81:0-88:1
+    Source: 'src/api.rs', lines 88:0-95:1
     Visibility: public -/
 def api.sign_internal_44
   (sk : Array Std.U8 2560#usize) (m_prime : Slice Std.U8)
@@ -4576,7 +4592,7 @@ def api.sign_internal_44
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_44]:
-    Source: 'src/api.rs', lines 91:0-93:1
+    Source: 'src/api.rs', lines 98:0-100:1
     Visibility: public -/
 def api.verify_internal_44
   (pk : Array Std.U8 1312#usize) (m_prime : Slice Std.U8)
@@ -4588,6 +4604,71 @@ def api.verify_internal_44
   let s1 ← lift (Array.to_slice (Std.Array.empty Std.U8))
   let s2 ← lift (Array.to_slice sig)
   verify.verify_internal 4#usize 4#usize p s s1 m_prime s2
+
+/-- [ml_dsa_verified::api::verifying_key_44]:
+    Source: 'src/api.rs', lines 121:0-123:1
+    Visibility: public -/
+def api.verifying_key_44
+  (pk : Array Std.U8 1312#usize) : RustM api.VerifyingKey44 := do
+  let s ← lift (Array.to_slice pk)
+  let pv ← verify.prepare_vk 4#usize 4#usize s
+  ok { inner := pv }
+
+/-- [ml_dsa_verified::verify::verify_prepared_internal]:
+    Source: 'src/verify.rs', lines 169:0-186:1
+    Visibility: public -/
+def verify.verify_prepared_internal
+  {K : Std.Usize} {L : Std.Usize} (p : params.Params)
+  (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
+  (sig : Slice Std.U8) :
+  RustM Bool
+  := do
+  let i := Slice.len sig
+  let i1 ← params.sig_len p
+  if i != i1
+  then ok false
+  else
+    let o ← encode.sig_decode K L p sig
+    match o with
+    | none => ok false
+    | some parts =>
+      let (c_tilde, z, h) := parts
+      verify.verify_decoded p vk m_prefix m c_tilde z h
+
+/-- [ml_dsa_verified::api::verify_prepared_44]:
+    Source: 'src/api.rs', lines 127:0-133:1
+    Visibility: public -/
+def api.verify_prepared_44
+  (vk : api.VerifyingKey44) (m : Slice Std.U8) (ctx : Slice Std.U8)
+  (sig : Array Std.U8 2420#usize) :
+  RustM Bool
+  := do
+  let o ← api.ctx_prefix ctx
+  match o with
+  | none => ok false
+  | some b =>
+    let p ← params.ML_DSA_44
+    let i := Slice.len ctx
+    let i1 ← 2#usize + i
+    let s ←
+      core.array.Array.index (core.ops.index.IndexSlice
+        (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) b
+        { «end» := i1 }
+    let s1 ← lift (Array.to_slice sig)
+    verify.verify_prepared_internal p vk.inner s m s1
+
+/-- [ml_dsa_verified::api::verify_internal_prepared_44]:
+    Source: 'src/api.rs', lines 137:0-139:1
+    Visibility: public -/
+def api.verify_internal_prepared_44
+  (vk : api.VerifyingKey44) (m_prime : Slice Std.U8)
+  (sig : Array Std.U8 2420#usize) :
+  RustM Bool
+  := do
+  let p ← params.ML_DSA_44
+  let s ← lift (Array.to_slice (Std.Array.empty Std.U8))
+  let s1 ← lift (Array.to_slice sig)
+  verify.verify_prepared_internal p vk.inner s m_prime s1
 
 /-- [ml_dsa_verified::encode::poly_in_eta]: loop body 0:
     Source: 'src/encode.rs', lines 161:4-166:5 -/
@@ -4714,7 +4795,7 @@ def encode.sk_is_well_formed
     true 0#usize
 
 /-- [ml_dsa_verified::api::sk_is_well_formed_44]:
-    Source: 'src/api.rs', lines 105:0-107:1
+    Source: 'src/api.rs', lines 151:0-153:1
     Visibility: public -/
 def api.sk_is_well_formed_44 (sk : Array Std.U8 2560#usize) : RustM Bool := do
   let p ← params.ML_DSA_44
@@ -4847,7 +4928,7 @@ def keygen.pk_from_sk
   else ok (false, pk)
 
 /-- [ml_dsa_verified::api::pk_from_sk_44]:
-    Source: 'src/api.rs', lines 125:0-132:1
+    Source: 'src/api.rs', lines 171:0-178:1
     Visibility: public -/
 def api.pk_from_sk_44
   (sk : Array Std.U8 2560#usize) :
@@ -4889,7 +4970,7 @@ def params.ML_DSA_65 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_65]:
-    Source: 'src/api.rs', lines 140:0-145:1
+    Source: 'src/api.rs', lines 186:0-191:1
     Visibility: public -/
 def api.keygen_65
   (xi : Array Std.U8 32#usize) :
@@ -4906,7 +4987,7 @@ def api.keygen_65
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_65]:
-    Source: 'src/api.rs', lines 149:0-160:1
+    Source: 'src/api.rs', lines 195:0-206:1
     Visibility: public -/
 def api.sign_65
   (sk : Array Std.U8 4032#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4934,7 +5015,7 @@ def api.sign_65
     else ok none
 
 /-- [ml_dsa_verified::api::verify_65]:
-    Source: 'src/api.rs', lines 163:0-169:1
+    Source: 'src/api.rs', lines 209:0-215:1
     Visibility: public -/
 def api.verify_65
   (pk : Array Std.U8 1952#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -4957,7 +5038,7 @@ def api.verify_65
     verify.verify_internal 6#usize 5#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_65]:
-    Source: 'src/api.rs', lines 172:0-179:1
+    Source: 'src/api.rs', lines 218:0-225:1
     Visibility: public -/
 def api.sign_internal_65
   (sk : Array Std.U8 4032#usize) (m_prime : Slice Std.U8)
@@ -4976,7 +5057,7 @@ def api.sign_internal_65
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_65]:
-    Source: 'src/api.rs', lines 182:0-184:1
+    Source: 'src/api.rs', lines 228:0-230:1
     Visibility: public -/
 def api.verify_internal_65
   (pk : Array Std.U8 1952#usize) (m_prime : Slice Std.U8)
@@ -4989,8 +5070,52 @@ def api.verify_internal_65
   let s2 ← lift (Array.to_slice sig)
   verify.verify_internal 6#usize 5#usize p s s1 m_prime s2
 
+/-- [ml_dsa_verified::api::verifying_key_65]:
+    Source: 'src/api.rs', lines 251:0-253:1
+    Visibility: public -/
+def api.verifying_key_65
+  (pk : Array Std.U8 1952#usize) : RustM api.VerifyingKey65 := do
+  let s ← lift (Array.to_slice pk)
+  let pv ← verify.prepare_vk 6#usize 5#usize s
+  ok { inner := pv }
+
+/-- [ml_dsa_verified::api::verify_prepared_65]:
+    Source: 'src/api.rs', lines 257:0-263:1
+    Visibility: public -/
+def api.verify_prepared_65
+  (vk : api.VerifyingKey65) (m : Slice Std.U8) (ctx : Slice Std.U8)
+  (sig : Array Std.U8 3309#usize) :
+  RustM Bool
+  := do
+  let o ← api.ctx_prefix ctx
+  match o with
+  | none => ok false
+  | some b =>
+    let p ← params.ML_DSA_65
+    let i := Slice.len ctx
+    let i1 ← 2#usize + i
+    let s ←
+      core.array.Array.index (core.ops.index.IndexSlice
+        (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) b
+        { «end» := i1 }
+    let s1 ← lift (Array.to_slice sig)
+    verify.verify_prepared_internal p vk.inner s m s1
+
+/-- [ml_dsa_verified::api::verify_internal_prepared_65]:
+    Source: 'src/api.rs', lines 267:0-269:1
+    Visibility: public -/
+def api.verify_internal_prepared_65
+  (vk : api.VerifyingKey65) (m_prime : Slice Std.U8)
+  (sig : Array Std.U8 3309#usize) :
+  RustM Bool
+  := do
+  let p ← params.ML_DSA_65
+  let s ← lift (Array.to_slice (Std.Array.empty Std.U8))
+  let s1 ← lift (Array.to_slice sig)
+  verify.verify_prepared_internal p vk.inner s m_prime s1
+
 /-- [ml_dsa_verified::api::sk_is_well_formed_65]:
-    Source: 'src/api.rs', lines 196:0-198:1
+    Source: 'src/api.rs', lines 281:0-283:1
     Visibility: public -/
 def api.sk_is_well_formed_65 (sk : Array Std.U8 4032#usize) : RustM Bool := do
   let p ← params.ML_DSA_65
@@ -4998,7 +5123,7 @@ def api.sk_is_well_formed_65 (sk : Array Std.U8 4032#usize) : RustM Bool := do
   encode.sk_is_well_formed 6#usize 5#usize p s
 
 /-- [ml_dsa_verified::api::pk_from_sk_65]:
-    Source: 'src/api.rs', lines 216:0-223:1
+    Source: 'src/api.rs', lines 301:0-308:1
     Visibility: public -/
 def api.pk_from_sk_65
   (sk : Array Std.U8 4032#usize) :
@@ -5040,7 +5165,7 @@ def params.ML_DSA_87 : RustM params.Params := do
     }
 
 /-- [ml_dsa_verified::api::keygen_87]:
-    Source: 'src/api.rs', lines 231:0-236:1
+    Source: 'src/api.rs', lines 316:0-321:1
     Visibility: public -/
 def api.keygen_87
   (xi : Array Std.U8 32#usize) :
@@ -5057,7 +5182,7 @@ def api.keygen_87
   ok (pk1, sk1)
 
 /-- [ml_dsa_verified::api::sign_87]:
-    Source: 'src/api.rs', lines 240:0-251:1
+    Source: 'src/api.rs', lines 325:0-336:1
     Visibility: public -/
 def api.sign_87
   (sk : Array Std.U8 4896#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5085,7 +5210,7 @@ def api.sign_87
     else ok none
 
 /-- [ml_dsa_verified::api::verify_87]:
-    Source: 'src/api.rs', lines 254:0-260:1
+    Source: 'src/api.rs', lines 339:0-345:1
     Visibility: public -/
 def api.verify_87
   (pk : Array Std.U8 2592#usize) (m : Slice Std.U8) (ctx : Slice Std.U8)
@@ -5108,7 +5233,7 @@ def api.verify_87
     verify.verify_internal 8#usize 7#usize p s s1 m s2
 
 /-- [ml_dsa_verified::api::sign_internal_87]:
-    Source: 'src/api.rs', lines 263:0-270:1
+    Source: 'src/api.rs', lines 348:0-355:1
     Visibility: public -/
 def api.sign_internal_87
   (sk : Array Std.U8 4896#usize) (m_prime : Slice Std.U8)
@@ -5127,7 +5252,7 @@ def api.sign_internal_87
   else ok none
 
 /-- [ml_dsa_verified::api::verify_internal_87]:
-    Source: 'src/api.rs', lines 273:0-275:1
+    Source: 'src/api.rs', lines 358:0-360:1
     Visibility: public -/
 def api.verify_internal_87
   (pk : Array Std.U8 2592#usize) (m_prime : Slice Std.U8)
@@ -5140,8 +5265,52 @@ def api.verify_internal_87
   let s2 ← lift (Array.to_slice sig)
   verify.verify_internal 8#usize 7#usize p s s1 m_prime s2
 
+/-- [ml_dsa_verified::api::verifying_key_87]:
+    Source: 'src/api.rs', lines 381:0-383:1
+    Visibility: public -/
+def api.verifying_key_87
+  (pk : Array Std.U8 2592#usize) : RustM api.VerifyingKey87 := do
+  let s ← lift (Array.to_slice pk)
+  let pv ← verify.prepare_vk 8#usize 7#usize s
+  ok { inner := pv }
+
+/-- [ml_dsa_verified::api::verify_prepared_87]:
+    Source: 'src/api.rs', lines 387:0-393:1
+    Visibility: public -/
+def api.verify_prepared_87
+  (vk : api.VerifyingKey87) (m : Slice Std.U8) (ctx : Slice Std.U8)
+  (sig : Array Std.U8 4627#usize) :
+  RustM Bool
+  := do
+  let o ← api.ctx_prefix ctx
+  match o with
+  | none => ok false
+  | some b =>
+    let p ← params.ML_DSA_87
+    let i := Slice.len ctx
+    let i1 ← 2#usize + i
+    let s ←
+      core.array.Array.index (core.ops.index.IndexSlice
+        (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) b
+        { «end» := i1 }
+    let s1 ← lift (Array.to_slice sig)
+    verify.verify_prepared_internal p vk.inner s m s1
+
+/-- [ml_dsa_verified::api::verify_internal_prepared_87]:
+    Source: 'src/api.rs', lines 397:0-399:1
+    Visibility: public -/
+def api.verify_internal_prepared_87
+  (vk : api.VerifyingKey87) (m_prime : Slice Std.U8)
+  (sig : Array Std.U8 4627#usize) :
+  RustM Bool
+  := do
+  let p ← params.ML_DSA_87
+  let s ← lift (Array.to_slice (Std.Array.empty Std.U8))
+  let s1 ← lift (Array.to_slice sig)
+  verify.verify_prepared_internal p vk.inner s m_prime s1
+
 /-- [ml_dsa_verified::api::sk_is_well_formed_87]:
-    Source: 'src/api.rs', lines 287:0-289:1
+    Source: 'src/api.rs', lines 411:0-413:1
     Visibility: public -/
 def api.sk_is_well_formed_87 (sk : Array Std.U8 4896#usize) : RustM Bool := do
   let p ← params.ML_DSA_87
@@ -5149,7 +5318,7 @@ def api.sk_is_well_formed_87 (sk : Array Std.U8 4896#usize) : RustM Bool := do
   encode.sk_is_well_formed 8#usize 7#usize p s
 
 /-- [ml_dsa_verified::api::pk_from_sk_87]:
-    Source: 'src/api.rs', lines 307:0-314:1
+    Source: 'src/api.rs', lines 431:0-438:1
     Visibility: public -/
 def api.pk_from_sk_87
   (sk : Array Std.U8 4896#usize) :
