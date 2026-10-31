@@ -34,9 +34,10 @@
   "ml_dsa_verified::api::sk_is_well_formed_87",
   "ml_dsa_verified::api::pk_from_sk_44",
   "ml_dsa_verified::api::pk_from_sk_65",
-  "ml_dsa_verified::api::pk_from_sk_87"
+  "ml_dsa_verified::api::pk_from_sk_87",
+  "ml_dsa_verified::field::mul"
  ],
- "src_sha256": "e4d66bc38feaa035866faa21a83a836d3a7791ef0fd59af44d0a1fbe3e3865ab",
+ "src_sha256": "a403199b654b45f7aed36996bc137cef5993f76c40414ae0113b8a6f70394845",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -45,7 +46,7 @@
   "lean": "v4.31.0"
  },
  "rename_changes": 0,
- "llbc_fun_decls": 153,
+ "llbc_fun_decls": 162,
  "llbc_opaque_funs": [
   "core::array::{impl}::index",
   "core::array::{impl}::index_mut",
@@ -59,6 +60,7 @@
   "core::iter::range::Step::backward_unchecked",
   "core::iter::range::Step::forward",
   "core::iter::range::Step::forward_unchecked",
+  "core::num::{impl}::wrapping_mul",
   "core::num::{impl}::wrapping_sub",
   "core::slice::index::{impl}::get",
   "core::slice::index::{impl}::get_mut",
@@ -75,5 +77,5 @@
  "aeneas_name_clashes": 0,
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
- "lean_defs": 300
+ "lean_defs": 305
 }

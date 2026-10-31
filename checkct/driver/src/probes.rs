@@ -54,6 +54,10 @@ probe!(field_add, field::add(secret_elem(), secret_elem()));
 probe!(field_sub, field::sub(secret_elem(), secret_elem()));
 probe!(field_neg, field::neg(secret_elem()));
 probe!(field_mul, field::mul(secret_elem(), secret_elem()));
+// The NTT products: the twiddle and its companion are public table entries, the other operand is secret.
+probe!(field_mul_shoup, field::mul_shoup(ntt::ZETAS[77], ntt::ZETAS_SHOUP[77], secret_elem()));
+probe!(field_mul_mont, field::mul_mont(secret_elem(), secret_elem()));
+probe!(field_mont_reduce, field::mont_reduce((secret_elem() as u64) * (secret_elem() as u64)));
 probe!(ct_lt_mask, field::ct_lt_mask(PrivateRng.next_u64() >> 1, PrivateRng.next_u64() >> 1));
 probe!(ct_select, field::ct_select(PrivateRng.next_u32(), PrivateRng.next_u32(), secret_mask()));
 

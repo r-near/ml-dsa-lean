@@ -1,4 +1,5 @@
 import Proofs.Field
+import Proofs.FieldFast
 import Proofs.Repr
 import Proofs.NTT
 import Proofs.NTTInverse

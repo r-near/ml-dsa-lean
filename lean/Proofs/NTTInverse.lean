@@ -56,10 +56,11 @@ theorem toZq_ibfly (w : Array U32 256#usize) (LEN : Nat) (z : Zq) (j i1 : Usize)
   rw [h6, h5, h3, hW1, hW2]
 
 @[step]
-theorem inner_loop_inv (LEN start : Usize) (z : U32) (hz : z.val < Spec.q)
+theorem inner_loop_inv (LEN start : Usize) (z zp : U32)
+    (hzp : zp.val = z.val * 4294967296 / 8380417)
     (hLEN : 0 < LEN.val) (hfit : start.val + 2 * LEN.val ≤ 256)
     (w0 : Array U32 256#usize) (hw0 : Canonical w0) :
-    ntt.ntt_inverse_layer_loop0_loop0 LEN w0 start z start ⦃ w =>
+    ntt.ntt_inverse_layer_loop0_loop0 LEN w0 start z zp start ⦃ w =>
       Canonical w ∧
       toZq w = (List.range' start.val LEN.val).foldl (ibfly LEN.val (z.val : Zq)) (toZq w0) ⦄ := by
   unfold ntt.ntt_inverse_layer_loop0_loop0
@@ -147,6 +148,8 @@ theorem outer_loop_inv (LEN ITER : Usize) (hLEN : 0 < LEN.val) (hprod : LEN.val 
       step*
       all_goals try first
         | exact (zetas_get m1 (by omega) ‹_› _ ‹_›).1
+        | exact z_post1
+        | exact zetas_neg_shoup_get m1 (by omega) ‹_› ‹_› _ _ _ ‹_› ‹_› z_post1 z_post2
         | (rw [start_post, i1_post]; omega)
         | (rw [i1_post]; scalar_tac)
       obtain ⟨_, hzeta⟩ := zetas_get m1 (by omega) ‹_› _ ‹_›
@@ -203,6 +206,7 @@ theorem scale_loop (w0 : Array U32 256#usize) (hw0 : Canonical w0) :
     all_goals try subst_vars
     all_goals try first
       | exact canon_get hc _
+      | exact f_shoup_eq
       | scalar_tac
     have hj : j.val < 256 := by scalar_tac
     refine ⟨canonical_set _ _ _ hc i1_post1, by omega, ?_, by omega⟩
