@@ -3,13 +3,13 @@
 What is proved, under which premises, and what is trusted. Updated as work lands.
 
 **Proved so far** (standard axioms only; `scripts/check-axioms.sh` checks every extracted def and every name in
-`lean/headline-theorems.txt`, 525 declarations at 4adba1e). Each is a `@[step]` refinement spec of an extracted function
+`lean/headline-theorems.txt`, 632 declarations at 87b4219). Each is a `@[step]` refinement spec of an extracted function
 against its `lean/Spec` algorithm, under representation relations from `Proofs/Repr.lean`.
 
 Done-gate: a module counts as proved only after `scripts/lean-check.sh` passes: a pipefail-safe `lake build` exits 0,
 the full log has no `error:` or `sorry` warning, and the axiom gate passes. Each agent reuses one stable `rx submit` name for its gates, which keeps
 that name's `.lake/build` warm (ISSUES T-7). Earlier rx jobs could report success on
-failed builds (ISSUES T-6). Every row below passed this gate at 4adba1e (job `gate-main`, `LEAN CHECK OK`, 525 declarations).
+failed builds (ISSUES T-6). Every row below passed this gate at 87b4219 (job `gate-main`, `LEAN CHECK OK`, 632 declarations).
 The phase 1–4a rows were also re-verified by a cold rebuild of ffc445c (job `verify-head`).
 
 | Module | What is proved | Extra hypotheses (parameter facts witnessed for 44/65/87; sampler premises: leaf witnesses, see below) |
@@ -42,6 +42,8 @@ k ≤ 8, ℓ ≥ 1, ω ≤ 255, …) holds for ML-DSA-44/65/87 (`ML_DSA_NN_std`)
 | `Proofs/API.lean` | **Public API (Alg 1/2/3)** for 44/65/87: `keygen_NN`, `verify_NN` (incl. \|ctx\| > 255 → false), `sign_NN` (σ on success; `none` for \|ctx\| > 255 and on exhaustion); M′ = 0 ‖ \|ctx\| ‖ ctx ‖ M matches the spec | the spec returns `some` (or `Exhausted`); nothing on the contents of pk, sk, σ, M, ctx |
 | `Proofs/APIInternal.lean` | **Internal API (Alg 7/8 without ctx)** for 44/65/87: `sign_internal_NN` (σ on success, `none` on exhaustion), `verify_internal_NN`; and the "only if" for `none`: `sign_NN`/`sign_internal_NN` return `none` only when the spec fails at every fuel, with the cases spelled out (\|ctx\| > 255, pre-loop failure, loop failure or exhaustion) | as for `API.lean` |
 | `Proofs/SkWellFormed.lean` | **Optional key check (not a FIPS step)**: `api.sk_is_well_formed_NN sk` returns `skWellFormed`, i.e. every s1/s2 coefficient skDecode yields lies in [−η, η] (t0 is always in range); keys from KeyGen are well-formed (`skWellFormed_keygen`); kernel witnesses for both outcomes. Sign does not call it (E-4) | none for the per-set theorems; KeyGen returns `some` for `skWellFormed_keygen` |
+| `Proofs/PkFromSk.lean` | **Optional key-consistency check (not a FIPS step)**: `api.pk_from_sk_NN sk` returns `Some pk` iff s1/s2 are in [−η, η] and recomputing KeyGen steps 5–9 from (ρ, s1, s2) reproduces the stored t0 and tr (K is a free seed, unchecked); never panics, agrees exactly with `skConsistentR` at any fuel; keys from KeyGen pass (`skConsistent_keygen`); acceptance implies the stored t0 and tr match (`skConsistent_sound`). Agrees with mldsa-native's `pk_from_sk` on 14 variants per set. Constant time: its steps are BINSEC-probed individually and its comparisons accumulate without early exit; the function as a whole has no probe | none for the API theorems |
+| `Proofs/Divergence.lean` | For every API function: the Rust diverges iff the spec returns no result at every fuel (Sign: and \|ctx\| ≤ 255 and no `Exhausted` at any fuel) | none |
 | `Proofs/Corr*.lean`, `Correctness.lean` | **Correctness (phase 5)**: for honest keys, Verify accepts Sign's output. Spec level, internal (`correct_internal`) and external with ctx (`correct_external`); Rust: `api.keygen_NN` → `api.sign_NN` → `api.verify_NN` returns true (`correct_44/65/87`). Building blocks: NTT algebra and convolution, ‖c·s‖∞ ≤ β, Power2Round/HighBits/UseHint lemmas, codec round trips, SampleInBall weight = τ | `StdParams`; KeyGen and Sign return `some` (RejTerm, κ budget), same fuel for all three |
 
 Reviews: the leaf proofs (phase 4a/4b) and the three internal top theorems were independently reviewed, and so were
@@ -65,14 +67,14 @@ One end-to-end Lean proof, readable top-down:
   or out-of-bounds in the Aeneas model); (b) if it returns `ok b`, then `Spec.Verify … F = some b` for some fuel `F`;
   and (c) if `Spec.Verify … F = some b` for any `F`, it returns `ok b`. Hence `b` is unique across fuels, and the
   Rust diverges exactly when the spec returns `none` at every fuel, i.e. when FIPS 204's unbounded ExpandA or
-  SampleInBall would never terminate (this follows from (a)–(c); it is not a separate theorem). The proof uses
+  SampleInBall would never terminate (`Proofs/Divergence.lean`). The proof uses
   generic loop lemmas proved by fixpoint induction (`Proofs/Partial.lean`) and fuel monotonicity of the samplers.
   Not modeled: stack exhaustion and out-of-memory.
 - `keygen_correct`, **no premises since 1be1625** (`Proofs/PartialKeyGen.lean`, `keygen_NN_exact`): for every seed
   ξ, (a) the extracted Rust never returns `fail`; (b) if `api.keygen_NN ξ = ok (pk, sk)` then `Spec.KeyGen … F =
   some (pk, sk)` for some fuel `F`; (c) if `Spec.KeyGen … F = some (pk, sk)` at any `F`, it returns `ok` of arrays
   holding that pair. So the pair is unique across fuels, and the Rust diverges exactly when the spec returns `none`
-  at every fuel (this follows from (a)–(c); it is not a separate theorem).
+  at every fuel (`Proofs/Divergence.lean`).
 - `sign_correct`, **no premises since 0074e0c** (`Proofs/PartialSign.lean`, `sign_NN_exact`,
   `sign_internal_NN_exact`): for every `sk`, `m`, `ctx`, `rnd` of the API types, (a) never `fail`; (b) if the Rust
   returns `some σ` then `Spec.Sign … F = some σ` for some `F`; (c) if `Spec.Sign … F = some σ` at any `F`, the Rust
@@ -80,7 +82,7 @@ One end-to-end Lean proof, readable top-down:
   ‖ m: ExpandA and all `kappaBudget` SampleInBall calls finished within the fuel and every attempt was rejected. The
   Rust's cap κ + ℓ ≤ 2¹⁶ is the same as `kappaBudget`; it is an implementation bound FIPS 204 allows (κ is encoded
   in 16 bits by ExpandMask), not a divergence from FIPS. Divergence happens only when no fuel lets ExpandA and the
-  SampleInBall calls of the attempts that run terminate (follows from (a)–(d)).
+  SampleInBall calls of the attempts that run terminate (`Proofs/Divergence.lean`).
 - These partial theorems restrict what the Rust may return; they give no positive guarantee for a concrete input.
   That the spec returns `some` for a given input still has no kernel witness at the top level (see below).
 - Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`. **Done** (`Proofs/Correctness.lean`).
