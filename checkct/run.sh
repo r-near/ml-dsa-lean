@@ -11,6 +11,8 @@
 #            "nearcore" builds with opt-level 3, lto = "fat", codegen-units = 1, panic = "abort" (default: the
 #            checkct workspace profile, release + debug info + panic = "abort")
 #   NAME     docker container name (default ct-run); `rx kill` does not stop containers, use `docker kill $NAME`
+# CT_MEMORY / CT_CPUS: docker --memory / --cpus caps (default 64g / 24); uncapped BINSEC runs have pushed the box
+# out of memory and killed unrelated Lean builds.
 set -o pipefail
 TIMEOUT="${TIMEOUT:-900}"
 NAME="${NAME:-ct-run}"
@@ -29,7 +31,7 @@ if [ "$PROFILE" = nearcore-novec ]; then
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false"
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
-docker run --rm --name "$NAME" $MOUNT $PENV -v "$PWD":/src:ro ct-binsec bash -c "
+docker run --rm --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -v "$PWD":/src:ro ct-binsec bash -c "
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
   rm -rf /home/opam/w/checkct/target && cd /home/opam/w && eval \$(opam env) &&
   cargo-checkct run --dir /home/opam/w --timeout $TIMEOUT $JOBS_ARG \
