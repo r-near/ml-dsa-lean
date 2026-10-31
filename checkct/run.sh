@@ -13,7 +13,15 @@
 #   NAME     docker container name (default ct-run); `rx kill` does not stop containers, use `docker kill $NAME`
 # CT_MEMORY / CT_CPUS: docker --memory / --cpus caps (default 64g / 24); uncapped BINSEC runs have pushed the box
 # out of memory and killed unrelated Lean builds.
+#            The dispatch profiles ("dispatch", "nearcore-dispatch": the driver built with its `avx2` feature, so the runtime
+#            AVX2 dispatch of src/ntt.rs is compiled in) are only supported by checkct/run-select.sh, which pre-sets the
+#            dispatch cache in the BINSEC scripts; this script refuses them (without the pre-set BINSEC would explore the
+#            AVX2 arm and stop at its first VEX instruction). Use e.g.
+#            PROFILE=dispatch ONLY='.' bash checkct/run-select.sh, or bash checkct/select-ntt.sh dispatch.
 set -o pipefail
+case "$PROFILE" in dispatch|nearcore-dispatch)
+  echo "run.sh does not support PROFILE=$PROFILE: use checkct/run-select.sh (it pre-sets the dispatch cache); see the header of this file" >&2
+  exit 2 ;; esac
 TIMEOUT="${TIMEOUT:-900}"
 NAME="${NAME:-ct-run}"
 JOBS_ARG=""

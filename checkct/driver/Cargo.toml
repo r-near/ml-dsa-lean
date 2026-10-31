@@ -6,3 +6,9 @@ edition = "2024"
 
 [dependencies]
 checkct_macros = { path = "../checkct_macros" }
+
+[features]
+# The #[path]-included crate sources are modules of this crate, so this is the crate's own `cfg(feature = "avx2")`:
+# the runtime AVX2 dispatch of src/ntt.rs. Off by default (like the crate). run-select.sh enables it for the
+# dispatch profiles by making it a default feature in its working copy of this file (cargo-checkct has no --features).
+avx2 = []

@@ -29,6 +29,10 @@ for line in text:
         funcs[cur].append((m.group(1), m.group(2).strip()))
 
 FLAGSET = re.compile(r"^(cmp|test|sub|add|dec|inc|and|or|xor|neg|shl|shr|sar)")
+found = [n for n in funcs if "_avx2" in n]
+if not found:
+    sys.exit("scan-avx2.py: no function with _avx2 in its name (driver built without the dispatch?)")
+print(len(found), "functions with _avx2 in the name")
 for name, ins in funcs.items():
     if "_avx2" not in name:
         continue

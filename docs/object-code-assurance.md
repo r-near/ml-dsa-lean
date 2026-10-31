@@ -304,10 +304,18 @@ time, **only with the opt-in `avx2` cargo feature**. The default build has a sin
 (`forbid(unsafe_code)`). This section records what the feature does to the claims above.
 
 **Status (2026-10-31): the results in this section predate the merge that made the dispatch opt-in.** They were measured on
-a tree where x86_64 always had the dispatch and the forced inlining. At the merge (6e25e52) the checkct driver includes
-`src/` without the `avx2` feature, so it never compiles the dispatch: the cache pre-set, `select-ntt.sh dispatch` and the
-static scan do nothing there. A full sweep of the merged tree, default build and `avx2` build, is pending; until then the
-table below is evidence about the code shape it was measured on, not about HEAD.
+a tree where x86_64 always had the dispatch and the forced inlining. At the merge (6e25e52) the checkct driver built `src/`
+without the `avx2` feature, so it never compiled the dispatch and the cache pre-set, `select-ntt.sh dispatch` and the
+static scan silently did nothing. The tooling now has explicit profiles (`checkct/README.md`, "Profiles for the AVX2
+dispatch"): the default profiles build no dispatch and say so; `PROFILE=dispatch` and `nearcore-dispatch` build the x86_64
+driver with the driver's `avx2` feature (the crate's `cfg(feature = "avx2")`), match the dispatch static exactly, pre-set
+it, and fail the run if the symbol or the script anchor is missing; `scan-avx2.sh` fails if the driver has no `*_avx2`
+function. Re-measured with these profiles on x86_64 (five probes: `ntt`, `ntt_inverse`, `multiply_ntt`, `field_mul_shoup`,
+`field_mul_mont`): all `secure` under `dispatch`, `nearcore-dispatch` and the default build; with the pre-set disabled,
+`ntt`, `ntt_inverse` and `multiply_ntt` under `dispatch` are `unknown` ("uninterpreted KO", the AVX2 arm), which shows
+the pre-set is what makes the verdicts above reachable; `scan-avx2.sh` finds `ntt_avx2`, `ntt_inverse_avx2` and
+`multiply_ntt_avx2`. The table below was not re-run: a full sweep of the merged tree, default build and dispatch build, is
+pending, and until then it is evidence about the code shape it was measured on, not about HEAD.
 
 **Trust argument.** The Lean proofs (`Proofs/NTT.lean`, `NTTInverse.lean`, `NTTOps.lean`) are about the source of the shared
 bodies `ntt_body`, `ntt_inverse_body` and `multiply_ntt_body`. Extraction runs with `--cfg miri`, where the
@@ -323,7 +331,7 @@ no BINSEC verdict, and functional evidence from `tests/dispatch.rs` and the KAT 
 **What BINSEC covers.**
 - cargo-checkct models `cpuid` as "no optional features" (`docs/upstream-issues.md` U-32). The dispatch cache is a `static` in `.bss`, which
   BINSEC leaves symbolic, so it would explore the AVX2 arm anyway. `checkct/run-select.sh` therefore pre-sets the cache to 1
-  ("checked, no AVX2") in the generated BINSEC script on x86_64, which is exactly what the stubbed `cpuid` would have produced.
+  ("checked, no AVX2") in the generated BINSEC scripts on x86_64 in the dispatch profiles, which is exactly what the stubbed `cpuid` would have produced.
   The probes then follow the portable arm, which is the body the proofs cover.
 - BINSEC 0.11.3 cannot lift the VEX-encoded instructions of the AVX2 copy (status `unknown`, "uninterpreted KO" at the first
   vector instruction). A build with `-C target-feature=+avx2` (`bash checkct/select-ntt.sh avx2`) therefore ends `unknown` for
