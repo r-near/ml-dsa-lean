@@ -342,4 +342,81 @@ theorem getElem?_squeeze (r : Nat) (hr : 0 < r) :
     have : k * r + r + off - (stateBytes r S).length = k * r + off := by simp [stateBytes_eq]; omega
     rw [this, ih _ (d - r) off hoff (by omega), Function.iterate_succ_apply]
 
+/-! ### Whole lanes -/
+
+/-- What `Shake::xor_lane` does: XOR the lane `X` into lane `j` of the state. -/
+def xorLane (S : State) (j : Nat) (X : UInt64) : State := S.set! j (S[j]! ^^^ X)
+
+theorem sb_xorLane (S : State) (j : Nat) (X : UInt64) (hj : j < 25) (k : Nat) (hk : k < 200) :
+    sb (xorLane S j X) k = if k / 8 = j then sb S k ^^^ byteOf X (k % 8) else sb S k := by
+  unfold sb xorLane
+  rw [getElem!_set!' _ _ _ _ (by omega)]
+  by_cases h : j = k / 8
+  · have h' : k / 8 = j := h.symm
+    rw [if_pos h, if_pos h', byteOf_xor, h']
+  · have h' : ¬ k / 8 = j := fun e => h e.symm
+    rw [if_neg h, if_neg h']
+
+/-- Appending a lane (8 bytes at a lane boundary) to a block XORs the little-endian lane `X` into one lane. -/
+theorem xorBlock_lane (S : State) (l B : List UInt8) (X : UInt64) (hl8 : l.length % 8 = 0)
+    (hl : l.length + 8 ≤ 200) (hB : B.length = 8) (hX : ∀ m < 8, byteOf X m = B.getD m 0) :
+    xorBlock S (l ++ B) = xorLane (xorBlock S l) (l.length / 8) X := by
+  apply sb_ext
+  intro k hk
+  rw [sb_xorBlock _ _ k hk, sb_xorLane _ _ _ (by omega) k hk, sb_xorBlock _ _ k hk]
+  by_cases h : k / 8 = l.length / 8
+  · rw [if_pos h]
+    have hk1 : l.length ≤ k := by omega
+    have hk2 : k - l.length = k % 8 := by omega
+    have h3 : (l ++ B).getD k 0 = B.getD (k % 8) 0 := by
+      simp only [List.getD_eq_getElem?_getD]
+      rw [List.getElem?_append_right hk1, hk2]
+    have h4 : l.getD k 0 = 0 := by
+      simp only [List.getD_eq_getElem?_getD]
+      rw [List.getElem?_eq_none hk1]
+      rfl
+    rw [h3, h4, hX (k % 8) (by omega), UInt8.xor_zero]
+  · rw [if_neg h]
+    congr 1
+    by_cases hk1 : k < l.length
+    · simp only [List.getD_eq_getElem?_getD]
+      rw [List.getElem?_append_left hk1]
+    · have hk2 : l.length + 8 ≤ k := by omega
+      simp only [List.getD_eq_getElem?_getD]
+      rw [List.getElem?_eq_none (show (l ++ B).length ≤ k by simp [hB]; omega),
+        List.getElem?_eq_none (show l.length ≤ k by omega)]
+
+/-- Absorbing a whole lane at a lane boundary of the current block (the `Shake::absorb` lane step). -/
+theorem absSt_lane (r : Nat) (hr : 0 < r) (hr2 : r ≤ 200) (M B : List UInt8) (X : UInt64) (hB : B.length = 8)
+    (hX : ∀ m < 8, byteOf X m = B.getD m 0) (h8 : M.length % r % 8 = 0) (hle : M.length % r + 8 ≤ r) :
+    (M.length % r + 8 < r → absSt r (M ++ B) = xorLane (absSt r M) (M.length % r / 8) X) ∧
+    (M.length % r + 8 = r → absSt r (M ++ B) = KeccakF1600 (xorLane (absSt r M) (M.length % r / 8) X)) := by
+  have hdm : M.length / r * r + M.length % r = M.length := Nat.div_add_mod' _ _
+  have hlt : M.length % r < r := Nat.mod_lt _ hr
+  obtain ⟨q, hq⟩ : ∃ q, M.length / r = q := ⟨_, rfl⟩
+  obtain ⟨rem, hrem⟩ : ∃ rem, M.length % r = rem := ⟨_, rfl⟩
+  rw [hq, hrem] at hdm
+  rw [hrem] at hlt h8 hle ⊢
+  have hl : (M ++ B).length = M.length + 8 := by simp [hB]
+  have hdl : (M.drop (q * r)).length = rem := by simp; omega
+  constructor
+  · intro h1
+    have hdiv : (M ++ B).length / r = q :=
+      Nat.div_eq_of_lt_le (by omega) (by rw [hl, Nat.succ_mul]; omega)
+    rw [absSt_eq r _ q hdiv, absSt_eq r M q hq, List.take_append_of_le_length (by omega),
+      List.drop_append_of_le_length (by omega),
+      xorBlock_lane _ (M.drop (q * r)) B X (by rw [hdl]; exact h8) (by rw [hdl]; omega) hB hX, hdl]
+  · intro h1
+    have hdiv : (M ++ B).length / r = q + 1 :=
+      Nat.div_eq_of_lt_le (by rw [hl, Nat.succ_mul]; omega) (by rw [hl, Nat.succ_mul, Nat.succ_mul]; omega)
+    rw [absSt_eq r _ (q + 1) hdiv, absSt_eq r M q hq]
+    have e1 : (M ++ B).take ((q + 1) * r) = M.take (q * r) ++ (M.drop (q * r) ++ B) := by
+      rw [List.take_of_length_le (by rw [hl, Nat.succ_mul]; omega), ← List.append_assoc, List.take_append_drop]
+    have e2 : (M ++ B).drop ((q + 1) * r) = [] := by
+      rw [List.drop_of_length_le (by rw [hl, Nat.succ_mul]; omega)]
+    have e3 : (M.drop (q * r) ++ B).length = r := by simp [hB]; omega
+    have e4 : (M.take (q * r)).length = q * r := by simp; omega
+    rw [e1, e2, xorBlock_nil, absorb_append r hr q _ _ _ e4, absorb_one r hr _ _ e3,
+      xorBlock_lane _ (M.drop (q * r)) B X (by rw [hdl]; exact h8) (by rw [hdl]; omega) hB hX, hdl]
+
 end Proofs.KM
