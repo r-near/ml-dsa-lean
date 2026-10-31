@@ -12,6 +12,13 @@
 //!   zero bytes for the deterministic variant of Algorithm 2.
 //!
 //! `sign_internal_*` and `verify_internal_*` expose Algorithms 7 and 8 (M′ supplied by the caller).
+//!
+//! Prepared verifying keys: `verifying_key_*` computes the part of Verify that depends on the public key alone
+//! (Â, NTT(t1 · 2^d), tr) once; `verify_prepared_*` and `verify_internal_prepared_*` then check signatures
+//! against it without recomputing. They return exactly what `verify_*` and `verify_internal_*` return for the
+//! key the `VerifyingKey*` was built from (proved in Lean, `Proofs/PreparedVerify.lean`). The key objects are
+//! 20,544 / 36,928 / 65,600 bytes (ML-DSA-44 / 65 / 87): too large to copy freely, so keep them in a `Box`
+//! (this crate is `no_std` without `alloc`, so it cannot do that for you).
 //! `sk_is_well_formed_*` is an optional range check on a stored secret key (s₁, s₂ within [−η, η]); `sign_*` does
 //! not call it. `pk_from_sk_*` is a stronger optional check (not a FIPS step): it recomputes the public key from
 //! a stored secret key and rejects keys that are inconsistent. HashML-DSA (Algorithms 4 and 5) and external μ are out of scope.
@@ -20,7 +27,7 @@ use crate::encode::sk_is_well_formed;
 use crate::keygen::{keygen_internal, pk_from_sk};
 use crate::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
 use crate::sign::sign_internal;
-use crate::verify::verify_internal;
+use crate::verify::{prepare_vk, verify_internal, verify_prepared_internal, PreparedVk};
 
 /// Builds the prefix 0 ‖ |ctx| ‖ ctx of M′ = IntegerToBytes(0, 1) ‖ IntegerToBytes(|ctx|, 1) ‖ ctx ‖ M.
 /// Returns the buffer (bytes `..2 + ctx.len()` are the prefix), or `None` if |ctx| > 255
@@ -90,6 +97,45 @@ pub fn sign_internal_44(sk: &[u8; 2560], m_prime: &[u8], rnd: &[u8; 32]) -> Opti
 /// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-44: M′ is supplied by the caller.
 pub fn verify_internal_44(pk: &[u8; 1312], m_prime: &[u8], sig: &[u8; 2420]) -> bool {
     verify_internal::<4, 4>(&ML_DSA_44, pk, &[], m_prime, sig)
+}
+
+/// A public key prepared for repeated verification (ML-DSA-44): Â = ExpandA(ρ) and NTT(t1 · 2^d) in the NTT
+/// domain, and tr = H(pk, 64), everything Algorithm 8 recomputes from the public key on every call.
+///
+/// Build it with [`verifying_key_44`], use it with [`verify_prepared_44`] and [`verify_internal_prepared_44`]. It holds
+/// no secret. Size: 20,544 bytes (4·4 + 4 polynomials of 1 KiB, plus 64 bytes), so keep it in a `Box` or
+/// a long-lived structure rather than on a small stack. The fields are private: the only way to obtain one is
+/// `verifying_key_44`, which fixes the relation to the key bytes.
+#[derive(Clone)]
+pub struct VerifyingKey44 {
+    inner: PreparedVk<4, 4>,
+}
+
+/// Prepares a public key for ML-DSA-44 verification: computes Â, NTT(t1 · 2^d) and tr once
+/// (Algorithm 8 steps 1, 6, 7 and the key half of step 10). Cost: about one `verify_44` call minus the
+/// per-signature work (dominated by ExpandA).
+///
+/// Never fails: every byte string of 1312 bytes decodes. Like `verify_44` it diverges only where FIPS 204's
+/// unbounded ExpandA would (probability about 2^-thousands per key). Returns by value (20,544 bytes); with a
+/// `Box`, write `Box::new(verifying_key_44(&pk))`.
+pub fn verifying_key_44(pk: &[u8; 1312]) -> VerifyingKey44 {
+    VerifyingKey44 { inner: prepare_vk::<4, 4>(pk) }
+}
+
+/// Algorithm 3 ML-DSA.Verify for ML-DSA-44 against a prepared key. For `vk = verifying_key_44(pk)` it returns
+/// exactly `verify_44(pk, m, ctx, sig)`. False if |ctx| > 255.
+pub fn verify_prepared_44(vk: &VerifyingKey44, m: &[u8], ctx: &[u8], sig: &[u8; 2420]) -> bool {
+    let prefix = match ctx_prefix(ctx) {
+        Some(b) => b,
+        None => return false,
+    };
+    verify_prepared_internal::<4, 4>(&ML_DSA_44, &vk.inner, &prefix[..2 + ctx.len()], m, sig)
+}
+
+/// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-44 against a prepared key: M′ is supplied by the caller. For
+/// `vk = verifying_key_44(pk)` it returns exactly `verify_internal_44(pk, m_prime, sig)`.
+pub fn verify_internal_prepared_44(vk: &VerifyingKey44, m_prime: &[u8], sig: &[u8; 2420]) -> bool {
+    verify_prepared_internal::<4, 4>(&ML_DSA_44, &vk.inner, &[], m_prime, sig)
 }
 
 /// Optional check for secret keys loaded from untrusted storage (ML-DSA-44). True iff every coefficient of s₁
@@ -183,6 +229,45 @@ pub fn verify_internal_65(pk: &[u8; 1952], m_prime: &[u8], sig: &[u8; 3309]) -> 
     verify_internal::<6, 5>(&ML_DSA_65, pk, &[], m_prime, sig)
 }
 
+/// A public key prepared for repeated verification (ML-DSA-65): Â = ExpandA(ρ) and NTT(t1 · 2^d) in the NTT
+/// domain, and tr = H(pk, 64), everything Algorithm 8 recomputes from the public key on every call.
+///
+/// Build it with [`verifying_key_65`], use it with [`verify_prepared_65`] and [`verify_internal_prepared_65`]. It holds
+/// no secret. Size: 36,928 bytes (6·5 + 6 polynomials of 1 KiB, plus 64 bytes), so keep it in a `Box` or
+/// a long-lived structure rather than on a small stack. The fields are private: the only way to obtain one is
+/// `verifying_key_65`, which fixes the relation to the key bytes.
+#[derive(Clone)]
+pub struct VerifyingKey65 {
+    inner: PreparedVk<6, 5>,
+}
+
+/// Prepares a public key for ML-DSA-65 verification: computes Â, NTT(t1 · 2^d) and tr once
+/// (Algorithm 8 steps 1, 6, 7 and the key half of step 10). Cost: about one `verify_65` call minus the
+/// per-signature work (dominated by ExpandA).
+///
+/// Never fails: every byte string of 1952 bytes decodes. Like `verify_65` it diverges only where FIPS 204's
+/// unbounded ExpandA would (probability about 2^-thousands per key). Returns by value (36,928 bytes); with a
+/// `Box`, write `Box::new(verifying_key_65(&pk))`.
+pub fn verifying_key_65(pk: &[u8; 1952]) -> VerifyingKey65 {
+    VerifyingKey65 { inner: prepare_vk::<6, 5>(pk) }
+}
+
+/// Algorithm 3 ML-DSA.Verify for ML-DSA-65 against a prepared key. For `vk = verifying_key_65(pk)` it returns
+/// exactly `verify_65(pk, m, ctx, sig)`. False if |ctx| > 255.
+pub fn verify_prepared_65(vk: &VerifyingKey65, m: &[u8], ctx: &[u8], sig: &[u8; 3309]) -> bool {
+    let prefix = match ctx_prefix(ctx) {
+        Some(b) => b,
+        None => return false,
+    };
+    verify_prepared_internal::<6, 5>(&ML_DSA_65, &vk.inner, &prefix[..2 + ctx.len()], m, sig)
+}
+
+/// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-65 against a prepared key: M′ is supplied by the caller. For
+/// `vk = verifying_key_65(pk)` it returns exactly `verify_internal_65(pk, m_prime, sig)`.
+pub fn verify_internal_prepared_65(vk: &VerifyingKey65, m_prime: &[u8], sig: &[u8; 3309]) -> bool {
+    verify_prepared_internal::<6, 5>(&ML_DSA_65, &vk.inner, &[], m_prime, sig)
+}
+
 /// Optional check for secret keys loaded from untrusted storage (ML-DSA-65). True iff every coefficient of s₁
 /// and s₂, as decoded by skDecode (FIPS 204 Algorithm 25: BitUnpack with a = b = η), lies in [−η, η]. t₀ needs no
 /// check: its 13-bit field decodes to 4096 − z with z < 2¹³, always within [−4095, 4096].
@@ -272,6 +357,45 @@ pub fn sign_internal_87(sk: &[u8; 4896], m_prime: &[u8], rnd: &[u8; 32]) -> Opti
 /// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-87: M′ is supplied by the caller.
 pub fn verify_internal_87(pk: &[u8; 2592], m_prime: &[u8], sig: &[u8; 4627]) -> bool {
     verify_internal::<8, 7>(&ML_DSA_87, pk, &[], m_prime, sig)
+}
+
+/// A public key prepared for repeated verification (ML-DSA-87): Â = ExpandA(ρ) and NTT(t1 · 2^d) in the NTT
+/// domain, and tr = H(pk, 64), everything Algorithm 8 recomputes from the public key on every call.
+///
+/// Build it with [`verifying_key_87`], use it with [`verify_prepared_87`] and [`verify_internal_prepared_87`]. It holds
+/// no secret. Size: 65,600 bytes (8·7 + 8 polynomials of 1 KiB, plus 64 bytes), so keep it in a `Box` or
+/// a long-lived structure rather than on a small stack. The fields are private: the only way to obtain one is
+/// `verifying_key_87`, which fixes the relation to the key bytes.
+#[derive(Clone)]
+pub struct VerifyingKey87 {
+    inner: PreparedVk<8, 7>,
+}
+
+/// Prepares a public key for ML-DSA-87 verification: computes Â, NTT(t1 · 2^d) and tr once
+/// (Algorithm 8 steps 1, 6, 7 and the key half of step 10). Cost: about one `verify_87` call minus the
+/// per-signature work (dominated by ExpandA).
+///
+/// Never fails: every byte string of 2592 bytes decodes. Like `verify_87` it diverges only where FIPS 204's
+/// unbounded ExpandA would (probability about 2^-thousands per key). Returns by value (65,600 bytes); with a
+/// `Box`, write `Box::new(verifying_key_87(&pk))`.
+pub fn verifying_key_87(pk: &[u8; 2592]) -> VerifyingKey87 {
+    VerifyingKey87 { inner: prepare_vk::<8, 7>(pk) }
+}
+
+/// Algorithm 3 ML-DSA.Verify for ML-DSA-87 against a prepared key. For `vk = verifying_key_87(pk)` it returns
+/// exactly `verify_87(pk, m, ctx, sig)`. False if |ctx| > 255.
+pub fn verify_prepared_87(vk: &VerifyingKey87, m: &[u8], ctx: &[u8], sig: &[u8; 4627]) -> bool {
+    let prefix = match ctx_prefix(ctx) {
+        Some(b) => b,
+        None => return false,
+    };
+    verify_prepared_internal::<8, 7>(&ML_DSA_87, &vk.inner, &prefix[..2 + ctx.len()], m, sig)
+}
+
+/// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-87 against a prepared key: M′ is supplied by the caller. For
+/// `vk = verifying_key_87(pk)` it returns exactly `verify_internal_87(pk, m_prime, sig)`.
+pub fn verify_internal_prepared_87(vk: &VerifyingKey87, m_prime: &[u8], sig: &[u8; 4627]) -> bool {
+    verify_prepared_internal::<8, 7>(&ML_DSA_87, &vk.inner, &[], m_prime, sig)
 }
 
 /// Optional check for secret keys loaded from untrusted storage (ML-DSA-87). True iff every coefficient of s₁
