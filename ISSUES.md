@@ -71,6 +71,19 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   it. Superseded on 2026-10-30 by an rx update: reusing an `rx submit` name now syncs changes into
   that name's snapshot, so its `.lake/build` stays warm. The extra `rx run` is dropped; each agent keeps one
   stable job name (the orchestrator's full gate is `gate-main`). A new name still starts cold.
+- **T-8 (2026-10-31): BINSEC out-of-memory kills were reported as tool errors.** When the kernel kills binsec at a
+  container's memory cap (or, before 244aecc, at the box limit), the job log shows only the probe's `error`, with no
+  `Program status` line and nothing about memory. `checkct/README.md` said the thumbv7em `census_sign_prepared_44`
+  `error` was "not an out-of-memory kill" because it was unchanged with the cap raised to 120 GB. The box kernel log
+  shows that rerun killed at the cap (binsec at 125 GB RSS, 2026-10-31 16:38:25Z). Kernel memcg/OOM kills of binsec
+  also fall in every earlier CT window: 2026-10-30 21:12–22:46Z, 2026-10-31 07:23–08:49Z, 10:18, 11:53, 12:01,
+  16:25, 17:18, and 19:00–21:04Z. The last are parallel probes (2–34 GB each) sharing one container's 64 GB cap, so
+  `JOBS=16` at 64 GB was too many for the large probes, and they include the nearcore positive control
+  `control_early_exit_44`. Fix: every `error`, and every probe without a `Program status`, is matched against
+  `journalctl -k -g 'Killed process'` (with `-b -1` across a reboot) and classified `oom` unless no kill falls in
+  its run window. Large probes run with `JOBS` 1–4. A probe killed alone at 120 GB is recorded as "needs more than
+  120 GB" instead of the cap being raised again. Until the full sweep at 1000b51+ lands, every `error` in the README is
+  presumed OOM and gives no verdict.
 
 ## Errata (docs, spec, upstream)
 

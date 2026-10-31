@@ -9,6 +9,11 @@ execute the compiled release binary, flagging any secret-dependent branch, memor
 This directory is its own workspace (`[workspace]` in `checkct/Cargo.toml`). It is not a member of the main
 crate's workspace and the main `Cargo.toml` needed no `exclude`. `src/` is not edited.
 
+> **Reading `error` results (2026-10-31, ISSUES.md T-8).** BINSEC killed at a container's memory cap shows only `error`
+> in the job log. Every `error` in the tables below is presumed to be an out-of-memory kill, with no verdict, unless
+> the kernel log (`journalctl -k -g 'Killed process'`) shows no kill in its run window. A full sweep at 1000b51+
+> re-classifies them.
+
 ## Running
 
 Linux only (BINSEC). On the build box, via Docker:
@@ -156,8 +161,11 @@ Results (BINSEC 0.11.3, checkct profile, 3000 s per probe unless noted; targets 
   in this context.
 - `census_sign_prepared_44`: x86_64 `insecure`, first leak `src/sampling.rs:35` (`sample_in_ball`'s accept test, a
   public-outcome branch) at 0x22b638, then one pending path and no verdict; the only leak reported. thumbv7em `error`
-  (no `Program status` line): first leak at 0x043db2, again `src/sampling.rs:35`, after 51 s; unchanged when rerun with the
-  container cap raised to 120 GB, so it is not an out-of-memory kill. Same behavior as `census_sign_internal_44` above.
+  (no `Program status` line): first leak at 0x043db2, again `src/sampling.rs:35`, after 51 s. **Correction
+  (2026-10-31): this `error` is an out-of-memory kill.** The rerun with the container cap raised to 120 GB was killed at
+  that cap (kernel log: binsec at 125 GB RSS, 16:38:25Z), so it has no verdict; an earlier version of this note said
+  the opposite (ISSUES.md T-8). The `census_sign_internal_44` `error` results above are presumed OOM for the same
+  reason (binsec kills fall in those runs' windows).
   A census cannot prove anything, as before; the secret halves of an attempt are covered by `response_*` and
   `hint_step_*`. riscv32imac census not run (the unprepared census was `unknown` there).
 
