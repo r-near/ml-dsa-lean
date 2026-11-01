@@ -583,6 +583,18 @@ validator verifying many signatures under stored keys can do. Uncached verify an
 AVX2 C and Rust implementations (avx2 column against section 2); the remaining gap is ExpandA (scalar SHAKE128, item 6) and the scalar parts of the
 signing loop.
 
+**4-way Keccak without intrinsics: measured, not adopted (2026-11-01, `experiments/keccak4/`).** A lane-interleaved
+`[[u64; 4]; 25]` Keccak-f written as plain loops (seven shapes tried, all checked equal to the scalar permutation)
+reaches at most 1.2–1.3× over four scalar permutations at x86-64-v3 or inside a `target_feature(avx2)` wrapper,
+below the 1.6× bar set for it. The cause is LLVM's SLP cost model: on AVX2 a 64-bit vector rotate costs shift +
+shift + or, so trees containing the ρ rotations are priced break-even and stay scalar. The same source vectorizes to
+2.8× with `-C llvm-args=-slp-threshold=-2`, which a library cannot impose on its users, and hand-written AVX2
+intrinsics reach 2.3–3.4×. Reaching that would need intrinsics in the `avx2` dispatch, modeled in Lean through
+value-level shims that are tested against the hardware, not proved (the SymCrypt approach,
+`experiments/simd/README.md`). It is not done. With prepared keys, ExpandA runs once per key, not per signature, so
+the gain on the paths nearcore uses repeatedly is small: about 1.3× on uncached verify and keygen, and none on
+prepared-key verify.
+
 Second batch: items 4 and 5 (lazy NTT with its contract unchanged, plus a vectorized build or dispatch). Projected:
 cached verify-87 about 40 us (below every uncached AVX2 figure here), uncached verify-87 about 155 us, sign-87 about
 430 us, keygen-87 about 160 us. Third batch: item 6 (4-way SHAKE) if sign and keygen need to approach the AVX2
