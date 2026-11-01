@@ -12,7 +12,8 @@ crate's workspace and the main `Cargo.toml` needed no `exclude`. `src/` is not e
 > **Reading `error` results (2026-10-31, ISSUES.md T-8).** BINSEC killed at a container's memory cap shows only `error`
 > in the job log. Every `error` in the tables below is presumed to be an out-of-memory kill, with no verdict, unless
 > the kernel log (`journalctl -k -g 'Killed process'`) shows no kill in its run window. The full sweep at e9a1c74
-> (below) re-classified them: all of them were OOM kills.
+> (below) matched every `error` of that sweep to a kernel OOM kill; the `error` rows of the older-tree sections stay
+> "presumed".
 
 ## Running
 
@@ -90,7 +91,9 @@ anywhere with the toolchain: `cd checkct && cargo build --release -p driver --ta
 Already present before this round (40, `probes.rs` and `signing.rs`):
 
 - field/mask: `field_small_reduce`, `barrett_reduce`, `field_add`, `field_sub`, `field_neg`, `field_mul`,
-  `ct_lt_mask`, `ct_select` (mask taken from a secret bit).
+  `ct_lt_mask`, `ct_select` (mask taken from a secret bit); `field_mul_shoup`, `field_mul_mont` and `field_mont_reduce`
+  (the Shoup/Montgomery products, added with the NTT rewrite; three probes, so the total is 87 with `field_add` merged
+  into `field_small_reduce` in the binary).
 - rounding: `power2round`, `decompose`/`high_bits`/`low_bits`/`make_hint` (`_44` for gamma2 = (q-1)/88 and
   `_65_87` for (q-1)/32), `infinity_norm`, `vec_infinity_norm` (4 polynomials).
 - `ntt`, `ntt_inverse`, `multiply_ntt` on secret polynomials; `keccak_f1600` with a secret state.
@@ -224,7 +227,7 @@ Every non-secure probe:
 | `sk_is_well_formed_{44,65,87}`, `encode_sk_is_well_formed_{44,65,87}` | x86_64 `nearcore`, `nearcore-dispatch` | unknown | within 0.1 s, same at 7200 s: BINSEC cuts the path at an instruction it cannot lift ("uninterpreted KO"), the SSE2 vectorization of the range-check loop (see "nearcore-like release profile" below). 0 pending paths, no leak; `PROFILE=nearcore-novec` is the profile that checks them |
 | `compute_t_44` | AArch64 | unknown | 1 pending path (stuck in one solver query: the same 210,835 instructions at 300 s, 3600 s and 7200 s), no leak found |
 | `census_sign_internal_44` | AArch64 | unknown | 1 pending path, same pattern (1,302,356 instructions), no leak found |
-| `prepare_sk_{44,65,87}`, `signing_key_{44,65,87}`, `census_sign_prepared_44` | AArch64 | unknown | 1 pending path each (the same instruction counts at 600 s, 3600 s and 7200 s), no leak found; the one-polynomial splits `prepare_sk_1x1_{44,65}` are secure |
+| `prepare_sk_{44,65,87}`, `signing_key_{44,65,87}`, `census_sign_prepared_44` | AArch64 | unknown | 1 pending path each (the same instruction counts at 3600 s and 7200 s, and at 600 s for `prepare_sk_44` and `control_prepared_branch_44`), no leak found; the one-polynomial splits `prepare_sk_1x1_{44,65}` are secure |
 | `control_prepared_branch_44`, `control_prepared_index_44` | AArch64 | unknown | built on `prepare_sk_44`, which does not finish (above), so the controls give no verdict either: the AArch64 `prepare_sk` rows are uncontrolled |
 | `control_prepared_branch_44` | thumbv7em | secure: invalid control | the compiler turns `if bit {1} else {2}` into a conditional select (as before) |
 
