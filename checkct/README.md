@@ -31,6 +31,7 @@ Scripts (all start from the repository root; `rx kill` does not stop containers,
 | `run-select.sh` | only probes matching a regex, long timeouts; builds with `cargo-checkct`, then calls `binsec` directly. Streams a `done <target> <probe> <status>` line per probe and ends with a `Summary:` block like `run.sh` | `ONLY` (regex), `TARGETS`, `TIMEOUT` (7200), `JOBS` (4), `OUT`, `NAME`, `PROFILE` |
 | `leaks.sh LOG BINDIR` | maps every leaking instruction address of a `Summary:` block to `file:line` and the instruction (`llvm-objdump -d -l` on the `OUT` binaries) | `OBJDUMP` as third argument |
 | `aarch64.sh` | experiment: AArch64 (see below); `cargo-checkct` does not support the target, so it builds the driver for `aarch64-unknown-linux-gnu` in the container and writes the BINSEC scripts itself | `ONLY`, `TIMEOUT`, `JOBS`, `NAME`, `OUT`, `NONEON=1` |
+| `split-run.sh [round2]` | the split probes of `driver/src/split.rs` on AArch64 (`NONEON=1`) and riscv32imac, two containers in parallel, exit status nonzero if either fails (see "Split probes") | `TIMEOUT` (3600), `JOBS` (2 per container), `AONLY`, `RONLY` |
 | `select-ntt.sh [mode]` | the NTT and field-product probes and the KeyGen/Sign pieces built on them, through `run-select.sh`; `mode` is `default`, `dispatch`, `nearcore-dispatch`, `avx2` or `nearcore-avx2` (see "Profiles for the AVX2 dispatch") | `TIMEOUT` (3600), `JOBS`, `OUT`, `NAME`; the 2nd and 3rd arguments replace the probe regex and the target list |
 | `scan-avx2.sh DIR` | static scan of the `*_avx2` functions of a dispatch driver (`DIR` under `~/rx/scratch`, the `OUT` of a dispatch run); fails if there are none | |
 
@@ -274,6 +275,107 @@ The AArch64 runs had no OOM kills. The census probes that finish at 120 GB end `
 public `sampling.rs:35` leak is the only one reported); a census cannot prove anything. For a verdict on the four
 probes that do not fit in 120 GB, a split (the rejection loop of `sample_in_ball` cut out of the probed region) would
 be needed; none was run.
+
+## Split probes (`driver/src/split.rs`, `split-run.sh`; November 1, 2026)
+
+The full sweep above left a few probes without a verdict: BINSEC stops with one pending path stuck in one solver query
+(the same instruction count at 3600 s and 7200 s), no leak found. These probes cover the same code in smaller
+pieces, so that every piece has a completed verdict. All of them are in `driver/src/split.rs` (the existing probes are
+untouched; `main.rs` gains `mod split;` and `aarch64-inner.sh` learns the new module name). Run with
+`rx submit sp-ct -- 'set -o pipefail; bash checkct/split-run.sh 2>&1 | tee split.log'`: it starts the AArch64
+container (`NONEON=1`, `aarch64.sh`) and the riscv32imac container (`run-select.sh`) side by side, each with 2
+BINSEC jobs, 3600 s per probe, and exits nonzero if either fails. The tree is `src/` at the commit that adds
+this section; the toolchain and BINSEC are those of the sweep. A probe name starts with `split_`.
+
+**How a split covers the original.** Every split probe calls the same functions as the probe it splits (the
+production `sign::prepare_sk` and `ntt::ntt_vec_into`; the driver's own copies of `keygen::compute_t` and
+`keygen::vec_power2round`, which are private in the crate, copied from `extra.rs` unchanged), with the same inputs
+secret or public as the original, and only the const-generic loop bounds (`K`, `L`) or the iteration window of a loop
+differ. In each of these functions the loops index with public counters, iteration `i` reads and writes only element
+`i` of its output, and nothing flows between iterations except through the accumulators that the pieces keep
+(`w[i]` over `j`). A shape with `K = 1` and the full `L` therefore runs every `L`-loop body (and the
+per-row tail once), and a shape with the full `K` and `L = 1` runs every `K`-loop body. Limits of the argument: it is a
+statement about the source, and each shape is its own monomorphization, so the machine code of the full-size instance
+(unrolling, inlining) is not what the pieces analyze; this is the same argument the existing `*_1x1_*` probes rest on.
+A piece that is `unknown` covers nothing.
+
+| original (no verdict) | target | pieces (all `secure` unless noted) | what they cover |
+|---|---|---|---|
+| `compute_t_44` | AArch64 | `split_compute_t_44_row` (K=1, L=4), `split_compute_t_44_col` (K=4, L=1), `split_compute_t_44_2x2`; with the existing `compute_t_1x1` (secure) | `ntt_vec::<4>`, the four-term row accumulation of `matrix_vector_ntt`, `ntt_inverse` and `add_poly` of one row (row); the four row iterations (col) |
+| `prepare_sk_44`, `prepare_sk_65`, `signing_key_44`, `signing_key_65` | AArch64 (riscv32imac too) | `split_prepare_sk_{44,65}_row` (K=1, L full), `split_prepare_sk_{44,65}_col` (K full, L=1); with the existing `prepare_sk_1x1_{44,65}` | skDecode of s1 and the in-place NTT of ŝ1 (row); skDecode of s2, t0 and their NTTs (col); ExpandA on the public rho for 1×L and K×1 |
+| `prepare_sk_87`, `signing_key_87` | AArch64 | `split_prepare_sk_87_row` (1×7), `_2x1`, `_4x1`, `_6x1`; stages `split_ntt_vec_into_7` (ŝ1), `split_ntt_vec_into_8` (ŝ2 and t̂0), `split_ntt_vec_into_1`; the existing `sk_decode_87` (secure on AArch64, full size). **`_7x1` and `_8x1` (`split_prepare_sk_87_col`) are `unknown`**: one pending path each, 1 pending path after 3600 s, no leak | K=8 does not fit in one query, K=6 does. The K=8 loops of skDecode (s2, t0) are the existing `sk_decode_87`, the K=8 loop of the in-place NTT is `split_ntt_vec_into_8`; ExpandA is on the public rho. What no probe has run in one piece is the glue between those stages (copies of K and tr, the zeroing in `ntt_vec_into`), which `_6x1` and `_row` do run |
+| `vec_power2round_87` | riscv32imac | `split_vec_power2round_{1,2,3}` (K = 1 to 3), the windows `_8_lo` (i in 0..4), `_8_hi` (4..8) and `_8_q0..q3` (pairs 0..2, 2..4, 4..6, 6..8) of the K=8 loop over the same eight secret polynomials. `_5`, `_6`, `_7` are `unknown` (capacity probing, not cover). `split_vec_power2round_4` was `secure` in the previous run of the same script (checks 26,713 control-flow); in the last run the compiler folded it into the identical `vec_power2round_44` (K = 4, secure in the sweep), so it has no entrypoint there | the windows run the identical K=8 instance and partition its iterations, so their union is the whole loop (the loop's trip count is public); `_8_lo`/`_8_hi` are the halves, `_q0..q3` the pairs |
+| `prepare_sk_44`, `prepare_sk_87`, `signing_key_44`, `signing_key_87` | riscv32imac (`unknown` at 2668aa9, `secure` since e9a1c74) | `split_prepare_sk_{44,65,87}_{row,col}`, `split_prepare_sk_87_{2,4,6,7}x1` | not needed for a verdict any more; run for the table |
+
+`signing_key_NN` is `sign::prepare_sk_into` on a zeroed key object plus a `mem::replace` of that object (`api.rs`): the
+same instruction and check counts as `prepare_sk_NN` on x86_64 and thumbv7em, so the `prepare_sk` pieces are its pieces. In the sweep above every riscv32imac `prepare_sk_*` and `signing_key_*` row is already `secure` at
+full size (they were `unknown` at 2668aa9); the riscv32imac `prepare_sk` splits are run for completeness.
+
+Verdicts (last run of job `sp-ct`: 28 probes on AArch64, 22 on riscv32imac, `split-run.sh` exit 0; the counts are from the
+`Summary:` block of its log; every `secure` row has 0 pending paths and all its control-flow and memory-access checks passing;
+`split_vec_power2round_*` also ran on AArch64, all `secure`, which `vec_power2round_*` already were there):
+
+| probe | target | verdict | pending paths | control-flow checks passed | memory-access checks passed |
+|---|---|---|---|---|---|
+| `split_compute_t_44_2x2` | AArch64 | secure | 0 | 21,718 | 39,996 |
+| `split_compute_t_44_col` | AArch64 | secure | 0 | 25,825 | 50,467 |
+| `split_compute_t_44_row` | AArch64 | secure | 0 | 23,629 | 43,296 |
+| `split_ntt_vec_into_1` | AArch64 | secure | 0 | 2,439 | 5,513 |
+| `split_ntt_vec_into_7` | AArch64 | secure | 0 | 19,662 | 42,857 |
+| `split_ntt_vec_into_8` | AArch64 | secure | 0 | 22,487 | 48,995 |
+| `split_prepare_sk_44_col` | AArch64 | secure | 0 | 43,819 | 98,326 |
+| `split_prepare_sk_44_row` | AArch64 | secure | 0 | 33,474 | 73,159 |
+| `split_prepare_sk_65_col` | AArch64 | secure | 0 | 65,331 | 144,195 |
+| `split_prepare_sk_65_row` | AArch64 | secure | 0 | 42,865 | 89,228 |
+| `split_prepare_sk_87_2x1` | AArch64 | secure | 0 | 31,328 | 57,927 |
+| `split_prepare_sk_87_4x1` | AArch64 | secure | 0 | 49,081 | 101,545 |
+| `split_prepare_sk_87_6x1` | AArch64 | secure | 0 | 66,827 | 145,159 |
+| `split_prepare_sk_87_7x1` | AArch64 | unknown | 1 | 47,961 | 87,346 |
+| `split_prepare_sk_87_col` | AArch64 | unknown | 1 | 53,132 | 99,986 |
+| `split_prepare_sk_87_row` | AArch64 | secure | 0 | 55,560 | 117,710 |
+| `split_vec_power2round_1` | AArch64 | secure | 0 | 2,546 | 2,961 |
+| `split_vec_power2round_2` | AArch64 | secure | 0 | 6,543 | 8,611 |
+| `split_vec_power2round_3` | AArch64 | secure | 0 | 9,869 | 12,967 |
+| `split_vec_power2round_5` | AArch64 | secure | 0 | 16,514 | 21,671 |
+| `split_vec_power2round_6` | AArch64 | secure | 0 | 19,836 | 26,023 |
+| `split_vec_power2round_7` | AArch64 | secure | 0 | 23,159 | 30,377 |
+| `split_vec_power2round_8_hi` | AArch64 | secure | 0 | 22,979 | 25,513 |
+| `split_vec_power2round_8_lo` | AArch64 | secure | 0 | 22,984 | 25,511 |
+| `split_vec_power2round_8_q0` | AArch64 | secure | 0 | 21,228 | 20,899 |
+| `split_vec_power2round_8_q1` | AArch64 | secure | 0 | 21,238 | 20,903 |
+| `split_vec_power2round_8_q2` | AArch64 | secure | 0 | 21,238 | 20,903 |
+| `split_vec_power2round_8_q3` | AArch64 | secure | 0 | 21,223 | 20,905 |
+| `split_prepare_sk_44_col` | riscv32imac | secure | 0 | 80,493 | 284,765 |
+| `split_prepare_sk_44_row` | riscv32imac | secure | 0 | 61,784 | 249,762 |
+| `split_prepare_sk_65_col` | riscv32imac | secure | 0 | 120,105 | 423,152 |
+| `split_prepare_sk_65_row` | riscv32imac | secure | 0 | 80,137 | 312,196 |
+| `split_prepare_sk_87_2x1` | riscv32imac | secure | 0 | 52,251 | 148,950 |
+| `split_prepare_sk_87_4x1` | riscv32imac | secure | 0 | 88,669 | 288,855 |
+| `split_prepare_sk_87_6x1` | riscv32imac | secure | 0 | 122,233 | 424,440 |
+| `split_prepare_sk_87_7x1` | riscv32imac | secure | 0 | 122,834 | 440,207 |
+| `split_prepare_sk_87_col` | riscv32imac | secure | 0 | 137,295 | 500,546 |
+| `split_prepare_sk_87_row` | riscv32imac | secure | 0 | 88,530 | 376,291 |
+| `split_vec_power2round_1` | riscv32imac | secure | 0 | 5,455 | 9,253 |
+| `split_vec_power2round_2` | riscv32imac | secure | 0 | 13,249 | 22,839 |
+| `split_vec_power2round_3` | riscv32imac | secure | 0 | 19,981 | 34,379 |
+| `split_vec_power2round_5` | riscv32imac | unknown | 1 | 26,623 | 43,531 |
+| `split_vec_power2round_6` | riscv32imac | unknown | 1 | 29,727 | 46,210 |
+| `split_vec_power2round_7` | riscv32imac | unknown | 1 | 32,811 | 48,760 |
+| `split_vec_power2round_8_hi` | riscv32imac | secure | 0 | 45,213 | 66,403 |
+| `split_vec_power2round_8_lo` | riscv32imac | secure | 0 | 45,219 | 66,399 |
+| `split_vec_power2round_8_q0` | riscv32imac | secure | 0 | 40,999 | 53,561 |
+| `split_vec_power2round_8_q1` | riscv32imac | secure | 0 | 41,011 | 53,571 |
+| `split_vec_power2round_8_q2` | riscv32imac | secure | 0 | 41,011 | 53,569 |
+| `split_vec_power2round_8_q3` | riscv32imac | secure | 0 | 40,993 | 53,567 |
+
+Reading the results: no split piece found a leak, and every piece that completed is `secure`. The `unknown` rows are
+the same solver stall as the originals (1 pending path, "timeout has left (at least) 1 pending paths", no leak among
+the checks that passed), reproduced at smaller sizes: AArch64 `prepare_sk` with K = 7 and 8 (not K <= 6), riscv32imac
+`vec_power2round` with K >= 5. For `prepare_sk_87` and `signing_key_87` on AArch64 the cover is therefore by stages
+(skDecode, the in-place NTTs, ExpandA on the public rho) plus the K <= 6 and L = 7 whole-function shapes, not by
+a smaller instantiation that includes the K = 8 glue; claim it at that strength. The AArch64 build is the scalar
+(`NONEON=1`) one, as in the sweep. The pieces were compiled into one driver with the full set of probes
+(the new `split` module also changes the code layout of that driver; the earlier verdicts above were measured without it).
 
 ## Earlier results (older trees; superseded by the sweep above)
 

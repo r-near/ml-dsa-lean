@@ -428,6 +428,56 @@ theorem prepare_vk_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Param
   simp only [WP.spec_ok]
   exact ⟨hahat, ht2d, htr⟩
 
+/-! ### The in-place key half
+
+`verify_internal` builds the key in place: `PreparedVk.zeroed`, then `prepare_vk_into` (Â expanded straight into the
+key by `expand_a_into`, which runs the loops of `sampling.expand_a` over a caller-owned matrix). On the all-zero key
+that is exactly `prepare_vk`, which returns by value (`api.verifying_key_NN` uses it). The two bridge lemmas below are
+what let every statement about `verify_internal` go through the by-value `prepare_vk` lemmas unchanged. -/
+
+/-- `expand_a_into` over the all-zero matrix is `expand_a`: the same loops, the same order of SHAKE calls. -/
+theorem expand_a_into_zero (K L : Usize) (rho : Array U8 32#usize) :
+    verify.expand_a_into rho (Array.repeat K (Array.repeat L (Array.repeat 256#usize 0#u32))) =
+      sampling.expand_a K L rho := rfl
+
+/-- `prepare_vk_into` on the all-zero key is `prepare_vk`. -/
+theorem prepare_vk_into_zero (K L : Usize) (pk : Slice U8) :
+    verify.prepare_vk_into pk
+      ({ a_hat := Array.repeat K (Array.repeat L (Array.repeat 256#usize 0#u32))
+         t1_2d_hat := Array.repeat K (Array.repeat 256#usize 0#u32)
+         tr := Array.repeat 64#usize 0#u8 } : verify.PreparedVk K L) = verify.prepare_vk K L pk := rfl
+
+/-- The in-place key half followed by anything is the by-value `prepare_vk` followed by it. -/
+theorem prepare_vk_zeroed_bind {α : Type} (K L : Usize) (pk : Slice U8)
+    (F : verify.PreparedVk K L → RustM α) :
+    (verify.PreparedVk.zeroed K L >>= fun vk => verify.prepare_vk_into pk vk >>= F) =
+      (verify.prepare_vk K L pk >>= F) := by
+  simp only [verify.PreparedVk.zeroed, Std.bind_tc_ok]
+  rw [prepare_vk_into_zero]
+
+/-- `verify_internal` with the in-place key half read as the by-value `prepare_vk`: the shape the correctness,
+partial-correctness and prepared-key proofs are written against. -/
+theorem verify_internal_def (K L : Usize) (p : Impl.params.Params) (pk m_prefix m sig : Slice U8) :
+    verify.verify_internal K L p pk m_prefix m sig = (do
+      let i := Slice.len pk
+      let i1 ← params.pk_len p
+      if i != i1 then ok false
+      else
+        let i2 := Slice.len sig
+        let i3 ← params.sig_len p
+        if i2 != i3 then ok false
+        else
+          let o ← encode.sig_decode K L p sig
+          match o with
+          | none => ok false
+          | some parts =>
+            let (c_tilde, z, h) := parts
+            let vk ← verify.prepare_vk K L pk
+            verify.verify_decoded p vk m_prefix m c_tilde z h) := by
+  unfold verify.verify_internal
+  simp only [prepare_vk_zeroed_bind]
+  rfl
+
 /-- The slice `c_tilde[..n]` of the 64-byte buffer. -/
 theorem c_tilde_prefix_spec (c_tilde : Array U8 64#usize) (n : Usize) (hn : n.val ≤ 64) :
     core.array.Array.index (core.ops.index.IndexSlice
@@ -642,7 +692,7 @@ theorem verify_internal_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.
   have hp' := hp
   obtain ⟨hv, hstd⟩ := hp
   have hd := hstd.d_eq
-  unfold verify.verify_internal
+  rw [verify_internal_def]
   dsimp only
   -- Length guard (Rust: `pk.len() != pk_len(p) || sig.len() != sig_len(p)` returns false, as in FIPS 204 Verify)
   refine WP.spec_bind hpkS ?_

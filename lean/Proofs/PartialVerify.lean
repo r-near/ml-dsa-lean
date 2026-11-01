@@ -130,7 +130,7 @@ theorem verify_internal_partial {ip : Impl.params.Params} {K L : Usize} {sp : Sp
   have hp' := hp
   obtain ⟨hv, hstd⟩ := hp
   have hd := hstd.d_eq
-  unfold verify.verify_internal
+  rw [Verify.verify_internal_def]
   dsimp only
   -- Length guard (Rust: `pk.len() != pk_len(p) || sig.len() != sig_len(p)` returns false, as in FIPS 204 Verify)
   refine dspec_bind_of_spec hpkS ?_

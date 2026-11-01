@@ -5,7 +5,7 @@ use crate::keccak::Shake;
 use crate::ntt::{matrix_vector_ntt, multiply_ntt, ntt, ntt_inverse, ntt_vec, sub_poly};
 use crate::params::{pk_len, sig_len, Params};
 use crate::rounding::{poly_use_hint, vec_infinity_norm};
-use crate::sampling::{expand_a, sample_in_ball};
+use crate::sampling::{expand_a, rej_ntt_poly, sample_in_ball};
 
 /// t1 · 2^d with d = 13, coefficient-wise. Every t1 coefficient is a 10-bit value (pkDecode), so
 /// t1 ≤ 2^10 − 1 and t1 · 2^13 ≤ 8380416 = q − 1: no u32 overflow and the result is canonical.
@@ -56,6 +56,13 @@ pub struct PreparedVk<const K: usize, const L: usize> {
     pub(crate) tr: [u8; 64],
 }
 
+impl<const K: usize, const L: usize> PreparedVk<K, L> {
+    /// The all-zero value: the destination `prepare_vk_into` fills in place. Not a valid key.
+    pub(crate) fn zeroed() -> PreparedVk<K, L> {
+        PreparedVk { a_hat: [[[0u32; 256]; L]; K], t1_2d_hat: [[0u32; 256]; K], tr: [0u8; 64] }
+    }
+}
+
 /// Step 7: tr ← H(pk, 64).
 fn hash_pk(pk: &[u8]) -> [u8; 64] {
     let mut tr = [0u8; 64];
@@ -66,11 +73,60 @@ fn hash_pk(pk: &[u8]) -> [u8; 64] {
     tr
 }
 
-/// Steps 1, 6, 7 and the key-dependent half of step 10 of Algorithm 8: (ρ, t1) ← pkDecode(pk);
-/// Â ← ExpandA(ρ); tr ← H(pk, 64); NTT(t1 · 2^d).
+/// Step 6: Â ← ExpandA(ρ) (`sampling::expand_a`, Algorithm 32), written into `a` instead of returned, so that the
+/// 57 KB matrix of ML-DSA-87 is not also a temporary of this function's frame. The loops and the order of the SHAKE
+/// calls are those of `expand_a`; every entry of `a` is overwritten.
+fn expand_a_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
+    let mut r = 0;
+    while r < K {
+        let mut s = 0;
+        while s < L {
+            let mut seed = [0u8; 34];
+            let mut b = 0;
+            while b < 32 {
+                seed[b] = rho[b];
+                b += 1;
+            }
+            seed[32] = s as u8;
+            seed[33] = r as u8;
+            a[r][s] = rej_ntt_poly(&seed);
+            s += 1;
+        }
+        r += 1;
+    }
+}
+
+/// Steps 1, 6, 7 and the key-dependent half of step 10 of Algorithm 8, written into `out` (any value; every field
+/// is overwritten): (ρ, t1) ← pkDecode(pk); Â ← ExpandA(ρ); tr ← H(pk, 64); NTT(t1 · 2^d). Â is expanded directly
+/// into `out`, so a caller that owns `out` never has a second copy of it on the stack (`verify_internal`).
 ///
 /// Precondition: `pk.len() == 32 + 320 * K` (the decoder indexes by `K`). Diverges exactly where ExpandA does
 /// (FIPS 204's rejection sampler has no bound).
+#[inline(never)]
+pub(crate) fn prepare_vk_into<const K: usize, const L: usize>(pk: &[u8], out: &mut PreparedVk<K, L>) {
+    // 1: (ρ, t1) ← pkDecode(pk)
+    let (rho, t1) = pk_decode::<K>(pk);
+    // 6: Â ← ExpandA(ρ)
+    expand_a_into::<K, L>(&rho, &mut out.a_hat);
+    // 7: tr ← H(pk, 64)
+    out.tr = hash_pk(pk);
+    // 10 (key half): NTT(t1 · 2^d)
+    out.t1_2d_hat = ntt_vec(&scale_vec_by_2d(&t1));
+}
+
+/// Steps 1, 6, 7 and the key-dependent half of step 10 of Algorithm 8, returned by value: the same computation as
+/// `prepare_vk_into` (proved equal to it on a zero destination, `Proofs/Verify.lean`). `api::verifying_key_*` uses
+/// this one because its result is the key object and LLVM builds a by-value call result in the caller's result slot,
+/// whereas going through `prepare_vk_into` would first fill a 66 KB local (ML-DSA-87) and then copy it to the
+/// result (measured: `verifying_key_87` 100 KB instead of 83 KB below the caller). The one-shot `verify_internal`
+/// owns its key and uses `prepare_vk_into`, so that Â exists once.
+///
+/// Precondition: `pk.len() == 32 + 320 * K`. Diverges exactly where ExpandA does.
+///
+/// Both `prepare_vk*` functions are `#[inline(never)]`: inlined into `verify_internal` or `verifying_key_*`, their
+/// temporaries (t1, the scaled copy, the NTT result; for `prepare_vk` the 57 KB Â temporary) become part of that
+/// caller's frame for its whole duration (measured: `verify_87` 132 KB instead of 115 KB).
+#[inline(never)]
 pub(crate) fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
@@ -161,9 +217,10 @@ fn verify_decoded<const K: usize, const L: usize>(
 /// `pk_len(p)` or a `sig` whose length is not `sig_len(p)` returns false. This is input validation consistent
 /// with FIPS 204 (its pk and σ are byte strings of those lengths), not a numbered step.
 ///
-/// Order: the signature is decoded (steps 2–5) before the per-key work (`prepare_vk`: steps 1, 6, 7), so a
-/// malformed signature is rejected without running ExpandA, as in the algorithm. The result is the same as
-/// `prepare_vk` followed by `verify_prepared_internal`.
+/// Order: the signature is decoded (steps 2–5) before the per-key work (`prepare_vk_into`: steps 1, 6, 7), so a
+/// malformed signature is rejected without running ExpandA, as in the algorithm. The key is created as a local and
+/// filled in place (`prepare_vk_into`), so Â exists once on the stack; the result is the same as `prepare_vk`
+/// followed by `verify_prepared_internal` (proved in Lean, `Proofs/PreparedVerify.lean`).
 ///
 /// Precondition: `p` is the parameter set matching `K` and `L` (`p.k == K`, `p.l == L`). The decoders index by
 /// `K`/`L`, so an inconsistent `p` can panic. The `api` functions always pass a consistent `p`.
@@ -184,8 +241,9 @@ pub fn verify_internal<const K: usize, const L: usize>(
         Some(parts) => parts,
         None => return false,
     };
-    // 1, 6, 7, 10 (key half)
-    let vk = prepare_vk::<K, L>(pk);
+    // 1, 6, 7, 10 (key half), built in place: `vk` is the only copy of Â
+    let mut vk = PreparedVk::<K, L>::zeroed();
+    prepare_vk_into::<K, L>(pk, &mut vk);
     // 8–13
     verify_decoded::<K, L>(p, &vk, m_prefix, m, &c_tilde, &z, &h)
 }
