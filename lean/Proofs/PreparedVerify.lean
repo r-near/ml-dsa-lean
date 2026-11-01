@@ -94,8 +94,12 @@ theorem verify_internal_prepared_eq {ip : Impl.params.Params} {K L : Usize} {sp 
     · rfl
     · exact absurd (by rw [hrv]; exact hpk) ((len_bne_iff pk r).1 hb)
   have hg' : pk.val.length = r.val := by rw [hrv]; exact hpk
-  unfold verify.verify_internal verify.verify_prepared_internal
-  simp [hr, hg, hg', hvk]
+  rw [Verify.verify_internal_def]
+  unfold verify.verify_prepared_internal
+  simp [hr, hg', hvk]
+  -- the two sides differ only in the auxiliary `match` constants of the two extracted functions
+  intro v _
+  rfl
 
 /-- The API bodies: `verifyPreparedAPI` on a prepared key equals `verifyAPI` on the key bytes. -/
 theorem verifyPreparedAPI_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
