@@ -51,8 +51,10 @@ run_one() {
     echo "  driver  aarch64-unknown-linux-gnu  driver::$n  ${st:-error}"
     echo "$out" | sed -n 's/.*\[checkct:result\] Instruction \(.*\)/      \1/p'
     [ -z "$st" ] && echo "$out" | grep -v '^ *$' | tail -6 | sed 's/^/      err: /'
-    echo "$out" | grep -E 'checks pass|visited instructions \(unrolled\)' | sed 's/^ */      stat: /'
-  } > /tmp/a64/$n.out
+    echo "$out" | grep -E 'checks pass|visited instructions \(unrolled\)|pending paths|branching points' | sed 's/^ */      stat: /'
+    # Why a probe is not secure (as run-select.sh): the timeout line, or the lifter's "uninterpreted"/"unknown" cut.
+    [ "$st" = secure ] || echo "$out" | grep -iE 'timeout has left|uninterpreted|cut path|unsupported|undefined|not executable|cannot' | sort | uniq -c | sort -rn | head -6 | sed 's/^ */      note: /'
+  }> /tmp/a64/$n.out
   echo "done $n ${st:-error}"
 }
 export -f run_one

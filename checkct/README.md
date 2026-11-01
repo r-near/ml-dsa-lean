@@ -11,8 +11,8 @@ crate's workspace and the main `Cargo.toml` needed no `exclude`. `src/` is not e
 
 > **Reading `error` results (2026-10-31, ISSUES.md T-8).** BINSEC killed at a container's memory cap shows only `error`
 > in the job log. Every `error` in the tables below is presumed to be an out-of-memory kill, with no verdict, unless
-> the kernel log (`journalctl -k -g 'Killed process'`) shows no kill in its run window. A full sweep at 1000b51+
-> re-classifies them.
+> the kernel log (`journalctl -k -g 'Killed process'`) shows no kill in its run window. The full sweep at e9a1c74
+> (below) re-classified them: all of them were OOM kills.
 
 ## Running
 
@@ -26,8 +26,8 @@ Scripts (all start from the repository root; `rx kill` does not stop containers,
 
 | script | purpose | environment |
 |---|---|---|
-| `run.sh` | all probes, all three targets (`cargo-checkct run --all-leaks`) | `TIMEOUT` (900 s per probe), `JOBS`, `OUT` (copies the three `<target>.driver` binaries), `NAME`, `PROFILE=nearcore` |
-| `run-select.sh` | only probes matching a regex, long timeouts; builds with `cargo-checkct`, then calls `binsec` directly. Streams a `done <target> <probe> <status>` line per probe and ends with a `Summary:` block like `run.sh` | `ONLY` (regex), `TARGETS`, `TIMEOUT` (7200), `JOBS` (30), `OUT`, `NAME`, `PROFILE` |
+| `run.sh` | all probes, all three targets (`cargo-checkct run --all-leaks`); `JOBS` defaults to every CPU, which does not fit a 64 GB container, so the full sweep of e9a1c74 used `run-select.sh` with `ONLY=.` instead | `TIMEOUT` (900 s per probe), `JOBS`, `OUT` (copies the three `<target>.driver` binaries), `NAME`, `PROFILE=nearcore` |
+| `run-select.sh` | only probes matching a regex, long timeouts; builds with `cargo-checkct`, then calls `binsec` directly. Streams a `done <target> <probe> <status>` line per probe and ends with a `Summary:` block like `run.sh` | `ONLY` (regex), `TARGETS`, `TIMEOUT` (7200), `JOBS` (4), `OUT`, `NAME`, `PROFILE` |
 | `leaks.sh LOG BINDIR` | maps every leaking instruction address of a `Summary:` block to `file:line` and the instruction (`llvm-objdump -d -l` on the `OUT` binaries) | `OBJDUMP` as third argument |
 | `aarch64.sh` | experiment: AArch64 (see below); `cargo-checkct` does not support the target, so it builds the driver for `aarch64-unknown-linux-gnu` in the container and writes the BINSEC scripts itself | `ONLY`, `TIMEOUT`, `JOBS`, `NAME`, `OUT`, `NONEON=1` |
 | `select-ntt.sh [mode]` | the NTT and field-product probes and the KeyGen/Sign pieces built on them, through `run-select.sh`; `mode` is `default`, `dispatch`, `nearcore-dispatch`, `avx2` or `nearcore-avx2` (see "Profiles for the AVX2 dispatch") | `TIMEOUT` (3600), `JOBS`, `OUT`, `NAME`; the 2nd and 3rd arguments replace the probe regex and the target list |
@@ -75,7 +75,7 @@ x86_64, 5 probes (`ntt`, `ntt_inverse`, `multiply_ntt`, `field_mul_shoup`, `fiel
 `nearcore-dispatch` give `secure` for all five with the pre-set; the default profile gives `secure` for all five with no
 dispatch compiled; with the pre-set disabled, `dispatch` gives `unknown` ("Cut path (uninterpreted KO)") for `ntt`,
 `ntt_inverse` and `multiply_ntt`. `scan-avx2.sh` reports `ntt_avx2`, `ntt_inverse_avx2` and `multiply_ntt_avx2`.
-The results tables below were not re-run for these profiles.
+The full sweep at e9a1c74 below covers every probe in both dispatch profiles.
 
 Toolchain: `nightly-2026-10-06` with `rust-src` (`checkct/rust-toolchain.toml`), `-Zbuild-std=core,panic_abort` with
 `compiler-builtins-mem` (`.cargo/config.toml`, copied from upstream). BINSEC 0.11.3, unisim_archisec 0.0.14,
@@ -85,7 +85,7 @@ anywhere with the toolchain: `cd checkct && cargo build --release -p driver --ta
 `checkct_macros/src/lib.rs` and `.cargo/config.toml` are copied from upstream (Apache-2.0 OR MIT), as
 `cargo-checkct init` generates them. `driver/src/rng.rs` is the same hook pair without the `rand_core` impls.
 
-## Probes (85 entrypoints x 3 targets: riscv32imac-unknown-none-elf, thumbv7em-none-eabihf, x86_64-unknown-linux-gnu)
+## Probes (87 entrypoints x 3 targets: riscv32imac-unknown-none-elf, thumbv7em-none-eabihf, x86_64-unknown-linux-gnu)
 
 Already present before this round (40, `probes.rs` and `signing.rs`):
 
@@ -121,7 +121,7 @@ Coverage of the secret paths:
 - Not probed on purpose: the accept/reject branching of ExpandA (`z < q`) and SampleInBall (public outcome, inputs
   public or hash outputs), and the two rejection `if`s of `attempt`.
 
-### Prepared signing key (`prepared.rs`, 11 probes; HEAD 2668aa9 plus the probes)
+### Prepared signing key (`prepared.rs`, 11 probes)
 
 `api::signing_key_NN` computes the secret-key half of Sign once (`sign::prepare_sk`: skDecode, three NTTs, ExpandA).
 Secret = the secret key bytes K (32..64) and the packed s1, s2, t0 (128..); rho (0..32) and tr (64..128) are fixed
@@ -137,8 +137,8 @@ public-outcome branch. m, ctx and rnd are public in the census.
 | `census_sign_prepared_44` | `signing_key_44` then `sign_prepared_44`; the mirror of `census_sign_internal_44`. There is no per-attempt probe of `sign_prepared_internal` to mirror: `attempt` is private to `sign.rs`, and its secret halves are the unchanged `response_*` and `hint_step_*`. |
 | `control_prepared_branch_44`, `control_prepared_index_44` | positive controls: `prepare_sk_44`, then a branch on a bit of ŝ1, resp. a table lookup indexed by a byte of ŝ1. Must be `insecure` |
 
-Results (BINSEC 0.11.3, checkct profile, 3000 s per probe unless noted; targets run one at a time, containers capped at
-64 GB):
+Earlier results at 2668aa9 plus the probes, superseded by the full sweep at e9a1c74 below (BINSEC 0.11.3, checkct
+profile, 3000 s per probe unless noted; targets run one at a time, containers capped at 64 GB):
 
 | probe | x86_64 | thumbv7em | riscv32imac |
 |---|---|---|---|
@@ -178,11 +178,105 @@ nibble is accepted, and which positions are rejected is public (it only changes 
 bugs; they show what BINSEC cannot distinguish (secret data versus public outcome of a secret-derived value), which
 is why the proof of "no secret-dependent branch" is done per step.
 
-## Results (nightly-2026-10-06, BINSEC 0.11.3, 900 s per probe unless noted)
+## Full sweep at e9a1c74 (October 31 to November 1, 2026)
 
-Column order below is x86_64 / thumbv7em / riscv32imac.
+The current results. Every probe of `checkct/driver` (87 distinct entrypoints per target; `field_add` is merged with
+`field_small_reduce` in the binary) on the tree at e9a1c74 (lane-wise SHAKE sponge, Shoup/Montgomery NTT, prepared keys
+with in-place construction, sponge wipes under `zeroize`), `nightly-2026-10-06`, BINSEC 0.11.3. Everything measured
+before this section is on an older tree and is kept below only as history (each table is labeled). Method: the full runs
+used `run-select.sh` with `ONLY=.` and `TIMEOUT=3600` (instead of `run.sh`: it streams a line per probe and keeps the check
+counts of every probe; every `secure` row of the x86_64, thumbv7em and riscv32imac runs was checked to have 0 pending
+paths and a non-zero number of control-flow checks passed), containers capped at 64 GB, parallel probes
+sharing that cap (`JOBS` 16 for the default, `nearcore` and `dispatch` runs, 8 for `nearcore-dispatch` and AArch64; the
+censuses and the `nearcore` and `nearcore-dispatch` `control_early_exit_44` were killed in those runs, and all reruns used
+`JOBS` 4 or less). `unknown` rows were rerun once with `TIMEOUT=7200`; `error` rows were classified from the kernel log
+(below) and rerun alone (`JOBS=1`, 64 GB, then 120 GB). Positions of the leaks were mapped with `leaks.sh` (the AArch64
+leak lists are the expected ones and were not mapped, `leaks.sh` has no AArch64 case).
 
-### Original 40 probes, before this round (unmodified `src/`)
+Result classes: `secure`; `expected insecure` (the README-documented ones: `rej_bounded_poly_eta{2,4}`, the two
+censuses, the positive controls, and on riscv32imac the standalone `ct_lt_mask`, see "Older tree: 74 probes" below); `unexpected
+insecure` (a finding); `unknown` (no verdict, no leak found); `oom` (BINSEC killed at the container's memory cap, no
+verdict; see ISSUES.md T-8).
+
+| target / profile | secure | expected insecure | unexpected insecure | unknown | oom |
+|---|---|---|---|---|---|
+| x86_64, default | 80 | 7 | 0 | 0 | 0 |
+| x86_64, `nearcore` | 74 | 7 | 0 | 6 | 0 |
+| x86_64, `dispatch` | 80 | 7 | 0 | 0 | 0 |
+| x86_64, `nearcore-dispatch` | 74 | 6 | 0 | 6 | 1 |
+| thumbv7em, default | 81 | 4 | 0 | 0 | 2 |
+| riscv32imac, default | 78 | 6 | 0 | 2 | 1 |
+| AArch64 `NONEON=1` | 73 | 3 | 0 | 11 | 0 |
+
+No unexpected insecure result on any target or profile: there is no new constant-time finding in this sweep.
+
+Every non-secure probe:
+
+| probe | where | result | reason |
+|---|---|---|---|
+| `rej_bounded_poly_eta2/4` | all 7 target/profile rows | insecure, expected | sampler accept test, a public outcome (`sampling.rs:129`, `:132`) |
+| `census_sign_internal_44`, `census_sign_prepared_44` | x86_64 in all four profiles | insecure, expected | only leak reported: `sampling.rs:35`, `sample_in_ball`'s accept test (public outcome); then one pending path, no verdict. Needed the 120 GB container, see below. Exception: `census_sign_prepared_44` under `nearcore-dispatch` is `oom` |
+| `census_sign_internal_44`, `census_sign_prepared_44` | thumbv7em | oom: needs more than 120 GB | leak at `sampling.rs:35` found first (36 to 61 s), then killed at the cap (RSS 125 GB at the 120 GB cap), no verdict |
+| `census_sign_prepared_44` | riscv32imac | oom: needs more than 120 GB | as thumbv7em; first leak `sampling.rs:35` |
+| `census_sign_internal_44` | riscv32imac | unknown | 4 pending paths at 3600 s and at 7200 s, no leak found (62,925 control-flow checks passed) |
+| `vec_power2round_87` | riscv32imac | unknown | 1 pending path at 3600 s and 7200 s, no leak found (solver capacity, as before) |
+| `ct_lt_mask` | riscv32imac | insecure, documented | `field.rs:107` branch of the standalone probe (inputs known to be below 2^63; in-crate callers are secure), as in "Older tree: 74 probes" |
+| `sk_is_well_formed_{44,65,87}`, `encode_sk_is_well_formed_{44,65,87}` | x86_64 `nearcore`, `nearcore-dispatch` | unknown | within 0.1 s, same at 7200 s: BINSEC cuts the path at an instruction it cannot lift ("uninterpreted KO"), the SSE2 vectorization of the range-check loop (see "nearcore-like release profile" below). 0 pending paths, no leak; `PROFILE=nearcore-novec` is the profile that checks them |
+| `compute_t_44` | AArch64 | unknown | 1 pending path (stuck in one solver query: the same 210,835 instructions at 300 s, 3600 s and 7200 s), no leak found |
+| `census_sign_internal_44` | AArch64 | unknown | 1 pending path, same pattern (1,302,356 instructions), no leak found |
+| `prepare_sk_{44,65,87}`, `signing_key_{44,65,87}`, `census_sign_prepared_44` | AArch64 | unknown | 1 pending path each (the same instruction counts at 600 s, 3600 s and 7200 s), no leak found; the one-polynomial splits `prepare_sk_1x1_{44,65}` are secure |
+| `control_prepared_branch_44`, `control_prepared_index_44` | AArch64 | unknown | built on `prepare_sk_44`, which does not finish (above), so the controls give no verdict either: the AArch64 `prepare_sk` rows are uncontrolled |
+| `control_prepared_branch_44` | thumbv7em | secure: invalid control | the compiler turns `if bit {1} else {2}` into a conditional select (as before) |
+
+Positive controls (`control_early_exit_44`, `control_prepared_branch_44`, `control_prepared_index_44`): `insecure`, as
+they must be, on x86_64 in all four profiles (`control_early_exit_44` at `extra.rs:221`, the prepared branch at
+`prepared.rs:76`, the prepared index at `prepared.rs:96`), on riscv32imac (`control_prepared_branch_44` was `unknown` at
+3600 s and `insecure` in the 7200 s rerun, a leak at 0x01d700 in under a second, so the BINSEC result for that probe
+depends on exploration order) and for `control_early_exit_44` and `control_prepared_index_44` on thumbv7em and AArch64.
+Invalid: `control_prepared_branch_44` on thumbv7em (secure, above); the two prepared controls on AArch64 (no verdict).
+
+Notes per profile:
+
+- x86_64 default: the CT-2 probes are all secure (`hint_step_*`, `response_*`, `decompose`-family), as are the new
+  `prepare_sk_*`, `signing_key_*` and `compute_t_*`; `hint_step_{44,87,1_44,1_65}` finish where they
+  were `unknown` at 069b439.
+- riscv32imac default: `response_*`, `hint_step_*`, `prepare_sk_{44,87}`, `signing_key_{44,87}` and the full-size
+  `compute_t_*` all finish `secure` in this sweep (all earlier `unknown` on this target).
+- `nearcore` (opt-level 3, fat LTO, one codegen unit): `hint_step_*`, `response_*`, `decompose_*`, `high_bits_*` and
+  `make_hint_*` secure; the six `unknown` rows are the vectorization artifact above.
+- `dispatch`, `nearcore-dispatch` (crate feature `avx2`, cache pre-set to 1 in every script, which the log confirms per
+  probe: `AVX2 cache 0x... pre-set to 1`): every NTT-reaching probe, every field probe and every signing-step probe gives
+  the same verdict as the profile without dispatch. `scan-avx2.sh` on both drivers finds four `*_avx2` functions
+  (`ntt_avx2`, `ntt_inverse_avx2`, `ntt_in_place_avx2`, `multiply_ntt_avx2`); conditional jumps are loop back-edges only,
+  no `div`/`idiv`/gather/scatter; the only indirect calls are through two `.got` slots (the by-value array copies).
+- AArch64 (`NONEON=1`; `aarch64-inner.sh` now includes the `prepared` module, which it silently skipped before): all
+  non-prepared probes are secure except `compute_t_44` and `census_sign_internal_44`; `compute_t_65/87` are secure.
+
+### Out-of-memory kills (all `error` results of this sweep)
+
+Every `error` was matched against the kernel log (`journalctl -k -g 'Killed process'`) by run window; the job logs carry
+no per-probe timestamps, so a kill is assigned to a probe by the run, the number of kills and the absence of any other
+`error` in that run. All of them are OOM kills; none is a tool error. Times are UTC, November 1 unless noted.
+
+| run (container cap, parallel probes) | kills (UTC) | probes with `error` | what happened next |
+|---|---|---|---|
+| default, 3 targets (64 GB, 16) | Oct 31 19:00:50 (2), 19:02:14 (3); RSS 7 to 20 GB each | `census_sign_internal_44` x86_64 and thumbv7em; `census_sign_prepared_44` x86_64, thumbv7em, riscv32imac | x86_64 reruns: below; thumbv7em and riscv32imac: below |
+| `nearcore` (64 GB, 16) | Oct 31 20:03:57 (3), RSS 2 to 32 GB | both x86_64 censuses, `control_early_exit_44` | control alone (64 GB): insecure; censuses (120 GB): insecure, `sampling.rs:35` |
+| `dispatch` (64 GB, 16) | Oct 31 21:04:45 (2), RSS 29 and 33 GB | both x86_64 censuses | 120 GB: insecure, `sampling.rs:35` |
+| `nearcore-dispatch` (64 GB, 8) | Oct 31 22:05:53 (3) | both censuses, `control_early_exit_44` | control alone (64 GB): insecure; `census_sign_internal_44` (120 GB): insecure; `census_sign_prepared_44` (120 GB): killed again, 07:11:52 |
+| rerun, x86_64 default `census_sign_internal_44` alone (64 GB, 1) | Oct 31 22:08:47, RSS 67 GB | the census itself | the census needs more than 64 GB even alone; the 120 GB reruns of both x86_64 default censuses are `insecure` |
+| rerun at 120 GB, 1 probe at a time | 02:48:12 riscv32imac `census_sign_prepared_44`; 03:00:31 thumbv7em `census_sign_internal_44`; 03:12:44 thumbv7em `census_sign_prepared_44`; 07:11:52 x86_64 `nearcore-dispatch` `census_sign_prepared_44` | those four | killed at the cap (RSS 125 GB or more): **needs more than 120 GB, no verdict** |
+
+The AArch64 runs had no OOM kills. The census probes that finish at 120 GB end `insecure` with one pending path (the
+public `sampling.rs:35` leak is the only one reported); a census cannot prove anything. For a verdict on the four
+probes that do not fit in 120 GB, a split (the rejection loop of `sample_in_ball` cut out of the probed region) would
+be needed; none was run.
+
+## Earlier results (older trees; superseded by the sweep above)
+
+(nightly-2026-10-06, BINSEC 0.11.3, 900 s per probe unless noted.) Column order below is x86_64 / thumbv7em / riscv32imac.
+
+### Original 40 probes, before the CT-1 fix (older tree, unmodified `src/`)
 
 | target | secure | insecure | unknown (timeout) |
 |---|---|---|---|
@@ -196,7 +290,7 @@ riscv32imac insecure (control-flow leaks; no memory-access, dividend or divisor 
 the `a ^ ((a ^ b) & mask)` select and the `(x - y) >> 63` mask to branches. That is ISSUES CT-1; the riscv-only
 `barrier_u32` hardening in `field.rs` fixed it, and the rows below are measured on the fixed `src/`.
 
-### Now: 74 probes, `src/` at HEAD (with the CT-1 barrier), checkct profile
+### Older tree: 74 probes, `src/` at 069b439 (with the CT-1 barrier), checkct profile
 
 Result of a full run (`ct4-900`, 900 s per probe, 71 entrypoints at that time) plus long reruns of the non-secure
 rows (`run-select.sh`, 3000 s):
@@ -273,6 +367,8 @@ patch and the signing cost is within noise (about 0 to 3 percent in the benches)
 A single probe of the whole `api::sign_internal_44`, with a concrete well-formed secret key whose K, s1, s2 and t0
 bytes are replaced by secret bytes (rho and tr stay public) and a secret `rnd`. This is a census, not a proof,
 because the rejection samplers and the rejection `if`s of `attempt` are public-outcome branches that BINSEC flags.
+The bullets below were measured on older trees; the `error` results in them were out-of-memory kills (ISSUES.md T-8), and the
+current census results are in the full sweep above.
 
 Final probe design (concrete public rho and tr, from a fixed-seed KeyGen):
 
@@ -295,7 +391,7 @@ So the largest signing steps that complete are `response_*` and `hint_step_*` (t
 `attempt`), plus the hash and ExpandMask probes; `sign_internal` itself is covered by those parts and by this census,
 whose leaks are the sampler branches and, on the unpatched tree, the decompose edge.
 
-### nearcore-like release profile (opt-level 3, fat LTO, codegen-units 1, panic = abort), `src/` at HEAD
+### nearcore-like release profile (opt-level 3, fat LTO, codegen-units 1, panic = abort), older tree (069b439)
 
 Built with `PROFILE=nearcore` (`opt-level = 3`, `lto = "fat"`, `codegen-units = 1`, `panic = "abort"`) and the
 unpatched tree, 900 s per probe, then 3000 s reruns of the non-secure rows. x86_64 / thumbv7em / riscv32imac:
@@ -327,7 +423,7 @@ Differences from the checkct profile:
   probes, so the split probes are the evidence there.
 - thumbv7em: identical to the checkct profile.
 
-### AArch64 (experimental, `aarch64.sh`)
+### AArch64 (experimental, `aarch64.sh`), older tree (069b439); current numbers are in the full sweep above
 
 BINSEC 0.11.3 supports `-isa aarch64`, and an AArch64 driver binary runs through the same flow, but `cargo-checkct`
 does not know the target, so `aarch64.sh` builds the driver for `aarch64-unknown-linux-gnu` itself (release, same

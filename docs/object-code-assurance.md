@@ -303,19 +303,25 @@ into one symbol that cargo-checkct lists twice. I did not edit the README.
 time, **only with the opt-in `avx2` cargo feature**. The default build has a single portable compilation, no `unsafe`
 (`forbid(unsafe_code)`). This section records what the feature does to the claims above.
 
-**Status (2026-10-31): the results in this section predate the merge that made the dispatch opt-in.** They were measured on
-a tree where x86_64 always had the dispatch and the forced inlining. At the merge (6e25e52) the checkct driver built `src/`
-without the `avx2` feature, so it never compiled the dispatch and the cache pre-set, `select-ntt.sh dispatch` and the
-static scan silently did nothing. The tooling now has explicit profiles (`checkct/README.md`, "Profiles for the AVX2
-dispatch"): the default profiles build no dispatch and say so; `PROFILE=dispatch` and `nearcore-dispatch` build the x86_64
-driver with the driver's `avx2` feature (the crate's `cfg(feature = "avx2")`), match the dispatch static exactly, pre-set
-it, and fail the run if the symbol or the script anchor is missing; `scan-avx2.sh` fails if the driver has no `*_avx2`
-function. Re-measured with these profiles on x86_64 (five probes: `ntt`, `ntt_inverse`, `multiply_ntt`, `field_mul_shoup`,
-`field_mul_mont`): all `secure` under `dispatch`, `nearcore-dispatch` and the default build; with the pre-set disabled,
-`ntt`, `ntt_inverse` and `multiply_ntt` under `dispatch` are `unknown` ("uninterpreted KO", the AVX2 arm), which shows
-the pre-set is what makes the verdicts above reachable; `scan-avx2.sh` finds `ntt_avx2`, `ntt_inverse_avx2` and
-`multiply_ntt_avx2`. The table below was not re-run: a full sweep of the merged tree, default build and dispatch build, is
-pending, and until then it is evidence about the code shape it was measured on, not about HEAD.
+**Status (2026-11-01): re-measured on the merged tree.** A full sweep of every `checkct/driver` probe (87 per target) at
+e9a1c74 covers the default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit) and, on x86_64, the
+`dispatch` and `nearcore-dispatch` builds (crate feature `avx2`, dispatch cache pre-set to "no AVX2" in every script; the
+run prints the address of the cache static and checks it per probe, and `PRESET FAILED` stops it if the symbol or the script
+anchor is missing). In both dispatch builds every NTT-reaching probe (`ntt`, `ntt_inverse`, `multiply_ntt`, `ntt_vec_44`,
+`matrix_vector_ntt_*`, `scalar_vector_ntt_inverse_1`, `compute_t_*`, `prepare_sk_*`, `signing_key_*`), every field probe
+(including `field_mul_shoup`, `field_mul_mont`) and every signing-step probe (`response_*`, `hint_step_*`, including the
+one-polynomial splits) is `secure` with 0 pending paths, the same verdict as in the build without dispatch; forced
+inlining (`cfg_attr(inline(always))` in `src/field.rs`) did not change a verdict. The non-secure probes are the expected
+ones (the sampler `rej_bounded_poly_*`, the whole-function censuses, the positive controls; the only leak the censuses
+report is the public `sample_in_ball` accept test, `sampling.rs:35`) and, under `nearcore-dispatch` and `nearcore`,
+the six `sk_is_well_formed` / `encode_sk_is_well_formed` probes, which BINSEC cannot finish because it cannot lift the
+SSE2 `movmskpd` of the vectorized range-check loop (`unknown` within a second, also at 7200 s; not NTT-related). The
+positive controls are `insecure` in all four x86_64 builds. `nearcore-dispatch`'s `census_sign_prepared_44` was killed
+at the 120 GB container cap (no verdict). Without the cache pre-set, `ntt`, `ntt_inverse` and `multiply_ntt` under
+`dispatch` are `unknown` ("uninterpreted KO", the AVX2 arm), which shows the pre-set is what makes the verdicts above
+reachable (measured at the merge of the opt-in dispatch, 6e25e52). `scan-avx2.sh` on both dispatch drivers finds four
+functions: `ntt_avx2`, `ntt_inverse_avx2`, `ntt_in_place_avx2` and `multiply_ntt_avx2`. The runs are at
+`checkct/README.md` "Full sweep at e9a1c74".
 
 **Trust argument.** The Lean proofs (`Proofs/NTT.lean`, `NTTInverse.lean`, `NTTOps.lean`) are about the source of the shared
 bodies `ntt_body`, `ntt_inverse_body` and `multiply_ntt_body`. Extraction runs with `--cfg miri`, where the
@@ -338,28 +344,38 @@ no BINSEC verdict, and functional evidence from `tests/dispatch.rs` and the KAT 
   every probe that reaches the vectorized NTT; the scalar probes (`field_mul_shoup`, `field_mont_reduce`, `field_mul_mont`)
   stay `secure` there. No claim is made about BINSEC verdicts for the AVX2 copy.
 - Substitute for the AVX2 copy: a static scan of the disassembly (`checkct/scan-avx2.sh`, `checkct/scan-avx2.py`). For
-  `ntt_avx2`, `ntt_inverse_avx2` and `multiply_ntt_avx2` it reports no `div`/`idiv`, no gather or scatter, only conditional
-  jumps that are loop back-edges on a counter compared with an immediate (5, 6 and 1 of them), and index registers that are
-  only those loop counters. The only indirect calls are `memcpy` calls (length 0x400) through the GOT for the by-value `[u32; 256]`
-  arrays. This is a review aid, not a proof: it does not show that the vector instructions are data-independent in time
+  `ntt_avx2`, `ntt_inverse_avx2`, `ntt_in_place_avx2` and `multiply_ntt_avx2` it reports no `div`/`idiv`, no gather or
+  scatter, only conditional jumps that are loop back-edges on a counter compared with an immediate (5, 6, 5 and 1 of
+  them; re-run on both dispatch drivers at e9a1c74), and index registers that are only those loop counters. The only
+  indirect calls are calls through two `.got` slots (the `memcpy` calls of the by-value `[u32; 256]` arrays). This is a review aid, not a proof: it does not show that the vector instructions are data-independent in time
   (VPMULUDQ and the other instructions used are fixed-latency on current Intel and AMD cores, which is an assumption about
   hardware, as in section 2.3).
 
-**Results of the runs for the Shoup/Montgomery NTT and the dispatch** (`checkct/select-ntt.sh`, 28 probes per target: the NTT,
-inverse NTT, pointwise product, the three field products, `ntt_vec`, `matrix_vector_ntt`, `scalar_vector_ntt_inverse`,
-`compute_t`, `response`, `hint_step` and the `sign_internal` census; nightly-2026-10-06, 1 hour per probe):
+**Results of the full sweep at e9a1c74** (`checkct/run-select.sh` with `ONLY=.`, 87 probes per target, nightly-2026-10-06,
+1 hour per probe, `unknown` rows rerun at 2 hours; details, probe lists and the out-of-memory ledger in `checkct/README.md`,
+"Full sweep at e9a1c74"):
 
-| target | secure | not secure |
-|---|---|---|
-| x86_64-unknown-linux-gnu | 27 | `census_sign_internal_44`: first leak at `sampling.rs:35` (the `sample_in_ball` rejection test, public outcome), no verdict (`error`), as in `checkct/README.md` |
-| thumbv7em-none-eabihf | 27 | `census_sign_internal_44`: leak found, no verdict (`error`), as in the README |
-| riscv32imac-unknown-none-elf | 26 | `compute_t_87`: unknown (timeout at 1 hour, no leak found; also unknown before this change); `census_sign_internal_44`: `error` |
+| target / profile | secure | expected insecure | unexpected insecure | unknown | oom (no verdict) |
+|---|---|---|---|---|---|
+| x86_64, default | 80 | 7 | 0 | 0 | 0 |
+| x86_64, `nearcore` | 74 | 7 | 0 | 6 | 0 |
+| x86_64, `dispatch` | 80 | 7 | 0 | 0 | 0 |
+| x86_64, `nearcore-dispatch` | 74 | 6 | 0 | 6 | 1 |
+| thumbv7em-none-eabihf, default | 81 | 4 | 0 | 0 | 2 |
+| riscv32imac-unknown-none-elf, default | 78 | 6 | 0 | 2 | 1 |
+| AArch64 `NONEON=1` | 73 | 3 | 0 | 11 | 0 |
 
-The `ntt`, `ntt_inverse` and `multiply_ntt` probes are secure on all three targets. A first version of the dispatch marked the field
+"Expected insecure" is `rej_bounded_poly_eta2/4`, the censuses, the positive controls and, on riscv32imac, the standalone
+`ct_lt_mask` probe. The `unknown` rows are the six `sk_is_well_formed` probes (unliftable SSE2 instruction) in the two
+nearcore builds; on riscv32imac `vec_power2round_87` and `census_sign_internal_44` (one or more pending paths, no leak found);
+on AArch64 `compute_t_44`, `census_sign_internal_44`, `prepare_sk_*`, `signing_key_*`, `census_sign_prepared_44` and the two
+prepared controls (one pending path each, no leak found). The `oom` rows are censuses that needed more than 120 GB. There is
+no unexpected insecure result: the sweep found no new constant-time leak. The `ntt`, `ntt_inverse` and `multiply_ntt` probes
+are secure on all three default targets and in all four x86_64 builds. A first version of the dispatch marked the field
 functions `#[inline(always)]` on every target. That made the riscv32imac `response_*` and `hint_step_*` probes `unknown` (1 hour,
 one pending path) where the Shoup/Montgomery tree without dispatch finishes them `secure` in about ten minutes. The attribute is
-now gated by `cfg_attr` on x86_64 builds that have the dispatch, which restored the verdicts above. This is a reminder that BINSEC
-completion depends on code shape, not only on the source.
+now gated by `cfg_attr` on x86_64 builds that have the dispatch; in this sweep those riscv32imac probes are all `secure`. This is a
+reminder that BINSEC completion depends on code shape, not only on the source.
 
 Section 3.3's "not covered" list gains one entry: the vectorized AVX2 copies are checked only by the static scan above (the
 indirect calls it lists are `memcpy` of 1024 bytes through the GOT, confirmed in the disassembly).
