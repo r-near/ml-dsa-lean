@@ -43,6 +43,7 @@ mod prepared;
 mod probes;
 mod rng;
 mod signing;
+mod split;
 
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {
