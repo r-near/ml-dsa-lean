@@ -592,8 +592,8 @@ shift + or, so trees containing the ρ rotations are priced break-even and stay 
 intrinsics reach 2.3–3.4×. Reaching that would need intrinsics in the `avx2` dispatch, modeled in Lean through
 value-level shims that are tested against the hardware, not proved (the SymCrypt approach,
 `experiments/simd/README.md`). It is not done. With prepared keys, ExpandA runs once per key, not per signature, so
-the gain on the paths nearcore uses repeatedly is small: about 1.3× on uncached verify and keygen, and none on
-prepared-key verify.
+the gain on the paths nearcore uses repeatedly is small: an estimated 1.5× on uncached verify and keygen at
+most (ExpandA's share of them, section 4, with a 3× faster ExpandA; not measured), and none on prepared-key verify.
 
 Second batch: items 4 and 5 (lazy NTT with its contract unchanged, plus a vectorized build or dispatch). Projected:
 cached verify-87 about 40 us (below every uncached AVX2 figure here), uncached verify-87 about 155 us, sign-87 about
