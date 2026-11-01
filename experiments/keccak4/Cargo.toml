@@ -1,0 +1,10 @@
+[package]
+name = "keccak4"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[profile.release]
+debug = false
+
+[workspace]
