@@ -252,21 +252,31 @@ timeout is BINSEC's default of 5 s per query (cargo-checkct does not override it
 
 ### 3.3 What our runs cover and do not
 
-Covered: 39 probe entrypoints (field and mask primitives, rounding, `ntt`, `ntt_inverse`, `multiply_ntt`, `keccak_f1600`,
-bit packing, `sk_encode`/`sk_decode`, and the production `sign::response` and `sign::hint_step`) on
-x86_64-unknown-linux-gnu, thumbv7em-none-eabihf and riscv32imac-unknown-none-elf, built with nightly-2026-10-06
-(`checkct/README.md`; counts in `STATUS.md` and `ISSUES.md` CT-1).
+**Current coverage (full sweep at e9a1c74, 2026-10-31/11-01; `checkct/README.md` "Full sweep at e9a1c74").** 87 probe
+entrypoints per target. They cover the field and mask primitives, rounding, the NTT and pointwise product, Keccak-f and
+the SHAKE paths with secret input (keygen seed hash, ρ″ hash, ExpandMask), ExpandS, bit packing, skEncode/skDecode,
+`sk_is_well_formed`, the KeyGen steps, the Sign steps (`response`, `hint_step`), `prepare_sk` and `signing_key`, two
+whole-signing censuses and the positive controls. Targets and profiles: x86_64-unknown-linux-gnu (default, nearcore,
+dispatch, nearcore-dispatch), thumbv7em-none-eabihf, riscv32imac-unknown-none-elf, and AArch64 built with NEON off
+(`checkct/aarch64.sh`, BINSEC called directly). No probe is unexpectedly insecure on any target or profile.
 
-Not covered (all from `checkct/README.md` "Not covered" unless noted):
-- the compiled `sign_internal` as nearcore will link it (inlining and optimization context differ); `sign::attempt` is not
-  probed as a whole; `expand_mask`, SHAKE absorb and squeeze with secret input (only `keccak_f1600` is probed), `sk_decode`
-  consumers, zeroize;
-- **aarch64** (any OS) and **macOS**: cargo-checkct supports only thumb, riscv32 and x86_64-unknown-linux-gnu targets
-  (cargo-checkct README). thumbv7em is Armv7-M, not Graviton or Apple silicon. Of nearcore's targets only
-  x86_64 Linux is covered. Whether BINSEC can lift AArch64 well enough to run these probes is **UNVERIFIED**;
-- other rustc versions, flags (`-C target-cpu`, LTO, `codegen-units`, `opt-level`) and inlining contexts. The riscv
-  results are the example: LLVM's lowering of the mask idiom flipped the verdict (ISSUES CT-1);
-- the six riscv32imac `response_*`/`hint_step_*` probes: "unknown", no leak found, no proof.
+Not covered:
+- **whole Sign:** the censuses either report only the public `sample_in_ball` accept branch or have no verdict. On
+  thumbv7em and riscv32imac they need more than 120 GB and were killed at the cap. Sign is covered by its secret
+  halves (`response_*`, `hint_step_*`) plus the hash and ExpandMask probes.
+- **unknowns** (BINSEC did not finish, no leak found):
+  - x86_64 nearcore profiles: 6 (`sk_is_well_formed_*`, `encode_sk_is_well_formed_*`). BINSEC can't lift SSE2
+    `movmskpd`.
+  - riscv32imac: 2 (`vec_power2round_87`, one census).
+  - AArch64: 11. `compute_t_44`, `prepare_sk_*`, `signing_key_*` and the censuses each have one pending path stuck in a
+    solver query.
+- **the AVX2 copy** of the dispatched NTT: BINSEC can't lift VEX instructions, so it is covered by the static scan
+  only (§3.5).
+- **AArch64 with NEON** (the production Graviton/Apple build): BINSEC can't lift `umax`/`umin` (`docs/upstream-issues.md`
+  U-40). macOS is not covered at all.
+- **other builds:** other rustc versions, flags and inlining contexts. Verdicts depend on code shape (ISSUES CT-1,
+  CT-2), so they hold for the builds measured.
+- **zeroize builds:** not probed (the wipes run after the outputs are written).
 
 ### 3.4 Proposed wording for the STATUS.md constant-time row
 
