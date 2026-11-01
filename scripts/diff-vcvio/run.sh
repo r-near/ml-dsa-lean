@@ -24,8 +24,10 @@ eval_all() { # exe outdir
     "$exe" "$f" "$out/$(basename "${f%.txt}").out" 2>"$out/$(basename "${f%.txt}").err" &
     pids+=($!)
   done
-  for p in "${pids[@]}"; do wait "$p"; done
+  local rc=0
+  for p in "${pids[@]}"; do wait "$p" || { echo "eval job $p failed (exit $?)"; rc=1; }; done
   cat "$out"/*.err
+  [ "$rc" -eq 0 ] || return 1
   if grep -l PANIC "$out"/*.err >/dev/null 2>&1; then echo "PANIC in $out"; return 1; fi
 }
 
