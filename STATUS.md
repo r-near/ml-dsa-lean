@@ -137,7 +137,7 @@ Not covered by any theorem:
 - The `zeroize` build (the proved code is extracted with it off; the wipes come after the outputs are written) and
   stack use. Measured worst case (`tools/stack/`, release, statically and by stack painting): Sign 116/168/240 KB,
   Verify 50/76/115 KB, KeyGen 64/98/143 KB for 44/65/87 on x86_64 (one-shot verify builds its key in place since
-  the merge after 0858e0a); other targets within 4%. Prepared keys: `verifying_key_*` 31/52/26,
+  23f1cb9); other targets within 4%. Prepared keys: `verifying_key_*` 31/52/26,
   `signing_key_*` 60/99/164, `verify_prepared_*` 34/45/59, `sign_prepared_*` 73/101/134 KB, plus the 20.5–81 KB
   key object in the caller's frame (`tools/stack/README.md`).
 
