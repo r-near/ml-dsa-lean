@@ -20,7 +20,7 @@ mkdir -p /tmp/a64
 : > /tmp/todo.txt
 while read -r n; do
   echo "$n" | grep -Eq "$ONLY" || continue
-  sym=$(awk '$4=="FUNC"{print $8}' /tmp/syms.txt | grep -E "^_RNvNtC[A-Za-z0-9]+_6driver[0-9]+(probes|extra|signing)[0-9]+${n}\$" | head -1)
+  sym=$(awk '$4=="FUNC"{print $8}' /tmp/syms.txt | grep -E "^_RNvNtC[A-Za-z0-9]+_6driver[0-9]+(probes|extra|signing|prepared)[0-9]+${n}\$" | head -1)
   [ -z "$sym" ] && { echo "no symbol for $n"; continue; }
   cat > /tmp/a64/$n.binsec <<S
 load sections $SECS from file
