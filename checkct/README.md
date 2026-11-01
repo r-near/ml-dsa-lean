@@ -87,6 +87,26 @@ anywhere with the toolchain: `cd checkct && cargo build --release -p driver --ta
 `checkct_macros/src/lib.rs` and `.cargo/config.toml` are copied from upstream (Apache-2.0 OR MIT), as
 `cargo-checkct init` generates them. `driver/src/rng.rs` is the same hook pair without the `rand_core` impls.
 
+## Known no-verdict probes (skip unless something changed)
+
+These probes are already known to end with no verdict. Don't rerun them unless one of these changed: the code
+under test (`src/` or the probe), the per-probe timeout, the memory cap, or how the probe is split. A rerun that
+changes nothing costs hours and gives the same result (about 1.6 h went to such reruns on 2026-11-01). Each entry
+says what was tried. When an entry gets a verdict, move it out of this list.
+
+| probe | target / profile | outcome | already tried |
+|---|---|---|---|
+| `sk_is_well_formed_{44,65,87}`, `encode_sk_is_well_formed_{44,65,87}` | x86_64 `nearcore`, `nearcore-dispatch` | unknown: BINSEC can't lift SSE2 `movmskpd` (stops at 0.1 s) | 1 h and 2 h at e9a1c74. Only a non-vectorized build helps (`PROFILE=nearcore-novec`) |
+| `vec_power2round_87` (full size) | riscv32imac default | unknown, 1 pending path | 1 h and 2 h at e9a1c74. Covered by the split windows `split_vec_power2round_8_*` (secure) |
+| `split_vec_power2round_{5,6,7}` | riscv32imac | unknown | 1 h (capacity probing only; the 8-wide windows cover the loop) |
+| `census_sign_internal_44` | riscv32imac default | unknown, 4 pending paths | 1 h and 2 h at e9a1c74 |
+| `compute_t_44`, `prepare_sk_{44,65,87}`, `signing_key_{44,65,87}`, `census_sign_internal_44`, `census_sign_prepared_44` | AArch64 `NONEON=1` | unknown: one pending path stuck in one solver query (instruction count identical at 300, 600, 3600 and 7200 s; upstream log U-42) | 1 h and 2 h at e9a1c74. Pieces covered by split probes, except the K = 8 glue of `prepare_sk_87` / `signing_key_87` |
+| `split_prepare_sk_87_7x1`, `split_prepare_sk_87_8x1` | AArch64 `NONEON=1` | unknown, same stall | 1 h (round 2 of `split-run.sh`) |
+| `census_sign_internal_44`, `census_sign_prepared_44` | thumbv7em default | OOM: needs more than 120 GB, no verdict | 64 GB and 120 GB caps (ISSUES T-8). Don't raise the cap again; a split would be needed |
+| `census_sign_prepared_44` | riscv32imac default; x86_64 `nearcore-dispatch` | OOM: needs more than 120 GB, no verdict | 64 GB and 120 GB caps |
+| `control_prepared_branch_44` | thumbv7em | `secure`: the control is invalid there (branch lowered to a select) | every run; expected |
+| `control_prepared_branch_44`, `control_prepared_index_44` | AArch64 `NONEON=1` | no verdict | 1 h and 2 h |
+
 ## Probes (87 entrypoints x 3 targets: riscv32imac-unknown-none-elf, thumbv7em-none-eabihf, x86_64-unknown-linux-gnu)
 
 Already present before this round (40, `probes.rs` and `signing.rs`):
