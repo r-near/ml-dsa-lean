@@ -101,5 +101,11 @@ disclosure only.
   `sk_is_well_formed` under fat LTO with vectorization on. The result is `unknown`, not a wrong verdict. Impact: the
   production NEON build can't be checked. Workaround: build without NEON (`NONEON=1`) or vectorization for analysis.
   Evidence: `checkct/README.md`, `checkct/aarch64.sh`. Status: open; check BINSEC's issue tracker first.
+- **U-42 (2026-11-01): BINSEC AArch64 runs stall in a single solver query.** With NEON off, 11 probes
+  (`compute_t_44`, `prepare_sk_*`, `signing_key_*`, the censuses) end `unknown` with one pending path, and the
+  visited-instruction count is identical at 300, 600, 3600 and 7200 s. `compute_t_44` finished `secure` on the older
+  NTT code shape. It looks like one solver query that never returns. Possible report: a reproducer with the probe's
+  BINSEC script and binary, and whether a solver timeout option exists. Evidence: `checkct/README.md` "Full sweep at
+  e9a1c74". Status: open (needs a minimal reproducer).
 - **U-41 (2026-10-30): cargo-checkct does not support aarch64 targets.** We call BINSEC directly with
   `-isa aarch64` (`checkct/aarch64.sh`). Status: open (feature request).
