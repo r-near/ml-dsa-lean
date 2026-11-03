@@ -50,7 +50,8 @@ ocaml-pq's `MLDSAAlg` takes SHAKE as an abstract `XOF`.  `Hash.lean` instantiate
 ocaml-pq's own `keccakXOF` (`oursShake128`, `oursShake256`; `*_squeeze`, `*_val`, `G_eq`, `H_eq`), so every
 statement below is first about ocaml-pq's algorithms instantiated with our hash.  `oursShake* = ocamlShake*`
 (our Keccak against ocaml-pq's independent Keccak) is proved in `KeccakPerm`/`KeccakSponge`/`Shake` (section
-"Keccak" below), and `Shake.lean` restates the top-level theorems on ocaml-pq's own SHAKE.
+"Keccak" below), and `Shake.lean` restates the top-level theorems on ocaml-pq's own SHAKE, except `verify_of_ctx_gt_both` and
+`verify_of_sigDecode_none_both`, which hold for any XOF and are stated with `oursShake*` only.
 
 `Samplers.lean` ports from `lean/Proofs/SampleA.lean` (`stepA`, `rej_unfold`, `rej_loop`, `stA`, `rej_eq_some`) and
 `lean/Proofs/SampleS.lean` (`rbStep`, `rbRun`, `RejBoundedPoly_eq_forIn`, `forIn_rbBody`, `RejBoundedPoly_eq`);
@@ -187,7 +188,9 @@ sponge; it shares no code with either.
   `SHAKE256_eq_ocaml`, equality of byte lists with the model of `Mldsa_keccak.shake128/256`.
 * `Shake.lean`: `oursShake128 = ocamlShake128 = fipsShake128` and likewise for 256 (so also `Hash.lean`'s `G_eq`, `H_eq`
   and every statement through it); the top-level theorems restated on `ocamlShake*`: `keyGen_*_ocaml`,
-  `verifyInternal_*_ocaml`, `verify_*_ocaml`, `SGB.sign*_ocaml`, `SGB.signTerm_of_ours*_ocaml`, `SGB.thSign_of_decode_ocaml`.
+  `verifyInternal_*_ocaml`, `verify_*_ocaml`, `SGB.sign*_ocaml`, `SGB.signTerm_of_ours*_ocaml`, `SGB.thSign_of_decode_ocaml` (not restated: `verify_of_ctx_gt_both` and
+  `verify_of_sigDecode_none_both`, true for any XOF). The `keyGen_*_ocaml` premises still name `KG.seed`, which is
+  computed with our `Spec.H` (docstring in `Shake.lean`).
   The termination predicates have `O` versions (`ExpandATermO`, `ExpandSTermO`, `SGB.SignTermO`; the `*_iff` lemmas show
   they are propositionally the original ones) and `SGB.thSignO`, `SGB.thSignInternalO`.  Hypotheses of the
   Keccak theorems: `0 < r`, `r ≤ 200` (satisfied by 168 and 136); the restated theorems carry exactly the hypotheses of
