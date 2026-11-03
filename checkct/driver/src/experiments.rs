@@ -180,3 +180,11 @@ probe!(exp_poly_orig, in_eta_orig(&crate::probes::secret_poly(), 2));
 probe!(exp_poly_mask, bad_mask(&crate::probes::secret_poly(), 2) == 0);
 probe!(exp_poly_maskbb, bad_mask_bb(&crate::probes::secret_poly(), 2) == 0);
 probe!(exp_poly_bitand, in_eta_bitand(&crate::probes::secret_poly(), 2));
+
+// --- the sk-level loop at smaller sizes, to see how far the solver gets with the block-level fix in place:
+// K + L = 2 blocks (1x1) and 4 blocks (2x2), eta = 2; the original at 1x1 as the reference.
+probe!(exp_sk_wf_orig_1x1_44, sk_wf_bool::<1, 1>(&params::ML_DSA_44, &secret_sk::<2560>(), in_eta_orig));
+probe!(exp_sk_wf_mask_1x1_44, sk_wf_int::<1, 1>(&params::ML_DSA_44, &secret_sk::<2560>(), bad_mask));
+probe!(exp_sk_wf_maskbb_1x1_44, sk_wf_int::<1, 1>(&params::ML_DSA_44, &secret_sk::<2560>(), bad_mask_bb));
+probe!(exp_sk_wf_mask_2x2_44, sk_wf_int::<2, 2>(&params::ML_DSA_44, &secret_sk::<2560>(), bad_mask));
+probe!(exp_sk_wf_maskbb_2x2_44, sk_wf_int::<2, 2>(&params::ML_DSA_44, &secret_sk::<2560>(), bad_mask_bb));
