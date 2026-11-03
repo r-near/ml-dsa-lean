@@ -1,0 +1,157 @@
+import Proofs.TopWitnessSeed
+import Proofs.SampleA
+
+/-!
+# `ExpandA` succeeds on the `ρ` derived from `ξ` (ML-DSA-44)
+
+`Spec.ExpandA` on `ρ = rhoS` at fuel 512. A single kernel evaluation of all 16 `RejNTTPoly` calls needs about 160 GB
+(measured: 19 min), so each entry is its own declaration (about 10 GB, 40 s each), assembled through the
+`expandA_eq` characterization of `SampleA`.
+-/
+
+open Spec
+set_option maxRecDepth 8192
+
+namespace Proofs
+namespace TopWitness
+
+theorem foldlM_isSome {α β : Type} (f : α → β → Option α) (l : List β) (A : α)
+    (h : ∀ x ∈ l, ∀ B, (f B x).isSome = true) : (l.foldlM f A).isSome = true := by
+  induction l generalizing A with
+  | nil => simp
+  | cons x l ih =>
+    obtain ⟨B, hB⟩ := Option.isSome_iff_exists.mp (h x (List.mem_cons_self) A)
+    rw [List.foldlM_cons, hB]
+    exact ih B (fun y hy => h y (List.mem_cons_of_mem _ hy))
+
+/-- `ExpandA` succeeds as soon as each of its `k · ℓ` calls to `RejNTTPoly` does. -/
+theorem expandA_isSome (p : Spec.Params) (fuel : Nat) (ρ : List UInt8)
+    (h : ∀ r, r < p.k → ∀ s, s < p.ℓ → (Spec.RejNTTPoly fuel (SampleA.pSeed ρ r s)).isSome = true) :
+    (Spec.ExpandA p fuel ρ).isSome = true := by
+  rw [SampleA.expandA_eq]
+  apply foldlM_isSome
+  intro r hr A
+  have hr' : r < p.k := by simpa using hr
+  unfold SampleA.outerF
+  apply foldlM_isSome
+  intro s hs B
+  have hs' : s < p.ℓ := by simpa using hs
+  obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp (h r hr' s hs')
+  unfold SampleA.innerF
+  rw [ha]
+  rfl
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(0, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_0_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 0)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(0, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_0_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 1)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(0, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_0_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 2)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(0, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_0_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 3)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(1, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_1_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 0)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(1, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_1_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 1)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(1, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_1_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 2)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(1, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_1_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 3)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(2, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_2_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 0)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(2, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_2_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 1)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(2, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_2_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 2)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(2, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_2_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 3)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(3, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_3_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 0)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(3, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_3_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 1)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(3, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_3_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 2)).isSome = true := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Entry `(3, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
+theorem rej_a_3_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 3)).isSome = true := by decide +kernel
+
+/-- The 16 entries, assembled. -/
+theorem rej_a_all :
+    ∀ r, r < Spec.ML_DSA_44.k → ∀ s, s < Spec.ML_DSA_44.ℓ →
+      (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS r s)).isSome = true := by
+  have hk : Spec.ML_DSA_44.k = 4 := by decide +kernel
+  have hl : Spec.ML_DSA_44.ℓ = 4 := by decide +kernel
+  rw [hk, hl]
+  intro r hr s hs
+  match r, hr, s, hs with
+  | 0, _, 0, _ => exact rej_a_0_0
+  | 0, _, 1, _ => exact rej_a_0_1
+  | 0, _, 2, _ => exact rej_a_0_2
+  | 0, _, 3, _ => exact rej_a_0_3
+  | 1, _, 0, _ => exact rej_a_1_0
+  | 1, _, 1, _ => exact rej_a_1_1
+  | 1, _, 2, _ => exact rej_a_1_2
+  | 1, _, 3, _ => exact rej_a_1_3
+  | 2, _, 0, _ => exact rej_a_2_0
+  | 2, _, 1, _ => exact rej_a_2_1
+  | 2, _, 2, _ => exact rej_a_2_2
+  | 2, _, 3, _ => exact rej_a_2_3
+  | 3, _, 0, _ => exact rej_a_3_0
+  | 3, _, 1, _ => exact rej_a_3_1
+  | 3, _, 2, _ => exact rej_a_3_2
+  | 3, _, 3, _ => exact rej_a_3_3
+  | r + 4, h, _, _ => exact absurd h (by omega)
+  | _, _, s + 4, h => exact absurd h (by omega)
+
+/-- **`ExpandA` succeeds** on the `ρ` that `KeyGen` derives from `ξ = 0, 1, ..., 31`, ML-DSA-44, fuel 512. -/
+theorem expandA_44_isSome : (Spec.ExpandA Spec.ML_DSA_44 512 rhoS).isSome = true :=
+  expandA_isSome _ _ _ rej_a_all
+
+end TopWitness
+end Proofs

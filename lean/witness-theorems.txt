@@ -1,0 +1,10 @@
+# Non-vacuity witnesses (read by scripts/witness-check.sh through scripts/check-axioms.sh --list).
+# One fully qualified name per line; each must depend only on propext, Classical.choice, Quot.sound.
+# These modules are not imported by the default build roots (lean/Proofs.lean).
+import Proofs.TopWitness
+Proofs.TopWitness.hout_44
+Proofs.TopWitness.expandA_44_isSome
+Proofs.TopWitness.expandS_44_isSome
+Proofs.TopWitness.keygen_44_isSome
+Proofs.TopWitness.keygen_44_witness
+Proofs.TopWitness.keygen_44_nonvacuous
