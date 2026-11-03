@@ -1,0 +1,27 @@
+import Spec.Keccak
+
+/-!
+# Kernel known-answer tests for our SHAKE (tests, not an equivalence)
+
+Published digests of the empty message (NIST FIPS 202 example values: SHAKE128("") = 7f9c2ba4 ... fa66ef26,
+SHAKE256("") = 46b9dd2b ... d5762f), checked by kernel evaluation of `Spec.SHAKE128` / `Spec.SHAKE256`.  These are
+point checks on the executable definitions; the equality with ocaml-pq's independent Keccak for ALL inputs is
+`KeccakSponge.lean`.  ocaml-pq proves the same two digests for its own FIPS 202 transcription (`Hash/KAT.lean`:
+`SHAKE128_empty`, `SHAKE256_empty`).
+-/
+
+namespace XSpec.KC
+
+/-- Test: `SHAKE128("", 32 bytes)`. -/
+theorem shake128_empty_kat : Spec.SHAKE128 [] 32 =
+    [0x7f, 0x9c, 0x2b, 0xa4, 0xe8, 0x8f, 0x82, 0x7d, 0x61, 0x60, 0x45, 0x50, 0x76, 0x05, 0x85, 0x3e,
+     0xd7, 0x3b, 0x80, 0x93, 0xf6, 0xef, 0xbc, 0x88, 0xeb, 0x1a, 0x6e, 0xac, 0xfa, 0x66, 0xef, 0x26] := by
+  decide +kernel
+
+/-- Test: `SHAKE256("", 32 bytes)`. -/
+theorem shake256_empty_kat : Spec.SHAKE256 [] 32 =
+    [0x46, 0xb9, 0xdd, 0x2b, 0x0b, 0xa8, 0x8d, 0x13, 0x23, 0x3b, 0x3f, 0xeb, 0x74, 0x3e, 0xeb, 0x24,
+     0x3f, 0xcd, 0x52, 0xea, 0x62, 0xb8, 0x1b, 0x82, 0xb5, 0x0c, 0x27, 0x64, 0x6e, 0xd5, 0x76, 0x2f] := by
+  decide +kernel
+
+end XSpec.KC
