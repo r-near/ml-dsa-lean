@@ -5,7 +5,7 @@
 # Part 1: top-level equivalences (Keccak-f[1600] and SHAKE128/256 against ocaml-pq's FIPS 202 transcription and
 # its Mldsa_keccak model; KeyGen, Sign, Verify against ocaml-pq, the termination witnesses, and the composition
 # with ocaml-pq's key decoder; each of the latter also restated on ocaml-pq's own SHAKE, `*_ocaml`).
-# Part 2: supporting lemmas.
+# Part 2: supporting lemmas.  Part 3: known-answer tests (not equivalences).
 import XSpec.Rounding
 import XSpec.Coeff
 import XSpec.NTTOps
@@ -91,9 +91,6 @@ XSpec.SGB.signTerm_of_ours_sign_ocaml
 XSpec.SGB.thSign_of_decode_ocaml
 # ---- Part 2: supporting lemmas ----
 # Keccak
-# tests (kernel known-answer checks of our SHAKE; not equivalences)
-XSpec.KC.shake128_empty_kat
-XSpec.KC.shake256_empty_kat
 XSpec.KC.rnd_eq
 XSpec.KC.S_keccakF
 XSpec.KC.theta_eq
@@ -181,3 +178,6 @@ XSpec.SGB.keyOfSk_s1
 XSpec.SGB.keyOfSk_s2
 XSpec.SGB.keyOfSk_t0
 XSpec.SGB.budget_of_std3
+# ---- Part 3: tests (kernel known-answer checks of our SHAKE on the empty message; NOT equivalences) ----
+XSpec.KC.shake128_empty_kat
+XSpec.KC.shake256_empty_kat
