@@ -272,7 +272,7 @@ Not covered:
     solver query.
 - **the AVX2 copy** of the dispatched NTT: BINSEC can't lift VEX instructions, so it is covered by the static scan
   only (§3.5).
-- **AArch64 with NEON** (the production Graviton/Apple build): BINSEC can't lift `umax`/`umin` (`docs/upstream-issues.md`
+- **AArch64 with NEON** (the default AArch64 build): BINSEC can't lift `umax`/`umin` (`docs/upstream-issues.md`
   U-40). macOS is not covered at all.
 - **other builds:** other rustc versions, flags and inlining contexts. Verdicts depend on code shape (ISSUES CT-1,
   CT-2), so they hold for the builds measured.
