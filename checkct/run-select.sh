@@ -3,6 +3,8 @@
 #   rx submit ct4 -- 'set -o pipefail; ONLY="hint_step|vec_power2round" TIMEOUT=7200 bash checkct/run-select.sh 2>&1 | tee sel.log'
 # Environment:
 #   ONLY     extended regex over the entrypoint names (driver__module__probe); required
+#   EXCLUDE  optional extended regex over the entrypoint names to leave out of the selection (the censuses of a sweep that
+#            runs several probes in parallel: they need more than 64 GB, so they run alone)
 #   TIMEOUT  seconds per probe (default 7200)
 #   TARGETS  space separated target list (default: all three)
 #   JOBS     parallel BINSEC instances (default 4: they share the container cap, and 16 at 64g got large probes killed).
@@ -12,6 +14,9 @@
 #            dispatch          the checkct profile with the driver's `avx2` cargo feature, which turns on the crate's
 #                              `cfg(feature = "avx2")`: the runtime AVX2 dispatch of src/ntt.rs is compiled in (x86_64 only)
 #            nearcore-dispatch the nearcore settings plus the same feature
+#            nearcore-exact    the exact nearcore release build (see the block comment below): nearcore's [profile.release] incl.
+#                              overflow-checks = true, nearcore's x86_64 target features and Rust 1.95.0 (CT_TOOLCHAIN)
+#            nearcore-exact-dispatch  nearcore-exact plus the driver's `avx2` feature, cache pre-set as in nearcore-dispatch
 #            In a dispatch profile the dispatch cache (a static in .bss) is pre-set to "no AVX2" in every x86_64 BINSEC
 #            script, see run_one below; the run fails if the static or the script anchor is not found. In every other
 #            profile no dispatch is compiled and nothing is pre-set (the log says so).
@@ -35,8 +40,9 @@ PENV=""
 DISPATCH=""
 case "$PROFILE" in
   ""|nearcore|nearcore-novec|avx2|nearcore-avx2) ;;
-  dispatch|nearcore-dispatch) DISPATCH=1 ;;
-  *) echo "unknown PROFILE=$PROFILE (known: nearcore, nearcore-novec, avx2, nearcore-avx2, dispatch, nearcore-dispatch)" >&2; exit 2 ;;
+  nearcore-exact) ;;
+  dispatch|nearcore-dispatch|nearcore-exact-dispatch) DISPATCH=1 ;;
+  *) echo "unknown PROFILE=$PROFILE (known: nearcore, nearcore-novec, avx2, nearcore-avx2, dispatch, nearcore-dispatch, nearcore-exact, nearcore-exact-dispatch)" >&2; exit 2 ;;
 esac
 case "$PROFILE" in nearcore|nearcore-novec|nearcore-dispatch)
   PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort" ;; esac
@@ -46,6 +52,23 @@ if [ "$PROFILE" = nearcore-novec ]; then
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false"
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
+# PROFILE=nearcore-exact, nearcore-exact-dispatch: the build settings of nearcore's release binary, read from the
+# nearcore clone at commit cd5a94457 (2026-11-03). The older "nearcore" profiles above stay as they were (historical
+# numbers refer to them).
+#   Cargo.toml:388-392      [profile.release] overflow-checks = true, panic = 'abort', lto = "fat", codegen-units = 1
+#                           (opt-level is not set: the release default 3; debug-assertions: default off)
+#   .cargo/config.toml:8-9  [target.'cfg(target_arch = "x86_64")'] rustflags = ["-Ctarget-feature=+sse2,+ssse3,+sse4.1,
+#                           +sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq", "-Cforce-unwind-tables=y"] (no AVX2)
+#   rust-toolchain.toml:12  channel = "1.95.0"
+# cargo-checkct drops RUSTFLAGS, so the x86_64 flags go through the per-target variable, which replaces the x86_64
+# rustflags of checkct/.cargo/config.toml: its linker flags are repeated here. The other targets are not changed.
+# Toolchain: CT_TOOLCHAIN (default 1.95.0, installed in the image by checkct/Dockerfile) through RUSTUP_TOOLCHAIN, which
+# overrides checkct/rust-toolchain.toml; RUSTC_BOOTSTRAP=1 lets that stable compiler take the -Zbuild-std of
+# checkct/.cargo/config.toml (the driver is no_std and needs build-std's compiler-builtins-mem for memcpy/memset;
+# RUSTC_BOOTSTRAP does not change code generation). CT_TOOLCHAIN=nightly-2026-10-06 builds with the checkct nightly instead.
+case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch)
+  PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort -e CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true -e CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false -e RUSTUP_TOOLCHAIN=${CT_TOOLCHAIN:-1.95.0} -e RUSTC_BOOTSTRAP=1 -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
+  export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -C force-unwind-tables=y" ;; esac
 # PROFILE=avx2: the default profile with `-C target-feature=+avx2` (nearcore-avx2: plus the nearcore settings). The
 # crate then takes its static-AVX2 arm (src/ntt.rs "Dispatch"): no cpuid, one compilation of each NTT body, compiled
 # for AVX2. BINSEC 0.11.3 cannot lift the VEX-encoded vector instructions LLVM emits there (status unknown at the
@@ -55,10 +78,13 @@ if [ "$PROFILE" = avx2 ] || [ "$PROFILE" = nearcore-avx2 ]; then
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+avx2"
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
-docker run --rm -e DISPATCH="$DISPATCH" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
+docker run --rm -e DISPATCH="$DISPATCH" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
   -v "$PWD":/src:ro ct-binsec bash -c '
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
   rm -rf /home/opam/w/checkct/target && cd /home/opam/w && eval $(opam env) &&
+  echo "toolchain for PROFILE=$PROFILE_NAME (RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN:-unset}, RUSTC_BOOTSTRAP=${RUSTC_BOOTSTRAP:-unset}):" &&
+  (cd checkct && rustc -vV | sed "s/^/  /") &&
+  echo "x86_64 rustflags: ${CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS:-(checkct/.cargo/config.toml)}; CARGO_PROFILE_RELEASE_*: $(env | grep ^CARGO_PROFILE_RELEASE_ | tr "\n" " ")" &&
   # Dispatch profiles: make `avx2` a default feature of the driver (cargo-checkct has no --features option). The
   # feature is declared in checkct/driver/Cargo.toml; the #[path]-included sources see it as cfg(feature = "avx2").
   if [ -n "$DISPATCH" ]; then
@@ -120,7 +146,7 @@ docker run --rm -e DISPATCH="$DISPATCH" -e PROFILE_NAME="${PROFILE:-default}" --
   export -f run_one
   for t in $TARGETS; do for s in $t/release/driver.*.binsec; do
     n=$(basename "$s" .binsec); n=${n#driver.}
-    echo "$n" | grep -Eq "$ONLY" && echo "$t $s"
+    echo "$n" | grep -Eq "$ONLY" && { [ -z "$EXCLUDE" ] || ! echo "$n" | grep -Eq "$EXCLUDE"; } && echo "$t $s"
   done; done > /tmp/jobs.txt
   echo "selected $(wc -l < /tmp/jobs.txt) probes"
   xargs -P "$JOBS" -L1 bash -c "run_one \$0 \$1" < /tmp/jobs.txt
