@@ -26,7 +26,7 @@ FIPS 204 on every input is in `docs/assurance.md` §1.1; there is no recorded di
 | `KeyType { ED25519 = 0, SECP256K1 = 1, MLDSA65 = 2 }` | :39–43; `TryFrom<u8>` :81–92; strings `"ml-dsa-65"` :62, :75 | the only ML-DSA variant |
 | Sizes | :20–31 | pk 1952, sk (raw) 4032, sig 3309, seed 32, handle 32 |
 | `PublicKey::MLDSA65(MlDsa65PublicKey(Box<[u8; 1952]>))` | enum :248–255, `len()` :262–271 | boxed so the enum stays small (:149–151) |
-| Borsh `PublicKey` | :398–: 1-byte tag (`KeyTag`, :352) then raw bytes; tag 2 = full ML-DSA-65 key | 1 + 1952 bytes; tag 3 is rejected here (:422–425) |
+| Borsh `PublicKey` | :398–425: 1-byte tag (`KeyTag`, :352) then raw bytes; tag 2 = full ML-DSA-65 key | 1 + 1952 bytes; tag 3 is rejected here (:422–425) |
 | `PublicKeyHandle::MlDsa65(32-byte SHA3-256)` | :515–523, hash derivation :164–172 | the trie stores the hash, not the key (`trie_id_len` :326–337); domain tag `near:ml-dsa-65-pubkey-hash:v1` (`hash_domain.rs:9,15`) |
 | `Signature::MLDSA65(MlDsa65Signature(Box<[u8; 3309]>))` | enum :1024–1028 | borsh = 1-byte `KeyType` (2) then 3309 bytes (:1131–1149, :1151–1180) |
 | `SecretKey::MLDSA65(Box<[u8; 4032]>)` | :735–739; sign :783–794 | raw FIPS 204 private key; validated by `PqdsaKeyPair::from_raw_private_key` at parse (:898) |
@@ -127,6 +127,13 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   fails (`docs/assurance.md` §1.1), but the compiled code under overflow checks is only tested empirically:
   `scripts/ci.sh` steps `nearcore-test` and `nearcore-test-avx2` run the whole test suite with
   `CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true` (results in the final report of the run that produced this document).
+- Dev and test builds: `[profile.dev]` is `panic = 'abort'` and compiles all non-workspace dependencies at `opt-level = 1`
+  (`Cargo.toml:385–386`, `:422–423`); `dev-release` is release without LTO (:395–399). A vendored copy of this crate would be
+  built at `opt-level = 1` there. Our stack figures are measured for release and for opt-level 0, not for 1 (they grow at 0, by
+  1.4 to 1.8 times, `tools/stack/README.md`). The `zeroize` feature's stack-residue tests (`tests/zeroize.rs`) pass in release
+  and fail at opt-level 0 (`scripts/ci.sh` header; 8 of 19 tests find copies of s1, s2, ŝ1 or K in dead stack frames after
+  `keygen_*`, `pk_from_sk_*` and `signing_key_*`), and were not run at opt-level 1. So the wipe behavior documented in
+  `src/api.rs` should be read as a property of optimized builds only; a nearcore test run in its dev profile would not show it.
 - x86_64 target features: `+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq`, plus
   `-Cforce-unwind-tables=y` (`.cargo/config.toml:9`; the profiling config adds frame pointers). **There is no `avx` or `avx2`**
   in that list. Our NTT is vectorized by LLVM only with AVX2, so nearcore's build gets the numbers in the "default"
