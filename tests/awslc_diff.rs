@@ -18,10 +18,11 @@
 //! must both return the slice verdict and the aws-lc verdict. These API comparisons are counted and printed separately
 //! from the slice-verdict comparisons (the prepared key is reused while consecutive cases share a pk).
 //!
-//! Run time. Release (`cargo test --release --test awslc_diff -- --nocapture`) runs the full counts, about 160 s of test
-//! time before the API comparisons and a few minutes after. A debug build (plain `cargo test`) runs only a smoke subset
-//! (counts divided by about 100, strided sweeps, every category still exercised at least once), well under a minute;
-//! set `AWSLC_DIFF_FULL=1` to force the full counts in a debug build too (hours: not meant for routine use).
+//! Run time. Release (`cargo test --release --test awslc_diff -- --nocapture`) runs the full counts: about 160 s of test
+//! time before the API comparisons were added, 340-370 s with them (measured on a shared box at load 30-100). A debug
+//! build (plain `cargo test`) runs only a smoke subset (counts divided by about 100, strided sweeps, every category still
+//! exercised at least once): 35 s of test time. Set `AWSLC_DIFF_FULL=1` to force the full counts in a debug build too
+//! (very slow: a tenth of the counts took 13 minutes there; not meant for routine use).
 //!
 //! Failures. On any disagreement the failing inputs (pk, m, σ in hex) are written to `target/awslc-diff-dump/caseN.txt`
 //! (override the directory with `AWSLC_DIFF_DUMP=<dir>`); the log names the file and never carries the full inputs.
