@@ -145,9 +145,11 @@ samples; probabilistic), the κ budget, `Params.Std` (kernel-checked for 44/65/8
 - **Randomness** is the caller's: `keygen_NN` takes ξ and `sign_NN` takes `rnd` (`src/api.rs` module docs).
 - **Test harnesses** (ACVP, Wycheproof, differentials, fuzzers) were not themselves reviewed; their sensitivity was
   checked by planting bugs (STATUS.md lines 53–54).
-- **No recorded comparison against aws-lc** (the library nearcore calls today for ML-DSA-65, see
-  `docs/nearcore-integration.md`). The cross-implementation differential covers libcrux, mldsa-native and RustCrypto
-  (STATUS.md line 224).
+- **The aws-lc comparison is a test, not a proof.** `tests/awslc_diff.rs` compares verdicts against aws-lc-rs 1.18.2,
+  the library nearcore calls today for ML-DSA-65: 0 differences in about 3.2M verify comparisons (incl. malformed
+  hints, wrong lengths, forged boundary signatures) and 610 Wycheproof vectors, byte-identical KeyGen on 15,000
+  seeds. Only ctx = "" is compared, signatures are cross-verified rather than compared (aws-lc signs hedged), and a
+  dropped "decreasing count" hint check would not be visible at the verdict level (see the STATUS.md aws-lc row).
 
 ## 4. Constant-time evidence and its scope
 

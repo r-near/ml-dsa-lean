@@ -14,8 +14,9 @@ for the existing ML-DSA-65 paths, and a possible source of 44/87 if nearcore eve
 existing 65 paths is consensus-critical: every node must return the same verdict for every (key, message, signature),
 including malformed ones. The nearcore doc states the message is passed with an empty context string
 (`post_quantum_signatures.md` §7), which is `ctx = &[]` in our `api`. Our crate's evidence that its Verify equals
-FIPS 204 on every input is in `docs/assurance.md` §1.1; there is no recorded differential against aws-lc
-(`STATUS.md` line 224 lists libcrux, mldsa-native and RustCrypto), which is a gap to close before any swap.
+FIPS 204 on every input is in `docs/assurance.md` §1.1; the verdict differential against aws-lc-rs 1.18.2
+(`tests/awslc_diff.rs`, STATUS.md aws-lc row) found 0 differences in about 3.2M verify comparisons, incl. malformed
+inputs, with ctx = "" as nearcore uses it. It is a test, not a proof about aws-lc.
 
 ## 1. Key and signature representation today
 
