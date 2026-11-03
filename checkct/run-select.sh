@@ -20,6 +20,8 @@
 #            In a dispatch profile the dispatch cache (a static in .bss) is pre-set to "no AVX2" in every x86_64 BINSEC
 #            script, see run_one below; the run fails if the static or the script anchor is not found. In every other
 #            profile no dispatch is compiled and nothing is pre-set (the log says so).
+#   TRACE    1 runs BINSEC with -sse-debug-level 3 -sse-loglevel debug and keeps only the last executed instruction and the
+#            executed-instruction count of each probe (a "last:" line in the Summary): where a path was cut or stuck
 #   EXPERIMENTS  1 compiles driver/src/experiments.rs (the throwaway rewrite probes `exp_*`) via its cargo feature
 #   NAME     container name (default ct-select)
 #   CT_MEMORY / CT_CPUS  docker --memory / --cpus caps for the container (default 64g / 24). BINSEC runs can grow to
@@ -90,7 +92,7 @@ if [ "$PROFILE" = avx2 ] || [ "$PROFILE" = nearcore-avx2 ]; then
 fi
 EXACT=""
 case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch) EXACT=1 ;; esac
-docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPERIMENTS" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
+docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPERIMENTS" -e TRACE="$TRACE" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
   -v "$PWD":/src:ro ct-binsec bash -c '
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
   rm -rf /home/opam/w/checkct/target && cd /home/opam/w && eval $(opam env) &&
@@ -161,12 +163,17 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
         return 0
       fi
     fi ;; esac
+    # TRACE=1: BINSEC prints every executed instruction ([sse:step] lines); only the last one and the count are kept.
+    # That is the instruction a path was at when the run ended (a cut path, or the query a timed-out path is stuck in).
+    trace=""; [ -n "$TRACE" ] && trace="-sse-debug-level 3 -sse-loglevel debug"
     out=$(binsec -sse -checkct -sse-depth 1000000000 -sse-jump-enum 64 -sse-script "$s" -sse-timeout "$TIMEOUT" \
-      -checkct-leak-info instr $isa -checkct-features control-flow,memory-access,dividend,divisor "$t/release/driver" 2>&1)
+      -checkct-leak-info instr $isa -checkct-features control-flow,memory-access,dividend,divisor $trace "$t/release/driver" 2>&1 |
+      awk '"'"'/^\[sse:step\]/ { last=$0; n++; next } { print } END { if (n) print "LASTSTEP " n " " last }'"'"')
     st=$(echo "$out" | sed -n "s/.*Program status is : \([a-z]*\).*/\1/p" | head -1)
     {
       echo "  driver  $t  $ep  ${st:-error}"
       echo "$out" | sed -n "s/.*\[checkct:result\] Instruction \(.*\)/      \1/p"
+      echo "$out" | grep "^LASTSTEP" | sed "s/^LASTSTEP /      last: /"
       echo "$out" | grep -E "visited instructions \(unrolled\)|branching points|checks pass|pending paths" | sed "s/^ */      stat: /"
       [ "$st" = secure ] || echo "$out" | grep -iE "warning|error|unsupported|unknown|undefined|abort|not executable|cannot|failed" | sort | uniq -c | sort -rn | head -8 | sed "s/^ */      note: /"
     } > "/tmp/sel.$t.$ep.out"

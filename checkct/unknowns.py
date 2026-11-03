@@ -50,5 +50,8 @@ for path in logs:
         m = re.search(r"Cut path.*@ (0x[0-9a-f]+)", line)
         if m:
             print("   cut   " + show(int(m.group(1), 16))); continue
+        m = re.search(r"last: (\d+) \[sse:step\] (0x[0-9a-f]+) ", line)
+        if m:
+            print(f"   last  after {m.group(1)} steps: " + show(int(m.group(2), 16))); continue
         if re.search(r"stat: (pending paths|\[checkct:info\] \d+ / \d+ control|visited instructions \(unrolled\))", line):
             print("   " + line.strip())
