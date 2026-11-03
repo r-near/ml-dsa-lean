@@ -3,8 +3,9 @@
 # build roots (lean/Proofs.lean) do not import, fail on any build error or `sorry`, then run the axiom check on the
 # names in lean/witness-theorems.txt. Exit 0 only if all three pass and the default roots stay free of the witnesses.
 # Usage: scripts/witness-check.sh [Module ...]   (default: Proofs.TopWitness)
-# The kernel evaluations are the cost: about 20 minutes of kernel time and at most 40 GB for one declaration
-# (`expandS_44_isSome`); `lake` runs the independent modules in parallel.
+# The kernel evaluations are the cost. Measured cold (2026-11-03): Proofs.TopWitnessA (16 ExpandA entries, about 10 GB
+# and 40 s each) built in about 700 s; ExpandS about 5 min and up to about 38 GB; about 12 min wall and about 19 GB
+# peak per process in total. `lake` runs the independent modules in parallel.
 set -euo pipefail
 cd "$(dirname "$0")/../lean"
 export PATH="$HOME/.elan/bin:$PATH"

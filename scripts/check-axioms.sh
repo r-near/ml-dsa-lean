@@ -10,12 +10,13 @@ LIST=headline-theorems.txt
 IMPL=1
 while [ $# -gt 0 ]; do
   case "$1" in
-    --list) LIST="$2"; shift 2 ;;
+    --list) [ $# -ge 2 ] || { echo "usage: $0 [--list FILE] [--no-impl]" >&2; exit 2; }; LIST="$2"; shift 2 ;;
     --no-impl) IMPL=0; shift ;;
     *) echo "usage: $0 [--list FILE] [--no-impl]" >&2; exit 2 ;;
   esac
 done
 cd "$(dirname "$0")/../lean"
+if [ "$LIST" != headline-theorems.txt ] && [ ! -f "$LIST" ]; then echo "AXIOM GATE FAIL: list file $LIST not found" >&2; exit 1; fi
 export PATH="$HOME/.elan/bin:$PATH"
 mkdir -p .lake
 TAG=$(basename "$LIST" .txt)
