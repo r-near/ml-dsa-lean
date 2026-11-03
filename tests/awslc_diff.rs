@@ -13,7 +13,22 @@
 //! equal on every case. Where FIPS 204 fixes the verdict (malformed hint encodings, z outside the bound, wrong lengths,
 //! a valid signature) it is also asserted against ours.
 //!
-//! Sets of cases (counts are printed per run; debug builds divide the bulk counts by `SCALE`):
+//! Our verify also goes through the public API, which is what nearcore would call: whenever pk and σ have the exact
+//! lengths, `api::verify_NN(pk, m, &[], sig)` and `api::verifying_key_NN` + `api::verify_prepared_NN(&vk, m, &[], sig)`
+//! must both return the slice verdict and the aws-lc verdict. These API comparisons are counted and printed separately
+//! from the slice-verdict comparisons (the prepared key is reused while consecutive cases share a pk).
+//!
+//! Run time. Release (`cargo test --release --test awslc_diff -- --nocapture`) runs the full counts, about 160 s of test
+//! time before the API comparisons and a few minutes after. A debug build (plain `cargo test`) runs only a smoke subset
+//! (counts divided by about 100, strided sweeps, every category still exercised at least once), well under a minute;
+//! set `AWSLC_DIFF_FULL=1` to force the full counts in a debug build too (hours: not meant for routine use).
+//!
+//! Failures. On any disagreement the failing inputs (pk, m, σ in hex) are written to `target/awslc-diff-dump/caseN.txt`
+//! (override the directory with `AWSLC_DIFF_DUMP=<dir>`); the log names the file and never carries the full inputs.
+//! The per-category RNG seeds are fixed, but aws-lc signing and `PqdsaKeyPair::generate` are randomized, so the cases
+//! they produce (`valid`, `keygen`) differ between runs and a failure there may not reproduce: keep the dump.
+//!
+//! Sets of cases (counts are printed per run; the smoke run divides the bulk counts by `scale()`):
 //! - `valid`: ours signs -> aws-lc verifies; aws-lc signs -> ours verifies; wrong message / wrong key.
 //! - `keygen`: KeyGen from ξ against `PqdsaKeyPair::from_seed` (pk and expanded sk bytes), import of ours sk, aws-lc
 //!   `generate` keys exported and re-derived by ours, and an informational sk-import matrix on mutated secret keys.
@@ -28,7 +43,6 @@
 //!   an SPKI parse of the public key bytes before the raw one), valid signatures and mutations under them.
 //! - `wycheproof`: the vendored Wycheproof vectors through aws-lc-rs.
 //!
-//! Run in release: `cargo test --release --test awslc_diff -- --nocapture`.
 #![allow(clippy::type_complexity, clippy::needless_range_loop)]
 use aws_lc_rs::encoding::AsRawBytes;
 use aws_lc_rs::signature::{self as aws, KeyPair, PqdsaKeyPair, PqdsaSigningAlgorithm, PqdsaVerificationAlgorithm, UnparsedPublicKey};
@@ -47,8 +61,22 @@ use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::io::Read;
 
-/// Bulk-case divisor: unoptimized builds run a tenth of the cases.
-const SCALE: usize = if cfg!(debug_assertions) { 10 } else { 1 };
+/// Bulk-case divisor: 1 in release (and with `AWSLC_DIFF_FULL=1`), 100 in a debug build, where the full run costs
+/// about 13 minutes. Every count goes through `sc`, which keeps at least one case.
+fn scale() -> usize {
+    static S: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
+    *S.get_or_init(|| if cfg!(debug_assertions) && std::env::var_os("AWSLC_DIFF_FULL").is_none_or(|v| v != "1") { 100 } else { 1 })
+}
+
+/// `n / scale()`, at least 1.
+fn sc(n: usize) -> usize {
+    (n / scale()).max(1)
+}
+
+/// `n / min(scale(), cap)`: a count that shrinks in the smoke run but never below `n / cap`.
+fn sc_cap(n: usize, cap: usize) -> usize {
+    (n / scale().min(cap)).max(1)
+}
 const Q: i64 = 8_380_417;
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -139,6 +167,9 @@ struct Forged {
     ones: usize,
 }
 
+/// Last pk and its prepared `api::VerifyingKeyNN`.
+type VkCache = Option<(Vec<u8>, Box<dyn std::any::Any + Send>)>;
+
 struct Set {
     name: &'static str,
     p: Params,
@@ -150,6 +181,9 @@ struct Set {
     sign: fn(&[u8], &[u8], &[u8; 32]) -> Vec<u8>,
     /// verify_internal with the pure-interface prefix 0 ‖ 0 (empty ctx); wrong lengths are rejected.
     ours_verify: fn(&Params, &[u8], &[u8], &[u8]) -> bool,
+    /// The public API with ctx = "": (`verify_NN`, `verifying_key_NN` + `verify_prepared_NN`); None unless pk and σ have
+    /// exactly the right lengths. The cache holds the prepared key of the last pk.
+    ours_verify_api: fn(&[u8], &[u8], &[u8], &mut VkCache) -> Option<(bool, bool)>,
     pk_from_sk: fn(&Params, &[u8]) -> Option<Vec<u8>>,
     sk_well_formed: fn(&[u8]) -> bool,
     rekey: fn(&Params, &KeySpec, &mut Rng) -> (Vec<u8>, Vec<u8>),
@@ -158,7 +192,7 @@ struct Set {
 }
 
 macro_rules! make_set {
-    ($name:literal, $oid:literal, $k:literal, $l:literal, $p:expr, $av:expr, $as:expr, $kg:ident, $sg:ident, $wf:ident) => {
+    ($name:literal, $oid:literal, $k:literal, $l:literal, $p:expr, $av:expr, $as:expr, $kg:ident, $sg:ident, $wf:ident, $vf:ident, $vkf:ident, $vpf:ident, $vkt:ident) => {
         Set {
             name: $name,
             p: $p,
@@ -171,6 +205,16 @@ macro_rules! make_set {
             },
             sign: |sk, m, rnd| api::$sg(sk.try_into().unwrap(), m, &[], rnd).expect("kappa budget").to_vec(),
             ours_verify: |p, pk, m, sig| verify_internal::<$k, $l>(p, pk, &[0, 0], m, sig),
+            ours_verify_api: |pk_s, m, sig, cache| {
+                let pk = pk_s.try_into().ok()?;
+                let sig = sig.try_into().ok()?;
+                let direct = api::$vf(pk, m, &[], sig);
+                if cache.as_ref().is_none_or(|(k, _)| k[..] != *pk_s) {
+                    *cache = Some((pk_s.to_vec(), Box::new(api::$vkf(pk))));
+                }
+                let vk = cache.as_ref().unwrap().1.downcast_ref::<api::$vkt>().unwrap();
+                Some((direct, api::$vpf(vk, m, &[], sig)))
+            },
             pk_from_sk: |p, sk| {
                 let mut pk = vec![0u8; prm::pk_len(p)];
                 pk_from_sk::<$k, $l>(p, sk, &mut pk).then_some(pk)
@@ -185,9 +229,9 @@ macro_rules! make_set {
 
 fn set(idx: usize) -> Set {
     match idx {
-        0 => make_set!("ML-DSA-44", 0x11, 4, 4, prm::ML_DSA_44, aws::ML_DSA_44, aws::ML_DSA_44_SIGNING, keygen_44, sign_44, sk_is_well_formed_44),
-        1 => make_set!("ML-DSA-65", 0x12, 6, 5, prm::ML_DSA_65, aws::ML_DSA_65, aws::ML_DSA_65_SIGNING, keygen_65, sign_65, sk_is_well_formed_65),
-        2 => make_set!("ML-DSA-87", 0x13, 8, 7, prm::ML_DSA_87, aws::ML_DSA_87, aws::ML_DSA_87_SIGNING, keygen_87, sign_87, sk_is_well_formed_87),
+        0 => make_set!("ML-DSA-44", 0x11, 4, 4, prm::ML_DSA_44, aws::ML_DSA_44, aws::ML_DSA_44_SIGNING, keygen_44, sign_44, sk_is_well_formed_44, verify_44, verifying_key_44, verify_prepared_44, VerifyingKey44),
+        1 => make_set!("ML-DSA-65", 0x12, 6, 5, prm::ML_DSA_65, aws::ML_DSA_65, aws::ML_DSA_65_SIGNING, keygen_65, sign_65, sk_is_well_formed_65, verify_65, verifying_key_65, verify_prepared_65, VerifyingKey65),
+        2 => make_set!("ML-DSA-87", 0x13, 8, 7, prm::ML_DSA_87, aws::ML_DSA_87, aws::ML_DSA_87_SIGNING, keygen_87, sign_87, sk_is_well_formed_87, verify_87, verifying_key_87, verify_prepared_87, VerifyingKey87),
         _ => unreachable!(),
     }
 }
@@ -218,13 +262,18 @@ impl Set {
 // Tally
 // ---------------------------------------------------------------------------------------------------------------
 
-/// Writes (pk, m, sig) of a failing case to `$AWSLC_DIFF_DUMP/<n>.txt` when that variable names a directory; returns
-/// where, or a note. The log itself never carries the full inputs.
+/// Writes (pk, m, sig) of a failing case to `target/awslc-diff-dump/case<n>.txt` (or `$AWSLC_DIFF_DUMP/case<n>.txt`);
+/// returns where, or a note. The log itself never carries the full inputs.
 fn dump_inputs(s: &Set, cat: &str, pk: &[u8], m: &[u8], sig: &[u8]) -> String {
     use std::sync::atomic::{AtomicUsize, Ordering};
     static N: AtomicUsize = AtomicUsize::new(0);
-    let Some(dir) = std::env::var_os("AWSLC_DIFF_DUMP") else { return "set AWSLC_DIFF_DUMP=<dir> to write them".into() };
-    let path = std::path::Path::new(&dir).join(format!("case{}.txt", N.fetch_add(1, Ordering::Relaxed)));
+    let dir = std::env::var_os("AWSLC_DIFF_DUMP")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("target/awslc-diff-dump"));
+    if let Err(e) = std::fs::create_dir_all(&dir) {
+        return format!("dump failed: {e}");
+    }
+    let path = dir.join(format!("case{}.txt", N.fetch_add(1, Ordering::Relaxed)));
     let body = format!("{} {cat}\npk={}\nm={}\nsig={}\n", s.name, hex(pk), hex(m), hex(sig));
     match std::fs::write(&path, body) {
         Ok(()) => path.display().to_string(),
@@ -248,6 +297,11 @@ struct Tally {
     info: BTreeMap<&'static str, (u64, u64, u64)>,
     notes: Vec<String>,
     lines: Vec<String>,
+    /// public-API comparisons: cases run (each calls `verify_NN` and `verify_prepared_NN`) and cases where either
+    /// verdict differs from the slice verdict or from aws-lc
+    api_n: u64,
+    api_dis: u64,
+    vk_cache: VkCache,
 }
 
 impl Tally {
@@ -255,6 +309,19 @@ impl Tally {
     fn check(&mut self, s: &Set, cat: &'static str, pk: &[u8], m: &[u8], sig: &[u8], expect: Option<bool>) -> bool {
         let ours = (s.ours_verify)(&s.p, pk, m, sig);
         let theirs = aws_verify(s.aws_v, pk, m, sig);
+        if let Some((direct, prepared)) = (s.ours_verify_api)(pk, m, sig, &mut self.vk_cache) {
+            self.api_n += 1;
+            if direct != ours || prepared != ours || direct != theirs || prepared != theirs {
+                self.api_dis += 1;
+                if self.notes.len() < 6 {
+                    self.notes.push(format!(
+                        "API-DISAGREE [{}] {cat}: slice={ours} verify_NN={direct} verify_prepared_NN={prepared} aws={theirs} (full inputs: {})",
+                        s.name,
+                        dump_inputs(s, cat, pk, m, sig)
+                    ));
+                }
+            }
+        }
         let r = self.rows.entry(cat).or_default();
         r.n += 1;
         if ours == theirs {
@@ -308,11 +375,11 @@ impl Tally {
     }
 
     fn bad(&self) -> u64 {
-        self.rows.values().map(|r| r.dis + r.spec_bad).sum()
+        self.rows.values().map(|r| r.dis + r.spec_bad).sum::<u64>() + self.api_dis
     }
 
     fn report(&self, set: &str, set_name: &str) {
-        println!("== {set_name} / {set}: {} verify comparisons", self.total());
+        println!("== {set_name} / {set}: {} verify comparisons; API comparisons (verify_NN and verify_prepared_NN against slice and aws-lc): {}, API disagreements {}", self.total(), self.api_n, self.api_dis);
         for (cat, r) in &self.rows {
             println!(
                 "   {cat:<44} n={:>8} both-accept={:>7} both-reject={:>8} DISAGREE={} SPEC-MISMATCH={}",
@@ -352,7 +419,8 @@ fn run_sets(what: &'static str, f: fn(&Set, &mut Rng) -> Tally) {
         bad += t.bad();
     }
     let total: u64 = tallies.iter().map(|(_, t)| t.total()).sum();
-    println!("== {what}: {total} verify comparisons in total, {bad} disagreements or spec mismatches");
+    let (api_n, api_dis): (u64, u64) = tallies.iter().fold((0, 0), |a, (_, t)| (a.0 + t.api_n, a.1 + t.api_dis));
+    println!("== {what}: {total} verify comparisons in total, {api_n} API comparisons ({api_dis} disagreements), {bad} disagreements or spec mismatches in total");
     assert_eq!(bad, 0, "{what}: disagreements or spec mismatches (details in the log above)");
 }
 
@@ -384,7 +452,7 @@ fn rand_msg(rng: &mut Rng, i: usize) -> Vec<u8> {
 
 fn cat_valid(s: &Set, rng: &mut Rng) -> Tally {
     let mut t = Tally::default();
-    let (keys, per_key) = (20, 150 / SCALE);
+    let (keys, per_key) = (sc_cap(20, 10), (150 / scale()).max(5));
     let (mut det_same, mut det_n) = (0, 0);
     for _ in 0..keys {
         let xi = rng.arr32();
@@ -431,7 +499,7 @@ fn cat_valid(s: &Set, rng: &mut Rng) -> Tally {
 
 fn cat_keygen(s: &Set, rng: &mut Rng) -> Tally {
     let mut t = Tally::default();
-    let n = 5000 / SCALE;
+    let n = sc(5000).max(11);
     let (mut pk_eq, mut sk_eq, mut imp_ok, mut gen_ok) = (0u64, 0u64, 0u64, 0u64);
     for i in 0..n {
         let xi = match i {
@@ -461,7 +529,7 @@ fn cat_keygen(s: &Set, rng: &mut Rng) -> Tally {
         }
     }
     // keys generated by aws-lc: export, ours derives the same pk from the sk bytes and signs under it
-    for i in 0..(300 / SCALE).max(3) {
+    for i in 0..sc(300).max(3) {
         let kp = PqdsaKeyPair::generate(s.aws_s).expect("aws generate");
         let apk: Vec<u8> = kp.public_key().as_ref().to_vec();
         let raw = kp.private_key().as_raw_bytes().expect("raw sk");
@@ -488,7 +556,7 @@ fn cat_keygen(s: &Set, rng: &mut Rng) -> Tally {
     let mut m4 = [[0u64; 2]; 2]; // [aws accepts][ours pk_from_sk Some]
     let (mut both_same, mut both_diff, mut aws_acc_not_wf) = (0u64, 0u64, 0u64);
     let mut by_region: BTreeMap<&'static str, [u64; 3]> = BTreeMap::new(); // n, aws accepts, ours Some
-    for i in 0..(3000 / SCALE) {
+    for i in 0..sc(3000) {
         let (_pk, sk) = s.key(rng);
         let mut bad = sk.clone();
         let pos = if i % 4 == 0 { rng.below(128) } else { rng.below(bad.len()) };
@@ -541,10 +609,10 @@ fn cat_keygen(s: &Set, rng: &mut Rng) -> Tally {
 
 fn cat_flips(s: &Set, rng: &mut Rng) -> Tally {
     let mut t = Tally::default();
-    let keys = 4;
-    let stride = SCALE;
+    let (keys, extra) = if scale() > 1 { (2, 2) } else { (4, 4) };
+    let stride = scale();
     let mut sigs: Vec<(Vec<u8>, Vec<u8>, Vec<u8>)> = Vec::new(); // (pk, m, sig)
-    for k in 0..keys + 4 {
+    for k in 0..keys + extra {
         let (pk, sk) = s.key(rng);
         let m = rand_msg(rng, 5 + k);
         let sig = (s.sign)(&sk, &m, &rng.arr32());
@@ -565,14 +633,14 @@ fn cat_flips(s: &Set, rng: &mut Rng) -> Tally {
             p2[bit / 8] ^= 1 << (bit % 8);
         }
         let mut m2 = m.clone();
-        for bit in 0..m.len() * 8 {
+        for bit in (0..m.len() * 8).step_by(stride) {
             m2[bit / 8] ^= 1 << (bit % 8);
             t.check(s, "message single-bit flip (exhaustive)", pk, &m2, sig, Some(false));
             m2[bit / 8] ^= 1 << (bit % 8);
         }
     }
     // random multi-bit flips, byte replacement, fills and splices
-    let n_multi = 120_000 / SCALE;
+    let n_multi = sc(120_000).min(if scale() > 1 { 300 } else { usize::MAX });
     for i in 0..n_multi {
         let (pk, m, sig) = &sigs[rng.below(sigs.len())];
         let (mut pk2, mut m2, mut sg2) = (pk.clone(), m.clone(), sig.clone());
@@ -649,8 +717,9 @@ fn spki(s: &Set, pk: &[u8]) -> Vec<u8> {
 
 fn cat_lengths(s: &Set, rng: &mut Rng) -> Tally {
     let mut t = Tally::default();
-    let n_cases = 40 / SCALE.min(4);
-    let step = SCALE;
+    let n_cases = sc_cap(40, 20);
+    let step = scale();
+    let ext = scale().min(16);
     let (mut pk, mut sk) = s.key(rng);
     for c in 0..n_cases {
         if c % 8 == 0 {
@@ -661,7 +730,7 @@ fn cat_lengths(s: &Set, rng: &mut Rng) -> Tally {
         for l in (0..sig.len()).step_by(step) {
             t.check(s, "sigma truncated (every length)", &pk, &m, &sig[..l], Some(false));
         }
-        for e in 1..=64usize {
+        for e in (1..=64usize).step_by(ext) {
             let mut zx = sig.clone();
             zx.extend(std::iter::repeat_n(0u8, e));
             t.check(s, "sigma extended with zeros (1..64)", &pk, &m, &zx, Some(false));
@@ -675,7 +744,7 @@ fn cat_lengths(s: &Set, rng: &mut Rng) -> Tally {
         for l in (0..pk.len()).step_by(step) {
             t.check(s, "pk truncated (every length)", &pk[..l], &m, &sig, Some(false));
         }
-        for e in 1..=64usize {
+        for e in (1..=64usize).step_by(ext) {
             let mut zx = pk.clone();
             zx.extend(std::iter::repeat_n(0u8, e));
             t.check(s, "pk extended with zeros (1..64)", &zx, &m, &sig, Some(false));
@@ -748,10 +817,15 @@ fn with_region(s: &Set, sig: &[u8], reg: &[u8]) -> Vec<u8> {
     x
 }
 
+/// A limit of verdict-level testing: removing our 'decreasing cumulative count' check (FIPS 204 Algorithm 21 step 4)
+/// is not detected by this file, because a mis-decoded h changes w1′ and c̃ rejects the signature anyway, so the verdict
+/// is the same. That check is covered by the Lean HintBitUnpack theorem and by `tests/leaf.rs`
+/// (`hint_unpack_bottom_cases`, 'count decreasing across polynomials', and `hint_unpack_alg21_corner_cases`, 'count
+/// decreases after reaching ω'), which look at the decoder's output instead of the verdict.
 fn cat_hint(s: &Set, rng: &mut Rng) -> Tally {
     let mut t = Tally::default();
     let (om, k) = (s.p.omega, s.p.k);
-    let n_sigs = 16 / SCALE.min(4);
+    let n_sigs = sc_cap(16, 16);
     let mut sigs = Vec::new();
     for i in 0..n_sigs {
         let (pk, sk) = s.key(rng);
@@ -813,7 +887,7 @@ fn cat_hint(s: &Set, rng: &mut Rng) -> Tally {
             t.check(s, "hint: last count extended over padding", pk, m, &with_region(s, sig, &hint_region(s, &lists, &[], &[(k - 1, (total + extra) as u8)])), None);
         }
         // (f) every value at every position of the hint region
-        let step = SCALE.min(8);
+        let step = scale().min(64);
         for pos in 0..om + k {
             for v in (0..=255u8).step_by(step) {
                 if v == sig[s.hint_off + pos] {
@@ -830,7 +904,7 @@ fn cat_hint(s: &Set, rng: &mut Rng) -> Tally {
             t.check(s, "hint: region filled with one byte value", pk, m, &x, if total == 0 && fill == 0 { Some(true) } else { None });
         }
         // (h) well-formed random hint sets (strictly increasing, counts consistent, total <= omega): reject by c~
-        for _ in 0..(400 / SCALE) {
+        for _ in 0..sc(400) {
             let mut ls = vec![Vec::new(); k];
             let want = rng.below(om + 1);
             let mut left = want;
@@ -850,12 +924,12 @@ fn cat_hint(s: &Set, rng: &mut Rng) -> Tally {
             t.check(s, "hint: well-formed random hints", pk, m, &with_region(s, sig, &hint_region(s, &ls, &[], &[])), None);
         }
         // (i) random regions
-        for _ in 0..(400 / SCALE) {
+        for _ in 0..sc(400) {
             let reg = rng.bytes(om + k);
             t.check(s, "hint: uniformly random region", pk, m, &with_region(s, sig, &reg), None);
         }
         // (j) random regions with small cumulative counts but arbitrary indices (unsorted / repeated)
-        for _ in 0..(400 / SCALE) {
+        for _ in 0..sc(400) {
             let mut reg = rng.bytes(om + k);
             let mut c = 0usize;
             for i in 0..k {
@@ -875,7 +949,7 @@ fn cat_hint(s: &Set, rng: &mut Rng) -> Tally {
 fn cat_ctilde(s: &Set, rng: &mut Rng) -> Tally {
     let mut t = Tally::default();
     let ct = s.p.c_tilde_len;
-    let n_sigs = 40 / SCALE.min(4);
+    let n_sigs = sc_cap(40, 20);
     let mut sigs = Vec::new();
     for i in 0..n_sigs {
         let (pk, sk) = s.key(rng);
@@ -899,7 +973,7 @@ fn cat_ctilde(s: &Set, rng: &mut Rng) -> Tally {
         y[..ct].reverse();
         t.check(s, "c~ reversed", pk, m, &y, None);
     }
-    for i in 0..(100_000 / SCALE) {
+    for i in 0..sc(100_000).min(if scale() > 1 { 300 } else { usize::MAX }) {
         let (pk, m, sig) = &sigs[rng.below(sigs.len())];
         let mut x = sig.clone();
         match i % 3 {
@@ -1027,6 +1101,11 @@ fn forge_g<const K: usize, const L: usize>(
     None
 }
 
+/// Evidence that the 'reject' targets below reach the norm check and fail only there (rather than failing earlier, in the
+/// decoder or the c̃ comparison): (1) the 'inside' targets, z = ±(γ1 − β − 1), built the same way, are accepted 150 of 150
+/// times per target (full run), so the forged signatures decode, c̃ matches and the hint is fine; and (2) the mutant of
+/// our norm check that replaces `<` by `<=` is killed by the z = ±(γ1 − β) rows, i.e. those rows do depend on the
+/// comparison at exactly the bound.
 fn cat_zbound(s: &Set, rng: &mut Rng) -> Tally {
     let mut t = Tally::default();
     let g1 = s.p.gamma1 as i64;
@@ -1042,7 +1121,7 @@ fn cat_zbound(s: &Set, rng: &mut Rng) -> Tally {
         ("z = -(g1-1): outside (reject)", -(g1 - 1)),
         ("z = +g1 (encoding 0): outside (reject)", g1),
     ];
-    let per_target = 150 / SCALE;
+    let per_target = sc(150);
     let (mut pk, mut sk) = s.key(rng);
     let mut produced = 0;
     for (ti, (label, tv)) in targets.iter().enumerate() {
@@ -1068,7 +1147,7 @@ fn cat_zbound(s: &Set, rng: &mut Rng) -> Tally {
     t.line(format!("{produced} forged signatures (norm check is the only failing condition for the 'reject' targets)"));
     // exactly omega hints (the maximum encodable), omega - 1, and 0 hints (honest signer filtered by the hint count)
     for want in [s.p.omega, s.p.omega - 1, s.p.omega - 2] {
-        for c in 0..(40 / SCALE) {
+        for c in 0..sc(40) {
             let (pk, sk) = s.key(rng);
             let m = rand_msg(rng, 5 + c);
             let f = (s.forge)(&s.p, &sk, &m, None, Some(want), rng).unwrap_or_else(|| panic!("[{}] no signature with {want} hints", s.name));
@@ -1184,7 +1263,7 @@ fn cat_edgekeys(s: &Set, rng: &mut Rng) -> Tally {
             if *rname == "rho = DER SPKI header + random" {
                 spki_like += 1;
             }
-            for j in 0..(60 / SCALE) {
+            for j in 0..sc(60) {
                 let m = rand_msg(rng, j);
                 let sig = (s.sign)(&sk, &m, &rng.arr32());
                 t.check(s, "edge key: valid signature", &pk, &m, &sig, Some(true));
