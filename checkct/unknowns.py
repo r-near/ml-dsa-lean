@@ -29,9 +29,15 @@ for line in dis:
     elif re.match(r"^\S.*:$", line):
         fn = line.rstrip(":")          # inlined-function marker lines of objdump -l
 
-def show(addr):
+order = sorted(table)
+pos = {a: i for i, a in enumerate(order)}
+
+def show(addr, back=0):
     fn, src, ins = table.get(addr, ("?", "?", "?"))
-    return f"{addr:#x}  {ins}   [{src}]   in {fn}"
+    ctx = ""
+    if back and addr in pos:   # the instructions just before it (the flag setter of a stuck jump)
+        ctx = "   prev: " + " ; ".join(table[a][2].split("#")[0].strip() for a in order[max(0, pos[addr] - back):pos[addr]])
+    return f"{addr:#x}  {ins}   [{src}]   in {fn}{ctx}"
 
 emit = False
 for path in logs:
@@ -52,6 +58,6 @@ for path in logs:
             print("   cut   " + show(int(m.group(1), 16))); continue
         m = re.search(r"last: (\d+) \[sse:step\] (0x[0-9a-f]+) ", line)
         if m:
-            print(f"   last  after {m.group(1)} steps: " + show(int(m.group(2), 16))); continue
+            print(f"   last  after {m.group(1)} steps: " + show(int(m.group(2), 16), 2)); continue
         if re.search(r"stat: (pending paths|\[checkct:info\] \d+ / \d+ control|visited instructions \(unrolled\))", line):
             print("   " + line.strip())
