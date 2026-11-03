@@ -188,3 +188,61 @@ probe!(exp_sk_wf_mask_1x1_44, sk_wf_int::<1, 1>(&params::ML_DSA_44, &secret_sk::
 probe!(exp_sk_wf_maskbb_1x1_44, sk_wf_int::<1, 1>(&params::ML_DSA_44, &secret_sk::<2560>(), bad_mask_bb));
 probe!(exp_sk_wf_mask_2x2_44, sk_wf_int::<2, 2>(&params::ML_DSA_44, &secret_sk::<2560>(), bad_mask));
 probe!(exp_sk_wf_maskbb_2x2_44, sk_wf_int::<2, 2>(&params::ML_DSA_44, &secret_sk::<2560>(), bad_mask_bb));
+
+// --- the same integer-mask test, with the unpack stage in `wrapping_*` arithmetic too. The full-size probes above stall
+// at the overflow-check guard of `field::sub` inside `unpack_signed` (not in the range test: the block-level and 1x1
+// variants are secure). This copy of `bit_unpack` / `field::sub` / `small_reduce` has no overflow check anywhere, to see
+// whether the full-size verdict then completes. Values are as in the crate: z < 2^c, sub(b, z) canonical.
+fn small_reduce_w(x: u32) -> u32 {
+    let mask = 0u32.wrapping_sub((x >= field::Q) as u32);
+    x.wrapping_sub(field::Q & mask)
+}
+fn sub_w(a: u32, b: u32) -> u32 {
+    small_reduce_w(a.wrapping_add(field::Q).wrapping_sub(b))
+}
+fn bit_unpack_w(v: &[u8], c: usize) -> [u32; 256] {
+    let mut w = [0u32; 256];
+    let mut acc: u64 = 0;
+    let mut nbits = 0usize;
+    let mut o = 0usize;
+    let mask = 1u64.wrapping_shl(c as u32).wrapping_sub(1);
+    let mut i = 0;
+    while i < 256 {
+        while nbits < c {
+            acc |= (v[o] as u64).wrapping_shl(nbits as u32);
+            nbits = nbits.wrapping_add(8);
+            o = o.wrapping_add(1);
+        }
+        w[i] = (acc & mask) as u32;
+        acc = acc.wrapping_shr(c as u32);
+        nbits = nbits.wrapping_sub(c);
+        i += 1;
+    }
+    w
+}
+fn unpack_signed_w(v: &[u8], b: u32, c: usize) -> [u32; 256] {
+    let z = bit_unpack_w(v, c);
+    let mut w = [0u32; 256];
+    let mut i = 0;
+    while i < 256 {
+        w[i] = sub_w(b, z[i]);
+        i += 1;
+    }
+    w
+}
+fn sk_wf_int_w<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> bool {
+    let n = 32 * p.eta_bits;
+    let mut o = 128;
+    let mut bad = 0u32;
+    let mut i = 0;
+    while i < L + K {
+        bad |= bad_mask(&unpack_signed_w(&sk[o..o + n], p.eta, p.eta_bits), p.eta);
+        o += n;
+        i += 1;
+    }
+    bad == 0
+}
+probe!(exp_sk_wf_maskw_2x2_44, sk_wf_int_w::<2, 2>(&params::ML_DSA_44, &secret_sk::<2560>()));
+probe!(exp_sk_wf_maskw_44, sk_wf_int_w::<4, 4>(&params::ML_DSA_44, &secret_sk::<2560>()));
+probe!(exp_sk_wf_maskw_65, sk_wf_int_w::<6, 5>(&params::ML_DSA_65, &secret_sk::<4032>()));
+probe!(exp_sk_wf_maskw_87, sk_wf_int_w::<8, 7>(&params::ML_DSA_87, &secret_sk::<4896>()));
