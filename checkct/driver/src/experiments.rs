@@ -152,3 +152,31 @@ probe!(exp_sk_wf_mask_65, sk_wf_int::<6, 5>(&params::ML_DSA_65, &secret_sk::<403
 probe!(exp_sk_wf_maskbb_65, sk_wf_int::<6, 5>(&params::ML_DSA_65, &secret_sk::<4032>(), bad_mask_bb));
 probe!(exp_sk_wf_mask_87, sk_wf_int::<8, 7>(&params::ML_DSA_87, &secret_sk::<4896>(), bad_mask));
 probe!(exp_sk_wf_maskbb_87, sk_wf_int::<8, 7>(&params::ML_DSA_87, &secret_sk::<4896>(), bad_mask_bb));
+
+// --- one eta-block (the loop body of `sk_is_well_formed`): 96 (eta = 2) or 128 (eta = 4) secret bytes, BitUnpack,
+// `eta - z`, then the range test. The sk-level loop runs this body with public counters, so a verdict here is the
+// verdict of every iteration; the full-size probes above are the same code at 8 to 15 iterations.
+fn blk_bool(p: &Params, f: fn(&[u32; 256], u32) -> bool) -> bool {
+    let n = 32 * p.eta_bits;
+    let v = secret_sk::<128>();
+    f(&unpack_signed(&v[..n], p.eta, p.eta_bits), p.eta)
+}
+fn blk_int(p: &Params, f: fn(&[u32; 256], u32) -> u32) -> bool {
+    let n = 32 * p.eta_bits;
+    let v = secret_sk::<128>();
+    f(&unpack_signed(&v[..n], p.eta, p.eta_bits), p.eta) == 0
+}
+probe!(exp_blk_orig_eta2, blk_bool(&params::ML_DSA_44, in_eta_orig));
+probe!(exp_blk_orig_eta4, blk_bool(&params::ML_DSA_65, in_eta_orig));
+probe!(exp_blk_wrapadd_eta2, blk_bool(&params::ML_DSA_44, in_eta_wrapadd));
+probe!(exp_blk_bitand_eta2, blk_bool(&params::ML_DSA_44, in_eta_bitand));
+probe!(exp_blk_mask_eta2, blk_int(&params::ML_DSA_44, bad_mask));
+probe!(exp_blk_mask_eta4, blk_int(&params::ML_DSA_65, bad_mask));
+probe!(exp_blk_maskbb_eta2, blk_int(&params::ML_DSA_44, bad_mask_bb));
+probe!(exp_blk_maskbb_eta4, blk_int(&params::ML_DSA_65, bad_mask_bb));
+// Isolated range test on a secret polynomial whose coefficients are canonical (the secret_elem domain [0, Q)): no
+// unpack, so this is the test alone. (The reachable domain is smaller: {0..eta} and {Q-eta..Q-1}.)
+probe!(exp_poly_orig, in_eta_orig(&crate::probes::secret_poly(), 2));
+probe!(exp_poly_mask, bad_mask(&crate::probes::secret_poly(), 2) == 0);
+probe!(exp_poly_maskbb, bad_mask_bb(&crate::probes::secret_poly(), 2) == 0);
+probe!(exp_poly_bitand, in_eta_bitand(&crate::probes::secret_poly(), 2));
