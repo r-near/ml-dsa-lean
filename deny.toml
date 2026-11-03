@@ -1,0 +1,27 @@
+# cargo-deny policy for the crate's own dependency graph (run by scripts/ci.sh).
+#
+# Scope: the normal (non-dev) dependencies of the main crate with all features on, which is what a downstream user
+# such as nearcore pulls in: only `zeroize`, and only with the `zeroize` feature. The dev-dependencies (the RustCrypto
+# `ml-dsa` differential oracle is a git dependency) and the separate workspaces (fuzz/, checkct/, bench/, crosscheck/,
+# tools/) are test and measurement tooling and are not covered.
+[graph]
+all-features = true
+exclude-dev = true
+
+[advisories]
+version = 2
+
+[licenses]
+version = 2
+# A subset of nearcore's deny.toml allow list (checked at nearcore cd5a94457), so the graph is acceptable there.
+allow = ["MIT", "Apache-2.0"]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

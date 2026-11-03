@@ -45,7 +45,13 @@
 //! (`sign::prepare_sk_into`, `ntt::ntt_vec_into`: the secret vectors are transformed in place) and `signing_key_*`
 //! returns the object through `mem::replace`, so that no copy is left in the dead stack frames below the call.
 //! `tests/zeroize.rs` checks this: it scans the stack below each call for K, s1, s2, t0, their NTT forms and ρ″, and
-//! reads a dropped key back. What remains:
+//! reads a dropped key back. The stack-residue results hold for optimized builds on the measured toolchain (release;
+//! also under nearcore's release profile, `scripts/ci.sh` step `nearcore-test-zeroize`). At opt-level 0 they fail:
+//! 8 of the 15 stack-residue scan tests find copies in dead frames (`keygen_*` and `pk_from_sk_*` for all three sets,
+//! `signing_key_*` for 44 and 65). At dev opt-level 1, a single run on the build box (the whole crate and test built at
+//! opt-level 1, not the per-package override of a downstream workspace) passed 13 of the 15 and failed `keygen_44` and
+//! `keygen_65`; no other opt-level 1 configuration was run. The drop wipe and the explicit wipes are not affected: their
+//! tests (`signing_key_drop_wipes`, `shake_wipe_zeroes_the_sponge`) pass at opt-level 0 and in release. What remains:
 //!
 //! - Copies the compiler makes when it moves a returned value are in the caller's frame and are the caller's concern:
 //!   a `SigningKey*` (keep it in a `Box`, build it there, and do not move it), and the secret-key array `keygen_*`
