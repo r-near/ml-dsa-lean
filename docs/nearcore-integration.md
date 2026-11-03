@@ -68,9 +68,9 @@ verification never sees ML-DSA at this commit; the sites are listed because they
 | Delegate actions (inner signer) | `core/primitives/src/action/delegate.rs:89`, `:213`; `runtime/runtime/src/actions.rs:453` |
 | Block header | `core/primitives/src/block_header.rs:1740–1742`; `chain/chain/src/signature_verification.rs:78–85` |
 | Chunk header | `chain/chain/src/signature_verification.rs:35–75` |
-| Block approvals (one message, up to one signature per validator) | `chain/chain/src/approval_verification.rs:11–40` and `:42–71`: the loop verifies the same `message_to_sign` against each approver's key, `:36–38`, `:64–68` |
+| Block approvals (one message, up to one signature per validator) | `chain/chain/src/approval_verification.rs`: the two verify calls are at `:33` and `:71`; each loop verifies the same `message_to_sign` against each approver's key |
 | Chunk endorsements | `core/primitives/src/stateless_validation/chunk_endorsement.rs:88–97`, `:133–134` (V2 verifies two signatures); `core/primitives/src/spice/chunk_endorsement.rs:97`, `:178` |
-| Partial witnesses, contract distribution | `stateless_validation/partial_witness.rs:73`, `:185`; `stateless_validation/contract_distribution.rs:111–1005` (12 sites) |
+| Partial witnesses, contract distribution | `stateless_validation/partial_witness.rs:73`, `:185`; `stateless_validation/contract_distribution.rs`: 8 `.verify(` call sites, at `:139`, `:210`, `:332`, `:459`, `:806`, `:879`, `:946`, `:1005` (the `verify_signature` wrappers at `:113`, `:138`, `:300`, `:413`, `:765` dispatch to them) |
 | Generic validator signature | `chain/epoch-manager/src/adapter.rs:787–796` |
 | Network (account data), on a rayon pool | `chain/network/src/accounts_data/mod.rs:235–300` via `chain/network/src/concurrency/rayon.rs:10–17` |
 | Host functions | `ed25519_verify` `runtime/near-vm-runner/src/logic/host.rs:2028–`; `ml_dsa_verify` `:2261–2321` (65 only: `MlDsa65Signature`, `MlDsa65PublicKey`, length check, then `Signature::verify` at :2320) |
@@ -80,8 +80,9 @@ byte · message_len`. Parameters (`core/parameters/res/runtime_configs/parameter
 210,000,000,000 and 9,000,000 per message byte (:215–216); `ml_dsa_verify` base 540,000,000,000 and 11,000,000 per
 message byte (:220–221, "derived from measurements relative to ed25519"). The host function is gated by
 `ml_dsa_verify_host_fn` (`parameters.yaml:350`, enabled in `87.yaml:14`, import list `imports.rs:162`).
-Transaction-level ML-DSA-65 verification is charged once at conversion as `ml_dsa_65_verification_cost` = 100 Ggas
-(`parameters.yaml:404`, `core/primitives/src/fees.rs:624–668`; rationale `post_quantum_signatures.md` §6, which cites
+Transaction-level ML-DSA-65 verification is charged at conversion as `ml_dsa_65_verification_cost` = 100 Ggas per
+signature, including each `Delegate` action's inner signer (`parameters.yaml:404`, `core/primitives/src/fees.rs:624–668`;
+rationale and the per-signature wording in `post_quantum_signatures.md` §6, which cites
 mean ≈ 80 µs on aws-lc and says pricing must cover the worst observed case, Caveat 4). These costs were calibrated for aws-lc.
 Changing backend changes the measured time (section 6 has our numbers, on different hardware), so the gas
 calibration would need re-measuring on one machine; this is a nearcore decision.
@@ -97,7 +98,24 @@ Our figures (`tools/stack/README.md`, release, x86_64, bytes below the caller's 
 | `verifying_key_*` (plus 20.5 / 36.9 / 65.6 KB key object in the caller's frame) | 31 / 52 / 26 |
 | `sign_*` | 116 / 168 / 240 |
 | `keygen_*` | 64 / 98 / 143 |
-| debug (opt-level 0) | about 1.4 to 1.8 times larger (Sign 87: 340 KB, Verify 87: 169 KB) |
+| debug (opt-level 0, with debug assertions; `cargo test` without `--release`) | see the next table |
+
+Dev profile (opt-level 0), x86_64 painted, bytes, from the dev-profile column of the `tools/stack/README.md` results
+table (release in parentheses; the ratio is not uniform, from 1.3 times for `sign_87` to 8.7 times for `verifying_key_87`):
+
+| Call | ML-DSA-44 | ML-DSA-65 | ML-DSA-87 |
+|---|---|---|---|
+| `verify_*` | 73,824 (49,576) | 103,008 (75,688) | 169,480 (115,112) |
+| `sign_*` | 163,728 (115,704) | 228,480 (167,816) | 317,648 (239,784) |
+| `keygen_*` | 93,440 (64,184) | 143,072 (98,040) | 221,856 (142,616) |
+| `verifying_key_*` | 79,008 (31,112) | 133,280 (51,592) | 225,440 (25,976) |
+| `signing_key_*` | 179,176 (59,960) | 286,696 (98,872) | 474,688 (164,424) |
+| `verify_prepared_*` | 53,264 (34,216) | 66,064 (45,480) | 83,984 (58,792) |
+| `sign_prepared_*` | 134,768 (73,384) | 180,064 (100,920) | 236,464 (133,976) |
+
+The key constructors also place the returned key object in the caller's frame (20.5 / 36.9 / 65.6 KB for
+`verifying_key_*`, 28.8 / 48.2 / 81.0 KB for `signing_key_*`). The largest dev-profile figure is `signing_key_87`,
+about 475 KB below the caller's frame plus the 81 KB result slot.
 
 Thread stacks found in nearcore (a grep for `stack_size`, `RUST_MIN_STACK` and thread builders over the whole tree
 found only the two entries marked explicit; no `actix` appears in `Cargo.toml`):
@@ -105,14 +123,15 @@ found only the two entries marked explicit; no `actix` appears in `Cargo.toml`):
 | Thread | Stack | Where |
 |---|---|---|
 | rayon global pool (explicit) | 8 MiB | `neard/src/main.rs:58–60`; parallel transaction validation (:1999–2025 above) and `RayonAsyncComputationSpawner` (`core/async/src/futures.rs:171–176`) run on it unless a local pool is installed there (not checked) |
-| compiler-daemon workers (explicit) | 8 MiB | `runtime/near-vm-runner/src/compiler_daemon/mod.rs:52`, `child.rs:47–49` (wasm compilation, not signatures) |
-| Chunk-application workers (`apply_chunks_spawner`, `chain/chain/src/chain.rs:303`, `:461`; I did not trace that the VM, and so `ml_dsa_verify`, runs on exactly these threads) | no `stack_size` call, so the std default (2 MiB, or `RUST_MIN_STACK`) | `ApplyChunksSpawner::Default` is `ThreadPool` (`core/async/src/thread_pool.rs:414–432`), whose workers come from `thread_priority::ThreadBuilder` with name, policy and priority only (:242–252) |
+| compiler-daemon workers (explicit) | 8 MiB default (`DEFAULT_THREAD_STACK_SIZE_BYTES`), configurable: the parent passes `thread_stack_size_bytes` to the child in `COMPILER_DAEMON_STACK_SIZE_ENV` (`protocol.rs:10`, `parent.rs:94`, `:118`, `child.rs:94`) | `runtime/near-vm-runner/src/compiler_daemon/mod.rs:52`, `child.rs:47–49` (wasm compilation, not signatures) |
+| Chunk-application workers (`apply_chunks_spawner`, `chain/chain/src/chain.rs:303`, `:461`; I did not trace that the VM, and so `ml_dsa_verify`, runs on exactly these threads) | no `stack_size` call, so the std default (2 MiB, or `RUST_MIN_STACK`) | `ApplyChunksSpawner::Default` is `ThreadPool` (`core/async/src/thread_pool.rs:414–432`), whose workers on unix come from `thread_priority::ThreadBuilder` with name, policy and priority only (`:223–239`; the `std::thread::Builder` at :242–252 is the non-unix branch) |
 | `StdThreadAsyncComputationSpawner` | std default | `core/async/src/futures.rs:155–160` |
 | Actor runtimes: one tokio worker each | tokio default (2 MiB), no `thread_stack_size` | `core/async/src/tokio/runtime_handle.rs:117–120`, `core/async/src/tokio/futures.rs:12–15`, `neard/src/cli.rs:577–580` |
 | Main thread | OS default (not set by nearcore) | |
 
 Against a 2 MiB stack: Verify 65 uses 3.6%, Verify 87 5.5%, Sign 87 11.4% (240 KB; `tools/stack/README.md` "Notes for
-nearcore" gives 11%). A 64 KB stack fits none of Sign, KeyGen, or Verify 65/87. What is not measured: the frames
+nearcore" gives 11%). A 64 KB (65,536 B) stack fits none of Sign, KeyGen 65/87 or Verify 65/87; `keygen_44` (64,184 B)
+fits with about 1.3 KB to spare, before any frame above the call, and Verify 44 (49,576 B) with about 16 KB. What is not measured: the frames
 already on the stack when verification starts. For `ml_dsa_verify` those include the VM's own frames (wasmtime sets
 `max_wasm_stack(1 GiB)` and relies on instrumented stack metering, `runtime/near-vm-runner/src/wasmtime_runner/mod.rs:193`;
 `max_stack_height` is 262,144, `parameters.yaml:303`) and async state machines, none of which this repository measured
@@ -125,19 +144,34 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   (`Cargo.toml:388–392`). `dev-release` inherits it with `lto = false`, `codegen-units = 16`, `debug-assertions = true`
   (:395–399). Under the Aeneas model arithmetic overflow is a `fail`, and the `_exact` theorems say the extracted code never
   fails (`docs/assurance.md` §1.1), but the compiled code under overflow checks is only tested empirically:
-  `scripts/ci.sh` steps `nearcore-test` and `nearcore-test-avx2` run the whole test suite (ACVP, Wycheproof, the
-  differentials) with nearcore's release settings and its x86_64 rustflags, on 1.95.0. Both passed on the box on 2026-11-03,
+  `scripts/ci.sh` steps `nearcore-test`, `nearcore-test-avx2` and `nearcore-test-zeroize` run the test suite (ACVP,
+  Wycheproof, the differentials; the last one `tests/zeroize.rs` with the `zeroize` feature) with nearcore's release
+  settings and its x86_64 rustflags, on 1.95.0, and `nearcore-build` checks that `-C overflow-checks=on` is on the crate's
+  rustc line and that `target_feature="sse4.2"`, `"bmi2"`, `"lzcnt"` and `"movbe"` are in rustc's cfg. Both passed on the box on 2026-11-03,
   with and without the `avx2` feature. The step prints cargo's unit graph first: every unit is `opt=3 lto=fat cgu=1
   overflow_checks=True`; the library build unit is `panic=abort`, the test units are `panic=unwind` because cargo ignores
   `panic = "abort"` for test targets (so the tests exercise overflow checks, not the abort path). A passing run is an empirical
   check on those inputs, not a proof that no overflow can occur in the compiled code.
-- Dev and test builds: `[profile.dev]` is `panic = 'abort'` and compiles all non-workspace dependencies at `opt-level = 1`
-  (`Cargo.toml:385–386`, `:422–423`); `dev-release` is release without LTO (:395–399). A vendored copy of this crate would be
-  built at `opt-level = 1` there. Our stack figures are measured for release and for opt-level 0, not for 1 (they grow at 0, by
-  1.4 to 1.8 times, `tools/stack/README.md`). The `zeroize` feature's stack-residue tests (`tests/zeroize.rs`) pass in release
-  and fail at opt-level 0 (`scripts/ci.sh` header; 8 of 19 tests find copies of s1, s2, ŝ1 or K in dead stack frames after
-  `keygen_*`, `pk_from_sk_*` and `signing_key_*`), and were not run at opt-level 1. So the wipe behavior documented in
-  `src/api.rs` should be read as a property of optimized builds only; a nearcore test run in its dev profile would not show it.
+- Dev and test builds: `[profile.dev]` is `panic = 'abort'` (`Cargo.toml:385–386`). Per-package overrides give seven named
+  crates `opt-level = 3` (`:408–421`) and **every other non-workspace dependency `opt-level = 1`** via
+  `[profile.dev.package."*"]` (`:422–423`); cargo's `"*"` override does not apply to workspace members. `dev-release` is
+  release without LTO (:395–399). So there are two cases for this crate in a dev or test build:
+  1. As a registry or git dependency (a non-workspace package), it builds at `opt-level = 1`.
+  2. Vendored as a workspace member (a path crate under the root `Cargo.toml` `members`, `:22`), the `"*"` override does
+     not apply and it builds at the dev default, `opt-level = 0`. That is where the `zeroize` stack-residue scans fail
+     and where the stacks are largest (the dev-profile table in section 3).
+
+  Our stack figures are measured for release and for opt-level 0, not for 1. The `zeroize` feature's stack-residue tests
+  (`tests/zeroize.rs`: 15 scan tests, five per parameter set) pass in release (15 of 15) and at opt-level 0 fail for 8 of
+  the 15 (`keygen_*` and `pk_from_sk_*` for 44, 65 and 87, and `signing_key_*` for 44 and 65; `sign_*`, `sign_prepared_*`
+  and `signing_key_87` pass), finding copies of s1, s2, ŝ1, t0 or K in dead stack frames. Run on the box with
+  `CARGO_PROFILE_DEV_OPT_LEVEL=1` (the whole crate and test at opt-level 1, which approximates case 1) 13 of the 15 pass and
+  `keygen_44` and `keygen_65` fail (2026-11-03). `scripts/ci.sh` runs the 7 that pass at opt-level 0 in `test-zeroize`
+  and all 15 in release (`test-zeroize-release`, and `nearcore-test-zeroize` under nearcore's profile). So the wipe
+  behavior documented in `src/api.rs` should be read as a property of optimized builds on the measured toolchain; drop
+  and the explicit wipes (`signing_key_*` drop, `Shake::wipe`, the decoded-key wipes) are not affected, which the
+  `signing_key_drop_wipes` and `shake_wipe_zeroes_the_sponge` tests check, and they pass at opt-level 0 and in release. A nearcore test run in its
+  dev profile would not show the stack-residue results.
 - x86_64 target features: `+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq`, plus
   `-Cforce-unwind-tables=y` (`.cargo/config.toml:9`; the profiling config adds frame pointers). **There is no `avx` or `avx2`**
   in that list. Our NTT is vectorized by LLVM only with AVX2, so nearcore's build gets the numbers in the "default"
@@ -220,7 +254,7 @@ hardware behind nearcore's ≈ 80 µs aws-lc figure (§2); no aws-lc number was 
 says which backend is faster.
 
 Where a cache could apply in nearcore: any place the same public key verifies many signatures. Approval verification
-runs one message over many validators' keys each block (`approval_verification.rs:36–38`), but those keys are ed25519 today;
+runs one message over many validators' keys each block (`approval_verification.rs:33`, `:71`), but those keys are ed25519 today;
 transactions from one ML-DSA account reuse its access key, but nearcore has the full 1952-byte key only on the wire, and the
 trie holds only the 32-byte handle, which can serve as the cache key (`signature.rs:164–172`, hashing cost of one SHA3-256 over
 the key). The cost side: a key object is 36,928 bytes (65) or 65,600 (87), construction costs about one uncached
@@ -239,7 +273,8 @@ those ever become ML-DSA. The hit rate on real traffic is unmeasured.
 - Re-measure verify time and the two gas parameters on one machine for both backends, including the worst-case signature
   shape nearcore's own benches probe (`core/crypto/benches/ml_dsa_worst_case.rs`).
 - Frames above the call on the real threads (section 3), and whether any signature check runs on a reduced stack.
-- If nearcore keeps aws-lc for 65 and wants 44 or 87: aws-lc-rs 1.18.2's PQDSA module lists all three sets as approved in
-  its docs (`src/pqdsa/signature.rs`, the "FIPS" comments), so adding sets does not require this crate; the case for
-  this crate is the Lean evidence in `docs/assurance.md`, its portability (`no_std`, wasm32, no C toolchain) and the
+- If nearcore keeps aws-lc for 65 and wants 44 or 87: aws-lc-rs 1.18.2 supports all three sets, so adding sets does not
+  require this crate. (A source comment in aws-lc-rs, `src/pqdsa/signature.rs:125–126`, reads "# FIPS" / "Approved for all
+  supported algorithms: ML-DSA-44, ML-DSA-65, ML-DSA-87." That is aws-lc-rs's own statement; this repository does not
+  assess or endorse it.) The case for this crate is the Lean evidence in `docs/assurance.md`, its portability (`no_std`, wasm32, no C toolchain) and the
   prepared-key API.
