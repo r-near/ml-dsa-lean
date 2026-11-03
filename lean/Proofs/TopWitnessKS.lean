@@ -1,0 +1,61 @@
+import Proofs.TopWitnessLit
+
+/-!
+# `RejBoundedPoly` on the 8 seeds of `ExpandS` (ML-DSA-44, `ρ′ = rho1S`), with the sampled polynomials named
+-/
+
+open Spec
+
+namespace Proofs
+namespace TopWitness
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `s₁[0]`. -/
+theorem rejS_0 :
+    Spec.RejBoundedPoly Spec.ML_DSA_44 512 (rho1S ++ IntegerToBytes 0 2) = some (Rl Data.s1_0) := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `s₁[1]`. -/
+theorem rejS_1 :
+    Spec.RejBoundedPoly Spec.ML_DSA_44 512 (rho1S ++ IntegerToBytes 1 2) = some (Rl Data.s1_1) := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `s₁[2]`. -/
+theorem rejS_2 :
+    Spec.RejBoundedPoly Spec.ML_DSA_44 512 (rho1S ++ IntegerToBytes 2 2) = some (Rl Data.s1_2) := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `s₁[3]`. -/
+theorem rejS_3 :
+    Spec.RejBoundedPoly Spec.ML_DSA_44 512 (rho1S ++ IntegerToBytes 3 2) = some (Rl Data.s1_3) := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `s₂[0]`. -/
+theorem rejS_4 :
+    Spec.RejBoundedPoly Spec.ML_DSA_44 512 (rho1S ++ IntegerToBytes 4 2) = some (Rl Data.s2_0) := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `s₂[1]`. -/
+theorem rejS_5 :
+    Spec.RejBoundedPoly Spec.ML_DSA_44 512 (rho1S ++ IntegerToBytes 5 2) = some (Rl Data.s2_1) := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `s₂[2]`. -/
+theorem rejS_6 :
+    Spec.RejBoundedPoly Spec.ML_DSA_44 512 (rho1S ++ IntegerToBytes 6 2) = some (Rl Data.s2_2) := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `s₂[3]`. -/
+theorem rejS_7 :
+    Spec.RejBoundedPoly Spec.ML_DSA_44 512 (rho1S ++ IntegerToBytes 7 2) = some (Rl Data.s2_3) := by decide +kernel
+
+end TopWitness
+end Proofs
