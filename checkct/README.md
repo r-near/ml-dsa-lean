@@ -36,7 +36,11 @@ Scripts (all start from the repository root; `rx kill` does not stop containers,
 | `scan-avx2.sh DIR` | static scan of the `*_avx2` functions of a dispatch driver (`DIR` under `~/rx/scratch`, the `OUT` of a dispatch run); fails if there are none | |
 
 `PROFILE=nearcore` builds with `opt-level = 3`, `lto = "fat"`, `codegen-units = 1`, `panic = "abort"` (through
-`CARGO_PROFILE_RELEASE_*`). The default is the checkct workspace profile (release plus debug info, `panic = "abort"`,
+`CARGO_PROFILE_RELEASE_*`). It approximates nearcore's release build but does not match it: nearcore (checked at
+nearcore cd5a94457, 2026-11-03) also sets `overflow-checks = true`, builds x86_64 with
+`-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq` and
+`-Cforce-unwind-tables=y`, and uses Rust 1.95.0. The `nearcore` results below are for this approximation only; a
+profile that matches nearcore and an x86_64 re-sweep with it are in progress. The default is the checkct workspace profile (release plus debug info, `panic = "abort"`,
 16 codegen units). BINSEC's `-sse-timeout` is only checked between paths, so a probe stuck in a long solver query
 can run well past `TIMEOUT`.
 
