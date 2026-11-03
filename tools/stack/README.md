@@ -213,9 +213,16 @@ per attempt about 55 KB. Verify 87 and KeyGen 87 would fall from about 115 and 1
 - **Native threads.** The worst case is 239 KB (Sign 87) and 115 KB (Verify 87); Verify 44 is 50 KB. A Rust thread
   spawned with the default builder has a 2 MiB stack, so the release numbers fit with room to spare (Sign 87: 11%).
   Check for threads or tasks built with a reduced `stack_size` and for deep call chains above the call. A
-  64 KB stack fits none of Sign, KeyGen or Verify 65/87 (Verify 44 needs 50 KB, which leaves 14 KB).
-- **Debug builds are about 1.4 to 1.8 times larger** (Sign 87: 340 KB, Verify 87: 169 KB at opt-level 0). That is still
-  inside the 2 MiB default of `cargo test` threads, with about 6x headroom for Sign 87.
+  64 KB (65,536 B) stack fits none of Sign, KeyGen 65/87 or Verify 65/87. `keygen_44` (64,184 B) fits with about 1.3 KB to
+  spare and Verify 44 (49,576 B) with about 16 KB, before any frame above the call.
+- **Debug builds (opt-level 0) are larger by a factor that varies by function, from 1.3x to 8.7x**; use the dev-profile
+  column of the results table, not a single ratio. Examples (release becomes dev): `sign_87` 239,784 becomes 317,648 B;
+  `verify_87` 115,112 becomes 169,480 B; `keygen_87` 142,616 becomes 221,856 B; `signing_key_87` 164,424 becomes
+  474,688 B; `verifying_key_87` 25,976 becomes 225,440 B (plus the 66 KB and 81 KB result slots of the key constructors).
+  All of them fit the 2 MiB default of `cargo test` threads: `sign_87` leaves about 6.6x headroom, `signing_key_87`
+  about 4.4x before its 81 KB result slot. The dev profile in nearcore: a crate vendored as a workspace member builds at
+  opt-level 0, while a non-workspace dependency gets opt-level 1 from `[profile.dev.package."*"]`, which was not
+  measured here (`docs/nearcore-integration.md` §4).
 - **As a host function called from wasm** the native frames add to whatever the VM already holds on the same thread; add the
   figures above to the VM's own depth. This was not measured with a VM.
 - **Inside a wasm contract** (`wasm32-unknown-unknown`), the arrays live in the linear-memory shadow stack: Sign 87 needs
