@@ -48,8 +48,10 @@ Preconditions and exact characterizations:
 
 ocaml-pq's `MLDSAAlg` takes SHAKE as an abstract `XOF`.  `Hash.lean` instantiates it with our SHAKE through
 ocaml-pq's own `keccakXOF` (`oursShake128`, `oursShake256`; `*_squeeze`, `*_val`, `G_eq`, `H_eq`), so every
-statement below is about ocaml-pq's algorithms instantiated with our hash.  **Not proved:** `oursShake* =
-ocamlShake*` (equality of the two Keccak-f[1600] transcriptions); that is a separate theorem about Keccak.
+statement below is first about ocaml-pq's algorithms instantiated with our hash.  `oursShake* = ocamlShake*`
+(our Keccak against ocaml-pq's independent Keccak) is proved in `KeccakPerm`/`KeccakSponge`/`Shake` (section
+"Keccak" below), and `Shake.lean` restates the top-level theorems on ocaml-pq's own SHAKE, except `verify_of_ctx_gt_both` and
+`verify_of_sigDecode_none_both`, which hold for any XOF and are stated with `oursShake*` only.
 
 `Samplers.lean` ports from `lean/Proofs/SampleA.lean` (`stepA`, `rej_unfold`, `rej_loop`, `stA`, `rej_eq_some`) and
 `lean/Proofs/SampleS.lean` (`rbStep`, `rbRun`, `RejBoundedPoly_eq_forIn`, `forIn_rbBody`, `RejBoundedPoly_eq`);
@@ -160,10 +162,50 @@ would return (that API returns an error).  The signing theorems say nothing abou
   assumption when ours succeeds: `signTerm_of_ours` (and `_internal`, `_sign`) derive `ExpandATerm` and
   `SignTerm sp sk M' rnd m` for every `m` from `Sign_internal_bounded sp B sk M' rnd F = some σ`.
 
+### Keccak (`KeccakPerm`, `KeccakSponge`, `KeccakKAT`, `Shake`)
+
+What ocaml-pq has (all under `formal/lean/OcamlPq/Hash/`, revision ceeb278): (1) `KeccakSpec.lean`, `FIPS202`: an
+independent transcription of FIPS 202 on bit strings (the state array `A[x, y, z]`, θ ρ π χ ι with the `rc` LFSR,
+`KeccakP`/`KeccakF`, `pad10*1`, `sponge`, `SHAKE128`/`SHAKE256`, written from the standard); (2) `KeccakModel.lean`: a
+literal transcription of the OCaml `lib/keccak.ml` (`Keccak.permute`, `sponge`, `shake128`, `shake256` on `BitVec 64`
+lanes), proved equal to (1) for all inputs (`permute_eq_KeccakF`, `shake128_eq`, `shake256_eq`).  `Hash.lean`
+imports both; `EndToEnd/MLDSA/Shake.lean` builds `ocamlShake128/256` from (2) and `fipsShake128/256` from (1) and
+proves `fipsShake* = ocamlShake*`.  Our side (`Spec/Keccak.lean`) is a lane-level `UInt64` permutation and a byte-level
+sponge; it shares no code with either.
+
+* `KeccakPerm.lean`: one round and the permutation, bit by bit.  `toArr` reads our `Vector UInt64 25` as ocaml-pq's
+  `Array (BitVec 64)` so that their `laneBits`, `toState`, `rho_eq`, `roundConstants_eq_RC` apply; `theta_eq`, `rho_eq`,
+  `pi_eq`, `chi_eq`, `iota_eq`, `rnd_eq` (round by round, lane by lane, for `ir < 24`), `rhoOffsets_eq_rotation` and
+  `RCs_eq_roundConstants` (kernel checks over the 25 offsets and the 24 round constants), and
+  `keccakF_eq : laneBits (toArr (KeccakF1600 A)) = FIPS202.KeccakF (laneBits (toArr A))` for every state.
+* `KeccakSponge.lean`: `sponge_bits`, for every message `M`, output length `d` and rate `0 < r ≤ 200` bytes:
+  `bytesToBits (Spec.Keccak.sponge r M d) = FIPS202.sponge KeccakF pad101 (8 r) (bytesToBits M ++ 1111) (8 d)`
+  (ocaml-pq's transcription of Algorithm 8).  Pieces: `bitsOf_xorBlock`, `bitsOf_absorb`, `pad101_eq` (our padded
+  message is the full blocks followed by ocaml-pq's `tailBlock r 0x1f M`, so their `padded_block_full` and
+  `padded_block_last` apply), `bitsOf_absorb_pad`, `squeeze_getElem`, `bytesToBits_squeeze`, and ocaml-pq's
+  `squeeze_spec`.  Instances `shake128_bits`, `shake256_bits` (rates 168 and 136), then, with ocaml-pq's `shake128_eq` /
+  `shake256_eq` and the injectivity of `bytesToBits`, `SHAKE128_eq_ocaml : Spec.SHAKE128 M d = Keccak.shake128 d M` and
+  `SHAKE256_eq_ocaml`, equality of byte lists with the model of `Mldsa_keccak.shake128/256`.
+* `Shake.lean`: `oursShake128 = ocamlShake128 = fipsShake128` and likewise for 256 (so also `Hash.lean`'s `G_eq`, `H_eq`
+  and every statement through it); the top-level theorems restated on `ocamlShake*`: `keyGen_*_ocaml`,
+  `verifyInternal_*_ocaml`, `verify_*_ocaml`, `SGB.sign*_ocaml`, `SGB.signTerm_of_ours*_ocaml`, `SGB.thSign_of_decode_ocaml` (not restated: `verify_of_ctx_gt_both` and
+  `verify_of_sigDecode_none_both`, true for any XOF). The `keyGen_*_ocaml` premises still name `KG.seed`, which is
+  computed with our `Spec.H` (docstring in `Shake.lean`).
+  The termination predicates have `O` versions (`ExpandATermO`, `ExpandSTermO`, `SGB.SignTermO`; the `*_iff` lemmas show
+  they are propositionally the original ones) and `SGB.thSignO`, `SGB.thSignInternalO`.  Hypotheses of the
+  Keccak theorems: `0 < r`, `r ≤ 200` (satisfied by 168 and 136); the restated theorems carry exactly the hypotheses of
+  the originals.
+* `KeccakKAT.lean`: kernel evaluation of `Spec.SHAKE128 [] 32` and `Spec.SHAKE256 [] 32` against the NIST digests.  These
+  are tests of the executable definitions only; ocaml-pq proves the same two digests for its transcription
+  (`Hash/KAT.lean`).
+
+Not covered by the Keccak theorems: the byte/bit conventions are those of FIPS 202 Appendix B.1 as transcribed by
+ocaml-pq (`FIPS202.bytesToBits`, least significant bit first), the same convention that FIPS 204 uses; the equivalence
+is therefore only as independent as ocaml-pq's `FIPS202` transcription is of ours, and ocaml-pq's published-digest
+tests (`KAT.lean`) are the external anchor for it.
+
 ### Remaining
 
-* Keccak: `oursShake* = ocamlShake*` (the two Keccak-f[1600] transcriptions) is not proved; every statement is about
-  ocaml-pq's algorithms instantiated with our SHAKE (`oursShake128`, `oursShake256`).
 * The termination hypotheses (`ExpandATerm`, `ExpandSTerm`, `SampleInBallReturns`/`SignTerm`) are not discharged:
   there is no input-independent proof that the rejection samplers terminate.  For a given input they can be checked
   (by running ocaml-pq's samplers or ours with enough fuel).  More importantly, the ours-to-theirs theorems derive them
