@@ -25,6 +25,15 @@ Bugs found, tool problems and errata, newest last. Each entry: ID, date, what, i
   probe is secure in both the default and nearcore-like profiles; thumbv7em and riscv32imac unchanged. Cost: Sign
   about +2–3%, Verify and KeyGen unchanged.
 
+- **Z-1 (2026-11-03): zeroize stack-residue scans fail in unoptimized builds.** `tests/zeroize.rs` has 15 stack
+  scans. At opt-level 0, 8 find copies of s1, s2, ŝ1, t0 or K in dead stack frames: `keygen` (44/65/87),
+  `pk_from_sk` (44/65/87) and `signing_key` (44/65); `signing_key_87`, `sign` and `sign_prepared` pass. At opt-level 1,
+  `keygen_44` and `keygen_65` fail. Release passes 15 of 15, as does the nearcore profile (1.95.0, fat LTO, overflow
+  checks). Impact: the stack-residue claims in `src/api.rs` hold for optimized builds only (now stated there); drop
+  and explicit wipes are unaffected. A copy vendored as a nearcore workspace member would build at opt-level 0 in
+  nearcore's dev profile (`docs/nearcore-integration.md` §4). Open: add wipes at those locals, or keep the scope.
+  `scripts/ci.sh` runs the 7 passing scans at opt-level 0 and all 15 in release and under the nearcore profile.
+
 ## Tool problems
 
 Known from the campaign (see docs/BLOCKERS.md and docs/SURVEY.md): B-F1 (nested loop reading freshly written outer

@@ -14,7 +14,7 @@ inputs it covered. "Spec" is `lean/Spec`, our transcription of FIPS 204 (Algorit
 
 ## 1. What is proved
 
-The last full done-gate passed at GATE_COMMIT, GATE_COUNT declarations (`scripts/lean-check.sh`: pipefail `lake build`,
+The last full done-gate passed at e917292 (2026-11-03), 765 declarations (`scripts/lean-check.sh`: pipefail `lake build`,
 no `error:` or `sorry`, axiom gate over `lean/headline-theorems.txt`; the gate definition is at the top of `STATUS.md`).
 Pin a commit and rerun it (section 6).
 
