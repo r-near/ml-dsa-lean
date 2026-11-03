@@ -38,6 +38,10 @@ ml-dsa-verified = { path = ".", features = ["internals"] }
 # Differential oracle: upstream RustCrypto master a3690c4, deprecated expanded-key API for skEncode bytes.
 ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e", default-features = false, features = ["alloc"] }
 
+# Differential oracle for the verify verdict: aws-lc-rs at the exact version nearcore ships (its Cargo.lock resolves
+# aws-lc-sys 0.46.0), default features as in nearcore. Tests only (tests/awslc_diff.rs).
+aws-lc-rs = "=1.18.2"
+
 flate2 = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

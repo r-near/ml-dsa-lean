@@ -21,8 +21,8 @@
 # --strict, none was skipped).
 #
 # Steps: test-default, test-zeroize, test-zeroize-release, test-avx2, thumbv7em, msrv-1.86, nearcore-build,
-# nearcore-test, nearcore-test-avx2, nearcore-test-zeroize, wasm32, wasm32-zeroize, fuzz-<target> (one per target in
-# fuzz/fuzz_targets), deny, lean.
+# nearcore-test, nearcore-test-avx2, nearcore-test-zeroize, wasm32, wasm32-zeroize, diff-awslc,
+# fuzz-<target> (one per target in fuzz/fuzz_targets), deny, lean.
 #
 # NOTE: skipping stack_residue_* (fails at opt-level 0, see the header of scripts/ci.sh). test-zeroize runs the zeroize feature's tests in
 # the dev profile (opt-level 0) without the 8 failing stack-residue scans (keygen and pk_from_sk for 44/65/87,
@@ -58,7 +58,7 @@ done
 
 # Known step names; --only must name only these (a typo must not turn the run into a silent no-op).
 KNOWN_STEPS=(test-default test-zeroize test-zeroize-release test-avx2 thumbv7em msrv-1.86 nearcore-build nearcore-test
-             nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize deny lean)
+             nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize diff-awslc deny lean)
 for f in fuzz/fuzz_targets/*.rs; do KNOWN_STEPS+=("fuzz-$(basename "$f" .rs)"); done
 if [ -n "$ONLY" ]; then
   IFS=',' read -r -a _only <<< "${ONLY#,}"
@@ -267,6 +267,14 @@ step_deny() {
   # Fetches the RustSec advisory database (a public git repository); sends nothing about this project.
   $denycmd --version && $denycmd check
 }
+step_diff_awslc() {
+  # Differential test against aws-lc-rs (tests/awslc_diff.rs; see its header). Release counts: the dev profile runs only
+  # a smoke subset. On a disagreement the test fails and writes the failing inputs to target/awslc-diff-dump/.
+  cargo test --release --test awslc_diff -- --nocapture || {
+    echo "diff-awslc FAILED: ours and aws-lc-rs disagree, or the public API disagrees with the slice verdict; failing inputs are in target/awslc-diff-dump/"
+    return 1
+  }
+}
 step_lean() { scripts/lean-check.sh; }
 
 run_step test-default step_test_default
@@ -285,6 +293,7 @@ for f in fuzz/fuzz_targets/*.rs; do
   t="$(basename "$f" .rs)"
   run_step "fuzz-$t" step_fuzz "$t"
 done
+run_step diff-awslc step_diff_awslc
 run_step deny step_deny
 if [ "$LEAN" -eq 1 ] || [[ "$ONLY" == *",lean,"* ]]; then run_step lean step_lean; fi
 
