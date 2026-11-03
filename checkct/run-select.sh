@@ -20,6 +20,7 @@
 #            In a dispatch profile the dispatch cache (a static in .bss) is pre-set to "no AVX2" in every x86_64 BINSEC
 #            script, see run_one below; the run fails if the static or the script anchor is not found. In every other
 #            profile no dispatch is compiled and nothing is pre-set (the log says so).
+#   EXPERIMENTS  1 compiles driver/src/experiments.rs (the throwaway rewrite probes `exp_*`) via its cargo feature
 #   NAME     container name (default ct-select)
 #   CT_MEMORY / CT_CPUS  docker --memory / --cpus caps for the container (default 64g / 24). BINSEC runs can grow to
 #            tens of GB each; without a cap they have pushed the box out of memory and killed unrelated Lean builds.
@@ -68,12 +69,15 @@ fi
 # exactly what nearcore compiles with checks: the crate.
 # cargo-checkct drops RUSTFLAGS, so the x86_64 flags go through the per-target variable, which replaces the x86_64
 # rustflags of checkct/.cargo/config.toml: its linker flags are repeated here. The other targets are not changed.
-# Toolchain: CT_TOOLCHAIN (default 1.95.0, installed in the image by checkct/Dockerfile) through RUSTUP_TOOLCHAIN, which
-# overrides checkct/rust-toolchain.toml; RUSTC_BOOTSTRAP=1 lets that stable compiler take the -Zbuild-std of
+# Toolchain: CT_TOOLCHAIN (default 1.95.0, installed in the image by checkct/Dockerfile), written into the container's
+# copy of checkct/rust-toolchain.toml. RUSTUP_TOOLCHAIN does NOT work: cargo-checkct removes it from the environment of its
+# cargo (src/run.rs:263, `.env_remove("RUSTUP_TOOLCHAIN")`) so that rust-toolchain.toml decides; the first nearcore-exact
+# drivers were built with the nightly that way. The run therefore reads the compiler back from the driver's .comment section
+# and fails if it is not the requested one. RUSTC_BOOTSTRAP=1 lets that stable compiler take the -Zbuild-std of
 # checkct/.cargo/config.toml (the driver is no_std and needs build-std's compiler-builtins-mem for memcpy/memset;
 # RUSTC_BOOTSTRAP does not change code generation). CT_TOOLCHAIN=nightly-2026-10-06 builds with the checkct nightly instead.
 case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch)
-  PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort -e CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false -e RUSTUP_TOOLCHAIN=${CT_TOOLCHAIN:-1.95.0} -e RUSTC_BOOTSTRAP=1 -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
+  PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort -e CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false -e RUSTC_BOOTSTRAP=1 -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -C force-unwind-tables=y" ;; esac
 # PROFILE=avx2: the default profile with `-C target-feature=+avx2` (nearcore-avx2: plus the nearcore settings). The
 # crate then takes its static-AVX2 arm (src/ntt.rs "Dispatch"): no cpuid, one compilation of each NTT body, compiled
@@ -86,14 +90,16 @@ if [ "$PROFILE" = avx2 ] || [ "$PROFILE" = nearcore-avx2 ]; then
 fi
 EXACT=""
 case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch) EXACT=1 ;; esac
-docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
+docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPERIMENTS" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
   -v "$PWD":/src:ro ct-binsec bash -c '
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
   rm -rf /home/opam/w/checkct/target && cd /home/opam/w && eval $(opam env) &&
   if [ -n "$EXACT" ]; then
-    printf "\n[profile.release.package.driver]\noverflow-checks = true\n" >> checkct/.cargo/config.toml
+    printf "[toolchain]\nchannel = \"%s\"\nprofile = \"minimal\"\ncomponents = [\"rust-src\"]\n" "${CT_TOOLCHAIN:-1.95.0}" > checkct/rust-toolchain.toml &&
+    printf "\n[profile.release.package.driver]\noverflow-checks = true\n" >> checkct/.cargo/config.toml &&
+    echo "driver package override appended to checkct/.cargo/config.toml: $(tail -2 checkct/.cargo/config.toml | tr "\n" " ")"
   fi &&
-  echo "toolchain for PROFILE=$PROFILE_NAME (RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN:-unset}, RUSTC_BOOTSTRAP=${RUSTC_BOOTSTRAP:-unset}):" &&
+  echo "toolchain for PROFILE=$PROFILE_NAME (checkct/rust-toolchain.toml: $(grep ^channel checkct/rust-toolchain.toml), RUSTC_BOOTSTRAP=${RUSTC_BOOTSTRAP:-unset}):" &&
   (cd checkct && rustc -vV | sed "s/^/  /") &&
   echo "x86_64 rustflags: ${CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS:-(checkct/.cargo/config.toml)}; CARGO_PROFILE_RELEASE_*: $(env | grep ^CARGO_PROFILE_RELEASE_ | tr "\n" " ")" &&
   # Dispatch profiles: make `avx2` a default feature of the driver (cargo-checkct has no --features option). The
@@ -102,8 +108,20 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e PROFILE_NAME="${PRO
     sed -i "s/^avx2 = \[\]\$/avx2 = []\ndefault = [\"avx2\"]/" checkct/driver/Cargo.toml &&
     grep -q "^default = \[\"avx2\"\]\$" checkct/driver/Cargo.toml || { echo "PRESET FAILED: could not enable the avx2 feature in checkct/driver/Cargo.toml"; exit 1; }
   fi
+  # EXPERIMENTS=1: also compile driver/src/experiments.rs (throwaway rewrite probes, off in every other run so the
+  # sweep drivers stay byte-identical to a build without it).
+  if [ -n "$EXPERIMENTS" ]; then
+    if grep -q "^default = " checkct/driver/Cargo.toml; then sed -i "s/^default = \[/default = [\"experiments\", /" checkct/driver/Cargo.toml
+    else printf "default = [\"experiments\"]\n" >> checkct/driver/Cargo.toml; fi &&
+    grep -q "experiments" checkct/driver/Cargo.toml || { echo "could not enable the experiments feature"; exit 1; }
+  fi
   cargo-checkct run --dir /home/opam/w --timeout 1 --jobs 60 --skip-unknown >/dev/null 2>&1
   cd /home/opam/w/checkct/target || exit 1
+  for t in $TARGETS; do case "$t" in x86_64*)
+    cm=$(readelf -p .comment "$t/release/driver" 2>/dev/null | sed -n "s/^ *\[ *[0-9a-f]*\] *//p" | tr "\n" "|")
+    echo "driver .comment ($t): $cm"
+    if [ -n "$EXACT" ] && [ "${CT_TOOLCHAIN:-1.95.0}" = 1.95.0 ] && ! echo "$cm" | grep -q "rustc version 1.95.0 "; then
+      echo "TOOLCHAIN MISMATCH: PROFILE=$PROFILE_NAME wants rustc 1.95.0 but the driver was built by something else"; exit 1; fi ;; esac; done
   # The dispatch static of src/ntt.rs (mod dispatch, static AVX2: AtomicU8): print the address of exactly that symbol.
   # v0 mangling _RNvNtNtC<crate hash>_6driver3ntt8dispatch4AVX2 (legacy: _ZN6driver3ntt8dispatch4AVX217h<hash>E), plus
   # the suffixes LTO adds (.0, .llvm.<number>). No other symbol of the binary matches (the NTT bodies are functions, type t).

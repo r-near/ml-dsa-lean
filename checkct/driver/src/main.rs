@@ -39,6 +39,8 @@ mod verify;
 mod api;
 
 mod extra;
+#[cfg(feature = "experiments")]
+mod experiments;
 mod prepared;
 mod probes;
 mod rng;
