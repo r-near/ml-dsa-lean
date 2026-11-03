@@ -60,6 +60,12 @@ fi
 #   .cargo/config.toml:8-9  [target.'cfg(target_arch = "x86_64")'] rustflags = ["-Ctarget-feature=+sse2,+ssse3,+sse4.1,
 #                           +sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq", "-Cforce-unwind-tables=y"] (no AVX2)
 #   rust-toolchain.toml:12  channel = "1.95.0"
+# overflow-checks = true is set for the driver package only ([profile.release.package.driver], appended to the container's
+# copy of checkct/.cargo/config.toml below), NOT through CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: -Zbuild-std takes the
+# release profile for core and compiler_builtins too (verified with `cargo build -v`: overflow-checks=on for every std
+# crate), whereas nearcore links the prebuilt core, whose own MIR has no overflow checks (only `rustc_inherit_overflow_checks`
+# operators take the user's setting). The driver includes the crate sources as modules, so the package override covers
+# exactly what nearcore compiles with checks: the crate.
 # cargo-checkct drops RUSTFLAGS, so the x86_64 flags go through the per-target variable, which replaces the x86_64
 # rustflags of checkct/.cargo/config.toml: its linker flags are repeated here. The other targets are not changed.
 # Toolchain: CT_TOOLCHAIN (default 1.95.0, installed in the image by checkct/Dockerfile) through RUSTUP_TOOLCHAIN, which
@@ -67,7 +73,7 @@ fi
 # checkct/.cargo/config.toml (the driver is no_std and needs build-std's compiler-builtins-mem for memcpy/memset;
 # RUSTC_BOOTSTRAP does not change code generation). CT_TOOLCHAIN=nightly-2026-10-06 builds with the checkct nightly instead.
 case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch)
-  PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort -e CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true -e CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false -e RUSTUP_TOOLCHAIN=${CT_TOOLCHAIN:-1.95.0} -e RUSTC_BOOTSTRAP=1 -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
+  PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort -e CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false -e RUSTUP_TOOLCHAIN=${CT_TOOLCHAIN:-1.95.0} -e RUSTC_BOOTSTRAP=1 -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -C force-unwind-tables=y" ;; esac
 # PROFILE=avx2: the default profile with `-C target-feature=+avx2` (nearcore-avx2: plus the nearcore settings). The
 # crate then takes its static-AVX2 arm (src/ntt.rs "Dispatch"): no cpuid, one compilation of each NTT body, compiled
@@ -78,10 +84,15 @@ if [ "$PROFILE" = avx2 ] || [ "$PROFILE" = nearcore-avx2 ]; then
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+avx2"
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
-docker run --rm -e DISPATCH="$DISPATCH" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
+EXACT=""
+case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch) EXACT=1 ;; esac
+docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
   -v "$PWD":/src:ro ct-binsec bash -c '
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
   rm -rf /home/opam/w/checkct/target && cd /home/opam/w && eval $(opam env) &&
+  if [ -n "$EXACT" ]; then
+    printf "\n[profile.release.package.driver]\noverflow-checks = true\n" >> checkct/.cargo/config.toml
+  fi &&
   echo "toolchain for PROFILE=$PROFILE_NAME (RUSTUP_TOOLCHAIN=${RUSTUP_TOOLCHAIN:-unset}, RUSTC_BOOTSTRAP=${RUSTC_BOOTSTRAP:-unset}):" &&
   (cd checkct && rustc -vV | sed "s/^/  /") &&
   echo "x86_64 rustflags: ${CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS:-(checkct/.cargo/config.toml)}; CARGO_PROFILE_RELEASE_*: $(env | grep ^CARGO_PROFILE_RELEASE_ | tr "\n" " ")" &&
