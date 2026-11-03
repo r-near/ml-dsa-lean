@@ -727,6 +727,8 @@ fn cat_lengths(s: &Set, rng: &mut Rng) -> Tally {
         }
         let m = rand_msg(rng, 5 + c);
         let sig = (s.sign)(&sk, &m, &rng.arr32());
+        // control: the untouched pair at exact lengths (the only case here that also goes through the public API)
+        t.check(s, "control: exact lengths, valid", &pk, &m, &sig, Some(true));
         for l in (0..sig.len()).step_by(step) {
             t.check(s, "sigma truncated (every length)", &pk, &m, &sig[..l], Some(false));
         }
