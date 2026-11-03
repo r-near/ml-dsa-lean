@@ -125,8 +125,12 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   (`Cargo.toml:388–392`). `dev-release` inherits it with `lto = false`, `codegen-units = 16`, `debug-assertions = true`
   (:395–399). Under the Aeneas model arithmetic overflow is a `fail`, and the `_exact` theorems say the extracted code never
   fails (`docs/assurance.md` §1.1), but the compiled code under overflow checks is only tested empirically:
-  `scripts/ci.sh` steps `nearcore-test` and `nearcore-test-avx2` run the whole test suite with
-  `CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true` (results in the final report of the run that produced this document).
+  `scripts/ci.sh` steps `nearcore-test` and `nearcore-test-avx2` run the whole test suite (ACVP, Wycheproof, the
+  differentials) with nearcore's release settings and its x86_64 rustflags, on 1.95.0. Both passed on the box on 2026-11-03,
+  with and without the `avx2` feature. The step prints cargo's unit graph first: every unit is `opt=3 lto=fat cgu=1
+  overflow_checks=True`; the library build unit is `panic=abort`, the test units are `panic=unwind` because cargo ignores
+  `panic = "abort"` for test targets (so the tests exercise overflow checks, not the abort path). A passing run is an empirical
+  check on those inputs, not a proof that no overflow can occur in the compiled code.
 - Dev and test builds: `[profile.dev]` is `panic = 'abort'` and compiles all non-workspace dependencies at `opt-level = 1`
   (`Cargo.toml:385–386`, `:422–423`); `dev-release` is release without LTO (:395–399). A vendored copy of this crate would be
   built at `opt-level = 1` there. Our stack figures are measured for release and for opt-level 0, not for 1 (they grow at 0, by
@@ -156,7 +160,7 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   `runtime/near-test-contracts/test-contract-rs/Cargo.toml` depends on `base64` and `serde_json`, not `near-crypto`) and
   verify signatures through the host functions; `near-crypto` itself pulls in `aws-lc-rs` and `secp256k1`. The toolchain file installs the
   `wasm32-unknown-unknown` target (`rust-toolchain.toml:14`) for contract builds. Our crate is `no_std` and builds for wasm32
-  (`scripts/ci.sh` steps `wasm32`, `wasm32-zeroize`; results in the report), so an in-contract verifier is possible, with the
+  (`scripts/ci.sh` steps `wasm32`, `wasm32-zeroize`, 1.95.0, `wasm32-unknown-unknown`, library only; both passed on 2026-11-03), so an in-contract verifier is possible, with the
   shadow-stack caveat in `tools/stack/README.md` (Verify 87 about 115 KB against rust-lld's 1 MiB default).
 
 ## 5. Public API and semver
