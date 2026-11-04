@@ -106,6 +106,26 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   its run window. Large probes run with `JOBS` 1–4. A probe killed alone at 120 GB is recorded as "needs more than
   120 GB" instead of the cap being raised again. Until the full sweep at 1000b51+ lands, every `error` in the README is
   presumed OOM and gives no verdict.
+- **T-9 (2026-11-04): two BINSEC limits decide what a `nearcore-exact` sweep can show.** (1) *Overflow-check guards on
+  secret values stall BINSEC* (cf. upstream U-45 in `docs/upstream-issues.md`). With `overflow-checks = true`, the
+  conditional jump to the panic path after `a + Q - b`, a Montgomery step and similar arithmetic left 65 probes at 1
+  pending path through 600 to 3600 s (e9a1c74 tree, `checkct/README.md`, section "`nearcore-exact` and
+  `nearcore-exact-dispatch`", stop table; summaries in `checkct/results/nearcore-exact.*`). The crate no longer has
+  those guards on secret values (ae6023c, CT-3), and at 15b4ce2 those probes are no longer stuck there. The limit is
+  not gone: one probe, `prepare_sk_1x1_65`, still ends with 1 pending path at 600 s and at 3600 s (last step a `movdqu`
+  store in `ntt_body_mut`), and source that keeps guards on secret values could stall the same way (not tested). (2) *BINSEC 0.11.3
+  cannot lift AVX/VEX instructions.* nearcore builds x86_64 with `+fma`, which implies AVX, so LLVM emits VEX forms.
+  Under `nearcore-exact` and `nearcore-exact-dispatch` at 15b4ce2, 48 of 113 probes are cut paths ("uninterpreted
+  KO", 0 pending paths, no leak among the checks that passed) at `vinsertps` (`ntt.rs:111`, NTT layer), `vblendvps`
+  (vectorized `small_reduce` after `mont_reduce`, `field.rs:25`/`:76`) or `vblendps` on `ymm` (`ntt.rs:131`, inverse NTT
+  layer): `ntt`, `ntt_inverse`, `multiply_ntt`, `ntt_vec_44`, the `compute_t_*` and `matrix_vector_ntt_*` family,
+  `prepare_sk_*` and `signing_key_*`, `hint_step_*`, `response_*`, `split_*` pieces and the censuses
+  (`checkct/results/sweep-15b4ce2/x86_64-nearcore-exact.unknowns.txt`). With the loop and SLP vectorizers off
+  (`PROFILE=nearcore-exact-novec`, otherwise the same flags) all 113 probes get a verdict (108 secure, 5 expected
+  insecure). So nearcore's exact build has no BINSEC verdict for the NTT, `hint_step` and `response`, and the `-novec`
+  result is evidence about a different binary, not about nearcore's. Same class as U-40 and U-44. Workaround: build
+  the analyzed binary without vectorization, or check the VEX code by another route; neither is done for the
+  vectorized NTT/product code.
 
 ## Errata (docs, spec, upstream)
 

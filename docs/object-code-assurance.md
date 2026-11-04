@@ -252,6 +252,9 @@ timeout is BINSEC's default of 5 s per query (cargo-checkct does not override it
 
 ### 3.3 What our runs cover and do not
 
+> A later sweep at 15b4ce2 (2026-11-04) supersedes the counts and the `sk_is_well_formed` and `nearcore-exact` statements of this section;
+> see `checkct/README.md` "Full sweep at 15b4ce2" and `docs/assurance.md` §4. The text below is the e9a1c74 state.
+
 **Current coverage (full sweep at e9a1c74, 2026-10-31/11-01; `checkct/README.md` "Full sweep at e9a1c74").** 87 probe
 entrypoints per target. They cover the field and mask primitives, rounding, the NTT and pointwise product, Keccak-f and
 the SHAKE paths with secret input (keygen seed hash, ρ″ hash, ExpandMask), ExpandS, bit packing, skEncode/skDecode,
