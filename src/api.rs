@@ -246,8 +246,9 @@ pub fn sign_internal_prepared_44(ssk: &SigningKey44, m_prime: &[u8], rnd: &[u8; 
 ///
 /// Constant time: no branch depends on a coefficient. Each one contributes a mask bit, the bits are OR-ed, and
 /// the result is compared with zero once (`encode::sk_is_well_formed`), with wrapping arithmetic, so the same holds
-/// in builds with overflow checks. BINSEC reports it secure on x86_64, including a nearcore-like build with
-/// overflow checks (`checkct/README.md`).
+/// in builds with overflow checks. BINSEC reports it secure on x86_64 in every profile measured (including nearcore's
+/// release settings: overflow checks, its target features, Rust 1.95.0), on thumbv7em, on riscv32imac and on AArch64
+/// without NEON (`checkct/README.md`, sweep at 15b4ce2).
 pub fn sk_is_well_formed_44(sk: &[u8; 2560]) -> bool {
     sk_is_well_formed::<4, 4>(&ML_DSA_44, sk)
 }
@@ -430,8 +431,9 @@ pub fn sign_internal_prepared_65(ssk: &SigningKey65, m_prime: &[u8], rnd: &[u8; 
 ///
 /// Constant time: no branch depends on a coefficient. Each one contributes a mask bit, the bits are OR-ed, and
 /// the result is compared with zero once (`encode::sk_is_well_formed`), with wrapping arithmetic, so the same holds
-/// in builds with overflow checks. BINSEC reports it secure on x86_64, including a nearcore-like build with
-/// overflow checks (`checkct/README.md`).
+/// in builds with overflow checks. BINSEC reports it secure on x86_64 in every profile measured (including nearcore's
+/// release settings: overflow checks, its target features, Rust 1.95.0), on thumbv7em, on riscv32imac and on AArch64
+/// without NEON (`checkct/README.md`, sweep at 15b4ce2).
 pub fn sk_is_well_formed_65(sk: &[u8; 4032]) -> bool {
     sk_is_well_formed::<6, 5>(&ML_DSA_65, sk)
 }
@@ -614,8 +616,9 @@ pub fn sign_internal_prepared_87(ssk: &SigningKey87, m_prime: &[u8], rnd: &[u8; 
 ///
 /// Constant time: no branch depends on a coefficient. Each one contributes a mask bit, the bits are OR-ed, and
 /// the result is compared with zero once (`encode::sk_is_well_formed`), with wrapping arithmetic, so the same holds
-/// in builds with overflow checks. BINSEC reports it secure on x86_64, including a nearcore-like build with
-/// overflow checks (`checkct/README.md`).
+/// in builds with overflow checks. BINSEC reports it secure on x86_64 in every profile measured (including nearcore's
+/// release settings: overflow checks, its target features, Rust 1.95.0), on thumbv7em, on riscv32imac and on AArch64
+/// without NEON (`checkct/README.md`, sweep at 15b4ce2).
 pub fn sk_is_well_formed_87(sk: &[u8; 4896]) -> bool {
     sk_is_well_formed::<8, 7>(&ML_DSA_87, sk)
 }
