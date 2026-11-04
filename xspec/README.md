@@ -1,5 +1,31 @@
 # xspec: cross-check of `lean/Spec` against the ocaml-pq Lean transcription
 
+A separate Lean project that proves `lean/Spec` (our transcription of FIPS 204 and FIPS 202) equal to the independent Lean
+transcription in [ocaml-pq](https://github.com/thevilledev/ocaml-pq). It restates what the equivalence covers and what it does not;
+`docs/assurance.md` section 1.8 gives the summary.
+
+## How to run
+
+On Linux with elan (the project pins its own Lean toolchain; the first run downloads Mathlib and builds ocaml-pq):
+
+```
+bash scripts/xspec/setup.sh            # lake dependencies, Mathlib cache, builds Spec and OcamlPq
+bash scripts/xspec/build.sh XSpec      # builds the equivalence proofs
+bash scripts/xspec/check-axioms.sh     # the axiom gate over xspec/headline-theorems.txt (144 names)
+bash scripts/xspec/run-diff.sh all     # compiled differential, executable check (results: diff-results.txt)
+bash scripts/xspec/sync-ours.sh        # checks that the vendored Spec is byte-identical to lean/Spec
+```
+
+`scripts/xspec/env.sh` keeps the Lake dependencies in `$XSPEC_WORK` (default `~/xspec-work`) so that several checkouts share one
+Mathlib build.
+
+## Attribution
+
+ocaml-pq is by its authors and licensed under the ISC license. This project depends on it as the Lake package `OcamlPq`, pinned to
+revision `ceeb2782e033148fc2bf773c2053752f7de5a1cd` (`formal/lean`); no file of it is copied into this repository. The executable
+stand-in in `XSpecDiff/Shadow.lean` follows ocaml-pq's definitions step by step (its header lists every deviation) and calls its
+functions directly; that file and the proofs in `XSpec/` refer to ocaml-pq's definitions and theorem names throughout.
+
 Toolchain: Lean v4.34.0 and Mathlib v4.34.0 (the versions ocaml-pq pins). `lean/` stays on v4.31.0.
 
 ## Vendored specification (`xspec/Spec*`)
@@ -223,7 +249,7 @@ there (an XOF cache).
 ## Differential results (see diff-results.txt)
 
 Clean run: 1,357,949 vector lines (leaves, sweeps over Z_q, ACVP-derived KeyGen/Sign/Verify, random and edge inputs),
-both sides evaluated compiled on the build box.  The only differences are 3,303 SKD lines: ocaml-pq's skDecode
+both sides evaluated compiled on a Linux machine.  The only differences are 3,303 SKD lines: ocaml-pq's skDecode
 returns none when an s1/s2 coefficient is outside [-eta, eta], while FIPS 204 Algorithm 25 (and lean/Spec) has no
 such check.  All 600 SKD lines with in-range coefficients agree.  HintBitPack with more than omega ones (HBPX) is
 outside Algorithm 20's precondition; ours panics on an out-of-range set! there (default value returned), the 363

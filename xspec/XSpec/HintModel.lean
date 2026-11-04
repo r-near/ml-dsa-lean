@@ -5,7 +5,7 @@ import XSpec.Pack
 
 `unpack_eq` / `pack_eq` rewrite the spec's early-exit and plain `for` loops into pure folds
 (`efoldv` / `packModel`); the weight lemmas relate `HintWeight` to a recursive count.  Unchanged except for the
-loop-state order of Lean 4.34 (see PORT-NOTES).
+loop-state order of Lean 4.34 (see xspec/README.md).
 -/
 
 open Spec

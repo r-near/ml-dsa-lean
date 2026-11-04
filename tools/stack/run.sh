@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stack measurement for the public api functions. From the repository root:
-#   rx submit stack -- 'set -o pipefail; bash tools/stack/run.sh 2>&1 | tee stack.log'
+#   bash tools/stack/run.sh 2>&1 | tee stack.log
 # Output goes to tools/stack/out/<variant>/ (ignored by git) and to stdout.
 #
 # Two build variants, because inlining decides the frame sizes:
@@ -9,7 +9,7 @@
 set -o pipefail
 cd "$(dirname "$0")"
 TC=nightly-2026-10-06
-# LLVM tools come from the floating nightly (the pinned toolchain does not ship llvm-tools on the build box).
+# LLVM tools come from the floating nightly (the pinned toolchain does not ship llvm-tools).
 SYSROOT=$(rustc +nightly --print sysroot)
 BIN=$SYSROOT/lib/rustlib/x86_64-unknown-linux-gnu/bin
 test -x "$BIN/llvm-objdump" || { echo "llvm-objdump not found in $BIN"; exit 1; }

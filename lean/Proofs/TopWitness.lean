@@ -19,7 +19,7 @@ returns `some (pk, sk)`. The proof is by composition of kernel evaluations:
 **What is not witnessed here.** Neither `Spec.Sign` nor `Spec.Verify` has a kernel witness. The values `pk`, `sk` are
 existentially quantified, not named. One signing attempt needs `skDecode`, `ExpandMask` (four `BitUnpack`s), about 25
 NTTs and the `w1Encode`; each of `BitUnpack`, `skDecode`, `pkEncode` and `skEncode` alone exceeded 100 GB of kernel
-memory when measured, so the `correct_44` premise `hs` has no witness (see `STATUS.md`).
+memory when measured, so the `correct_44` premise `hs` has no witness here (docs/assurance.md lists what is witnessed).
 -/
 
 open Aeneas Aeneas.Std RustM

@@ -8,7 +8,7 @@ import Proofs.StdParams
 
 FIPS 204 Algorithm 25 (skDecode) notes that the decoded `s₁` and `s₂` "may lie outside `[−η, η]` if the input is
 malformed" and leaves `Sign` undefined there. `Spec.Sign` stays FIPS-literal (it signs with such a key, see
-ISSUES E-4), so the range condition lives here, in `Proofs`, not in `Spec`:
+docs/assurance.md, E-4), so the range condition lives here, in `Proofs`, not in `Spec`:
 
 * `PolyInEta η w`: every coefficient of the integer polynomial `w` lies in `[−η, η]`.
 * `SkWF sp sk`: every coefficient of the `s₁` and `s₂` that `Spec.skDecode sp sk` returns does.

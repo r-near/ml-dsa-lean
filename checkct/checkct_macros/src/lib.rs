@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+// Copyright (c) 2024-2026 RustCrypto Developers
+// Taken from the constant-time harness in RustCrypto's ml-dsa crate (github.com/RustCrypto/signatures, ml-dsa/checkct,
+// rev a3690c4, licensed Apache-2.0 OR MIT), unmodified.
+
 use proc_macro::TokenStream;
 use proc_macro2::{Literal, Span};
 use quote::quote;

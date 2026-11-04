@@ -223,7 +223,7 @@ impl<const K: usize, const L: usize> PreparedSk<K, L> {
 /// destination, which is what `signing_key_*` and `sign_internal` use (see there for why).
 ///
 /// Precondition: `sk.len() == sk_len(p)` and `p` agrees with `K` and `L`. The decoders index `sk` by those, so
-/// other inputs panic (the same as `sign_internal`, ISSUES E-1). The `api` functions pass fixed-size arrays and
+/// other inputs panic (the same as `sign_internal`, docs/assurance.md, E-1). The `api` functions pass fixed-size arrays and
 /// consistent parameters; this function is public only for the `internals` feature (tests, fuzzing, the
 /// constant-time probes of `checkct/`), so it cannot be reached from outside the crate otherwise.
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]

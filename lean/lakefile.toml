@@ -1,4 +1,4 @@
-name = "MlDsaVerified"
+name = "MlDsaLean"
 version = "0.1.0"
 defaultTargets = ["Impl", "Spec", "Proofs"]
 

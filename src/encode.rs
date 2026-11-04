@@ -165,7 +165,7 @@ pub fn sk_decode<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> Secre
 /// Branch-free on the coefficients and free of overflow-checked arithmetic on them: each coefficient contributes the
 /// bit `[w > η] & [w < q − η]`, computed as the sign bits of two wrapping differences (exact because `w`, η and q are
 /// below 2³¹), and the bits are OR-ed. A `w[i] > eta && w[i] + eta < Q` test would stay a branch on the sign of every
-/// coefficient of s₁ and s₂ in a build with overflow checks (its right operand can panic), see ISSUES.md CT-3.
+/// coefficient of s₁ and s₂ in a build with overflow checks (its right operand can panic), see docs/assurance.md, CT-3.
 fn poly_eta_bad(w: &[u32; 256], eta: u32) -> u32 {
     let lo = Q - eta;
     let mut bad = 0u32;

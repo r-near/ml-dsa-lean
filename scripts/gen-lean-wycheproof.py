@@ -146,7 +146,6 @@ def main():
                 if a.sign and kept >= a.sign and not special:
                     continue
                 kept += 1
-                n_sign += 1
                 cases.append(
                     f"    {{ tcId := {int(t['tcId'])}, msg := {hexs(t['msg'])}, ctx := {hexs(t.get('ctx'))},"
                     f" rnd := {hexs(t.get('rnd') or '00' * 32)}, sig := {hexs(t.get('sig'))},"
@@ -154,7 +153,8 @@ def main():
                     f" comment := {lit(t['comment'])} }}"
                 )
             if not cases or len(g["privateSeed"]) != 64:
-                continue
+                continue  # also drops the wrong-seed-length IncorrectPrivateKeyLength groups
+            n_sign += len(cases)
             sgroups.append(
                 f"  {{ set := \"ML-DSA-{set_}\", group := {gi}, seed := {hexs(g['privateSeed'])},"
                 f" pk := {hexs(g.get('publicKey'))}, cases := #[\n" + ",\n".join(cases) + "] }"

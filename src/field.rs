@@ -57,7 +57,7 @@ pub fn mul(a: u32, b: u32) -> u32 {
 /// With `hi = floor(x * zp / 2^32)` the exact quotient satisfies `hi <= floor(z * x / q) <= hi + 1`, so
 /// `z * x - hi * q` lies in `[0, 2q)` and fits in a u32; the wrapping u32 arithmetic below computes it exactly. One
 /// `small_reduce` (a mask in the source; that the compiled code has no branch is a per-target BINSEC result,
-/// see checkct/README.md and ISSUES.md CT-1) finishes. Only 32 x 32 -> 64 multiplies.
+/// see checkct/README.md and docs/assurance.md, CT-1) finishes. Only 32 x 32 -> 64 multiplies.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn mul_shoup(z: u32, zp: u32, x: u32) -> u32 {
     let hi = (((x as u64) * (zp as u64)) >> 32) as u32;
@@ -85,7 +85,7 @@ pub fn mul_mont(a: u32, b: u32) -> u32 {
 }
 
 /// Optimization barrier: the identity, but opaque to LLVM, so that the mask idioms below are not turned back
-/// into branches on targets without a conditional move (checkct found this on riscv32imac; ISSUES.md CT-1).
+/// into branches on targets without a conditional move (checkct found this on riscv32imac; docs/assurance.md, CT-1).
 /// Only RISC-V gets it on every mask: the mask idioms check clean on x86_64 and thumbv7em without it (the two
 /// exceptions, `decompose`'s edge mask and the running maximum in `vec_infinity_norm`, use `opaque_u32` below),
 /// and `black_box` on every mask costs about 25% in signing there. Extraction runs with `--cfg miri`, so the extracted (proved) code is the plain identity;
@@ -118,7 +118,7 @@ pub fn ct_select(if_false: u32, if_true: u32, mask: u32) -> u32 {
 
 /// Optimization barrier on every target (unlike `barrier_u32`, which is RISC-V only). Used where LLVM turns a mask
 /// select into a branch on x86_64 because one arm is a multiply (`decompose`'s edge case, checkct hint_step probes;
-/// ISSUES.md CT-1). Like `barrier_u32` it is the identity under `cfg(miri)`, so the extracted (proved) code is the
+/// docs/assurance.md, CT-2). Like `barrier_u32` it is the identity under `cfg(miri)`, so the extracted (proved) code is the
 /// plain identity.
 #[cfg(not(miri))]
 pub fn opaque_u32(x: u32) -> u32 {

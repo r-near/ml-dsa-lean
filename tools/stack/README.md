@@ -1,6 +1,6 @@
 # tools/stack: worst-case stack use of the public `api` functions
 
-STATUS.md says Sign for ML-DSA-87 "keeps roughly 60 KB of arrays on the stack". Measured: **about 239 KB** in a
+An earlier estimate said Sign for ML-DSA-87 "keeps roughly 60 KB of arrays on the stack". Measured: **about 239 KB** in a
 release build (the 60 KB figure is just the expanded matrix Â; see "Biggest frames"). This directory measures every
 public `api` function (keygen / sign / verify / sign_internal / verify_internal / sk_is_well_formed and the prepared-key
 constructors and calls for 44, 65, 87) two independent ways and checks that they agree.
@@ -9,8 +9,7 @@ It is its own workspace (`[workspace]` in `Cargo.toml`), not a member of the mai
 
 ## Running
 
-    rx submit stack -- 'set -o pipefail; bash tools/stack/run.sh 2>&1 | tee stack.log'    # about 6 minutes
-    rx wait stack
+    bash tools/stack/run.sh 2>&1 | tee stack.log    # about 6 minutes
 
 Needs a Linux machine with the nightly in `rust-toolchain.toml` (`rust-src`, for `-Zbuild-std`) and the floating
 nightly's `llvm-tools` (`llvm-readobj`, `llvm-objdump`; `run.sh` looks them up). Reports land in `out/`
@@ -175,7 +174,7 @@ coloring merges some, the frame is about 9% below the sum):
 
 | array | bytes | note |
 |---|---|---|
-| `a_hat` | 57,344 | Â = 8 × 7 × 256 × 4 bytes. This is the "roughly 60 KB" in STATUS.md, and it is a quarter of the frame |
+| `a_hat` | 57,344 | Â = 8 × 7 × 256 × 4 bytes. This is the "roughly 60 KB" of the earlier estimate, and it is a quarter of the frame |
 | `key` (decoded sk) | 23,680 | s1, s2, t0 in plain form; only needed to make the NTT forms |
 | `_64` (the three `ntt_vec` results) | 23,552 | a by-value temporary that is moved into `s1_hat`, `s2_hat`, `t0_hat` |
 | `s1_hat`, `s2_hat`, `t0_hat` | 7,168 + 8,192 + 8,192 | the NTT forms that are actually used by every attempt |

@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+// Copyright (c) 2024-2026 RustCrypto Developers
+// Adapted from the constant-time harness in RustCrypto's ml-dsa crate (github.com/RustCrypto/signatures, ml-dsa/checkct,
+// rev a3690c4, licensed Apache-2.0 OR MIT): the driver crate layout and the `#[path]` inclusion of the production
+// modules, with this crate's modules and probes in place of upstream's.
+
 #![no_std]
 #![no_main]
 

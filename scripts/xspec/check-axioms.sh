@@ -2,7 +2,7 @@
 # Fail unless every theorem named in xspec/headline-theorems.txt depends only on propext, Classical.choice,
 # Quot.sound (no sorryAx, no other axiom).  Also fails on any `sorry`, `admit`, `native_decide`, `axiom`,
 # `opaque`, `implemented_by`, `unsafe`, `partial`, `extern`, `macro`, `elab` or `syntax` in xspec/XSpec/ (the proof files; XSpecDiff is test-only and may use
-# `implemented_by`).  Run on the build box:  rx run -- bash scripts/xspec/check-axioms.sh
+# `implemented_by`).  Run:  bash scripts/xspec/check-axioms.sh
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 . "$here/env.sh"      # cd's to xspec/

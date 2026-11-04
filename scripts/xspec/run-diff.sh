@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Compiled differential between lean/Spec (vendored as `Spec`) and ocaml-pq.  Run on the build box:
-#   rx submit xs-diff -- 'set -o pipefail; bash scripts/xspec/run-diff.sh all'
+# Compiled differential between lean/Spec (vendored as `Spec`) and ocaml-pq.  Run on Linux:
+#   bash scripts/xspec/run-diff.sh all
 # Steps: gen | build | ours | theirs | compare | all.  Work directory: $DIFF_RUN (default $HOME/xspec-work/run).
 # Sizes: DIFF_N_COEFF, DIFF_N_POLY, DIFF_N_CODEC, DIFF_N_SAMPLER, DIFF_N_TOP, DIFF_N_SIGN.
 set -euo pipefail

@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
-# Differential check of lean/Spec against VCVio's MLDSA.Concrete.  Run on the build box (never build Lean on the Mac):
-#   rx submit vcv      -- 'set -o pipefail; bash scripts/diff-vcvio/setup-vcvio.sh'   # once: clone + build VCVio side
-#   rx submit vcv-ours -- 'set -o pipefail; bash scripts/diff-vcvio/run.sh all'       # generate, run both, compare
-# Steps: gen | ours | theirs | compare | reference | logic | all.  Work directory: $DIFF_RUN (default $HOME/rx/scratch/vcvio-diff/run),
-# VCVio clone: $VCVIO_DIR (default $HOME/rx/scratch/vcvio-diff/VCVio).  Vector sizes: DIFF_N_COEFF, DIFF_N_POLY, DIFF_N_CODEC.
+# Differential check of lean/Spec against VCVio's MLDSA.Concrete.  Run on a Linux machine with Lean installed:
+#   bash scripts/diff-vcvio/setup-vcvio.sh   # once: clone + build the VCVio side
+#   bash scripts/diff-vcvio/run.sh all       # generate, run both, compare
+# Steps: gen | ours | theirs | compare | reference | logic | all.  Work directory: $DIFF_RUN (default $ML_DSA_SCRATCH/vcvio-diff/run),
+# VCVio clone: $VCVIO_DIR (default $ML_DSA_SCRATCH/vcvio-diff/VCVio).  Vector sizes: DIFF_N_COEFF, DIFF_N_POLY, DIFF_N_CODEC.
 set -euo pipefail
 export PATH="$HOME/.elan/bin:$PATH"
 root="$(cd "$(dirname "$0")/../.." && pwd)"
-run="${DIFF_RUN:-$HOME/rx/scratch/vcvio-diff/run}"
-vcv="${VCVIO_DIR:-$HOME/rx/scratch/vcvio-diff/VCVio}"
+SCRATCH="${ML_DSA_SCRATCH:-${XDG_CACHE_HOME:-$HOME/.cache}/ml-dsa-lean/scratch}"
+run="${DIFF_RUN:-$SCRATCH/vcvio-diff/run}"
+vcv="${VCVIO_DIR:-$SCRATCH/vcvio-diff/VCVio}"
 step="${1:-all}"
 
 gen() {
@@ -33,7 +34,7 @@ eval_all() { # exe outdir
 
 ours() {
   bash "$root/scripts/diff-vcvio/check-common.sh"
-  (cd "$root/lean" && mkdir -p .lake && ([ -d .lake/packages ] || cp -a "${LEAN_PACKAGES_SEED:-$HOME/lean-survey/.lake/packages}" .lake/packages) \
+  (cd "$root/lean" && mkdir -p .lake && ([ -d .lake/packages ] || [ -z "${LEAN_PACKAGES_SEED:-}" ] || cp -a "$LEAN_PACKAGES_SEED" .lake/packages) \
     && (lake exe cache get >/dev/null 2>&1 || true) && lake build spec-diff-vcvio)
   eval_all "$root/lean/.lake/build/bin/spec-diff-vcvio" "$run/ours"
 }

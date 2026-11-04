@@ -1,5 +1,9 @@
 # ACVP ML-DSA vectors (vendored subset)
 
+These are NIST ACVP test vectors (public data published by NIST in the ACVP-Server repository). They are vendored as a
+subset, gzipped, and used only by the tests; they are not part of the published crate. For the terms of use, see the
+repository's license and notices at the commit below.
+
 - Source: https://github.com/usnistgov/ACVP-Server, directory `gen-val/json-files/`
   (`ML-DSA-keyGen-FIPS204`, `ML-DSA-sigGen-FIPS204`, `ML-DSA-sigVer-FIPS204`).
 - Commit: `975de31eb83d87039ec88934fdc47d8c312b892d` (commit date 2026-08-12), fetched 2026-10-29 with

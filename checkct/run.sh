@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run all probes. From the repository root (needs docker; build the image once with
 #   docker build -t ct-binsec checkct):
-#   rx submit ct4 -- 'set -o pipefail; bash checkct/run.sh'   # TIMEOUT=900 by default
+#   bash checkct/run.sh   # TIMEOUT=900 by default
 # Environment:
 #   TIMEOUT  seconds per probe (default 900)
 #   JOBS     parallel BINSEC instances (default: all CPUs)
@@ -10,9 +10,9 @@
 #   PROFILE  "nearcore-novec" is "nearcore" plus -C llvm-args=-vectorize-loops=false and -vectorize-slp=false (BINSEC cannot lift movmskpd);
 #            "nearcore" builds with opt-level 3, lto = "fat", codegen-units = 1, panic = "abort" (default: the
 #            checkct workspace profile, release + debug info + panic = "abort")
-#   NAME     docker container name (default ct-run); `rx kill` does not stop containers, use `docker kill $NAME`
-# CT_MEMORY / CT_CPUS: docker --memory / --cpus caps (default 64g / 24); uncapped BINSEC runs have pushed the box
-# out of memory and killed unrelated Lean builds.
+#   NAME     docker container name (default ct-run); to stop a run early, use `docker kill $NAME`
+# CT_MEMORY / CT_CPUS: docker --memory / --cpus caps (default 64g / 24); an uncapped BINSEC run can exhaust the
+# host's memory.
 #            The dispatch profiles ("dispatch", "nearcore-dispatch": the driver built with its `avx2` feature, so the runtime
 #            AVX2 dispatch of src/ntt.rs is compiled in) are only supported by checkct/run-select.sh, which pre-sets the
 #            dispatch cache in the BINSEC scripts; this script refuses them (without the pre-set BINSEC would explore the
