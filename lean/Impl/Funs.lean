@@ -1975,7 +1975,7 @@ def rounding.power2round (r : Std.U32) : RustM (Std.U32 × Std.U32) := do
   ok (r1, r0)
 
 /-- [ml_dsa_verified::rounding::poly_power2round]: loop body 0:
-    Source: 'src/rounding.rs', lines 141:4-146:5
+    Source: 'src/rounding.rs', lines 143:4-148:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_power2round_loop.body
@@ -1995,7 +1995,7 @@ def rounding.poly_power2round_loop.body
   else ok (done (t1, t0))
 
 /-- [ml_dsa_verified::rounding::poly_power2round]: loop 0:
-    Source: 'src/rounding.rs', lines 141:4-146:5
+    Source: 'src/rounding.rs', lines 143:4-148:5
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_power2round_loop
@@ -2008,7 +2008,7 @@ def rounding.poly_power2round_loop
     (t1, t0, j)
 
 /-- [ml_dsa_verified::rounding::poly_power2round]:
-    Source: 'src/rounding.rs', lines 137:0-148:1
+    Source: 'src/rounding.rs', lines 139:0-150:1
     Visibility: public -/
 def rounding.poly_power2round
   (t : Array Std.U32 256#usize) :
@@ -3341,7 +3341,7 @@ def rounding.infinity_norm (r : Std.U32) : RustM Std.U32 := do
   field.ct_select i5 r lower
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]: loop body 1:
-    Source: 'src/rounding.rs', lines 95:8-99:9
+    Source: 'src/rounding.rs', lines 95:8-101:9
     Visibility: public -/
 @[rust_loop_body]
 def rounding.vec_infinity_norm_loop0_loop0.body
@@ -3358,13 +3358,14 @@ def rounding.vec_infinity_norm_loop0_loop0.body
     let i3 ← lift (UScalar.cast .U64 x)
     let i4 ← field.ct_lt_mask i2 i3
     let i5 ← lift (UScalar.cast .U32 i4)
-    let acc1 ← field.ct_select acc x i5
+    let i6 ← field.opaque_u32 i5
+    let acc1 ← field.ct_select acc x i6
     let j1 ← j + 1#usize
     ok (cont (acc1, j1))
   else ok (done acc)
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]: loop 1:
-    Source: 'src/rounding.rs', lines 95:8-99:9
+    Source: 'src/rounding.rs', lines 95:8-101:9
     Visibility: public -/
 @[rust_loop]
 def rounding.vec_infinity_norm_loop0_loop0
@@ -3377,7 +3378,7 @@ def rounding.vec_infinity_norm_loop0_loop0
     (acc, j)
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]: loop body 0:
-    Source: 'src/rounding.rs', lines 93:4-101:5
+    Source: 'src/rounding.rs', lines 93:4-103:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.vec_infinity_norm_loop0.body
@@ -3393,7 +3394,7 @@ def rounding.vec_infinity_norm_loop0.body
   else ok (done acc)
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]: loop 0:
-    Source: 'src/rounding.rs', lines 93:4-101:5
+    Source: 'src/rounding.rs', lines 93:4-103:5
     Visibility: public -/
 @[rust_loop]
 def rounding.vec_infinity_norm_loop0
@@ -3406,7 +3407,7 @@ def rounding.vec_infinity_norm_loop0
     (acc, i)
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]:
-    Source: 'src/rounding.rs', lines 90:0-103:1
+    Source: 'src/rounding.rs', lines 90:0-105:1
     Visibility: public -/
 @[reducible]
 def rounding.vec_infinity_norm
@@ -4328,7 +4329,7 @@ def verify.prefix_eq
   ok (diff = 0#u8)
 
 /-- [ml_dsa_verified::rounding::use_hint]:
-    Source: 'src/rounding.rs', lines 106:0-123:1
+    Source: 'src/rounding.rs', lines 108:0-125:1
     Visibility: public -/
 def rounding.use_hint
   (p : params.Params) (h : Bool) (r : Std.U32) : RustM Std.U32 := do
@@ -4353,7 +4354,7 @@ def rounding.use_hint
   else ok r1
 
 /-- [ml_dsa_verified::rounding::poly_use_hint]: loop body 0:
-    Source: 'src/rounding.rs', lines 129:4-132:5
+    Source: 'src/rounding.rs', lines 131:4-134:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_use_hint_loop.body
@@ -4373,7 +4374,7 @@ def rounding.poly_use_hint_loop.body
   else ok (done out)
 
 /-- [ml_dsa_verified::rounding::poly_use_hint]: loop 0:
-    Source: 'src/rounding.rs', lines 129:4-132:5
+    Source: 'src/rounding.rs', lines 131:4-134:5
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_use_hint_loop
@@ -4386,7 +4387,7 @@ def rounding.poly_use_hint_loop
     (out, j)
 
 /-- [ml_dsa_verified::rounding::poly_use_hint]:
-    Source: 'src/rounding.rs', lines 126:0-134:1
+    Source: 'src/rounding.rs', lines 128:0-136:1
     Visibility: public -/
 def rounding.poly_use_hint
   (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)

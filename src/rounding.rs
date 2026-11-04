@@ -94,7 +94,9 @@ pub fn vec_infinity_norm<const N: usize>(w: &[[u32; 256]; N]) -> u32 {
         let mut j = 0;
         while j < 256 {
             let x = infinity_norm(w[i][j]);
-            acc = ct_select(acc, x, ct_lt_mask(acc as u64, x as u64) as u32);
+            // opaque_u32: without it LLVM's x86 cmov-to-branch conversion turns this running maximum into `cmp; ja` in
+            // the non-vectorized build (checkct response_*/hint_step_* under nearcore-novec).
+            acc = ct_select(acc, x, opaque_u32(ct_lt_mask(acc as u64, x as u64) as u32));
             j += 1;
         }
         i += 1;

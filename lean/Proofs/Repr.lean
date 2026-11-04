@@ -547,6 +547,7 @@ theorem vec_norm_row_spec {N : Usize} (w : Array (Array U32 256#usize) N) (i : U
         unfold Spec.q at hc
         have hbj := hb j.val hj'
         have hmask := cast_mask i4 i5 i5_post
+        subst i6_post
         have hi2 : i2.val = ac.val := by rw [i2_post]; simp
         have hi3 : i3.val = x.val := by rw [i3_post]; simp
         have hx : x.val = p[j.val].natAbs := by
