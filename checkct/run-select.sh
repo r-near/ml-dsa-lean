@@ -17,7 +17,7 @@
 #            nearcore-exact    the exact nearcore release build (see the block comment below): nearcore's [profile.release] incl.
 #                              overflow-checks = true, nearcore's x86_64 target features and Rust 1.95.0 (CT_TOOLCHAIN)
 #            nearcore-exact-dispatch  nearcore-exact plus the driver's `avx2` feature, cache pre-set as in nearcore-dispatch
-#            nearcore-exact-novec     nearcore-exact plus -C llvm-args=-vectorize-loops=false -vectorize-slp=false
+#            nearcore-exact-novec     nearcore-exact plus -C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false
 #            In a dispatch profile the dispatch cache (a static in .bss) is pre-set to "no AVX2" in every x86_64 BINSEC
 #            script, see run_one below; the run fails if the static or the script anchor is not found. In every other
 #            profile no dispatch is compiled and nothing is pre-set (the log says so).

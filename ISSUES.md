@@ -35,8 +35,8 @@ Bugs found, tool problems and errata, newest last. Each entry: ID, date, what, i
   arithmetic where the proofs already exclude overflow, so no overflow-check guard remains on secret values; the
   `vec_infinity_norm` running maximum gets `opaque_u32`. Proofs changed only in bodies (770 headline names, witness
   146). Under `nearcore-exact` after the fix: the six `sk_is_well_formed*` probes, `sk_decode`, `sk_encode` and
-  `expand_mask` are secure; the remaining unknowns stop at AVX/VEX instructions BINSEC 0.11.3 cannot lift (`vinsertps`,
-  `vblendvps`, `vblendps ymm`) and are secure with vectorization off (49 probes; T-9, `checkct/README.md`).
+  `expand_mask` are secure; 48 of the 49 remaining unknowns stop at AVX/VEX instructions BINSEC 0.11.3 cannot lift (`vinsertps`,
+  `vblendvps`, `vblendps ymm`), one is a solver stall, and all 49 are secure in a build with vectorization off (a different binary; T-9, `checkct/README.md`).
 
 - **Z-1 (2026-11-03): zeroize stack-residue scans fail in unoptimized builds.** `tests/zeroize.rs` has 15 stack
   scans. At opt-level 0, 8 find copies of s1, s2, ŝ1, t0 or K in dead stack frames: `keygen` (44/65/87),
@@ -104,20 +104,22 @@ B-X3 (`--monomorphize` adds unmodeled index axioms; extract generically).
   `control_early_exit_44`. Fix: every `error`, and every probe without a `Program status`, is matched against
   `journalctl -k -g 'Killed process'` (with `-b -1` across a reboot) and classified `oom` unless no kill falls in
   its run window. Large probes run with `JOBS` 1–4. A probe killed alone at 120 GB is recorded as "needs more than
-  120 GB" instead of the cap being raised again. Until the full sweep at 1000b51+ lands, every `error` in the README is
-  presumed OOM and gives no verdict.
+  120 GB" instead of the cap being raised again. Every `error` in the README is presumed OOM and gives no verdict; the kills of the
+  15b4ce2 sweep are in `checkct/results/sweep-15b4ce2/oom-kills.txt`.
 - **T-9 (2026-11-04): two BINSEC limits decide what a `nearcore-exact` sweep can show.** (1) *Overflow-check guards on
   secret values stall BINSEC* (cf. upstream U-45 in `docs/upstream-issues.md`). With `overflow-checks = true`, the
-  conditional jump to the panic path after `a + Q - b`, a Montgomery step and similar arithmetic left 65 probes at 1
+  conditional jump to the panic path after `a + Q - b`, a Montgomery step and similar arithmetic left 65 probes plus the two censuses at 1
   pending path through 600 to 3600 s (e9a1c74 tree, `checkct/README.md`, section "`nearcore-exact` and
   `nearcore-exact-dispatch`", stop table; summaries in `checkct/results/nearcore-exact.*`). The crate no longer has
-  those guards on secret values (ae6023c, CT-3), and at 15b4ce2 those probes are no longer stuck there. The limit is
-  not gone: one probe, `prepare_sk_1x1_65`, still ends with 1 pending path at 600 s and at 3600 s (last step a `movdqu`
-  store in `ntt_body_mut`), and source that keeps guards on secret values could stall the same way (not tested). (2) *BINSEC 0.11.3
+  those guards on secret values (ae6023c, CT-3), and at 15b4ce2 those probes are no longer stuck there. Source that keeps
+  guards on secret values could stall the same way (not tested). Separately, one probe, `prepare_sk_1x1_65`, still ends
+  with 1 pending path at 600 s and at 3600 s; its last step is a `movdqu` store in `ntt_body_mut`, not an overflow-check
+  jump, and it is `secure` under `-novec` with overflow checks on, so the cause of that stall is unknown
+  (`checkct/results/sweep-15b4ce2/x86_64-nearcore-exact.prepare_sk_1x1_65-trace-3600s.txt`). (2) *BINSEC 0.11.3
   cannot lift AVX/VEX instructions.* nearcore builds x86_64 with `+fma`, which implies AVX, so LLVM emits VEX forms.
   Under `nearcore-exact` and `nearcore-exact-dispatch` at 15b4ce2, 48 of 113 probes are cut paths ("uninterpreted
   KO", 0 pending paths, no leak among the checks that passed) at `vinsertps` (`ntt.rs:111`, NTT layer), `vblendvps`
-  (vectorized `small_reduce` after `mont_reduce`, `field.rs:25`/`:76`) or `vblendps` on `ymm` (`ntt.rs:131`, inverse NTT
+  (vectorized wrapping subtraction, apparently `small_reduce` after `mont_reduce`, `field.rs:25`/`:76`; the debug info maps it only to `<u32>::wrapping_sub`) or `vblendps` on `ymm` (`ntt.rs:131`, inverse NTT
   layer): `ntt`, `ntt_inverse`, `multiply_ntt`, `ntt_vec_44`, the `compute_t_*` and `matrix_vector_ntt_*` family,
   `prepare_sk_*` and `signing_key_*`, `hint_step_*`, `response_*`, `split_*` pieces and the censuses
   (`checkct/results/sweep-15b4ce2/x86_64-nearcore-exact.unknowns.txt`). With the loop and SLP vectorizers off

@@ -106,7 +106,7 @@ The current results. `src/` at 15b4ce2: the tree after ae6023c (merged in ddf201
 `encode.rs` (`poly_eta_bad`/`eta_block_bad` mask accumulation, one compare in `sk_is_well_formed`), so that no
 overflow-check guard is left on a secret value (ISSUES CT-3). The harness is c63f632, which only adds the profile
 `nearcore-exact-novec` to `run-select.sh` (`nearcore-exact` plus `-C llvm-args=-vectorize-loops=false
--vectorize-slp=false`). The previous full sweep is at e9a1c74 (below). Raw per-probe results, with every
+-C llvm-args=-vectorize-slp=false`). The previous full sweep is at e9a1c74 (below). Raw per-probe results, with every
 leak and stop address mapped to function, source line and instruction by `unknowns.py`, are in
 `checkct/results/sweep-15b4ce2/` (`<target>-<profile>.verdicts.tsv`, `.unknowns.txt`/`.summary.txt`, `.header.txt` with the
 toolchain and flags the run printed).
@@ -125,7 +125,9 @@ tables and are counted separately) plus the two censuses. A run now has 113 entr
 (29 where noted); the AArch64 run has 115 rows with the two censuses. The "same basis" column is the 85
 non-split entrypoints plus the two censuses, which is the e9a1c74 basis and gives 87; the split probes have their own column. The
 e9a1c74-era `nearcore-exact` sweep had 84 non-split entrypoints because LTO had merged `field_add`; its totals (114 with the
-censuses) are not on the 87 basis, so the `nearcore-exact*` rows compare all probes.
+censuses) are not on the 87 basis, so the `nearcore-exact*` rows compare all probes. Which field probe survives LTO as its own
+entrypoint differs by profile: the default TSVs list `field_mul` and not `field_add`, the `nearcore-exact*` TSVs the reverse; the
+count of 85 holds in both.
 
 Columns: secure / expected insecure / unexpected insecure / unknown / no verdict (OOM).
 
@@ -136,7 +138,7 @@ Columns: secure / expected insecure / unexpected insecure / unknown / no verdict
 | x86_64, `dispatch` | 80 / 7 / 0 / 0 / 0 | 80 / 6 / 0 / 0 / 1 | 29 / 0 / 0 / 0 / 0 |
 | x86_64, `nearcore-dispatch` | 74 / 6 / 0 / 6 / 1 | 80 / 6 / 0 / 0 / 1 (prepared census not rerun) | 28 / 0 / 0 / 0 / 0 |
 | thumbv7em, default | 81 / 4 / 0 / 0 / 2 | 81 / 4 / 0 / 0 / 2 (censuses not rerun) | 28 / 0 / 0 / 0 / 0 |
-| riscv32imac, default | 78 / 6 / 0 / 2 / 1 | 78 / 6 / 0 / 2 / 1 (censuses not rerun) | 23 / 0 / 0 / 6 / 0 |
+| riscv32imac, default | 78 / 6 / 0 / 2 / 1 | 78 / 6 / 0 / 2 / 1 (censuses not rerun; counts `control_prepared_branch_44` as insecure from its 7200 s rerun, it is `unknown` in the sweep TSV, which strictly gives 78 / 5 / 0 / 3 / 1) | 23 / 0 / 0 / 6 / 0 |
 | AArch64 `NONEON=1` | 73 / 3 / 0 / 11 / 0 | 73 / 3 / 0 / 11 / 0 | 26 / 0 / 0 / 2 / 0 |
 
 Not on the 87 basis, all probes of the run (113 entrypoints plus the two censuses):
@@ -149,8 +151,8 @@ Not on the 87 basis, all probes of the run (113 entrypoints plus the two censuse
 
 Reading the first table: the "expected insecure" cells are `rej_bounded_poly_eta2/4`, the positive controls (`control_early_exit_44`,
 `control_prepared_branch_44`, `control_prepared_index_44`; on thumbv7em only the first and the third, the branch control is the invalid
-`secure` one; on riscv32imac also the standalone `ct_lt_mask`) and, on x86_64, the censuses that finish `insecure` with only the public
-`sampling.rs:35` leak (below). Every probe of the first table has a verdict except the unknown and OOM cells shown, and each `secure`
+`secure` one; on riscv32imac also the standalone `ct_lt_mask`) and, on x86_64, the censuses, which report only the public
+`sampling.rs:35` leak (then 1 pending path) (below). Every probe of the first table has a verdict except the unknown and OOM cells shown, and each `secure`
 row has 0 pending paths and all checks passing. **No unexpected `insecure` result on any target or profile; no new leak.**
 
 **Verdict changes against e9a1c74**, probe by probe:
@@ -226,7 +228,8 @@ probes; no probe went from `secure` to anything else):
 
 **What `unknown` means now.** At e9a1c74 it was "timeout with 1 pending path stuck at an overflow-check guard". At 15b4ce2 it is
 "0 pending paths, no leak among the checks that passed, one path cut at an instruction BINSEC cannot lift" (`[sse:error]
-Cut path 0 (uninterpreted "KO")`, the 600 s limit is not reached: 0.08 to 1.7 s per probe) for 48 of the 49, and a solver stall for one:
+Cut path 0 (uninterpreted "KO")`, the 600 s limit is not reached: 0.08 to 1.7 s per probe; every cut line and status time in
+`sweep-15b4ce2/x86_64-nearcore-exact.cut-paths.txt`) for 48 of the 49, and a solver stall for one:
 
 | unliftable instruction | where | probes |
 |---|---|---|
@@ -345,9 +348,12 @@ nearcore's compiler actually emits.
   With `TRACE=1` at 600 s (`riscv32imac.rerun-trace-600s.txt`) all three stop at the same instruction, `0x045e28 sw s1,0(a7)` in
   `ntt_body_mut` (+0xaba). As a control the same three probes were built from d1f4da0
   (checkct harness and `src/` of that commit, same image and command, `JOBS=3`): all `secure` within the run
-  (`riscv32imac.control-d1f4da0.txt`: 1,431,873 / 991,518 / 1,434,718 instructions). So the source changes between d1f4da0 and
-  15b4ce2 (the wrapping arithmetic of ae6023c) changed the riscv code shape of the in-place NTT enough that BINSEC stalls on one
-  solver query at a store of `ntt_body_mut` for these three pieces. Coverage is not reduced: the full-size riscv
+  (`riscv32imac.control-d1f4da0.txt`: 1,431,873 / 991,518 / 1,434,718 instructions). Building the riscv driver from three trees (d1f4da0
+  harness and source; 9000537 harness and source; 9000537 source with the d1f4da0 harness) shows the harness changes are
+  irrelevant (the last two are byte-identical) and `ntt_body_mut` is essentially unchanged (3136 bytes, 3 bytes differ, apparently
+  one byte in each of three immediates); what changed is that the `split_prepare_sk_*` wrappers now inline `prepare_sk_into`
+  (`65_col` 340 → 1296 bytes, `65_row` 216 → 854). Other pieces inlined the same way (`44_col`, `87_4x1`, `87_7x1`, `87_col`,
+  `87_row`) stayed `secure`, so the cause of the stall at the `ntt_body_mut` store is not pinned down. Coverage is not reduced: the full-size riscv
   `prepare_sk_{44,65,87}` and `signing_key_{44,65,87}` are `secure` at 15b4ce2 (the reason the pieces were run is gone), and
   the 23 other riscv split pieces and both one-polynomial `prepare_sk_1x1_*` are `secure`. No leak was found.
 - **AArch64 without NEON** (`aarch64.sh`, 115 probes with the two censuses, 3600 s): 99 secure, 3 expected insecure
