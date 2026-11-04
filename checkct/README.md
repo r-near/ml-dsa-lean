@@ -19,7 +19,7 @@ crate's workspace and the main `Cargo.toml` needed no `exclude`. `src/` is not e
 
 Linux only (BINSEC). On the build box, via Docker:
 
-    docker build -t ct-binsec checkct                           # once; compiles BINSEC from opam, ~10 min
+    docker build -t ct-binsec checkct                           # once, and again after Dockerfile changes; ~10 min
     rx submit ct4 -- 'set -o pipefail; bash checkct/run.sh 2>&1 | tee ct.log'
     rx wait ct4
 
@@ -184,7 +184,7 @@ stall for the whole timeout (two probes per hour per container, about two days f
    `split_vec_power2round_3`); the others did not, and moved by a few thousand instructions in 3000 s.
 4. The two censuses alone at 120 GB, `JOBS=1`, `TIMEOUT=3600` (below).
 
-The unknown rows were not rerun at 7200 s. Raw summaries, with every leak and stop address mapped to function, source line and
+The unknown rows were not rerun at 7200 s. Post-processed summaries (not BINSEC's raw output), with every leak and stop address mapped to function, source line and
 instruction by `checkct/unknowns.py`, are in `checkct/results/`.
 
 ### Results (x86_64, rustc 1.95.0, BINSEC 0.11.3)
@@ -242,7 +242,7 @@ VEX `vtestps` of the experiment `exp_sk_wf_wrapadd_44` (which removes the overfl
 vectorization).
 
 Per probe (stop = the last executed instruction; 300 s trace unless the stage column says 3600 s; the instruction before it is
-the flag setter; `nearcore-exact-dispatch` stops at the same sites with other addresses, `checkct/results/`):
+the flag setter; `nearcore-exact-dispatch` stops at the same sites with other addresses, except `matrix_vector_ntt_44` (`field.rs:21` vs `:71`) and `prepare_sk_1x1_44` (`:35` vs `:39`), all overflow guards; `checkct/results/`):
 
 | probe | stage | steps | stopped at | source | preceding instructions |
 |---|---|---|---|---|---|
@@ -347,7 +347,8 @@ exploring the 2^n paths (257 pending at the timeout; the verdict is "insecure", 
 - Scope: `sk_is_well_formed_NN` is the optional key check (not called by Sign; its doc comment already says it branches on the
   sign of each coefficient and is to be run "where timing is not observable"). The finding is about nearcore's build of that
   function, in the probe's inlining context (the crate in isolation, not nearcore's callers). Sign, KeyGen and Verify do not call
-  it. The doc comment of `api::sk_is_well_formed_NN` says "Not covered by the constant-time checks"; with the older profiles the
+  it, but `api::pk_from_sk_NN` does (`src/keygen.rs`, first step), so the leak is reachable through it; `pk_from_sk_*` has no
+  probe of its own. The doc comment of `api::sk_is_well_formed_NN` says "Not covered by the constant-time checks"; with the older profiles the
   object code happened to be branch-free, with nearcore's it is not.
 
 ### Rewrites tested (throwaway probes, `driver/src/experiments.rs`, `EXPERIMENTS=1`; `src/` and `lean/` untouched)
@@ -363,7 +364,7 @@ Copies of `poly_in_eta` / `sk_is_well_formed` with only the range test changed. 
 | `exp_blk_mask_eta{2,4}`, `exp_poly_mask`, `exp_sk_wf_mask_1x1_44` | integer accumulation: `bad \|= (eta.wrapping_sub(x) >> 31) & (x.wrapping_sub(Q - eta) >> 31)`, one `bad == 0` at the end (also across blocks) | **secure** (1x1: 29,105 instructions, 7,998 control-flow checks) |
 | `exp_blk_maskbb_eta{2,4}`, `exp_poly_maskbb`, `exp_sk_wf_maskbb_1x1_44` | same with `black_box` on each element mask | **secure** (1x1: 33,852 instructions, 8,478 checks) |
 | `exp_sk_wf_bitand_44`, `exp_sk_wf_mask{,bb}_{44,65,87}`, `exp_sk_wf_mask{,bb}_2x2_44` | the same at full size and with 4 blocks | unknown: one pending path stuck at the overflow-check guard of `field::sub` inside `unpack_signed` (`field.rs:39`, `ja`/`jae`, 0x2070dd for 2x2), the same stall as `sk_decode_*`; not the range test |
-| `exp_sk_wf_maskw_{2x2_44,44,65,87}` | the mask test **and** the unpack stage (`bit_unpack`, `field::sub`, `small_reduce`) in `wrapping_*` arithmetic | **secure** at full size: 52,773 / 78,838 / 99,470 instructions, 12,706 / 18,907 / 24,019 control-flow checks, 0 pending paths |
+| `exp_sk_wf_maskw_{2x2_44,44,65,87}` | the mask test **and** the unpack stage (`bit_unpack`, `field::sub`, `small_reduce`) in `wrapping_*` arithmetic | **secure** at full size: 34,177 (2x2) / 52,773 / 78,838 / 99,470 instructions, 12,706 / 18,907 / 24,019 control-flow checks, 0 pending paths |
 
 So the integer-mask range test is branch-free and liftable under `nearcore-exact`, and the full-size verdict also needs the
 unpack stage without overflow-check guards (wrapping arithmetic there, or whatever makes BINSEC's guard queries cheap). The
@@ -558,8 +559,8 @@ Every non-secure probe:
 
 | probe | where | result | reason |
 |---|---|---|---|
-| `rej_bounded_poly_eta2/4` | all 7 target/profile rows | insecure, expected | sampler accept test, a public outcome (`sampling.rs:129`, `:132`) |
-| `census_sign_internal_44`, `census_sign_prepared_44` | x86_64 in all four profiles | insecure, expected | only leak reported: `sampling.rs:35`, `sample_in_ball`'s accept test (public outcome); then one pending path, no verdict. Needed the 120 GB container, see below. Exception: `census_sign_prepared_44` under `nearcore-dispatch` is `oom` |
+| `rej_bounded_poly_eta2/4` | all 9 target/profile rows | insecure, expected | sampler accept test, a public outcome (`sampling.rs:129`, `:132`) |
+| `census_sign_internal_44`, `census_sign_prepared_44` | x86_64 in the four older profiles (`unknown` under `nearcore-exact*`, stopped at `field.rs:39` before `sampling.rs:35`) | insecure, expected | only leak reported: `sampling.rs:35`, `sample_in_ball`'s accept test (public outcome); then one pending path, no verdict. Needed the 120 GB container, see below. Exception: `census_sign_prepared_44` under `nearcore-dispatch` is `oom` |
 | `census_sign_internal_44`, `census_sign_prepared_44` | thumbv7em | oom: needs more than 120 GB | leak at `sampling.rs:35` found first (36 to 61 s), then killed at the cap (RSS 125 GB at the 120 GB cap), no verdict |
 | `census_sign_prepared_44` | riscv32imac | oom: needs more than 120 GB | as thumbv7em; first leak `sampling.rs:35` |
 | `census_sign_internal_44` | riscv32imac | unknown | 4 pending paths at 3600 s and at 7200 s, no leak found (62,925 control-flow checks passed) |

@@ -4,7 +4,7 @@
 #   bash checkct/probe-now.sh CONTAINER PROBE [TIMEOUT] [extra binsec args]     PROBE e.g. extra__sk_is_well_formed_44
 # A dispatch container needs the cache pre-set: use the /tmp/mod.* script run-select.sh wrote (this script prefers it).
 set -o pipefail
-C=$1; P=$2; T=${3:-120}; shift 3 2>/dev/null
+C=$1; P=$2; T=${3:-120}; shift $(( $# < 3 ? $# : 3 ))
 docker exec -w /home/opam/w/checkct/target "$C" bash -c '
   eval $(opam env); t=x86_64-unknown-linux-gnu; s=$t/release/driver.driver__'"$P"'.binsec
   m=$(ls /tmp/mod.*."driver::'"${P/__/::}"'".binsec 2>/dev/null | head -1); [ -n "$m" ] && s=$m

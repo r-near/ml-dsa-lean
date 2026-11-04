@@ -33,6 +33,8 @@ set -o pipefail
 : "${ONLY:?set ONLY to a regex over the probe names}"
 TIMEOUT="${TIMEOUT:-7200}"
 NAME="${NAME:-ct-select}"
+case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch) TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}"
+  case " $TARGETS " in *" x86_64-unknown-linux-gnu "*) ;; *) echo "PROFILE=$PROFILE is x86_64 only (nearcore's settings); TARGETS=$TARGETS" >&2; exit 2 ;; esac ;; esac
 TARGETS="${TARGETS:-riscv32imac-unknown-none-elf thumbv7em-none-eabihf x86_64-unknown-linux-gnu}"
 JOBS="${JOBS:-4}"
 MOUNT=""
