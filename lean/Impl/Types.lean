@@ -88,25 +88,25 @@ structure api.SigningKey44 where
   inner : sign.PreparedSk 4#usize 4#usize
 
 /-- [ml_dsa_lean::api::VerifyingKey65]
-    Source: 'src/api.rs', lines 338:0-340:1
+    Source: 'src/api.rs', lines 341:0-343:1
     Visibility: public -/
 structure api.VerifyingKey65 where
   inner : verify.PreparedVk 6#usize 5#usize
 
 /-- [ml_dsa_lean::api::SigningKey65]
-    Source: 'src/api.rs', lines 378:0-380:1
+    Source: 'src/api.rs', lines 381:0-383:1
     Visibility: public -/
 structure api.SigningKey65 where
   inner : sign.PreparedSk 6#usize 5#usize
 
 /-- [ml_dsa_lean::api::VerifyingKey87]
-    Source: 'src/api.rs', lines 520:0-522:1
+    Source: 'src/api.rs', lines 526:0-528:1
     Visibility: public -/
 structure api.VerifyingKey87 where
   inner : verify.PreparedVk 8#usize 7#usize
 
 /-- [ml_dsa_lean::api::SigningKey87]
-    Source: 'src/api.rs', lines 560:0-562:1
+    Source: 'src/api.rs', lines 566:0-568:1
     Visibility: public -/
 structure api.SigningKey87 where
   inner : sign.PreparedSk 8#usize 7#usize
