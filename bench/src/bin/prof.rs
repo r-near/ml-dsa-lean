@@ -1,4 +1,4 @@
-//! Sampling profile of the public APIs with pprof's SIGPROF sampler (perf is not usable on the box: unprivileged
+//! Sampling profile of the public APIs with pprof's SIGPROF sampler (perf is not usable in the measured environment: unprivileged
 //! users get perf_event_paranoid=4). Writes one folded-stack file per workload (`root;...;leaf count`, inlined
 //! frames expanded from the DWARF line tables), which bench/categorize.py turns into a breakdown.
 //!

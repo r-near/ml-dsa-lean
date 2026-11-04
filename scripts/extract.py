@@ -7,7 +7,7 @@ Usage: scripts/extract.py [--src DIR] [--roots FILE] [--work DIR] [--out DIR]
   --work   scratch directory (default: <repo>/.extract)
   --out    destination for Types.lean/Funs.lean/FunsExternal*.lean/extract-report.json (default: lean/Impl)
 
-Needs the tools from scripts/setup-tools.sh. Exits non-zero on any gate failure; --out is only touched on success.
+Needs the tools from scripts/setup-tools.sh (ML_DSA_TOOLS overrides their location, default ~/hax-tools). Exits non-zero on any gate failure; --out is only touched on success.
 """
 import argparse, copy, hashlib, json, os, re, shutil, subprocess, sys
 from pathlib import Path
@@ -24,7 +24,7 @@ src, work, out = Path(a.src).resolve(), Path(a.work).resolve(), Path(a.out).reso
 CRATE = 'ml_dsa_lean'
 NS = 'Impl'
 AENEAS_PIN, CHARON_PIN = 'build-183e4f0', 'nightly-2026.09.02'
-T = Path.home() / 'hax-tools'
+T = Path(os.environ.get('ML_DSA_TOOLS', str(Path.home() / 'hax-tools')))
 AENEAS = T / f'cache/hax/tools/aeneas/{AENEAS_PIN}/aeneas'
 for tool in [T / 'bin/cargo-hax', AENEAS]:
     if not tool.exists():
@@ -166,7 +166,7 @@ else:
         record.update(external_axioms_declared=len(axioms), external_axioms_referenced=len(referenced),
                       lean_defs=len(re.findall(r'^(?:divergent )?def ', funs_txt, re.M)))
 
-# Never commit box-absolute paths.
+# Never commit machine-specific absolute paths.
 def scrub(v):
     return re.sub(r'(/home/[^/\s"]+|/Users/[^/\s"]+)', '$HOME', v) if isinstance(v, str) else v
 record = json.loads(scrub(json.dumps(record)))

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Prepare the xspec lake project on the build box (never on the Mac):
-#   rx submit xs-setup -- 'set -o pipefail; bash scripts/xspec/setup.sh [all|update|cache|spec|theirs]'
+# Prepare the xspec lake project on Linux:
+#   bash scripts/xspec/setup.sh [all|update|cache|spec|theirs]
 # Network use: GitHub (lake dependencies: Mathlib, ocaml-pq) and the Mathlib cache.
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"

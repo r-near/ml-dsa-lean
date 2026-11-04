@@ -10,5 +10,5 @@ fi
 status=0
 diff -q "$root/lean/Spec.lean" "$root/xspec/Spec.lean" || status=1
 diff -rq "$root/lean/Spec" "$root/xspec/Spec" || status=1
-[ $status -eq 0 ] && echo "vendored Spec is identical to lean/Spec" || echo "vendored Spec DIFFERS from lean/Spec (record the change in xspec/PORT-NOTES.md)"
+[ $status -eq 0 ] && echo "vendored Spec is identical to lean/Spec" || echo "vendored Spec DIFFERS from lean/Spec (record the change in xspec/README.md)"
 exit $status

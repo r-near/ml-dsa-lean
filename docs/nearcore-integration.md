@@ -1,8 +1,10 @@
 # nearcore integration notes
 
-Findings from reading nearcore at cd5a94457 (2026-11-03), read-only; nothing in nearcore was built or run. File:line
-cites are repo-relative paths into that tree. This document lists facts and options; the decisions are nearcore's.
-Our side: `STATUS.md`, `src/api.rs`, `tools/stack/README.md`, `docs/performance-baseline.md`, `docs/assurance.md`.
+Notes from an outside reader of nearcore at cd5a94457 (2026-11-03), read-only; nothing in nearcore was built or run, and
+the notes may be out of date or wrong for later commits. File:line cites are repo-relative paths into that tree. This
+document lists facts and options; the decisions are nearcore's. `ml-dsa-lean` is an independent personal project, not
+affiliated with or endorsed by NEAR, and nearcore is only an example of a consumer. Our side: `src/api.rs`,
+`tools/stack/README.md`, `docs/assurance.md`.
 
 ## 0. Starting point: nearcore already ships ML-DSA-65
 
@@ -15,7 +17,7 @@ existing 65 paths is consensus-critical: every node must return the same verdict
 including malformed ones. The nearcore doc states the message is passed with an empty context string
 (`post_quantum_signatures.md` §7), which is `ctx = &[]` in our `api`. Our crate's evidence that its Verify equals
 FIPS 204 on every input is in `docs/assurance.md` §1.1; the verdict differential against aws-lc-rs 1.18.2
-(`tests/awslc_diff.rs`, STATUS.md aws-lc row) found 0 differences in about 3.2M verify comparisons, incl. malformed
+(`tests/awslc_diff.rs`, `docs/assurance.md` §5) found 0 differences in about 3.2M verify comparisons, incl. malformed
 inputs, with ctx = "" as nearcore uses it. It is a test, not a proof about aws-lc.
 
 ## 1. Key and signature representation today
@@ -125,7 +127,7 @@ found only the two entries marked explicit; no `actix` appears in `Cargo.toml`):
 |---|---|---|
 | rayon global pool (explicit) | 8 MiB | `neard/src/main.rs:58–60`; parallel transaction validation (:1999–2025 above) and `RayonAsyncComputationSpawner` (`core/async/src/futures.rs:171–176`) run on it unless a local pool is installed there (not checked) |
 | compiler-daemon workers (explicit) | 8 MiB default (`DEFAULT_THREAD_STACK_SIZE_BYTES`), configurable: the parent passes `thread_stack_size_bytes` to the child in `COMPILER_DAEMON_STACK_SIZE_ENV` (`protocol.rs:10`, `parent.rs:94`, `:118`, `child.rs:94`) | `runtime/near-vm-runner/src/compiler_daemon/mod.rs:52`, `child.rs:47–49` (wasm compilation, not signatures) |
-| Chunk-application workers (`apply_chunks_spawner`, `chain/chain/src/chain.rs:303`, `:461`; I did not trace that the VM, and so `ml_dsa_verify`, runs on exactly these threads) | no `stack_size` call, so the std default (2 MiB, or `RUST_MIN_STACK`) | `ApplyChunksSpawner::Default` is `ThreadPool` (`core/async/src/thread_pool.rs:414–432`), whose workers on unix come from `thread_priority::ThreadBuilder` with name, policy and priority only (`:223–239`; the `std::thread::Builder` at :242–252 is the non-unix branch) |
+| Chunk-application workers (`apply_chunks_spawner`, `chain/chain/src/chain.rs:303`, `:461`; it was not traced whether the VM, and so `ml_dsa_verify`, runs on exactly these threads) | no `stack_size` call, so the std default (2 MiB, or `RUST_MIN_STACK`) | `ApplyChunksSpawner::Default` is `ThreadPool` (`core/async/src/thread_pool.rs:414–432`), whose workers on unix come from `thread_priority::ThreadBuilder` with name, policy and priority only (`:223–239`; the `std::thread::Builder` at :242–252 is the non-unix branch) |
 | `StdThreadAsyncComputationSpawner` | std default | `core/async/src/futures.rs:155–160` |
 | Actor runtimes: one tokio worker each | tokio default (2 MiB), no `thread_stack_size` | `core/async/src/tokio/runtime_handle.rs:117–120`, `core/async/src/tokio/futures.rs:12–15`, `neard/src/cli.rs:577–580` |
 | Main thread | OS default (not set by nearcore) | |
@@ -148,7 +150,7 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   `scripts/ci.sh` steps `nearcore-test`, `nearcore-test-avx2` and `nearcore-test-zeroize` run the test suite (ACVP,
   Wycheproof, the differentials; the last one `tests/zeroize.rs` with the `zeroize` feature) with nearcore's release
   settings and its x86_64 rustflags, on 1.95.0, and `nearcore-build` checks that `-C overflow-checks=on` is on the crate's
-  rustc line and that `target_feature="sse4.2"`, `"bmi2"`, `"lzcnt"` and `"movbe"` are in rustc's cfg. Both passed on the box on 2026-11-03,
+  rustc line and that `target_feature="sse4.2"`, `"bmi2"`, `"lzcnt"` and `"movbe"` are in rustc's cfg. Both passed on a Linux machine on 2026-11-03,
   with and without the `avx2` feature. The step prints cargo's unit graph first: every unit is `opt=3 lto=fat cgu=1
   overflow_checks=True`; the library build unit is `panic=abort`, the test units are `panic=unwind` because cargo ignores
   `panic = "abort"` for test targets (so the tests exercise overflow checks, not the abort path). A passing run is an empirical
@@ -165,7 +167,7 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   Our stack figures are measured for release and for opt-level 0, not for 1. The `zeroize` feature's stack-residue tests
   (`tests/zeroize.rs`: 15 scan tests, five per parameter set) pass in release (15 of 15) and at opt-level 0 fail for 8 of
   the 15 (`keygen_*` and `pk_from_sk_*` for 44, 65 and 87, and `signing_key_*` for 44 and 65; `sign_*`, `sign_prepared_*`
-  and `signing_key_87` pass), finding copies of s1, s2, ŝ1, t0 or K in dead stack frames. Run on the box with
+  and `signing_key_87` pass), finding copies of s1, s2, ŝ1, t0 or K in dead stack frames (Z-1 in `docs/assurance.md` §7). Run with
   `CARGO_PROFILE_DEV_OPT_LEVEL=1` (the whole crate and test at opt-level 1, which approximates case 1) 13 of the 15 pass and
   `keygen_44` and `keygen_65` fail (2026-11-03). `scripts/ci.sh` runs the 7 that pass at opt-level 0 in `test-zeroize`
   and all 15 in release (`test-zeroize-release`, and `nearcore-test-zeroize` under nearcore's profile). So the wipe
@@ -176,7 +178,7 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
 - x86_64 target features: `+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq`, plus
   `-Cforce-unwind-tables=y` (`.cargo/config.toml:9`; the profiling config adds frame pointers). **There is no `avx` or `avx2`**
   in that list. Our NTT is vectorized by LLVM only with AVX2, so nearcore's build gets the numbers in the "default"
-  column of `docs/performance-baseline.md` §7. The only way to get the AVX2 column without changing nearcore's target
+  column of the benchmark table in `docs/assurance.md` §5. The only way to get the AVX2 column without changing nearcore's target
   features is our opt-in `avx2` cargo feature (runtime CPUID dispatch; crate-only `unsafe`, outside the Lean proof;
   `docs/assurance.md` §3). Enabling it, or building with `-C target-cpu=x86-64-v3` (which makes the binary require
   AVX2), is nearcore's decision. The CT results for the `nearcore` profile do not cover nearcore's exact build
@@ -202,7 +204,7 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
 
 `src/lib.rs` makes only `pub mod api` public; the other modules are public only under the `internals` feature, which is for
 tests and fuzzing and is turned on by the crate's self dev-dependency (`Cargo.toml:29–37`). `Cargo.toml` has
-`version = "0.0.0"` and `publish = false`, with `license = "MIT OR Apache-2.0"`.
+`version = "0.1.0"` and `license = "MIT OR Apache-2.0"`.
 
 Public surface of `api` (39 functions and 6 types, the same per set NN ∈ {44, 65, 87}; `src/api.rs`):
 
@@ -220,8 +222,8 @@ Cargo features: `zeroize` (optional dependency), `avx2` (x86_64 only), `internal
 
 What would need to stabilize, as options rather than recommendations:
 
-1. **Version and metadata.** `0.0.0`/`publish = false` mean nothing has been promised. Vendoring as a path or git
-   dependency avoids publishing; publishing needs `repository`, `readme`, `keywords`/`categories` and a decision on the crate name.
+1. **Version and metadata.** `0.1.0` promises nothing. Vendoring as a path or git dependency avoids publishing; publishing
+   needs the `repository` field (a TODO placeholder in `Cargo.toml`) and a decision on the crate name.
 2. **Naming and types.** The API is 3 × 13 free functions with literal array sizes in signatures and no exported length
    constants; options are to export `PK_LEN`/`SK_LEN`/`SIG_LEN` per set, to add newtypes, or to keep the arrays
    (they let near-crypto pass its `Box<[u8; N]>` contents by reference).
@@ -232,7 +234,7 @@ What would need to stabilize, as options rather than recommendations:
 5. **Prepared-key types.** `VerifyingKeyNN` is `Clone` with a private field and size in the tens of KB (meant to be boxed);
    `SigningKeyNN` is deliberately not `Clone`. Whether these are public API or an implementation detail of a cache is open.
 6. **Feature semantics.** `avx2` caches a CPUID check and contains the only `unsafe`; `zeroize` changes `Drop` behavior; Cargo
-   unifies features across a dependency graph, so enabling `internals` anywhere in the graph exposes panicking internals (ISSUES E-1).
+   unifies features across a dependency graph, so enabling `internals` anywhere in the graph exposes panicking internals (E-1 in `docs/assurance.md` §7).
 7. **Behavior contracts.** Verify returns `false` for malformed hint encodings and `ctx.len() > 255` (it equals the spec's
    verdict on every input, `docs/assurance.md` §1.1); the possible non-termination of ExpandA/SampleInBall on adversarial input (probability
    negligible but not zero) is documented in `Divergence.lean`, not by a timeout. Sign can return `None`.
@@ -241,8 +243,8 @@ What would need to stabilize, as options rather than recommendations:
 ## 6. Prepared verifying-key cache: the option and its numbers
 
 `verifying_key_NN(pk)` computes Â = ExpandA(ρ), NTT(t1·2^d) and tr once; `verify_prepared_NN` returns exactly what
-`verify_NN` returns for that key (proved: `verify_prepared_NN_eq`, `docs/assurance.md` §1.4). Measured (box, nearcore-like
-profile, medians, `docs/performance-baseline.md` §7; `STATUS.md` line 216 for ML-DSA-87):
+`verify_NN` returns for that key (proved: `verify_prepared_NN_eq`, `docs/assurance.md` §1.4). Measured (nearcore-like
+profile, medians, one pinned core of a shared virtual machine; ML-DSA-87 is also in the benchmark table in `docs/assurance.md` §5):
 
 | Verify, µs | default build | `avx2` feature | `-C target-cpu=x86-64-v3` |
 |---|---|---|---|
@@ -250,9 +252,9 @@ profile, medians, `docs/performance-baseline.md` §7; `STATUS.md` line 216 for M
 | ML-DSA-65, one-shot / prepared | 139.7 / 52.6 | 111.5 / 27.7 | 101.3 / 25.0 |
 | ML-DSA-87, one-shot / prepared | 234.6 / 81.6 | 188.7 / 38.8 | 175.4 / 34.9 |
 
-(The default-build ML-DSA-87 pair is the 235 µs / 82 µs quoted in `STATUS.md`.) These are on the project's build box, not on the
-hardware behind nearcore's ≈ 80 µs aws-lc figure (§2); no aws-lc number was measured here, so nothing in this document
-says which backend is faster.
+(The default-build ML-DSA-87 pair is the 235 µs / 82 µs in `docs/assurance.md` §5.) These were measured on one machine, not on the
+hardware behind nearcore's ≈ 80 µs aws-lc figure (§2); no aws-lc timing was measured for this document, so it
+says nothing about which backend is faster.
 
 Where a cache could apply in nearcore: any place the same public key verifies many signatures. Approval verification
 runs one message over many validators' keys each block (`approval_verification.rs:33`, `:71`), but those keys are ed25519 today;
@@ -268,8 +270,8 @@ those ever become ML-DSA. The hit rate on real traffic is unmeasured.
 
 ## 7. Things to check before any decision
 
-- A differential of this crate against `aws-lc-rs` ML-DSA-65 Verify on valid, mutated and random inputs (the
-  `crosscheck/` harness already does this for three other implementations; adding a fourth is mechanical), since the
+- The differential of this crate against `aws-lc-rs` ML-DSA-65 Verify on valid, mutated and random inputs exists
+  (`tests/awslc_diff.rs`, `docs/assurance.md` §5); rerun it against whichever aws-lc-rs version a deployment pins, since the
   verdict is consensus-critical.
 - Re-measure verify time and the two gas parameters on one machine for both backends, including the worst-case signature
   shape nearcore's own benches probe (`core/crypto/benches/ml_dsa_worst_case.rs`).

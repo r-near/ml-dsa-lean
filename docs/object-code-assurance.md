@@ -1,8 +1,9 @@
-# Object-code assurance: what exists, what we have, what to do
+# Object-code assurance: what exists, what we have, and the options
 
-Research and design study, written 2026-10-30. Nothing here changes code or proofs. Every statement about another
-project cites a primary source; anything I could not confirm is marked **UNVERIFIED**. Estimates of effort are mine
-and are labeled as such.
+A study written on 2026-10-30 and revised on 2026-11-04. Nothing here changes code or proofs. Every statement about
+another project cites a primary source; anything that could not be confirmed is marked **UNVERIFIED**. Effort estimates
+are estimates. The current constant-time verdicts are in `checkct/README.md` and summarized in `docs/assurance.md`
+section 4; this document keeps the argument and the method.
 
 ## 0. Bottom line
 
@@ -17,30 +18,30 @@ and are labeled as such.
    explored every path of that compiled probe to completion and found no secret-dependent branch, memory address or
    division operand, for all secret values and all public values of the probe's inputs. That is stronger than
    "tested", and weaker than "the signing function is constant time". "Unknown" is a failure to conclude, not a near
-   miss. Proposed STATUS wording is in section 2.4.
-3. For nearcore, the property that matters most at consensus level is that Verify agrees across every node,
-   architecture and backend, and Verify handles only public data. So object-code *constant time* matters for Sign
-   (validator keys) and object-code *functional correctness* matters most for Verify. Different assurance goals
-   suggest different options for each.
-4. Recommendation (section 5): now, fix the CT wording, close the cheap BINSEC gaps (aarch64 feasibility, optimization
-   profile, whole `sign_internal`), and land a Lean lemma that connects our NTT to the HOL Light NTT formula. In the
-   performance phase, make SIMD in Rust verified through the Aeneas/Lean route (SymCrypt style) the default, and treat
-   mldsa-native assembly as an optional, clearly labeled, axiom-carrying backend. Leave rustc/LLVM, ISA lifting and
-   hardware instruction timing as stated assumptions.
+   miss. Section 3.4 gives the wording.
+3. For a consensus system, the property that matters most is that Verify agrees across every node, architecture and
+   backend, and Verify handles only public data. So object-code *constant time* matters for Sign (signing keys) and
+   object-code *functional correctness* matters most for Verify. Different assurance goals suggest different options
+   for each.
+4. Position (section 5): keep the portable Rust path as the default and the only one the unconditional theorem
+   covers. If SIMD is wanted, write it in Rust with Lean models of the intrinsics (the SymCrypt route) so the theorem
+   stays at source level; treat mldsa-native assembly as an optional, clearly labeled, axiom-carrying backend. Leave
+   rustc/LLVM, ISA lifting and hardware instruction timing as stated assumptions.
 
 ## 1. Sources and pins
 
 | Project | Pin used | Notes |
 |---|---|---|
-| mldsa-native | `fe47bf8afdb548224f32e7ef04fe580188f2d972` (main, 2026-10-30). Blob base: `https://github.com/pq-code-package/mldsa-native/blob/fe47bf8afdb548224f32e7ef04fe580188f2d972/` | Most files were read from `main` on the same day; `docs/verified-ml-dsa-landscape.md` pins the same commit. |
+| mldsa-native | `fe47bf8afdb548224f32e7ef04fe580188f2d972` (main, 2026-10-30). Blob base: `https://github.com/pq-code-package/mldsa-native/blob/fe47bf8afdb548224f32e7ef04fe580188f2d972/` | Most files were read from `main` on the same day. |
 | s2n-bignum | `9f2cd960e11892a582e7facb0c191b4a2959ea91` (main, 2026-10-27). Blob base: `https://github.com/awslabs/s2n-bignum/blob/9f2cd960e11892a582e7facb0c191b4a2959ea91/` | `SOUNDNESS.md`, `common/safety.ml`, `doc/program_equivalence.md`, `LICENSE`. |
-| BINSEC | tag `0.11.3` (the version our README pins). Master at `9749bd8aed7ee0a27959158b1e53e8789cb0e5ab` (2026-08-26). Blob base: `https://github.com/binsec/binsec/blob/0.11.3/` | I diffed `src/sse/plugin/binsec_sse_checkct.ml` and `doc/sse/relse.md` between the tag and master: identical. |
-| cargo-checkct | `85271e5ce9eab9ba895c62c8b5d4129810a635a0` (2026-10-08; this is both `main` HEAD and the rev our README pins). Blob base: `https://github.com/Ledger-Donjon/cargo-checkct/blob/85271e5ce9eab9ba895c62c8b5d4129810a635a0/` | `src/run.rs`, `template/driver.binsec`, README. |
+| BINSEC | tag `0.11.3` (the version `checkct/README.md` pins). Master at `9749bd8aed7ee0a27959158b1e53e8789cb0e5ab` (2026-08-26). Blob base: `https://github.com/binsec/binsec/blob/0.11.3/` | Diffed `src/sse/plugin/binsec_sse_checkct.ml` and `doc/sse/relse.md` between the tag and master: identical. |
+| cargo-checkct | `85271e5ce9eab9ba895c62c8b5d4129810a635a0` (2026-10-08; this is both `main` HEAD and the rev `checkct/README.md` pins). Blob base: `https://github.com/Ledger-Donjon/cargo-checkct/blob/85271e5ce9eab9ba895c62c8b5d4129810a635a0/` | `src/run.rs`, `template/driver.binsec`, README. |
 | BINSEC/Rel paper | Daniel, Bardin, Rezk, IEEE S&P 2020, https://arxiv.org/pdf/1912.08788 | Read the arXiv text: Definition 1, Theorems 1 to 4, Section VIII. |
 | SymCrypt | branch `feature/verifiedcrypto` at `c2e575ace0ea4b6b7a4184c1f19b81d1d5b2b5be` (2026-07-12); paper arXiv 2609.15648 (14 Sep 2026), https://arxiv.org/pdf/2609.15648 | `README-VERIFIEDCRYPTO.md`, `SymCRust/lean/Intrinsics/INTRINSICS.md`. |
-| libcrux | see `docs/verified-ml-dsa-landscape.md` section 3.4 (pinned there at `9d5290ec`); plus Cryspen's post and a third-party critique cited in 3.5 | |
+| libcrux | commit `9d5290ec`; plus Cryspen's post and a third-party critique cited in section 4.5 | |
 
-Our own files: `STATUS.md`, `ISSUES.md` (CT-1), `checkct/README.md`, `checkct/run.sh`, `lean/Proofs/CorrNTT.lean`.
+
+Our own files: `docs/assurance.md`, `checkct/README.md`, `checkct/run.sh`, `lean/Proofs/CorrNTT.lean`.
 
 ## 2. Part 1: what mldsa-native's HOL Light proofs establish
 
@@ -56,11 +57,11 @@ From `proofs/hol_light/README.md` ("Routines covered") and the directory listing
 
 Source: https://github.com/pq-code-package/mldsa-native/blob/fe47bf8afdb548224f32e7ef04fe580188f2d972/proofs/hol_light/README.md
 
-Not in the HOL Light set, going by the README's list (I did not search the proofs directory for others): `poly_reduce`, sampling of the challenge polynomial (SampleInBall), packing and unpacking other
+Not in the HOL Light set, going by the README's list (the proofs directory was not searched for others): `poly_reduce`, sampling of the challenge polynomial (SampleInBall), packing and unpacking other
 than `polyz_unpack`, the sponge (only the permutation is proved), rounding Power2Round, and every algorithm above the
 polynomial level (ExpandA, KeyGen, Sign, Verify). These are C, covered by CBMC for undefined-behavior freedom only
 (root README, https://github.com/pq-code-package/mldsa-native, "Formal Verification"; and
-`docs/verified-ml-dsa-landscape.md` section 3.5, which found no FIPS-level postcondition on the public entry points).
+the related-work survey in `docs/assurance.md` section 10, which found no FIPS-level theorem for the whole algorithm).
 
 ### 2.2 Shape of the functional-correctness statement
 
@@ -101,13 +102,13 @@ with `arm_mldsa_forward_ntt f k = (SUM_{j<256} f j * 1753^((2 * bitreverse8 k + 
     Montgomery with R = 2^32).
   - The inverse NTT spec is `2^24 * SUM f(bitreverse8 j) * 731434^((2j+1)k) rem q`, which `poly.h` documents as
     `NTT^{-1} o mult(2^32)`. Composed with the 2^-32 of the pointwise product, the scalings cancel (this follows from the
-    two specs; whether mldsa-native states the composition anywhere is **UNVERIFIED**, I did not search).
+    two specs; whether mldsa-native states the composition anywhere is **UNVERIFIED**, it was not searched for).
 - **Other examples.** `poly_use_hint_88`: for all `x_i < q` and `h_i <= 1`, output `i` is `mldsa_use_hint_88 (h i) (x i)`
   (a HOL transcription of FIPS 204 UseHint, with a lemma tying it to the code-shaped version) and output `< 44`.
   `poly_chknorm`: `X0 = bitval(exists i. abs(x i) >= bound)` for public `0 <= bound < 2^31`.
   `rej_uniform`: output list is the first 256 elements of `REJ_SAMPLE inlist`, where each 24-bit word is masked to 23 bits
   and kept iff `< q`; the return value is the count. `rej_uniform_eta2/4`: nibble filter (`< 15`, resp. `< 9`) then map
-  to `2 - n mod 5`, resp. `4 - n`. I did not read the `decompose`, `polyz_unpack`, Keccak or RV32 statements.
+  to `2 - n mod 5`, resp. `4 - n`. The `decompose`, `polyz_unpack`, Keccak and RV32 statements were not read.
 
 ### 2.3 The constant-time statement
 
@@ -158,7 +159,7 @@ spec and constant differences:
   `proofs/hol_light/<arch>/mldsa/*.S` with a pinned nix toolchain (`proofs/hol_light/aarch64/Makefile`: `as -march=armv8.4-a+sha3`,
   `strip`; checks that x18 is unused, which matters on Apple platforms). `scripts/autogen` generates those files and the
   shipped `mldsa/src/native/*/src/*.S` from the same `dev/` sources (`gen_hol_light_asm_file`, `update_via_simpasm`), with
-  different flags and namespace. I did not find a check that a *consumer's* assembled bytes equal the proved bytes;
+  different flags and namespace. No check was found that a *consumer's* assembled bytes equal the proved bytes;
   that check would have to be ours (section 4.1).
 - **Preconditions at call sites (D3).** The caller must satisfy bounds, alignment, non-aliasing and table identity.
 
@@ -172,18 +173,18 @@ No. Three separate facts:
    applies unchanged (https://github.com/pq-code-package/mldsa-native/blob/fe47bf8afdb548224f32e7ef04fe580188f2d972/SOUNDNESS.md).
 2. The bridge is a comment: each asm prototype in `arith_native_aarch64.h` carries "This must be kept in sync with the
    HOL-Light specification in proofs/hol_light/aarch64/proofs/mldsa_ntt_aarch64_asm.ml", and the HOL file says the
-   reverse ("This must be kept in sync with the CBMC specification"). I found no script that compares them
+   reverse ("This must be kept in sync with the CBMC specification"). No script that compares them was found
    (`scripts/check-contracts` checks that contracts have CBMC proofs; `scripts/check-hol-light-imports` lints imports).
-   Not exhaustive: I did not read every script.
+   Not exhaustive: not every script was read.
 3. The CBMC harness for the native wrapper replaces the assembly by its contract
    (`proofs/cbmc/ntt_native_aarch64/Makefile`: `CHECK_FUNCTION_CONTRACTS=mld_ntt_native`, `USE_FUNCTION_CONTRACTS=mld_ntt_aarch64_asm`),
    and that contract is bounds only: `requires array_abs_bound(r, 0, N, 8380417)`, `ensures array_abs_bound(r, 0, N, 75423753)`.
    `mld_poly_ntt` in `poly.h` likewise ensures only `array_abs_bound(..., MLD_NTT_BOUND)`; "Implements FIPS 204 Algorithm 41" is a
    doc comment (`@spec`). So the functional claim "this is the NTT" never reaches the C layer, even informally in a
    machine-readable form. The same holds up the stack: no theorem relates ExpandA, KeyGen, Sign or Verify to FIPS 204
-   (`docs/verified-ml-dsa-landscape.md` 3.5).
+   (`docs/assurance.md` section 10).
 
-AWS-LC's ML-DSA imports only the C-only variant of mldsa-native (landscape doc 3.5), so it inherits the CBMC proofs but not
+AWS-LC's ML-DSA imports only the C-only variant of mldsa-native (`docs/assurance.md` section 10), so it inherits the CBMC proofs but not
 the assembly proofs.
 
 ## 3. Part 2: what our BINSEC checks establish
@@ -227,7 +228,7 @@ timeout is BINSEC's default of 5 s per query (cargo-checkct does not override it
   runs a cascade of taint analysis, chosen-value sampling and RelSE (options `Taint`, `ChosenValues`, `Relse` in the CLI source).
   By construction the first two answer only when trivially right (`taint_analysis` returns Secure only for an untainted
   expression; `cv_analysis` returns Insecure only with a concrete witness pair) and RelSE decides the rest, so the cascade should
-  preserve the soundness argument, but I did not audit that. The OCaml plugin, the lifter and the SMT solver are not verified.
+  preserve the soundness argument, but that was not audited. The OCaml plugin, the lifter and the SMT solver are not verified.
 - **When it says "secure".** BINSEC's own table (`doc/sse/relse.md`, "Threat to completeness"): `secure` iff no leak was
   found *and* exploration was complete; `unknown` if no leak was found but exploration was cut off; `insecure` if any leak
   was found. In code, an unknown report results from any of: pending paths (timeout), unknown check statuses, non-executable
@@ -239,7 +240,7 @@ timeout is BINSEC's default of 5 s per query (cargo-checkct does not override it
 - **So:** a "secure" verdict is a result over all secret values and all public values of the probe's inputs, for that exact
   compiled binary, covering the whole function (every path from entry to return), not a sampled or depth-truncated
   analysis. This is the strongest reading, and it holds only if the exploration was complete.
-- **Trusted.** (i) The instruction lifting (BINSEC DBA lifter; unisim_archisec for non-x86 targets); I found no
+- **Trusted.** (i) The instruction lifting (BINSEC DBA lifter; unisim_archisec for non-x86 targets); No
   co-simulation or fidelity argument comparable to s2n-bignum's, **UNVERIFIED** either way. (ii) The SMT solver and the
   plugin. (iii) The leakage model: control flow and addresses only. Not modeled: operand-dependent instruction latency
   (cargo-checkct README: "the analysis is predicated on the fact that all instructions have data-independent timing";
@@ -252,63 +253,36 @@ timeout is BINSEC's default of 5 s per query (cargo-checkct does not override it
 
 ### 3.3 What our runs cover and do not
 
-> A later sweep at 15b4ce2 (2026-11-04) supersedes the counts and the `sk_is_well_formed` and `nearcore-exact` statements of §3.3 to §3.5 (including the 87-probe results and the proposed STATUS wording of §3.4);
-> see `checkct/README.md` "Full sweep at 15b4ce2" and `docs/assurance.md` §4. The text below is the e9a1c74 state.
+`checkct/` probes every function that touches secret data in KeyGen and Sign (field and mask primitives, rounding, the NTT
+and pointwise product, Keccak-f and the SHAKE paths with secret input, ExpandS, ExpandMask, bit packing, skEncode/skDecode,
+`sk_is_well_formed`, the KeyGen steps, the Sign steps, `prepare_sk` and `signing_key`), two whole-Sign censuses and positive
+controls, on x86_64-unknown-linux-gnu (several profiles), thumbv7em-none-eabihf, riscv32imac-unknown-none-elf and AArch64 built
+without NEON. The counts per target and profile, the unknowns and the out-of-memory ledger are in `checkct/README.md` and
+`docs/assurance.md` section 4; they change when the code or the tools change, so they are not repeated here.
 
-**Current coverage (full sweep at e9a1c74, 2026-10-31/11-01; `checkct/README.md` "Full sweep at e9a1c74").** 87 probe
-entrypoints per target. They cover the field and mask primitives, rounding, the NTT and pointwise product, Keccak-f and
-the SHAKE paths with secret input (keygen seed hash, ρ″ hash, ExpandMask), ExpandS, bit packing, skEncode/skDecode,
-`sk_is_well_formed`, the KeyGen steps, the Sign steps (`response`, `hint_step`), `prepare_sk` and `signing_key`, two
-whole-signing censuses and the positive controls. Targets and profiles: x86_64-unknown-linux-gnu (default, nearcore,
-dispatch, nearcore-dispatch), thumbv7em-none-eabihf, riscv32imac-unknown-none-elf, and AArch64 built with NEON off
-(`checkct/aarch64.sh`, BINSEC called directly). No probe is unexpectedly insecure on any target or profile.
+What the runs cannot cover:
 
-Not covered:
-- **whole Sign:** the censuses either report only the public `sample_in_ball` accept branch or have no verdict. On
-  thumbv7em and riscv32imac they need more than 120 GB and were killed at the cap. Sign is covered by its secret
-  halves (`response_*`, `hint_step_*`) plus the hash and ExpandMask probes.
-- **unknowns** (BINSEC did not finish, no leak found):
-  - x86_64 nearcore profiles: 6 (`sk_is_well_formed_*`, `encode_sk_is_well_formed_*`). BINSEC can't lift SSE2
-    `movmskpd`.
-  - riscv32imac: 2 (`vec_power2round_87`, one census).
-  - AArch64: 11. `compute_t_44`, `prepare_sk_*`, `signing_key_*` and the censuses each have one pending path stuck in a
-    solver query.
-- **the AVX2 copy** of the dispatched NTT: BINSEC can't lift VEX instructions, so it is covered by the static scan
-  only (§3.5).
-- **AArch64 with NEON** (the default AArch64 build): BINSEC can't lift `umax`/`umin` (`docs/upstream-issues.md`
-  U-40). macOS is not covered at all.
-- **other builds:** other rustc versions, flags and inlining contexts. Verdicts depend on code shape (ISSUES CT-1,
-  CT-2), so they hold for the builds measured.
+- **Whole Sign:** the censuses either report only the public `sample_in_ball` accept branch or have no verdict (out of memory).
+  Sign is covered by its secret-touching pieces (`response_*`, `hint_step_*`, the hash and ExpandMask probes, `prepare_sk`).
+- **Unknowns:** probes where BINSEC did not finish or cannot lift an instruction (VEX forms under `+fma`, some AArch64 solver
+  queries, some riscv32imac pieces). No leak was found in them and no conclusion is drawn.
+- **The AVX2 copy** of the dispatched NTT: BINSEC cannot lift VEX instructions, so it is covered by the static scan only (3.5).
+- **AArch64 with NEON** (the default AArch64 build): BINSEC cannot lift `umax`/`umin` (`docs/upstream-issues.md` U-40). macOS is
+  not covered at all.
+- **Other builds:** other rustc versions, flags and inlining contexts. Verdicts depend on code shape (CT-1 and CT-2 in
+  `docs/assurance.md` section 6), so they hold for the builds measured.
 - **zeroize builds:** not probed (the wipes run after the outputs are written).
 
-### 3.4 Proposed wording for the STATUS.md constant-time row
+### 3.4 How to state the result
 
-The `STATUS.md` row (line 172) reports counts only ("39 probes x 3 targets ... 6 unknown ... 1 probe artifact") and never
-states what a "secure" verdict means; `docs/verified-ml-dsa-landscape.md` summarizes it as "tested, not proved", and the task
-brief says the same. That undersells it. I suggest replacing the row's text with the following and keeping the evidence
-column as is. The row should say *verified by BINSEC*, not "proved": the
-verdict comes from a tool whose implementation, lifter and solver are trusted, unlike a Lean or HOL Light theorem.
-
-> **Constant time (binary level, BINSEC).** For 39 probe functions (field and mask primitives, rounding, NTT, Keccak-f1600,
-> bit packing, secret-key encode and decode, and the production `sign::response` and `sign::hint_step`), compiled in release mode,
-> BINSEC checkct 0.11.3 explored every execution path to completion and found no secret-dependent branch, memory address or
-> division operand, for all secret values and all public values of the probe's inputs, under the probe harness's input shapes
-> (a bounded-verification result in the BINSEC/Rel sense, by relational symbolic execution). Results:
-> x86_64-unknown-linux-gnu 39/39 and thumbv7em-none-eabihf 39/39 secure; riscv32imac-unknown-none-elf 32 secure, 6 unknown
-> (timeouts: no leak found, no conclusion), 1 insecure probe artifact (the standalone `ct_lt_mask`, whose inputs the probe
-> restricts; every in-crate caller is secure). **Not claimed:** constant time of the whole `sign_internal` as linked into an
-> application, of other compiler versions or flags, of aarch64 or macOS builds, or of hardware (variable-latency instructions,
-> speculation, power). Trusted: BINSEC's instruction lifting, solver and plugin; "all instructions take operand-independent time".
-
-Short form for prose: "Constant time: verified at the binary level for 39 compiled probe functions by relational symbolic
-execution under BINSEC's control-flow-and-address model on x86_64 and two embedded targets; not verified for the whole signing
-function, aarch64, or hardware timing."
-
-Housekeeping found while reading, two separate items. (1) `checkct/README.md`'s "Results" section shows only the *pre-barrier*
-baseline (riscv32imac: 22 secure, 12 insecure, 6 unknown), while `ISSUES.md` CT-1 and `STATUS.md` give the post-fix numbers
-(32 secure, 6 unknown, 1 probe artifact). The README should carry both tables labeled "before" and "after", or cite the post-fix
-run. (2) The 40-versus-39 count is not a discrepancy: the README's own note says LLVM merges `field_add` and `field_small_reduce`
-into one symbol that cargo-checkct lists twice. I did not edit the README.
+The result is *verified by BINSEC*, not "proved": the verdict comes from a tool whose implementation, lifter and solver are
+trusted, unlike a Lean or HOL Light theorem. A sentence that stays inside the evidence: "For the compiled probe functions
+listed in `checkct/README.md`, BINSEC checkct 0.11.3 explored every execution path to completion and found no secret-dependent
+branch, memory address or division operand, for all secret values and all public values of the probe's inputs, under the
+probe harness's input shapes (a bounded-verification result in the BINSEC/Rel sense), on the targets and profiles listed
+there." Not claimed: constant time of the whole `sign_internal` as linked into an application, of other compiler versions or
+flags, of macOS or AArch64-with-NEON builds, or of hardware (variable-latency instructions, speculation, power). Trusted:
+BINSEC's instruction lifting, solver and plugin; "all instructions take operand-independent time".
 
 ### 3.5 AVX2 dispatch of the NTT bodies
 
@@ -316,25 +290,17 @@ into one symbol that cargo-checkct lists twice. I did not edit the README.
 time, **only with the opt-in `avx2` cargo feature**. The default build has a single portable compilation, no `unsafe`
 (`forbid(unsafe_code)`). This section records what the feature does to the claims above.
 
-**Status (2026-11-01): re-measured on the merged tree.** A full sweep of every `checkct/driver` probe (87 per target) at
-e9a1c74 covers the default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit) and, on x86_64, the
-`dispatch` and `nearcore-dispatch` builds (crate feature `avx2`, dispatch cache pre-set to "no AVX2" in every script; the
+**Measured.** The sweep covers the default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit) and, on x86_64,
+the `dispatch` and `nearcore-dispatch` builds (crate feature `avx2`, dispatch cache pre-set to "no AVX2" in every script; the
 run prints the address of the cache static and checks it per probe, and `PRESET FAILED` stops it if the symbol or the script
 anchor is missing). In both dispatch builds every NTT-reaching probe (`ntt`, `ntt_inverse`, `multiply_ntt`, `ntt_vec_44`,
 `matrix_vector_ntt_*`, `scalar_vector_ntt_inverse_1`, `compute_t_*`, `prepare_sk_*`, `signing_key_*`), every field probe
 (including `field_mul_shoup`, `field_mul_mont`) and every signing-step probe (`response_*`, `hint_step_*`, including the
-one-polynomial splits) is `secure` with 0 pending paths, the same verdict as in the build without dispatch; forced
-inlining (`cfg_attr(inline(always))` in `src/field.rs`) did not change a verdict. The non-secure probes are the expected
-ones (the sampler `rej_bounded_poly_*`, the whole-function censuses, the positive controls; the only leak the censuses
-report is the public `sample_in_ball` accept test, `sampling.rs:35`) and, under `nearcore-dispatch` and `nearcore`,
-the six `sk_is_well_formed` / `encode_sk_is_well_formed` probes, which BINSEC cannot finish because it cannot lift the
-SSE2 `movmskpd` of the vectorized range-check loop (`unknown` within a second, also at 7200 s; not NTT-related). The
-positive controls are `insecure` in all four x86_64 builds. `nearcore-dispatch`'s `census_sign_prepared_44` was killed
-at the 120 GB container cap (no verdict). Without the cache pre-set, `ntt`, `ntt_inverse` and `multiply_ntt` under
-`dispatch` are `unknown` ("uninterpreted KO", the AVX2 arm), which shows the pre-set is what makes the verdicts above
-reachable (measured at the merge of the opt-in dispatch, 6e25e52). `scan-avx2.sh` on both dispatch drivers finds four
-functions: `ntt_avx2`, `ntt_inverse_avx2`, `ntt_in_place_avx2` and `multiply_ntt_avx2`. The runs are at
-`checkct/README.md` "Full sweep at e9a1c74".
+one-polynomial splits) has the same verdict as in the build without dispatch (`checkct/README.md`); forced inlining
+(`cfg_attr(inline(always))` in `src/field.rs`) did not change a verdict. Without the cache pre-set, `ntt`, `ntt_inverse` and
+`multiply_ntt` under `dispatch` are `unknown` ("uninterpreted KO", the AVX2 arm), which shows the pre-set is what makes the
+verdicts reachable (measured at the merge of the opt-in dispatch, 6e25e52). `scan-avx2.sh` on a dispatch driver finds four
+functions: `ntt_avx2`, `ntt_inverse_avx2`, `ntt_in_place_avx2` and `multiply_ntt_avx2`.
 
 **Trust argument.** The Lean proofs (`Proofs/NTT.lean`, `NTTInverse.lean`, `NTTOps.lean`) are about the source of the shared
 bodies `ntt_body`, `ntt_inverse_body` and `multiply_ntt_body`. Extraction runs with `--cfg miri`, where the
@@ -358,44 +324,21 @@ no BINSEC verdict, and functional evidence from `tests/dispatch.rs` and the KAT 
   stay `secure` there. No claim is made about BINSEC verdicts for the AVX2 copy.
 - Substitute for the AVX2 copy: a static scan of the disassembly (`checkct/scan-avx2.sh`, `checkct/scan-avx2.py`). For
   `ntt_avx2`, `ntt_inverse_avx2`, `ntt_in_place_avx2` and `multiply_ntt_avx2` it reports no `div`/`idiv`, no gather or
-  scatter, only conditional jumps that are loop back-edges on a counter compared with an immediate (5, 6, 5 and 1 of
-  them; re-run on both dispatch drivers at e9a1c74), and index registers that are only those loop counters. The only
+  scatter, only conditional jumps that are loop back-edges on a counter compared with an immediate, and index registers that
+  are only those loop counters. The only
   indirect calls are calls through two `.got` slots (the `memcpy` calls of the by-value `[u32; 256]` arrays). This is a review aid, not a proof: it does not show that the vector instructions are data-independent in time
   (VPMULUDQ and the other instructions used are fixed-latency on current Intel and AMD cores, which is an assumption about
   hardware, as in section 2.3).
 
-**Results of the full sweep at e9a1c74** (`checkct/run-select.sh` with `ONLY=.`, 87 probes per target, nightly-2026-10-06,
-1 hour per probe, `unknown` rows rerun at 2 hours; details, probe lists and the out-of-memory ledger in `checkct/README.md`,
-"Full sweep at e9a1c74"):
 
-| target / profile | secure | expected insecure | unexpected insecure | unknown | oom (no verdict) |
-|---|---|---|---|---|---|
-| x86_64, default | 80 | 7 | 0 | 0 | 0 |
-| x86_64, `nearcore` | 74 | 7 | 0 | 6 | 0 |
-| x86_64, `dispatch` | 80 | 7 | 0 | 0 | 0 |
-| x86_64, `nearcore-dispatch` | 74 | 6 | 0 | 6 | 1 |
-| thumbv7em-none-eabihf, default | 81 | 4 | 0 | 0 | 2 |
-| riscv32imac-unknown-none-elf, default | 78 | 6 | 0 | 2 | 1 |
-| AArch64 `NONEON=1` | 73 | 3 | 0 | 11 | 0 |
-
-"Expected insecure" is `rej_bounded_poly_eta2/4`, the censuses, the positive controls and, on riscv32imac, the standalone
-`ct_lt_mask` probe. The `unknown` rows are the six `sk_is_well_formed` probes (unliftable SSE2 instruction) in the two
-nearcore builds; on riscv32imac `vec_power2round_87` and `census_sign_internal_44` (one or more pending paths, no leak found);
-on AArch64 `compute_t_44`, `census_sign_internal_44`, `prepare_sk_*`, `signing_key_*`, `census_sign_prepared_44` and the two
-prepared controls (one pending path each, no leak found). The `oom` rows are censuses that needed more than 120 GB. There is
-no unexpected insecure result: the sweep found no new constant-time leak. The `ntt`, `ntt_inverse` and `multiply_ntt` probes
-are secure on all three default targets and in all four x86_64 builds. A first version of the dispatch marked the field
-functions `#[inline(always)]` on every target. That made the riscv32imac `response_*` and `hint_step_*` probes `unknown` (1 hour,
-one pending path) where the Shoup/Montgomery tree without dispatch finishes them `secure` in about ten minutes. The attribute is
-now gated by `cfg_attr` on x86_64 builds that have the dispatch; in this sweep those riscv32imac probes are all `secure`. This is a
-reminder that BINSEC completion depends on code shape, not only on the source.
-
-Section 3.3's "not covered" list gains one entry: the vectorized AVX2 copies are checked only by the static scan above (the
-indirect calls it lists are `memcpy` of 1024 bytes through the GOT, confirmed in the disassembly).
+A reminder from the first version of the dispatch: it marked the field functions `#[inline(always)]` on every target, which made
+the riscv32imac `response_*` and `hint_step_*` probes `unknown` (one pending path after an hour) where the Shoup/Montgomery tree
+without dispatch finishes them in about ten minutes. The attribute is now gated by `cfg_attr` on x86_64 builds that have the
+dispatch. BINSEC completion depends on code shape, not only on the source.
 
 ## 4. Part 3: options for object-code functional correctness of our crate
 
-Framing. Our theorem is about the Rust source; rustc/LLVM output is trusted (`STATUS.md` "Trusted base"). An object-code
+Framing. Our theorem is about the Rust source; rustc/LLVM output is trusted (`docs/assurance.md` section 2). An object-code
 functional-correctness claim needs, for each hot function, a machine-checked or tool-checked link between the *bytes that
 run* and a spec that is (or is connected to) our Lean spec. For nearcore, "the bytes that run" is what rustc emits when
 nearcore builds the crate from source, with nearcore's toolchain and flags, unless we ship precompiled objects. That fact
@@ -410,9 +353,9 @@ timing under s2n-bignum's TCB (section 2.4), with the Rust or Lean side stating 
 
 1. *Transcribe each HOL postcondition into a Lean statement.* The mathematical content is small. For the NTT, our
    `CorrNTT.lean` already proves `NTT_eval : (NTT w)[k] = SUM_i w[i] * rt 8 k ^ i`; the HOL formula is
-   `SUM_j f j * 1753^((2 * bitreverse8 k + 1) * j)`. What remains is `rt 8 k = zeta ^ (2 * BitRev8 k + 1)`; I checked this
-   numerically for all 256 k with the Lean definitions of `rt` and `zeta` transcribed to Python (true), and expect a
-   `decide +kernel` proof like the existing `zeta_sq`; I have not run it in Lean. The real work is the *representation*
+   `SUM_j f j * 1753^((2 * bitreverse8 k + 1) * j)`. What remains is `rt 8 k = zeta ^ (2 * BitRev8 k + 1)`; This was checked
+   numerically for all 256 k with the Lean definitions of `rt` and `zeta` transcribed to Python (true); a
+   `decide +kernel` proof like the existing `zeta_sq` is expected but was not run in Lean. The real work is the *representation*
    lemma: signed lazily reduced int32 with bounds on one side, canonical `u32` in `[0, q)` on ours, Montgomery factors
    (pointwise: 2^-32; inverse NTT: 2^32), and on x86_64 the custom order. Each transcription is one more trusted statement
    (below).
@@ -426,12 +369,12 @@ timing under s2n-bignum's TCB (section 2.4), with the Rust or Lean side stating 
 3. *Runtime feature dispatch.* mldsa-native guards each call with `mld_sys_check_capability` and falls back to C. Ours must
    fall back to the portable, fully proved Rust, and the dispatch itself is outside every proof.
 4. *Extraction.* An FFI function is external to Aeneas, which emits an opaque declaration. That breaks our extraction gate
-   ("no referenced external axiom", `STATUS.md` Decisions). The honest design is the SymCrypt pattern: a `cfg`-gated backend,
+   ("no referenced external axiom", `docs/assurance.md` section 0). The honest design is the SymCrypt pattern: a `cfg`-gated backend,
    with the kernel represented in Lean by an axiom that states the transcribed postcondition (SymCrypt's `#[verify::opaque]`
    shims paired with Lean `[step]` axioms; `INTRINSICS.md` P3/P4). The headline theorem for that build becomes *conditional on
    N named axioms*; the portable build's theorem stays unconditional. A Verify-focused kernel set is roughly NTT, inverse NTT,
    pointwise, pointwise-accumulate (three sizes), use_hint (two), chknorm, caddq: on the order of 10 axioms per architecture
-   (my count, not a measurement), plus the layout adapter on x86_64.
+   (an estimate, not a measurement), plus the layout adapter on x86_64.
 
 **Trust list for this option** (everything not kernel-checked in our repo):
 the transcription of each HOL statement into Lean (reviewable, small, but not machine linked: it is the same "manual bridge"
@@ -445,11 +388,10 @@ not break their own use, ours inherits it.
 reference code, and "Every file states its own SPDX-License-Identifier" (test and benchmark helpers differ) (https://github.com/pq-code-package/mldsa-native/blob/fe47bf8afdb548224f32e7ef04fe580188f2d972/LICENSE).
 s2n-bignum: `Apache-2.0 OR ISC or MIT-0` (https://github.com/awslabs/s2n-bignum/blob/9f2cd960e11892a582e7facb0c191b4a2959ea91/LICENSE;
 the HOL Light proof files in mldsa-native carry `Apache-2.0 OR ISC OR MIT-0` or `... OR MIT`). nearcore is `MIT OR Apache-2.0`
-(workspace `Cargo.toml`, `licenses/LICENSE-MIT` and `LICENSE-APACHE`). Vendoring either under MIT or Apache-2.0 is compatible with
-a `MIT OR Apache-2.0` crate; keep SPDX headers and notices. Note: this crate has `LICENSE-APACHE` and `LICENSE-MIT` files but no
-`license` field in `Cargo.toml` (it is `publish = false` today); add one before anything is vendored into nearcore.
+(workspace `Cargo.toml`, `licenses/LICENSE-MIT` and `LICENSE-APACHE`; read at cd5a94457). Vendoring either under MIT or Apache-2.0 is compatible with
+a `MIT OR Apache-2.0` crate; keep SPDX headers and notices.
 
-**Effort and maintenance (my estimates, wide error bars).** First backend (AArch64 or x86_64, about 10 kernels, Lean statements,
+**Effort and maintenance (estimates, wide error bars).** First backend (AArch64 or x86_64, about 10 kernels, Lean statements,
 representation lemmas, glue, byte check, differential tests against the portable path): a few person-weeks. Second
 architecture: roughly the same again, mostly the x86_64 order adapter. Every mldsa-native or s2n-bignum bump means re-running
 the byte check and diffing the HOL statements, because the asm is regenerated from `dev/` by `autogen` and proofs are
@@ -475,8 +417,8 @@ branches", `checkct/README.md`); it is not a property of the Lean spec, and `Rej
 **Feasibility.** s2n-bignum is built for hand-written and SLOTHY-scheduled assembly: its README states "All routines are
 written in pure machine code". The infrastructure symbolically simulates instruction sequences and proves loops with
 invariants, and it has a relational logic (`doc/program_equivalence.md`, citing Mazzucato et al., CAV 2025, arXiv 2505.14348)
-that was used to prove NEON-vectorized and SLOTHY-reordered variants equivalent to scalar reference code. I did not find an
-instance of compiler-emitted code in the s2n-bignum tree; that is a negative result from a directory listing, **UNVERIFIED**.
+that was used to prove NEON-vectorized and SLOTHY-reordered variants equivalent to scalar reference code. No
+instance of compiler-emitted code was found in the s2n-bignum tree; that is a negative result from a directory listing, **UNVERIFIED**.
 Rust-emitted code would add spills and stack traffic, calls to `memcpy`/`memset`, panic branches for each bounds check we
 have not eliminated, loop unrolling and vectorization chosen by LLVM, and symbol and ABI details that vary.
 
@@ -499,10 +441,10 @@ specification language:
 |---|---|---|
 | Alive2 | refinement between LLVM IR before and after optimization passes; loops unrolled once; experimental AArch64 extension "arm-tv" for the backend ([Regehr, Alive2 part 1](https://blog.regehr.org/archives/1722); [talk on arm-tv](https://talks.cam.ac.uk/talk/index/231601/)) | IR-level only; we would still need IR to Lean; does not see rustc's MIR-to-IR step |
 | SAW with Macaw | x86_64 machine code (experimental) against Cryptol specs; used for AWS-LC proofs ([SAW manual](https://galoisinc.github.io/saw-script/master/saw-user-manual/verifying-code.html), [Macaw paper](https://arxiv.org/pdf/2407.06375)) | x86_64 only; spec in Cryptol, i.e. a second spec to keep faithful to FIPS 204 and to our Lean spec |
-| seL4-style translation validation | decompile a gcc binary and prove refinement to the C semantics ([Sewell, Myreen, Klein, PLDI 2013](https://www.cl.cam.ac.uk/~mom22/pldi13.pdf)) | built around C and one compiler version; no Rust analogue that I know of |
+| seL4-style translation validation | decompile a gcc binary and prove refinement to the C semantics ([Sewell, Myreen, Klein, PLDI 2013](https://www.cl.cam.ac.uk/~mom22/pldi13.pdf)) | built around C and one compiler version; no Rust analogue known |
 | s2n-bignum `equiv.ml` / relational Hoare logic | binary versus binary equivalence (e.g. optimized versus reference assembly) | would prove two *binaries* equal; the reference binary still needs a functional proof |
 
-Our own `impl-eval` differential (`STATUS.md`: 345,360 cases, 100% agreement, 4 injected bugs detected) checks that the extracted
+Our own `impl-eval` differential (`docs/assurance.md` section 2: 345,360 cases, 100% agreement, 4 injected bugs detected) checks that the extracted
 model and the native build agree on sampled inputs. It is testing, but it is the realistic form of (c) today: it exercises
 rustc's actual output and the Lean model together, and it can be rerun against nearcore's exact toolchain and flags. A cheap
 strengthening is to run the same corpus (plus ACVP and Wycheproof, already in `tests/`) through every backend and optimization
@@ -527,15 +469,15 @@ Primary sources: arXiv 2609.15648 and `README-VERIFIEDCRYPTO.md` / `INTRINSICS.m
   on compiled binaries", i.e. the same class of evidence as our BINSEC probes, and informal.
 - **ML-DSA status.** The paper's Figure 4 lists ML-DSA as "experimental", meaning "the Rust source is not distributed as part
   of SymCrypt"; the branch README lists only SHA-3 and ML-KEM as verified primitives. So there is no inspectable ML-DSA
-  proof there (consistent with `docs/verified-ml-dsa-landscape.md` 3.2). The paper reports ML-DSA Rust matching SymCrypt C for
+  proof there . The paper reports ML-DSA Rust matching SymCrypt C for
   signing and 2.3 to 2.5x faster for verification "owing to vectorization and the more optimized Keccak", with the Formosa
   AVX2 implementation 4 to 5x ahead for signing and about 3x for verification (section 8.3). That is the performance ceiling
   to expect from intrinsics-in-Rust versus hand-tuned assembly.
 - **What it gives us for the perf phase.** It is the same toolchain we use, so a SIMD kernel written in Rust with `core::arch`
   intrinsics keeps the end-to-end theorem at source level with no FFI, no axiom per kernel, no layout adapter at the ABI, and
   a feature-detection precondition that is modeled (`featurePresent` as an opaque Boolean). Costs: a Lean model of each
-  intrinsic we use (their AVX2 and NEON models are available in the branch, MIT licensed, though I did not check how
-  reusable they are outside their tree: **UNVERIFIED**), lane-level proofs for each vector kernel, and the intrinsic models
+  intrinsic we use (their AVX2 and NEON models are available in the branch, MIT licensed, though how
+  reusable they are outside their tree was not checked: **UNVERIFIED**), lane-level proofs for each vector kernel, and the intrinsic models
   join the trusted base (reviewed and differentially tested rather than machine-linked to hardware).
 - **A cautionary example for axiomatized intrinsics:** see 4.5, where a wrong intrinsic specification sat unnoticed in a
   "verified" libcrux proof set. SymCrypt's Rust-shim-first policy is the mitigation: a shim is executable, so it can be
@@ -550,13 +492,13 @@ Primary sources: arXiv 2609.15648 and `README-VERIFIEDCRYPTO.md` / `INTRINSICS.m
 Rust source is extracted by hax to F*; the maintainers say Rust is "directly verified for runtime safety and functional
 correctness using the hax toolchain" for verified modules, that "the verification guarantees for libcrux code only extends to
 the verified modules", and that executables "are not verified to be side-channel resistant" (libcrux README;
-https://cryspen.com/post/strengths-and-limitations/). The ML-DSA proof set (per `docs/verified-ml-dsa-landscape.md` 3.4) is
+https://cryspen.com/post/strengths-and-limitations/). The ML-DSA proof set (per the survey behind `docs/assurance.md` section 10) is
 leaf modules of the portable and AVX2 SIMD layers; the top-level Sign, Verify and KeyGen modules are admitted. AVX2 intrinsics
 are specified by F* `val` lemmas in `Spec.Intrinsics.fsti`, i.e. axioms. A third-party report (Symbolic Software, 17 Feb
 2026, https://symbolic.software/blog/2026-02-17-cryspen-mldsa/) says one of those specs (`i16_mul_32extended`) computed
 x * x instead of x * y, making the axioms logically false, and that a dead verifier norm check and a hint decoding bound
-bug existed; the report records fixes for the latter two (PRs merged 2026-03-04) and no fix for the specification error. I
-have not re-verified those claims against the code and treat them as third-party. Comparison: hax/F* gives the same
+bug existed; the report records fixes for the latter two (PRs merged 2026-03-04) and no fix for the specification error. Those claims were not
+re-verified against the code and are treated as third-party. Comparison: hax/F* gives the same
 source-level, compiler-trusting guarantee as ours, with SMT instead of a small kernel, no end-to-end ML-DSA theorem, and
 axiomatized intrinsics; the lesson is the one from 4.4, that an unchecked intrinsic axiom is where an otherwise formal
 argument quietly stops being one.
@@ -571,26 +513,20 @@ argument quietly stops being one.
 | (d) SymCrypt route | no (compiler trusted) | direct, same toolchain, no FFI | intrinsic models | proportional to kernels written | best for keeping the theorem unconditional |
 | (e) hax/F* | no | no top-level theorem | F* axioms, SMT | n/a | comparison only |
 
-## 5. Part 4: recommendation
+## 5. Part 4: position
 
-### 5.1 Do now (cheap, high value)
+### 5.1 Open items
 
-1. **Fix the CT wording** (section 3.4) in `STATUS.md`, and reconcile `checkct/README.md` with `ISSUES.md` CT-1 (before and
-   after tables, 39 versus 40 probes).
-2. **Close the BINSEC gaps that matter for nearcore:**
-   - a spike to see whether BINSEC can analyze aarch64 binaries for these probes (cargo-checkct does not target them today);
-   - run the probes under nearcore's actual release profile (`opt-level`, LTO, `codegen-units`, `target-cpu`) on x86_64;
-   - probe `expand_mask`, a SHAKE absorb and squeeze with a secret input, and the full `sign_internal` (the 900 s riscv
-     timeouts suggest raising the timeout or splitting, not weakening the claim).
-3. **Land the NTT bridge lemma in Lean:** `rt 8 k = zeta ^ (2 * BitRev8 k + 1)` and the corollary
-   `(NTT w)[k] = SUM_j w[j] * zeta ^ ((2 * BitRev8 k + 1) * j)`. It is small, has standalone documentation value (it states our NTT in
-   the same closed form as every external NTT spec), and is the first prerequisite for any future import of an external kernel.
-4. **Add the `license` field** to `Cargo.toml` (see 4.1).
-5. **Keep the consensus view explicit.** For nearcore, differential agreement of Verify across architectures and
-   backends is the safety property. Extend the existing differential and fuzz harnesses so that, when a second backend exists,
-   every test and fuzz target runs both and compares bytes.
+1. **Land the NTT bridge lemma in Lean:** `rt 8 k = zeta ^ (2 * BitRev8 k + 1)` and the corollary
+   `(NTT w)[k] = SUM_j w[j] * zeta ^ ((2 * BitRev8 k + 1) * j)`. It is small, has standalone documentation value (it states our
+   NTT in the same closed form as every external NTT spec), and is the first prerequisite for any future import of an external
+   kernel.
+2. **Keep the consensus view explicit.** For a consensus system, differential agreement of Verify across architectures and
+   backends is the safety property. When a second backend exists, every test and fuzz target should run both and compare bytes.
+3. **Open constant-time gaps:** the vectorized x86_64 NTT under `+fma`, AArch64 with NEON and the whole-Sign censuses (see
+   section 3.3 and `docs/assurance.md` section 7).
 
-### 5.2 Do in the performance phase
+### 5.2 If performance work continues
 
 1. Write SIMD as Rust intrinsics with Lean shims in the SymCrypt style (section 4.4), starting with the kernels that
    dominate Verify (NTT, pointwise multiply and accumulate, ExpandA via 4-way Keccak), so the end-to-end theorem stays
@@ -602,6 +538,7 @@ argument quietly stops being one.
    probes as a CI gate with a pinned toolchain.
 4. Do not pursue (b) or (c) as standing programs.
 
+
 ### 5.3 Leave as stated assumptions
 
 rustc/LLVM correctness for functional properties; BINSEC's lifter, solver and plugin; that instructions have
@@ -610,13 +547,12 @@ the ISA models if (a) is adopted; runtime CPU feature dispatch; Charon/Aeneas an
 
 ### 5.4 Claim wording for each outcome
 
-Unchanged parts of the claim stay as in `STATUS.md`. These are the sentences to use for the assurance axis only.
+Unchanged parts of the claim stay as in `docs/assurance.md` section 12. These are the sentences to use for the assurance axis only.
 
-**A. Portable path today.** "For ML-DSA-44/65/87, the public `api` functions are proved equal to the FIPS 204 Lean specification at
-the Rust source level (premises as listed). The compiled code is trusted to preserve this meaning (rustc and LLVM are in the
-trusted base). Constant time is verified at the binary level for 39 compiled probe functions by BINSEC relational symbolic
-execution on x86_64 and two embedded targets under its control-flow-and-address model; it is not verified for the whole signing
-function as linked into an application, for aarch64, or against hardware timing."
+**A. Portable path today.** The wording in `docs/assurance.md` section 12 (proved at source level, compiled code trusted, constant
+time checked by BINSEC on compiled probes for the builds and targets listed in `checkct/README.md`, not for the whole signing
+function as linked into an application, not for hardware timing).
+
 
 **B. SIMD in Rust with Lean intrinsic models (SymCrypt style).** "As A, with the vectorized kernels written in Rust with
 `core::arch` intrinsics and proved against the same Lean specification using Lean models of those intrinsics. The models are
@@ -638,14 +574,14 @@ whole signing function is constant time.
 ## 6. UNVERIFIED list
 
 - Whether the flattened `proofs/hol_light/*/mldsa/*.S` files assemble and link under `global_asm!` or the `cc` crate without
-  changes, and whether a consumer's assembled bytes equal the proved bytes (I found no check; the script is ours to write).
+  changes, and whether a consumer's assembled bytes equal the proved bytes (no check was found; the script is ours to write).
 - Whether BINSEC 0.11.3 can lift AArch64 and AVX2 code well enough for the probes; whether its lifters have a fidelity
   argument comparable to s2n-bignum's co-simulation.
-- Whether any script in mldsa-native machine-checks HOL statements against CBMC contracts (I found none; not exhaustive).
+- Whether any script in mldsa-native machine-checks HOL statements against CBMC contracts (none found; not exhaustive).
 - That `rt 8 k = zeta ^ (2 * BitRev8 k + 1)` is provable by `decide +kernel` in Lean (checked numerically only).
 - That HOL Light's `rem` on integers is the non-negative remainder (assumed for the `caddq` reading).
 - That no compiler-generated code appears in s2n-bignum (only the tree listing was scanned).
 - Whether SymCrypt's AVX2/NEON Lean models are reusable outside that repository.
 - The libcrux/Symbolic Software findings (third-party; fixes for two of three recorded by that source, none for the
   intrinsic specification).
-- My effort estimates.
+- The effort estimates.

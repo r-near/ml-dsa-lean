@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Re-run selected probes with a long timeout (cargo-checkct has no entrypoint filter). From the repository root:
-#   rx submit ct4 -- 'set -o pipefail; ONLY="hint_step|vec_power2round" TIMEOUT=7200 bash checkct/run-select.sh 2>&1 | tee sel.log'
+#   ONLY="hint_step|vec_power2round" TIMEOUT=7200 bash checkct/run-select.sh 2>&1 | tee sel.log
 # Environment:
 #   ONLY     extended regex over the entrypoint names (driver__module__probe); required
 #   EXCLUDE  optional extended regex over the entrypoint names to leave out of the selection (the censuses of a sweep that
@@ -8,7 +8,7 @@
 #   TIMEOUT  seconds per probe (default 7200)
 #   TARGETS  space separated target list (default: all three)
 #   JOBS     parallel BINSEC instances (default 4: they share the container cap, and 16 at 64g got large probes killed).
-#            A probe killed at the cap reports "error", never "secure"; check `journalctl -k -g "Killed process"` (ISSUES T-8)
+#            A probe killed at the cap reports "error", never "secure"; check `journalctl -k -g "Killed process"` (checkct/README.md, "Reading `error` results")
 #   OUT      as in run.sh (copies the compiled drivers)
 #   PROFILE  as in run.sh (nearcore = opt-level 3, fat LTO, one codegen unit), plus the dispatch profiles:
 #            dispatch          the checkct profile with the driver's `avx2` cargo feature, which turns on the crate's
@@ -26,7 +26,7 @@
 #   EXPERIMENTS  1 compiles driver/src/experiments.rs (the throwaway rewrite probes `exp_*`) via its cargo feature
 #   NAME     container name (default ct-select)
 #   CT_MEMORY / CT_CPUS  docker --memory / --cpus caps for the container (default 64g / 24). BINSEC runs can grow to
-#            tens of GB each; without a cap they have pushed the box out of memory and killed unrelated Lean builds.
+#            tens of GB each; without a cap they can exhaust the host's memory.
 # Builds the drivers and generates the BINSEC scripts through `cargo-checkct run --timeout 1`, then runs BINSEC
 # on the matching scripts with the same command line cargo-checkct uses. Prints a "Summary:" block in the same
 # shape as run.sh, so checkct/leaks.sh can map the leak addresses to source lines.
@@ -70,7 +70,7 @@ fi
 # copy of checkct/.cargo/config.toml below), NOT through CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: -Zbuild-std takes the
 # release profile for core and compiler_builtins too (verified with `cargo build -v`: overflow-checks=on for every std
 # crate), whereas nearcore links the prebuilt core, whose own MIR has no overflow checks (only `rustc_inherit_overflow_checks`
-# operators take the user's setting). The driver includes the crate sources as modules, so the package override covers
+# operators take the crate's own setting). The driver includes the crate sources as modules, so the package override covers
 # exactly what nearcore compiles with checks: the crate.
 # cargo-checkct drops RUSTFLAGS, so the x86_64 flags go through the per-target variable, which replaces the x86_64
 # rustflags of checkct/.cargo/config.toml: its linker flags are repeated here. The other targets are not changed.

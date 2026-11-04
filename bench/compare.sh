@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # Build the nearcore-profile `bench` at the default target, with the crate's `avx2` feature (runtime dispatch), and at
 # x86-64-v3 from the current tree, pick the idlest
-# physical core (cpu i and its hyper-thread sibling i+30 both idle), and run both pinned. Run on the build box from
-# the repository root:
-#   rx submit ntt-bench -- 'set -o pipefail; bash bench/compare.sh LABEL [CPU] 2>&1 | tee bench-LABEL.log'
+# physical core (cpu i and its hyper-thread sibling i+HT_OFFSET both idle), and run both pinned. Run from
+# the repository root, on a machine that is otherwise idle:
+#   bash bench/compare.sh LABEL [CPU] 2>&1 | tee bench-LABEL.log
 # CPU (default: the idlest core, chosen at run time) pins both runs; pass the same CPU to compare two trees.
-# Output: $HOME/rx/scratch/ntt-bench-LABEL/{default,avx2,v3}.cpuN.tsv (same TSV as bench/run.sh).
-# Check `uptime` and `rx ps` first: the numbers are only comparable when the box is otherwise quiet.
+# Output: $ML_DSA_SCRATCH/ntt-bench-LABEL/{default,avx2,v3}.cpuN.tsv (same TSV as bench/run.sh; ML_DSA_SCRATCH defaults to
+# ${XDG_CACHE_HOME:-~/.cache}/ml-dsa-lean/scratch).
+# HT_OFFSET (default: half the logical CPUs) is the distance between a core and its hyper-thread sibling.
+# Check `uptime` first: the numbers are only comparable when the machine is otherwise quiet.
 set -o pipefail
 L=${1:?usage: compare.sh LABEL}
-OUT=$HOME/rx/scratch/ntt-bench-$L
+OUT=${ML_DSA_SCRATCH:-${XDG_CACHE_HOME:-$HOME/.cache}/ml-dsa-lean/scratch}/ntt-bench-$L
 mkdir -p "$OUT"
 root=$PWD
 cd bench || exit 1
@@ -34,8 +36,10 @@ done
 cd "$root" || exit 1
 uptime
 ps -eo pcpu,psr,comm --sort=-pcpu | head -6
-CPU=${2:-$(python3 - <<'PY'
-import time
+HT=${HT_OFFSET:-$(( $(nproc) / 2 ))}
+CPU=${2:-$(python3 - "$HT" <<'PY'
+import sys, time
+HT = int(sys.argv[1])
 def snap():
     d = {}
     for l in open("/proc/stat"):
@@ -44,10 +48,10 @@ def snap():
     return d
 a = snap(); time.sleep(2); b = snap()
 busy = {n: 1 - (b[n][1] - a[n][1]) / max(1, (b[n][0] - a[n][0])) for n in a}
-print(min(range(1, 30), key=lambda i: busy[i] + busy[i + 30]))
+print(min(range(1, HT), key=lambda i: busy[i] + busy[i + HT]))
 PY
 )}
-echo "pinned cpu $CPU (sibling $((CPU + 30)))"
+echo "pinned cpu $CPU (sibling $((CPU + HT)))"
 for v in default avx2 v3; do
   echo "== $v $(date -u +%H:%M:%S) load $(cut -d' ' -f1-3 /proc/loadavg)"
   taskset -c "$CPU" "$OUT/bench-$v" --label "$L-$v-cpu$CPU" | tee "$OUT/$v.cpu$CPU.tsv"

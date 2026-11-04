@@ -40,7 +40,7 @@ finishes within `F`.
   from `ExpandA(ρ)`, `s₁`, `s₂`, the stored `t₀` is that `t₀`, and the stored `tr` is `H(pk, 64)`.
 * `skConsistent_bad_44`: a kernel witness that the check can fail (a key with an out-of-range `s₁`). That it
   can succeed is `skConsistent_keygen`: no concrete witness exists in the kernel because KeyGen needs SHAKE and
-  `ExpandA`/`ExpandS` on a derived seed (the same reason as for the top-level KeyGen premises in STATUS.md).
+  `ExpandA`/`ExpandS` on a derived seed (the same reason as for the top-level KeyGen premises, docs/assurance.md).
 -/
 
 open Aeneas Aeneas.Std RustM

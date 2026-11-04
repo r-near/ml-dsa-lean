@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # bash checkct/scan-avx2.sh DRIVER_DIR   (a directory printed as "drivers copied to ..." by checkct/select-ntt.sh dispatch,
-# given as a name under ~/rx/scratch). Needs a driver built with the dispatch (PROFILE=dispatch or nearcore-dispatch);
+# given as a name under $ML_DSA_SCRATCH, default ${XDG_CACHE_HOME:-~/.cache}/ml-dsa-lean/scratch). Needs a driver built with the dispatch (PROFILE=dispatch or nearcore-dispatch);
 # fails if the disassembly has no `*_avx2` function, which is what the default build and the static-AVX2 profiles give.
 set -o pipefail
-D="$HOME/rx/scratch/${1:?driver dir name under ~/rx/scratch}"
+SCRATCH="${ML_DSA_SCRATCH:-${XDG_CACHE_HOME:-$HOME/.cache}/ml-dsa-lean/scratch}"
+D="$SCRATCH/${1:?driver dir name under $SCRATCH}"
 OBJDUMP=$(ls "$HOME"/.rustup/toolchains/*/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-objdump 2>/dev/null | head -1)
 [ -n "$OBJDUMP" ] || { echo "scan-avx2: no llvm-objdump under ~/.rustup/toolchains" >&2; exit 1; }
 "$OBJDUMP" -d --no-show-raw-insn "$D/x86_64-unknown-linux-gnu.driver" > "$D/disasm.txt" || exit 1

@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # Differential evaluation of the extracted Lean code (lean/Impl) against the native Rust, on the same inputs.
-# Run on the build box (stable job names; rerun under the same name):
-#   rx submit impl-eval    -- 'set -o pipefail; bash scripts/impl-eval.sh lean [SCALE]'
-#   rx submit impl-eval-rs -- 'set -o pipefail; bash scripts/impl-eval.sh rs [SCALE]'
-#   (after both finish)  rx submit impl-eval -- 'set -o pipefail; bash scripts/impl-eval.sh compare'
-# Inputs come from scripts/gen-impl-eval-inputs.py (deterministic), data lives in $HOME/rx/scratch/impl-eval-data/{lean,rs}.
+# Run on a Linux machine (the two sides may run at the same time):
+#   bash scripts/impl-eval.sh lean [SCALE]
+#   bash scripts/impl-eval.sh rs [SCALE]
+#   (after both finish)  bash scripts/impl-eval.sh compare
+# Inputs come from scripts/gen-impl-eval-inputs.py (deterministic), data lives in $ML_DSA_SCRATCH/impl-eval-data/{lean,rs}
+# (ML_DSA_SCRATCH defaults to ${XDG_CACHE_HOME:-~/.cache}/ml-dsa-lean/scratch).
 # SCALE multiplies the random-case counts (default 1.0 = 1000 per polynomial-level op, 10000 per scalar op).
 set -euo pipefail
 side="${1:?usage: impl-eval.sh lean|rs|compare [SCALE]}"
 scale="${2:-1.0}"
 cd "$(dirname "$0")/.."
-base="$HOME/rx/scratch/impl-eval-data"
+base="${ML_DSA_SCRATCH:-${XDG_CACHE_HOME:-$HOME/.cache}/ml-dsa-lean/scratch}/impl-eval-data"
 if [ "$side" = compare ]; then
   python3 -I scripts/impl-eval-compare.py "$base/lean" "$base/rs" | tee "$base/report.txt"
   exit 0
@@ -24,9 +25,9 @@ start=$(date +%s)
 case "$side" in
   lean)
     export PATH="$HOME/.elan/bin:$PATH"
-    SEED="${LEAN_PACKAGES_SEED:-$HOME/lean-survey/.lake/packages}"
+    SEED="${LEAN_PACKAGES_SEED:-}"
     mkdir -p lean/.lake
-    if [ ! -d lean/.lake/packages ] && [ -d "$SEED" ]; then cp -a "$SEED" lean/.lake/packages; fi
+    if [ ! -d lean/.lake/packages ] && [ -n "$SEED" ] && [ -d "$SEED" ]; then cp -a "$SEED" lean/.lake/packages; fi
     (cd lean && lake build impl-eval)
     echo "build done after $(( $(date +%s) - start )) s"
     exe="$PWD/lean/.lake/build/bin/impl-eval"

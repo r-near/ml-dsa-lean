@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# Box-runnable check script for the Rust crate (no GitHub Actions). Run it on the build box:
+# Check script for the Rust crate (no GitHub Actions). Run it on a Linux x86_64 machine with rustup:
 #
-#   rx submit ci-nc -- 'set -o pipefail; bash scripts/ci.sh' && set -o pipefail && timeout 570 rx wait ci-nc | tail -50
+#   bash scripts/ci.sh
 #
-# (the whole run takes tens of minutes on a cold cache; if the wait times out, rerun the `rx wait` part. Do not tee into
-# the worktree. With a warm mbx build cache the build steps finish in under a second because cargo's compile work is a
-# shared-cache hit, so a short step time is not evidence that the step did nothing. The mbx cargo shim prints its own
-# `mbx[cache]: N hits, M misses ...` line after every cargo command; that is the summary to quote when asked whether a
-# build was cached.)
+# (the whole run takes tens of minutes on a cold build cache. A warm cache, for example from a compiler wrapper that
+# shares compiled crates, makes the build steps finish in seconds, so a short step time is not evidence that a step did
+# nothing.)
 #
 # Usage: scripts/ci.sh [--lean] [--fuzz-secs N] [--only step[,step...]] [--strict]
 #   --lean         also run scripts/lean-check.sh (the Lean done-gate; slow, heavy, off by default)
@@ -24,11 +22,11 @@
 # nearcore-test, nearcore-test-avx2, nearcore-test-zeroize, wasm32, wasm32-zeroize, diff-awslc,
 # fuzz-<target> (one per target in fuzz/fuzz_targets), deny, lean.
 #
-# NOTE: skipping stack_residue_* (fails at opt-level 0, see the header of scripts/ci.sh). test-zeroize runs the zeroize feature's tests in
+# NOTE: test-zeroize skips stack_residue_* where they fail at opt-level 0. test-zeroize runs the zeroize feature's tests in
 # the dev profile (opt-level 0) without the 8 failing stack-residue scans (keygen and pk_from_sk for 44/65/87,
 # signing_key for 44/65) and with the 7 that pass (sign and sign_prepared for 44/65/87, signing_key for 87);
-# test-zeroize-release and nearcore-test-zeroize run the full suite, all 15 scans, in release. Counts reproduced on the
-# build box: of the 15 stack-residue scan tests in tests/zeroize.rs, 8 find copies of s1, s2, ŝ1, t0 or K in dead stack
+# test-zeroize-release and nearcore-test-zeroize run the full suite, all 15 scans, in release. Counts reproduced on
+# a Linux machine: of the 15 stack-residue scan tests in tests/zeroize.rs, 8 find copies of s1, s2, ŝ1, t0 or K in dead stack
 # frames at opt-level 0; all 15 pass in release; at dev opt-level 1, 13 pass and keygen 44/65 fail. The wipe claims in
 # src/api.rs are therefore about optimized builds. Reproducer: cargo test --features zeroize --test zeroize stack_residue
 #
@@ -122,7 +120,7 @@ need_toolchain() {
 
 step_test_default() { cargo test; }
 step_test_zeroize() {
-  echo "NOTE: skipping stack_residue_* (fails at opt-level 0, see the header of scripts/ci.sh); running the 7 that pass at opt-level 0"
+  echo "NOTE: skipping stack_residue_* (fails at opt-level 0, see the header of this script and Z-1 in docs/assurance.md); running the 7 that pass at opt-level 0"
   ZEROIZE_SKIPPED=1
   # `--skip` matches substrings of the full test path (ml_dsa_44::stack_residue_keygen, ...). Skipped: keygen and
   # pk_from_sk for all sets, signing_key for 44 and 65. Run: sign, sign_prepared (all sets) and signing_key for 87.
@@ -245,7 +243,7 @@ step_fuzz() {
   local target="$1" tc; tc="$(fuzz_toolchain)"
   if ! cargo fuzz --version >/dev/null 2>&1; then echo "SKIP: cargo-fuzz is not installed"; return 77; fi
   if [ -z "$tc" ]; then echo "SKIP: no nightly toolchain installed"; return 77; fi
-  # cargo-fuzz picks the wrong default target on the box (it stops with "sanitizer is incompatible with statically
+  # cargo-fuzz picks the wrong default target on some machines (it stops with "sanitizer is incompatible with statically
   # linked libc" and E0463 for musl), so pass the host triple explicitly.
   local host; host="$(rustc "+$tc" -vV | sed -n 's/^host: //p')"
   echo "cargo-fuzz: $(cargo fuzz --version); toolchain $tc; host $host; ${FUZZ_SECS}s on $target"
@@ -305,7 +303,7 @@ for i in "${!NAMES[@]}"; do
 done
 if [ "$STRICT" -eq 1 ] && [ "$skip" -gt 0 ]; then fail=$((fail+skip)); fi
 if [ "$ZEROIZE_SKIPPED" -eq 1 ]; then
-  echo "NOTE: skipping stack_residue_* in test-zeroize (fails at opt-level 0, see the header of scripts/ci.sh); test-zeroize-release and nearcore-test-zeroize cover them in release"
+  echo "NOTE: skipping stack_residue_* in test-zeroize (fails at opt-level 0, see the header of this script and Z-1 in docs/assurance.md); test-zeroize-release and nearcore-test-zeroize cover them in release"
 fi
 if [ "${#NAMES[@]}" -eq 0 ]; then
   echo "no step ran (--only matched nothing that was enabled)"; fail=$((fail+1))
