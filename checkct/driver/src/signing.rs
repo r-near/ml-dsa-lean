@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+// Copyright (c) 2024-2026 RustCrypto Developers
+// Adapted from the constant-time harness in RustCrypto's ml-dsa crate (github.com/RustCrypto/signatures, ml-dsa/checkct,
+// rev a3690c4, licensed Apache-2.0 OR MIT): the signing-stage probe style, rewritten for this crate's `sign::response`
+// and `sign::hint_step`.
+
 //! Signing-stage probes. They call the production `sign::response` (FIPS 204 Algorithm 7 steps 18-21)
 //! and `sign::hint_step` (steps 25-26) directly; the norms that feed the rejection branches (steps 23 and
 //! 28) are computed here on the returned vectors with the production `vec_infinity_norm`. The two

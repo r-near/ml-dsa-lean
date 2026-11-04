@@ -193,7 +193,7 @@ fn write_hint(set: Set, sig: &mut [u8], hint: &[Vec<u8>], counts_override: Optio
     }
 }
 
-/// Malformed (or merely unusual) hint encodings, all derived from an honest signature. Each is labelled.
+/// Malformed (or merely unusual) hint encodings, all derived from an honest signature. Each is labeled.
 pub fn hint_mutants(set: Set, sig: &[u8], r: &mut Rng) -> Vec<(String, Vec<u8>)> {
     let (hs, cs, k, w) = (set.hint_start(), set.counts_start(), set.k(), set.omega());
     let hint = parse_hint(set, sig);

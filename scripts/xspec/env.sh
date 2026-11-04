@@ -1,4 +1,4 @@
-# Sourced by the xspec scripts .  Dependencies (Mathlib, ocaml-pq, ...) live in one shared
+# Sourced by the xspec scripts.  Dependencies (Mathlib, ocaml-pq, ...) live in one shared
 # directory so that every checkout and every script uses the same Mathlib build;
 # the per-checkout build products stay in xspec/.lake/build.
 export PATH="$HOME/.elan/bin:$PATH"

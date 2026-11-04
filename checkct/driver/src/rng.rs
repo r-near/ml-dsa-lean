@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+// Copyright (c) 2024-2026 RustCrypto Developers
+// Adapted from the constant-time harness in RustCrypto's ml-dsa crate (github.com/RustCrypto/signatures, ml-dsa/checkct,
+// rev a3690c4, licensed Apache-2.0 OR MIT): the same hook pair (`__checkct_private_rand`,
+// `__checkct_public_rand`) without the rand_core impls, which this dependency-free crate does not need.
+
 //! Secret and public value sources for BINSEC. `__checkct_private_rand` and `__checkct_public_rand` are
 //! the hook symbols the generated BINSEC scripts replace (private reads are marked secret). Same contract
 //! as the RustCrypto checkct driver; the rand_core trait impls are dropped because this crate has no
