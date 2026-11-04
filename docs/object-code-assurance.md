@@ -268,7 +268,7 @@ What the runs cannot cover:
 - **Unknowns:** probes where BINSEC did not finish or cannot lift an instruction (VEX forms under `+fma`, some AArch64 solver
   queries, some riscv32imac pieces). No leak was found in them and no conclusion is drawn.
 - **The AVX2 copy** of the dispatched NTT: BINSEC cannot lift VEX instructions, so it is covered by the static scan only (3.5).
-- **AArch64 with NEON** (the default AArch64 build): BINSEC cannot lift `umax`/`umin` (`docs/upstream-issues.md` U-40). macOS is
+- **AArch64 with NEON** (the default AArch64 build): BINSEC 0.11.3 cannot lift the vector `umax`/`umin` instructions, so probes stop `unknown` at the first one. macOS is
   not covered at all.
 - **Other builds:** other rustc versions, flags and inlining contexts. Verdicts depend on code shape (CT-1 and CT-2 in
   `docs/assurance.md` section 6), so they hold for the builds measured.
@@ -315,7 +315,7 @@ portable copy too, but the AVX2 copy is a separate vectorizer run over the whole
 no BINSEC verdict, and functional evidence from `tests/dispatch.rs` and the KAT suites run with `--features avx2` only.
 
 **What BINSEC covers.**
-- cargo-checkct models `cpuid` as "no optional features" (`docs/upstream-issues.md` U-32). The dispatch cache is a `static` in `.bss`, which
+- cargo-checkct models `cpuid` as "no optional features", so runtime-dispatched SIMD paths are never explored by default. The dispatch cache is a `static` in `.bss`, which
   BINSEC leaves symbolic, so it would explore the AVX2 arm anyway. `checkct/run-select.sh` therefore pre-sets the cache to 1
   ("checked, no AVX2") in the generated BINSEC scripts on x86_64 in the dispatch profiles, which is exactly what the stubbed `cpuid` would have produced.
   The probes then follow the portable arm, which is the body the proofs cover.

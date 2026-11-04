@@ -326,7 +326,7 @@ nearcore's compiler actually emits.
 - **AArch64 without NEON** (`aarch64.sh`, 115 probes with the two censuses, 3600 s): 99 secure, 3 expected insecure
   (`rej_bounded_poly_eta2/4`, `control_early_exit_44`), 13 unknown: `compute_t_44`, `prepare_sk_{44,65,87}`,
   `signing_key_{44,65,87}`, `census_sign_internal_44`, `census_sign_prepared_44`, `control_prepared_{branch,index}_44`, and the two
-  split pieces `split_prepare_sk_87_{7x1,col}`. All are the solver stall (upstream U-42 in `docs/upstream-issues.md`). All 28 split
+  split pieces `split_prepare_sk_87_{7x1,col}`. All are the same solver stall: one pending path, with the visited-instruction count identical at 300, 600, 3600 and 7200 s, so one solver query never returns (a BINSEC limitation, not a verdict). All 28 split
   probes ran (26 secure, 2 unknown).
 - Every `secure` row of the thumbv7em, riscv32imac and AArch64 runs has 0 pending paths and all of its (nonzero) control-flow and
   memory-access checks passing (`*.verdicts.tsv`); the x86_64 rows too.
