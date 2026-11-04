@@ -2,8 +2,8 @@
 //! [-eta, eta] and recomputing (t1, t0) and tr from (rho, s1, s2) gives the stored t0 and tr. Honest keys give back
 //! KeyGen's pk; a flipped bit in rho, tr, t0, s1 or s2 is rejected; K is a free seed and is not checked. Sign does
 //! not call it.
-use ml_dsa_verified::api;
-use ml_dsa_verified::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
+use ml_dsa_lean::api;
+use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
 
 struct Set {
     name: &'static str,

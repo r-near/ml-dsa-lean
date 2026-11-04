@@ -3,7 +3,7 @@
 //! with a pattern; after it, the lowest overwritten word gives the high-water mark. The reported number is
 //! measured from the stack pointer at the call instruction, so it includes the pushed return address and the
 //! frames of everything the function calls, but not the caller's frame or the caller's result slot.
-use ml_dsa_verified::api;
+use ml_dsa_lean::api;
 use std::arch::asm;
 use std::hint::black_box;
 use std::sync::atomic::{AtomicUsize, Ordering};

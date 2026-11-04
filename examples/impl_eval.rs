@@ -5,14 +5,14 @@
 //! `lean/SpecTests/ImplEval.lean`: `N` for `None`, `FAIL` when the function panics (the extracted function returns
 //! `fail`), `BADIN` for a malformed line. Build with overflow checks on (the script sets
 //! `CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true`) so that arithmetic overflow panics as it does in the extraction.
-use ml_dsa_verified::api::*;
-use ml_dsa_verified::encode::*;
-use ml_dsa_verified::field;
-use ml_dsa_verified::keccak::{Shake, keccak_f1600};
-use ml_dsa_verified::ntt;
-use ml_dsa_verified::params::*;
-use ml_dsa_verified::rounding::*;
-use ml_dsa_verified::sampling::*;
+use ml_dsa_lean::api::*;
+use ml_dsa_lean::encode::*;
+use ml_dsa_lean::field;
+use ml_dsa_lean::keccak::{Shake, keccak_f1600};
+use ml_dsa_lean::ntt;
+use ml_dsa_lean::params::*;
+use ml_dsa_lean::rounding::*;
+use ml_dsa_lean::sampling::*;
 use std::fmt::Write as _;
 use std::io::{BufRead, BufWriter, Write};
 use std::panic::{AssertUnwindSafe, catch_unwind};

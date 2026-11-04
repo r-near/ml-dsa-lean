@@ -3,7 +3,7 @@
 //! every chunking of the output across `squeeze` calls that the lane/byte boundary cases need: lane-aligned and
 //! unaligned starts, calls shorter than a lane, and runs that cross the rate boundary.
 
-use ml_dsa_verified::keccak::{Shake, keccak_f1600};
+use ml_dsa_lean::keccak::{Shake, keccak_f1600};
 
 /// Byte-at-a-time reference SHAKE (FIPS 202 sponge on bytes, little-endian lanes).
 fn reference(rate: usize, msg: &[u8], out_len: usize) -> Vec<u8> {

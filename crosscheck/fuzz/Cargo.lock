@@ -516,7 +516,7 @@ dependencies = [
  "cc",
  "libcrux-ml-dsa",
  "ml-dsa",
- "ml-dsa-verified",
+ "ml-dsa-lean",
 ]
 
 [[package]]
@@ -528,8 +528,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "ml-dsa-verified"
-version = "0.0.0"
+name = "ml-dsa-lean"
+version = "0.1.0"
 
 [[package]]
 name = "module-lattice"

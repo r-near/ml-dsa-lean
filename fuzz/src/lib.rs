@@ -10,10 +10,10 @@ use ml_dsa::{
     EncodedVerifyingKey, ExpandedSigningKey, ExpandedSigningKeyBytes, MlDsa44, MlDsa65, MlDsa87, MlDsaParams, Signature,
     VerifyingKey,
 };
-use ml_dsa_verified::api;
-use ml_dsa_verified::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params, pk_len, sig_len, sk_len};
-use ml_dsa_verified::sign::sign_internal;
-use ml_dsa_verified::verify::verify_internal;
+use ml_dsa_lean::api;
+use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params, pk_len, sig_len, sk_len};
+use ml_dsa_lean::sign::sign_internal;
+use ml_dsa_lean::verify::verify_internal;
 use std::cell::Cell;
 use std::sync::OnceLock;
 

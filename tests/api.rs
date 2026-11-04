@@ -5,7 +5,7 @@ use ml_dsa::{
     B32, EncodedVerifyingKey, ExpandedSigningKey, MlDsa44, MlDsa65, MlDsa87, MlDsaParams, Seed, Signature,
     VerifyingKey,
 };
-use ml_dsa_verified::api::*;
+use ml_dsa_lean::api::*;
 
 struct Rng(u64);
 impl Rng {

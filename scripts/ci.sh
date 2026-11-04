@@ -75,7 +75,7 @@ NEARCORE_TC="${NEARCORE_TC:-1.95.0}"
 MSRV_TC="${MSRV_TC:-1.86.0}"
 # From nearcore's .cargo/config.toml, section [target.'cfg(target_arch = "x86_64")'] at nearcore cd5a94457.
 NEARCORE_RUSTFLAGS="-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -Cforce-unwind-tables=y"
-CI_TOOLS="${CI_TOOLS:-$HOME/.cache/ml-dsa-verified-ci/tools}"
+CI_TOOLS="${CI_TOOLS:-$HOME/.cache/ml-dsa-lean-ci/tools}"
 
 NAMES=(); RESULTS=(); TIMES=(); ZEROIZE_SKIPPED=0
 want() { [ -z "$ONLY" ] || [[ "$ONLY" == *",$1,"* ]]; }
@@ -165,7 +165,7 @@ sub = sys.argv[1]
 g = json.load(sys.stdin)
 seen, bad = set(), 0
 for u in g["units"]:
-    if "ml-dsa-verified" not in u["pkg_id"] or "-fuzz" in u["pkg_id"]:
+    if "ml-dsa-lean" not in u["pkg_id"] or "-fuzz" in u["pkg_id"]:
         continue
     p, t = u["profile"], u["target"]
     k = (t["name"], u["mode"], p["name"], "opt=" + str(p["opt_level"]), "lto=" + str(p["lto"]),
@@ -197,9 +197,9 @@ nearcore_overflow_flag_check() {
   touch src/lib.rs
   nearcore_env cargo "+$NEARCORE_TC" build --release -v 2>&1 | tee "$log"
   if [ "${PIPESTATUS[0]}" -ne 0 ]; then rm -f "$log"; return 1; fi
-  line="$(grep -E "Running .*--crate-name ml_dsa_verified" "$log" | head -n 1)"
+  line="$(grep -E "Running .*--crate-name ml_dsa_lean" "$log" | head -n 1)"
   rm -f "$log"
-  if [ -z "$line" ]; then echo "no rustc line for ml_dsa_verified in the verbose build output"; return 1; fi
+  if [ -z "$line" ]; then echo "no rustc line for ml_dsa_lean in the verbose build output"; return 1; fi
   case "$line" in *"-C overflow-checks=on"*) echo "rustc line has -C overflow-checks=on" ;; *) echo "MISSING: -C overflow-checks=on in the rustc line"; rc=1 ;; esac
   case "$line" in *"-C panic=abort"*) echo "rustc line has -C panic=abort" ;; *) echo "MISSING: -C panic=abort in the rustc line"; rc=1 ;; esac
   return "$rc"

@@ -7,16 +7,16 @@
 //!   other check of that signature passes, so only the norm comparison can reject it.
 //! * Verify rejects a flipped last byte of c-tilde. NOTE: this does NOT kill the `prefix_eq` off-by-one mutant
 //!   (see the comment on that test); it is kept as a plain regression test.
-use ml_dsa_verified::encode::{hint_bit_unpack, sig_decode, sk_decode};
-use ml_dsa_verified::field::{Q, add, neg};
-use ml_dsa_verified::keccak::Shake;
-use ml_dsa_verified::keygen::keygen_internal;
-use ml_dsa_verified::ntt::{matrix_vector_ntt, ntt, ntt_inverse, ntt_vec};
-use ml_dsa_verified::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params, pk_len, sig_len, sk_len};
-use ml_dsa_verified::rounding::{infinity_norm, make_hint, poly_high_bits, poly_low_bits, vec_infinity_norm};
-use ml_dsa_verified::sampling::{expand_a, expand_mask, sample_in_ball};
-use ml_dsa_verified::sign::sign_internal;
-use ml_dsa_verified::verify::verify_internal;
+use ml_dsa_lean::encode::{hint_bit_unpack, sig_decode, sk_decode};
+use ml_dsa_lean::field::{Q, add, neg};
+use ml_dsa_lean::keccak::Shake;
+use ml_dsa_lean::keygen::keygen_internal;
+use ml_dsa_lean::ntt::{matrix_vector_ntt, ntt, ntt_inverse, ntt_vec};
+use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params, pk_len, sig_len, sk_len};
+use ml_dsa_lean::rounding::{infinity_norm, make_hint, poly_high_bits, poly_low_bits, vec_infinity_norm};
+use ml_dsa_lean::sampling::{expand_a, expand_mask, sample_in_ball};
+use ml_dsa_lean::sign::sign_internal;
+use ml_dsa_lean::verify::verify_internal;
 
 /// Dispatch a generic-over-(K, L) function on the parameter set.
 macro_rules! with_kl {
@@ -245,7 +245,7 @@ fn attempt_kl<const K: usize, const L: usize>(
         w1[i] = poly_high_bits(p, &w[i]);
     }
     let mut w1_enc = vec![0u8; K * 32 * p.w1_bits];
-    ml_dsa_verified::encode::w1_encode(p, &w1, &mut w1_enc);
+    ml_dsa_lean::encode::w1_encode(p, &w1, &mut w1_enc);
     let mut c_tilde = vec![0u8; p.c_tilde_len];
     let mut h = Shake::shake256();
     h.absorb(&mu);
@@ -266,7 +266,7 @@ fn attempt_kl<const K: usize, const L: usize>(
     let mut r0 = [[0u32; 256]; K];
     for i in 0..K {
         for j in 0..256 {
-            w_cs2[i][j] = ml_dsa_verified::field::sub(w[i][j], cs2[i][j]);
+            w_cs2[i][j] = ml_dsa_lean::field::sub(w[i][j], cs2[i][j]);
         }
         r0[i] = poly_low_bits(p, &w_cs2[i]);
     }
@@ -292,7 +292,7 @@ fn attempt_kl<const K: usize, const L: usize>(
 }
 
 fn ntt_vec_scalar<const N: usize>(c_hat: &[u32; 256], v_hat: &[[u32; 256]; N]) -> [[u32; 256]; N] {
-    ml_dsa_verified::ntt::scalar_vector_ntt_inverse::<N>(c_hat, v_hat)
+    ml_dsa_lean::ntt::scalar_vector_ntt_inverse::<N>(c_hat, v_hat)
 }
 
 /// `attempt_kl` with the strict (real) norm check, as a full signing loop: must equal `sign_internal`.
@@ -301,7 +301,7 @@ fn strict_sign_kl<const K: usize, const L: usize>(p: &Params, sk: &[u8], m: &[u8
     while kappa + L as u32 - 1 <= 0xFFFF {
         if let Some((c_tilde, z, h)) = attempt_kl::<K, L>(p, sk, m, rnd, kappa as u16, true) {
             let mut sig = vec![0u8; sig_len(p)];
-            ml_dsa_verified::encode::sig_encode::<K, L>(p, &c_tilde, &z, &h, &mut sig);
+            ml_dsa_lean::encode::sig_encode::<K, L>(p, &c_tilde, &z, &h, &mut sig);
             return sig;
         }
         kappa += L as u32;
@@ -319,7 +319,7 @@ fn boundary_sig_kl<const K: usize, const L: usize>(p: &Params, sk: &[u8], m: &[u
         if let Some((c_tilde, z, h)) = attempt_kl::<K, L>(p, sk, m, &rnd, 0, false) {
             if vec_infinity_norm(&z) == bound {
                 let mut sig = vec![0u8; sig_len(p)];
-                ml_dsa_verified::encode::sig_encode::<K, L>(p, &c_tilde, &z, &h, &mut sig);
+                ml_dsa_lean::encode::sig_encode::<K, L>(p, &c_tilde, &z, &h, &mut sig);
                 return (sig, n + 1);
             }
         }

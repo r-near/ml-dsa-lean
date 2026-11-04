@@ -157,7 +157,7 @@ of every algorithm from the arithmetic leaves up to KeyGen, Sign and Verify, wit
 
 | Decision | Choice | Why |
 |---|---|---|
-| Crate | `ml-dsa-verified` (`ml_dsa_verified`), `no_std`, no core dependencies | extraction closure = this crate + core |
+| Crate | `ml-dsa-lean` (`ml_dsa_lean`), `no_std`, no core dependencies | extraction closure = this crate + core |
 | Lean layout | lake package `MlDsaVerified` in `lean/`; extracted code in `lean/Impl/` (Aeneas namespace `Impl`), spec in `lean/Spec/`, proofs in `lean/Proofs/` | names are fixed now so proofs don't churn |
 | M′ | `sign_internal(p, sk, m_prefix, m, rnd, sig)` and `verify_internal(p, pk, m_prefix, m, sig)`, with M′ = `m_prefix ‖ m` absorbed in two calls | the external API builds 0 ‖ \|ctx\| ‖ ctx (≤ 257 bytes) on the stack, no alloc; the proof needs one sponge lemma: absorbing two slices = absorbing their concatenation |
 | Charon | generic (no `--monomorphize`) | 0 external axioms vs 9 (SURVEY B-X3) |

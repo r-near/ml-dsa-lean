@@ -1,4 +1,4 @@
-//! sign_diff: KeyGen (Algorithm 1), Sign (2) and Sign_internal (7) of ml-dsa-verified against upstream RustCrypto
+//! sign_diff: KeyGen (Algorithm 1), Sign (2) and Sign_internal (7) of ml-dsa-lean against upstream RustCrypto
 //! `ml-dsa`, byte for byte, plus Verify on the result (ours and upstream's must both accept; a changed message must
 //! be rejected by both).
 //!

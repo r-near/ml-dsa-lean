@@ -52,7 +52,7 @@ marked as such; nothing in the optimization list has been implemented in `src/`.
 
 ### Harness (`bench/`)
 
-- One binary (`bench`) links all implementations behind identical closures: this crate (`ml-dsa-verified`), RustCrypto
+- One binary (`bench`) links all implementations behind identical closures: this crate (`ml-dsa-lean`), RustCrypto
   `ml-dsa` (git rev a3690c4), `libcrux-ml-dsa` 0.0.11 (portable and AVX2), and mldsa-native v2.0.0 C (portable and AVX2)
   through `crosscheck`'s build, as a path dependency.
 - Inputs: one key pair per parameter set; 256 messages of 64 bytes with empty context; 64 keygen seeds. All

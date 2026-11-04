@@ -3,7 +3,7 @@ name = "ml-dsa-bench"
 version = "0.0.0"
 edition = "2024"
 publish = false
-description = "Timing and profiling harness: ml-dsa-verified vs RustCrypto ml-dsa, libcrux-ml-dsa (portable, AVX2) and mldsa-native (C portable, AVX2)"
+description = "Timing and profiling harness: ml-dsa-lean vs RustCrypto ml-dsa, libcrux-ml-dsa (portable, AVX2) and mldsa-native (C portable, AVX2)"
 
 [[bin]]
 name = "bench"
@@ -22,15 +22,15 @@ path = "src/bin/prof.rs"
 required-features = ["prof"]
 
 [features]
-# Exposes every module of ml-dsa-verified. Never enabled for the headline numbers (`bench` is built without it).
-internals = ["ml-dsa-verified/internals"]
+# Exposes every module of ml-dsa-lean. Never enabled for the headline numbers (`bench` is built without it).
+internals = ["ml-dsa-lean/internals"]
 prof = ["dep:pprof"]
 # Runtime AVX2 dispatch of the NTT (opt-in in the crate; see its Cargo.toml).
-avx2 = ["ml-dsa-verified/avx2"]
+avx2 = ["ml-dsa-lean/avx2"]
 
 [dependencies]
 # The crate under test (public `api` only unless `internals` is on).
-ml-dsa-verified = { path = ".." }
+ml-dsa-lean = { path = ".." }
 
 # Reuses crosscheck's build of mldsa-native v2.0.0 (portable C and, on x86_64 Linux, AVX2): its build.rs compiles the
 # vendored sources and emits the link directives. This crate declares the C entry points itself (src/lib.rs) so that

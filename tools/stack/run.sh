@@ -82,6 +82,6 @@ target/debug/dynamic | tee out/dynamic-debug.txt
 
 echo "################ allocas (x86_64 optimized IR of the library, codegen-units = 1)"
 mkdir -p out
-cargo +$TC rustc --release -p ml-dsa-verified --lib --target x86_64-unknown-linux-gnu -- \
+cargo +$TC rustc --release -p ml-dsa-lean --lib --target x86_64-unknown-linux-gnu -- \
   --emit=llvm-ir=$PWD/out/lib.ll -Zfewer-names=no 2>&1 | tail -1
 $WALKER allocas --ll out/lib.ll --min 1024 | tee out/allocas.md

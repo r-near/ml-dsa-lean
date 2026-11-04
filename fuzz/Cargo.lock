@@ -222,17 +222,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "ml-dsa-verified"
-version = "0.0.0"
+name = "ml-dsa-lean"
+version = "0.1.0"
 
 [[package]]
-name = "ml-dsa-verified-fuzz"
+name = "ml-dsa-lean-fuzz"
 version = "0.0.0"
 dependencies = [
  "flate2",
  "libfuzzer-sys",
  "ml-dsa",
- "ml-dsa-verified",
+ "ml-dsa-lean",
  "serde",
  "serde_json",
 ]

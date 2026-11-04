@@ -1,6 +1,6 @@
 [package]
-name = "ml-dsa-verified"
-version = "0.0.0"
+name = "ml-dsa-lean"
+version = "0.1.0"
 edition = "2024"
 # Safe `#[target_feature]` functions (the optional `avx2` feature) need 1.86.
 rust-version = "1.86"
@@ -34,7 +34,7 @@ internals = []
 
 [dev-dependencies]
 # Self dev-dependency: turns on `internals` for tests, examples and benches (not for downstream users).
-ml-dsa-verified = { path = ".", features = ["internals"] }
+ml-dsa-lean = { path = ".", features = ["internals"] }
 # Differential oracle: upstream RustCrypto master a3690c4, deprecated expanded-key API for skEncode bytes.
 ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e", default-features = false, features = ["alloc"] }
 

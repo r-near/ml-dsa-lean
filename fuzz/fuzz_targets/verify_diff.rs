@@ -1,4 +1,4 @@
-//! verify_diff: Verify / Verify_internal of ml-dsa-verified against upstream RustCrypto `ml-dsa` on arbitrary
+//! verify_diff: Verify / Verify_internal of ml-dsa-lean against upstream RustCrypto `ml-dsa` on arbitrary
 //! pk, signature, message and context bytes. Our side must never panic and must give upstream's verdict.
 //!
 //! Input format (all multi-byte integers little endian; missing bytes read as zero):

@@ -1,4 +1,4 @@
-//! Cross-implementation differential testing for `ml-dsa-verified`.
+//! Cross-implementation differential testing for `ml-dsa-lean`.
 //!
 //! Oracles (see `oracle::Imp`): our crate through its public `api`, RustCrypto `ml-dsa`, libcrux-ml-dsa (portable
 //! and AVX2) and mldsa-native (portable C and AVX2). `cases` produces seeded random cases and mutations,

@@ -4,8 +4,8 @@
 //! those out-of-range keys.
 #![allow(deprecated)]
 use ml_dsa::{ExpandedSigningKey, ExpandedSigningKeyBytes, MlDsa44, MlDsa65, MlDsa87, MlDsaParams};
-use ml_dsa_verified::api;
-use ml_dsa_verified::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
+use ml_dsa_lean::api;
+use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
 
 struct Rng(u64);
 impl Rng {

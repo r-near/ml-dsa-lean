@@ -16,10 +16,10 @@
 use ml_dsa::{
     EncodedVerifyingKey, ExpandedSigningKey, MlDsa44, MlDsa65, MlDsa87, MlDsaParams, Seed, Signature, VerifyingKey,
 };
-use ml_dsa_verified::keygen::keygen_internal;
-use ml_dsa_verified::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params, pk_len, sig_len, sk_len};
-use ml_dsa_verified::sign::sign_internal;
-use ml_dsa_verified::verify::verify_internal;
+use ml_dsa_lean::keygen::keygen_internal;
+use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params, pk_len, sig_len, sk_len};
+use ml_dsa_lean::sign::sign_internal;
+use ml_dsa_lean::verify::verify_internal;
 
 /// Bulk-case divisor: unoptimized builds (overflow checks on) run a tenth of the cases.
 const SCALE: usize = if cfg!(debug_assertions) { 10 } else { 1 };
