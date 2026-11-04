@@ -1,0 +1,68 @@
+import Proofs.TopWitnessLit
+import Proofs.TopWitnessKS
+
+/-!
+# Forward NTTs (kernel stage lemmas): `t̂₀`, `NTT(y)`, `ĉ`
+-/
+
+open Spec
+
+namespace Proofs
+namespace TopWitness
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `NTT(t₀[0])`. -/
+theorem nttF_t0_0 :
+    NTT (RPoly.toZq (Rl Data.t0_0)) = Pl Data.t0h_0 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `NTT(t₀[1])`. -/
+theorem nttF_t0_1 :
+    NTT (RPoly.toZq (Rl Data.t0_1)) = Pl Data.t0h_1 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `NTT(t₀[2])`. -/
+theorem nttF_t0_2 :
+    NTT (RPoly.toZq (Rl Data.t0_2)) = Pl Data.t0h_2 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `NTT(t₀[3])`. -/
+theorem nttF_t0_3 :
+    NTT (RPoly.toZq (Rl Data.t0_3)) = Pl Data.t0h_3 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `NTT(y[0])`. -/
+theorem nttF_y_0 :
+    NTT (Pl Data.y_0) = Pl Data.yh_0 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `NTT(y[1])`. -/
+theorem nttF_y_1 :
+    NTT (Pl Data.y_1) = Pl Data.yh_1 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `NTT(y[2])`. -/
+theorem nttF_y_2 :
+    NTT (Pl Data.y_2) = Pl Data.yh_2 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `NTT(y[3])`. -/
+theorem nttF_y_3 :
+    NTT (Pl Data.y_3) = Pl Data.yh_3 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `ĉ = NTT(c)`. -/
+theorem nttF_c :
+    NTT (RPoly.toZq (Rl Data.cL)) = Pl Data.ch := by decide +kernel
+
+end TopWitness
+end Proofs

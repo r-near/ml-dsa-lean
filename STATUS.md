@@ -96,7 +96,7 @@ One end-to-end Lean proof, readable top-down:
   `prepare_sk_*` and `signing_key_*` in `checkct/README.md`: secure on x86_64 and thumbv7em; on riscv32imac secure
   for 65, unknown for 44 and 87 (timeout, no leak found).
 - These partial theorems restrict what the Rust may return; they give no positive guarantee for a concrete input.
-  That the spec returns `some` for a given input has a kernel witness at the top level only for KeyGen, ML-DSA-44, one seed (see below).
+  That the spec returns `some` for a given input has a kernel witness at the top level only for one ML-DSA-44 input (KeyGen, Sign, Verify; see below).
 - Stretch: `Verify(pk, M, Sign(sk, M)) = true` for `(pk, sk) = KeyGen(ξ)`. **Done** (`Proofs/Correctness.lean`).
 
 Named premises (the only ones allowed; each needs a satisfiability witness):
@@ -113,21 +113,22 @@ Witness status of the premises:
 - Parameter premises (`Params.Std`): kernel-checked for 44/65/87.
 - Sampler premises at the leaves: kernel witnesses on zero seeds (RejNTTPoly, ExpandA for 44, RejBoundedPoly and
   ExpandS for 44 and 65, SampleInBall for 44).
-- Top-level `some` premises: **KeyGen** has a kernel witness for ML-DSA-44 (ξ = 0..31, default fuel):
-  `Proofs.TopWitness.keygen_44_nonvacuous` is `keygen_44_correct` with no premise left for that seed (Rust
-  `api.keygen_44` returns the spec's pk and sk). It is checked by `scripts/witness-check.sh`, outside the default build
-  (about 12 min cold, about 19 GB peak per process). **Sign and Verify** have no kernel witness yet: one signing
-  attempt needs BitUnpack, skDecode, pkEncode and skEncode, each of which exceeded 100 GB of kernel memory when
-  measured, because evaluating `BytesToBits` and the `Array.push`/`set!` loops is quadratic in the kernel. Work on
-  linear-cost equivalents is in progress. Until then their evidence is the spec's ACVP run (`spec-acvp`, 63/63),
-  outside the kernel.
+- Top-level `some` premises: for ML-DSA-44 with ξ = 0..31, rnd = 0³², M = [0], ctx = [] and the default fuel, all
+  hypotheses of `correct_44` hold on a kernel-checked instance: `Spec.KeyGen` returns a key pair, `Spec.Sign` returns
+  `some` (`sign_lit_isSome`: the first attempt is accepted), and `Spec.Verify` returns `some true` on that pk and σ.
+  `Proofs.TopWitnessCorrect.correct_44_nonvacuous` bundles these with the Rust chain `api.keygen_44` → `api.sign_44`
+  → `api.verify_44 = ok true`; `keygen_44_nonvacuous` is the KeyGen-only version. Kernel evaluation runs on list-based
+  equivalents of BytesToBits, the bit packers and the Array loops, each proved equal to the spec for all inputs
+  (`TopWitnessFast`); the literals come from a native generator and each is re-derived by `decide +kernel`. Checked by
+  `scripts/witness-check.sh` (146 names, standard axioms), outside the default build: about 47 min cold, about 46 GB
+  peak across modules, about 24 GB for the largest declaration. One parameter set and one input only.
 - `Exhausted` (Sign's `false` case, all κ attempts rejected): satisfiable only by a counting argument; no witness,
   probability about 2^-thousands per input, untestable in practice.
 
 Not covered by any theorem:
 
-- Positive existence: KeyGen only, for ML-DSA-44 and one seed (above); Sign/Verify, and ML-DSA-65/87, have none.
-  The sampler leaves have witnesses. Every input is covered by the unconditional theorems
+- Positive existence: only the one ML-DSA-44 instance above (KeyGen, Sign, Verify); ML-DSA-65/87 and other inputs
+  have none. The sampler leaves have witnesses. Every input is covered by the unconditional theorems
   above, which say the Rust never panics and agrees with the spec whenever either returns.
 - The crate-private internals, public only under the `internals` feature (tests, fuzzing): `verify_internal` with a
   `Params` inconsistent with its `K`/`L` (the decoders index by `K`/`L`, so it can panic), and `sign_internal` /

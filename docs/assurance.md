@@ -128,8 +128,10 @@ samples; probabilistic), the κ budget, `Params.Std` (kernel-checked for 44/65/8
 
 - **Stack exhaustion and out-of-memory are not modeled** (STATUS.md line 72). Worst-case stack was measured, not
   proved: Sign 116/168/240 KB, Verify 50/76/115 KB, KeyGen 64/98/143 KB for 44/65/87 (`tools/stack/README.md`).
-- **No top-level kernel witness** that the spec returns `some` for any concrete KeyGen/Sign/Verify input; the sampler
-  leaves have witnesses on zero seeds. The `_exact` theorems still cover every input (STATUS.md lines 116–126).
+- **Top-level kernel witness for one input only.** `correct_44_nonvacuous` (`lean/Proofs/TopWitnessCorrect.lean`,
+  checked by `scripts/witness-check.sh`) shows the hypotheses of `correct_44` hold for one ML-DSA-44 input: KeyGen,
+  Sign and Verify (`some true`) all evaluated in the kernel, and the Rust keygen → sign → verify chain returns true.
+  ML-DSA-65/87 and other inputs have no witness. The `_exact` theorems still cover every input.
 - **Keccak is cross-checked with limits**: `xspec` proves our Keccak-f[1600] and SHAKE128/256 equal to ocaml-pq's FIPS 202
   transcription, and restates KeyGen, Verify and Sign on their SHAKE, but two reject-case Verify lemmas are not
   restated, the `keyGen_*_ocaml` premises still name a seed computed with our H, and independence is only that of
