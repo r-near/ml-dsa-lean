@@ -4,7 +4,7 @@
 //! - keyGen / sigVer: parsing is tested now; the runners are `#[ignore]`d until `keygen::keygen_internal` and
 //!   `verify::verify_internal` exist (see the TODO markers below).
 use flate2::read::GzDecoder;
-use ml_dsa_verified::params::{self, Params, ML_DSA_44, ML_DSA_65, ML_DSA_87};
+use ml_dsa_lean::params::{self, Params, ML_DSA_44, ML_DSA_65, ML_DSA_87};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::io::Read;
@@ -95,7 +95,7 @@ fn external_prefix(ctx: &[u8]) -> Vec<u8> {
 }
 
 fn sign_for(p: &Params, sk: &[u8], prefix: &[u8], m: &[u8], rnd: &[u8; 32]) -> Option<Vec<u8>> {
-    use ml_dsa_verified::sign::sign_internal;
+    use ml_dsa_lean::sign::sign_internal;
     let mut sig = vec![0u8; params::sig_len(p)];
     let ok = match p.k {
         4 => sign_internal::<4, 4>(p, sk, prefix, m, rnd, &mut sig),
@@ -244,9 +244,9 @@ fn vectors_parse() {
 fn keygen_for(p: &Params, xi: &[u8; 32]) -> (Vec<u8>, Vec<u8>) {
     let (mut pk, mut sk) = (vec![0u8; pk_len(p)], vec![0u8; params::sk_len(p)]);
     match p.k {
-        4 => ml_dsa_verified::keygen::keygen_internal::<4, 4>(p, xi, &mut pk, &mut sk),
-        6 => ml_dsa_verified::keygen::keygen_internal::<6, 5>(p, xi, &mut pk, &mut sk),
-        8 => ml_dsa_verified::keygen::keygen_internal::<8, 7>(p, xi, &mut pk, &mut sk),
+        4 => ml_dsa_lean::keygen::keygen_internal::<4, 4>(p, xi, &mut pk, &mut sk),
+        6 => ml_dsa_lean::keygen::keygen_internal::<6, 5>(p, xi, &mut pk, &mut sk),
+        8 => ml_dsa_lean::keygen::keygen_internal::<8, 7>(p, xi, &mut pk, &mut sk),
         _ => unreachable!(),
     }
     (pk, sk)
@@ -273,9 +273,9 @@ fn key_gen() {
 /// Algorithm 8 via `verify::verify_internal`.
 fn verify_for(p: &Params, pk: &[u8], prefix: &[u8], m: &[u8], sig: &[u8]) -> bool {
     match p.k {
-        4 => ml_dsa_verified::verify::verify_internal::<4, 4>(p, pk, prefix, m, sig),
-        6 => ml_dsa_verified::verify::verify_internal::<6, 5>(p, pk, prefix, m, sig),
-        8 => ml_dsa_verified::verify::verify_internal::<8, 7>(p, pk, prefix, m, sig),
+        4 => ml_dsa_lean::verify::verify_internal::<4, 4>(p, pk, prefix, m, sig),
+        6 => ml_dsa_lean::verify::verify_internal::<6, 5>(p, pk, prefix, m, sig),
+        8 => ml_dsa_lean::verify::verify_internal::<8, 7>(p, pk, prefix, m, sig),
         _ => unreachable!(),
     }
 }

@@ -1,8 +1,8 @@
 //! Differential test: fork KeyGen_internal(ξ) vs upstream pk and expanded sk.
 #![allow(deprecated)]
 use ml_dsa::{ExpandedSigningKey, MlDsa44, MlDsa65, MlDsa87, MlDsaParams, Seed};
-use ml_dsa_verified::keygen::keygen_internal;
-use ml_dsa_verified::params::{pk_len, sk_len, Params, ML_DSA_44, ML_DSA_65, ML_DSA_87};
+use ml_dsa_lean::keygen::keygen_internal;
+use ml_dsa_lean::params::{pk_len, sk_len, Params, ML_DSA_44, ML_DSA_65, ML_DSA_87};
 
 fn xorshift(state: &mut u64) -> u64 {
     let mut x = *state;

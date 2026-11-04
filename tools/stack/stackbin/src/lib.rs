@@ -7,7 +7,7 @@
 use core::hint::black_box;
 use core::mem::MaybeUninit;
 use core::ptr::addr_of;
-use ml_dsa_verified::api;
+use ml_dsa_lean::api;
 
 static mut XI: [u8; 32] = [7; 32];
 static mut RND: [u8; 32] = [9; 32];

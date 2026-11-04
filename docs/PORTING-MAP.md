@@ -1,4 +1,4 @@
-# Porting map: campaign Lean lemmas to ml-dsa-verified
+# Porting map: campaign Lean lemmas to ml-dsa-lean
 
 Scope: which Lean results from the earlier RustCrypto `ml-dsa` verification campaign can be reused here, from where,
 and what has to change. All paths are relative to the campaign root and prefixed `campaign/`. The campaign is

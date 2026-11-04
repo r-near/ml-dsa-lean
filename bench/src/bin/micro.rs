@@ -1,4 +1,4 @@
-//! Step-level costs of ml-dsa-verified (needs the `internals` feature) and a stepwise replica of keygen, sign
+//! Step-level costs of ml-dsa-lean (needs the `internals` feature) and a stepwise replica of keygen, sign
 //! and verify with a timer around every step.
 //!
 //! Part A: `MICRO` lines: nanoseconds per call of the building blocks (the permutation alone, a sponge squeeze of
@@ -14,14 +14,14 @@
 #![allow(clippy::type_complexity, clippy::needless_range_loop)]
 
 use ml_dsa_bench::*;
-use ml_dsa_verified::api;
-use ml_dsa_verified::encode::{pk_decode, pk_encode, sig_decode, sig_encode, sk_decode, sk_encode, w1_encode, bit_unpack, SecretKey};
-use ml_dsa_verified::keccak::{keccak_f1600, Shake};
-use ml_dsa_verified::ntt::{add_poly, matrix_vector_ntt, multiply_ntt, ntt, ntt_inverse, ntt_vec, scalar_vector_ntt_inverse, sub_poly};
-use ml_dsa_verified::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
-use ml_dsa_verified::rounding::{make_hint, poly_high_bits, poly_low_bits, poly_power2round, poly_use_hint, vec_infinity_norm};
-use ml_dsa_verified::sampling::{expand_a, expand_mask, expand_s, rej_bounded_poly, rej_ntt_poly, sample_in_ball};
-use ml_dsa_verified::field::{add, neg};
+use ml_dsa_lean::api;
+use ml_dsa_lean::encode::{pk_decode, pk_encode, sig_decode, sig_encode, sk_decode, sk_encode, w1_encode, bit_unpack, SecretKey};
+use ml_dsa_lean::keccak::{keccak_f1600, Shake};
+use ml_dsa_lean::ntt::{add_poly, matrix_vector_ntt, multiply_ntt, ntt, ntt_inverse, ntt_vec, scalar_vector_ntt_inverse, sub_poly};
+use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
+use ml_dsa_lean::rounding::{make_hint, poly_high_bits, poly_low_bits, poly_power2round, poly_use_hint, vec_infinity_norm};
+use ml_dsa_lean::sampling::{expand_a, expand_mask, expand_s, rej_bounded_poly, rej_ntt_poly, sample_in_ball};
+use ml_dsa_lean::field::{add, neg};
 use std::hint::black_box;
 use std::time::Instant;
 
@@ -120,7 +120,7 @@ fn sign_replica<const K: usize, const L: usize>(
     let mut rho_pp = [0u8; 64];
     a.t("H(K,rnd,mu)", || shake256(&[&key.key, rnd, &mu], &mut rho_pp));
     let mut kappa: u32 = 0;
-    let mut sig = vec![0u8; ml_dsa_verified::params::sig_len(p)];
+    let mut sig = vec![0u8; ml_dsa_lean::params::sig_len(p)];
     while kappa + (L as u32) - 1 <= 0xFFFF {
         *attempts += 1;
         let y = a.t("ExpandMask", || expand_mask::<L>(p, &rho_pp, kappa as u16));
@@ -226,7 +226,7 @@ fn keygen_replica<const K: usize, const L: usize>(p: &Params, xi: &[u8; 32], a: 
     a.t("pkEncode", || pk_encode::<K>(&rho, &t1, &mut pk));
     let mut tr = [0u8; 64];
     a.t("H(pk)", || shake256(&[&pk], &mut tr));
-    let mut sk = vec![0u8; ml_dsa_verified::params::sk_len(p)];
+    let mut sk = vec![0u8; ml_dsa_lean::params::sk_len(p)];
     a.t("skEncode", || sk_encode::<K, L>(p, &rho, &key, &tr, &s1, &s2, &t0, &mut sk));
     (pk, sk)
 }
@@ -299,7 +299,7 @@ fn verify_prepared<const K: usize, const L: usize>(p: &Params, prep: &Prepared<K
 // `ntt`, `ntt_inverse` and `multiply_ntt` (canonical u32 in [0, q), Barrett through u128, a conditional subtract
 // after every add and sub).
 mod cand {
-    use ml_dsa_verified::ntt::ZETAS;
+    use ml_dsa_lean::ntt::ZETAS;
     pub const Q: i32 = 8_380_417;
     const QU: u32 = 8_380_417;
     pub const QINV: u32 = 58_728_449; // q^-1 mod 2^32
@@ -701,7 +701,7 @@ macro_rules! per_set {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let rounds: usize = args.iter().position(|a| a == "--rounds").and_then(|i| args.get(i + 1)).map(|s| s.parse().unwrap()).unwrap_or(11);
-    println!("# micro: stepwise costs of ml-dsa-verified");
+    println!("# micro: stepwise costs of ml-dsa-lean");
     for l in sysinfo() {
         println!("# {l}");
     }

@@ -1,6 +1,6 @@
 //! The Shoup/Montgomery NTT arithmetic against plain `u64 %` arithmetic and the original Barrett butterflies.
-use ml_dsa_verified::field::{self, Q};
-use ml_dsa_verified::ntt::{self, F_SHOUP, ZETAS, ZETAS_NEG_SHOUP, ZETAS_SHOUP};
+use ml_dsa_lean::field::{self, Q};
+use ml_dsa_lean::ntt::{self, F_SHOUP, ZETAS, ZETAS_NEG_SHOUP, ZETAS_SHOUP};
 
 const QU: u64 = Q as u64;
 

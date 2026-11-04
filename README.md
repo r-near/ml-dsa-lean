@@ -1,4 +1,4 @@
-# ml-dsa-verified
+# ml-dsa-lean
 
 A proof-first ML-DSA (FIPS 204) implementation in Rust, written so that it extracts cleanly to Lean (Charon/Aeneas) and can carry one end-to-end proof:
 

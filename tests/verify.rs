@@ -4,8 +4,8 @@
 use ml_dsa::{
     EncodedVerifyingKey, ExpandedSigningKey, MlDsa44, MlDsa65, MlDsa87, MlDsaParams, Seed, Signature, VerifyingKey,
 };
-use ml_dsa_verified::params::{self, ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
-use ml_dsa_verified::verify::verify_internal;
+use ml_dsa_lean::params::{self, ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
+use ml_dsa_lean::verify::verify_internal;
 
 struct Rng(u64);
 impl Rng {

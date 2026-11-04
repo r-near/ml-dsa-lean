@@ -94,7 +94,7 @@ def runSign (verbose : Bool) : IO (Counts × Nat) := do
   return (counts, failures)
 
 /-- The `InvalidPrivateKey` vectors expect signing to fail. FIPS 204 does not require that (skDecode is defined on such bytes
-and "should only be run on inputs that come from trusted sources"), so the specification, like `ml-dsa-verified`, signs.
+and "should only be run on inputs that come from trusted sources"), so the specification, like `ml-dsa-lean`, signs.
 This prints what the specification does; it never counts as a failure. A signature that verifies is reported as `signs`. -/
 def runBadKeys (verbose : Bool) : IO Unit := do
   let mut signs := 0

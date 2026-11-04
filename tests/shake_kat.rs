@@ -2,7 +2,7 @@
 //! (`lean/SpecTests/Keccak.lean`, constants `exp_<hash>_<message>_<outputBytes>`): one source of truth for
 //! the expected outputs, checked by both the Rust implementation and the Lean specification.
 
-use ml_dsa_verified::keccak::Shake;
+use ml_dsa_lean::keccak::Shake;
 
 const LEAN: &str = include_str!("../lean/SpecTests/Keccak.lean");
 

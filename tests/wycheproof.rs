@@ -27,9 +27,9 @@ use ml_dsa::{
     EncodedVerifyingKey, ExpandedSigningKey, ExpandedSigningKeyBytes, MlDsa44, MlDsa65, MlDsa87, MlDsaParams, Seed, Signature,
     VerifyingKey,
 };
-use ml_dsa_verified::api;
-use ml_dsa_verified::params::{self, ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
-use ml_dsa_verified::verify::verify_internal as verify_slice;
+use ml_dsa_lean::api;
+use ml_dsa_lean::params::{self, ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
+use ml_dsa_lean::verify::verify_internal as verify_slice;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::io::Read;
@@ -527,7 +527,7 @@ fn vectors_parse() {
 #[test]
 fn ours() {
     let tallies = run_ours();
-    let failed = report("ml-dsa-verified (this crate)", &tallies);
+    let failed = report("ml-dsa-lean (this crate)", &tallies);
     assert_eq!(failed, 0, "{failed} Wycheproof vectors disagree with this crate (see FAIL lines above)");
 }
 

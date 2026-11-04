@@ -12,7 +12,7 @@
 //! The second half of the file does the same for prepared signing keys (`SigningKey*`): signatures must be
 //! byte-identical to `sign_*` and `sign_internal_*`, including `None` for |ctx| > 255 and for keys that exhaust
 //! the kappa budget.
-use ml_dsa_verified::api::*;
+use ml_dsa_lean::api::*;
 
 const SCALE: usize = if cfg!(debug_assertions) { 10 } else { 1 };
 

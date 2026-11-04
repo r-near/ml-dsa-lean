@@ -6,7 +6,7 @@
 #![allow(deprecated)]
 
 use crate::*;
-use ml_dsa_verified::api;
+use ml_dsa_lean::api;
 
 pub const NMSG: usize = 256;
 pub const NSEED: usize = 64;

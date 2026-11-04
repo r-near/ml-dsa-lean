@@ -9,7 +9,7 @@
 //! compared (ours is called with an empty ctx, `verify_internal(.., prefix = [0, 0], ..)`).
 //!
 //! Everything is run for ML-DSA-44, -65 and -87 (aws-lc-rs 1.18.2 exposes all three; nearcore uses 65). The verdict of
-//! `ml_dsa_verified::verify::verify_internal` (slice version: a wrong-length pk or σ is rejected) and of aws-lc-rs must be
+//! `ml_dsa_lean::verify::verify_internal` (slice version: a wrong-length pk or σ is rejected) and of aws-lc-rs must be
 //! equal on every case. Where FIPS 204 fixes the verdict (malformed hint encodings, z outside the bound, wrong lengths,
 //! a valid signature) it is also asserted against ours.
 //!
@@ -48,16 +48,16 @@
 use aws_lc_rs::encoding::AsRawBytes;
 use aws_lc_rs::signature::{self as aws, KeyPair, PqdsaKeyPair, PqdsaSigningAlgorithm, PqdsaVerificationAlgorithm, UnparsedPublicKey};
 use flate2::read::GzDecoder;
-use ml_dsa_verified::api;
-use ml_dsa_verified::encode::{pk_encode, sig_decode, sig_encode, sk_decode, sk_encode, w1_encode};
-use ml_dsa_verified::field::{add, neg};
-use ml_dsa_verified::keccak::Shake;
-use ml_dsa_verified::keygen::pk_from_sk;
-use ml_dsa_verified::ntt::{add_poly, matrix_vector_ntt, ntt, ntt_inverse, ntt_vec, scalar_vector_ntt_inverse, sub_poly};
-use ml_dsa_verified::params::{self as prm, Params};
-use ml_dsa_verified::rounding::{make_hint, poly_high_bits, poly_low_bits, poly_power2round, vec_infinity_norm};
-use ml_dsa_verified::sampling::{expand_a, sample_in_ball};
-use ml_dsa_verified::verify::verify_internal;
+use ml_dsa_lean::api;
+use ml_dsa_lean::encode::{pk_encode, sig_decode, sig_encode, sk_decode, sk_encode, w1_encode};
+use ml_dsa_lean::field::{add, neg};
+use ml_dsa_lean::keccak::Shake;
+use ml_dsa_lean::keygen::pk_from_sk;
+use ml_dsa_lean::ntt::{add_poly, matrix_vector_ntt, ntt, ntt_inverse, ntt_vec, scalar_vector_ntt_inverse, sub_poly};
+use ml_dsa_lean::params::{self as prm, Params};
+use ml_dsa_lean::rounding::{make_hint, poly_high_bits, poly_low_bits, poly_power2round, vec_infinity_norm};
+use ml_dsa_lean::sampling::{expand_a, sample_in_ball};
+use ml_dsa_lean::verify::verify_internal;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::io::Read;

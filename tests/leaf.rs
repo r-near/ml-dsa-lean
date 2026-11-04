@@ -2,12 +2,12 @@
 //! CoeffFromHalfByte, with RustCrypto `ml-dsa` as the oracle where it exposes the data.
 #![allow(deprecated)]
 use ml_dsa::{ExpandedSigningKey, MlDsa44, MlDsa65, MlDsa87, MlDsaParams, Seed};
-use ml_dsa_verified::encode::*;
-use ml_dsa_verified::field::Q;
-use ml_dsa_verified::keccak::Shake;
-use ml_dsa_verified::params::*;
-use ml_dsa_verified::rounding::*;
-use ml_dsa_verified::sampling::*;
+use ml_dsa_lean::encode::*;
+use ml_dsa_lean::field::Q;
+use ml_dsa_lean::keccak::Shake;
+use ml_dsa_lean::params::*;
+use ml_dsa_lean::rounding::*;
+use ml_dsa_lean::sampling::*;
 
 fn seed(i: u8) -> Seed {
     let mut s = Seed::default();

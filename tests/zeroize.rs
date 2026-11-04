@@ -19,11 +19,11 @@
 #![cfg(all(feature = "zeroize", feature = "internals"))]
 #![allow(clippy::needless_range_loop)]
 
-use ml_dsa_verified::api::*;
-use ml_dsa_verified::encode::sk_decode;
-use ml_dsa_verified::keccak::Shake;
-use ml_dsa_verified::ntt::ntt_vec;
-use ml_dsa_verified::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
+use ml_dsa_lean::api::*;
+use ml_dsa_lean::encode::sk_decode;
+use ml_dsa_lean::keccak::Shake;
+use ml_dsa_lean::ntt::ntt_vec;
+use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
 use std::hint::black_box;
 use std::mem::{size_of, ManuallyDrop, MaybeUninit};
 use std::ptr;

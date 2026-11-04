@@ -11,7 +11,7 @@ use ml_dsa::{
     EncodedVerifyingKey, ExpandedSigningKey, ExpandedSigningKeyBytes, MlDsa44, MlDsa65, MlDsa87, MlDsaParams, Signature,
     VerifyingKey,
 };
-use ml_dsa_verified::api;
+use ml_dsa_lean::api;
 use std::cell::Cell;
 
 // ---------------------------------------------------------------------------------------------

@@ -71,7 +71,7 @@ fn run<P: MlDsaParams>(
 }
 
 fn main() {
-    use ml_dsa_verified::api::*;
+    use ml_dsa_lean::api::*;
     println!("{:<10} {:<7} {:>12} {:>12} {:>7}", "set", "op", "upstream", "this crate", "ratio");
     run::<MlDsa44>(
         "ML-DSA-44",

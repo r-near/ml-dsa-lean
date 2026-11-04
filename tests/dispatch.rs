@@ -4,8 +4,8 @@
 // Only meaningful with the dispatch compiled in (feature `avx2`). Not a `[[test]] required-features` entry, because
 // scripts/extract.py copies only src/ and Cargo.toml.
 #![cfg(feature = "avx2")]
-use ml_dsa_verified::field::Q;
-use ml_dsa_verified::ntt;
+use ml_dsa_lean::field::Q;
+use ml_dsa_lean::ntt;
 
 struct XorShift(u64);
 impl XorShift {

@@ -298,7 +298,7 @@ fn report(g: &Graph, exclude: &[String], min_frame: u64) {
     let names: Vec<String> = g.funcs.iter().map(|f| dem(&f.name)).collect();
     let skip_panics: Vec<bool> = names.iter().map(|n| exclude.iter().any(|e| n.contains(e.as_str()))).collect();
     let none = vec![false; g.funcs.len()];
-    let mut roots: Vec<usize> = (0..g.funcs.len()).filter(|&i| names[i].starts_with("ml_dsa_verified::api::")).collect();
+    let mut roots: Vec<usize> = (0..g.funcs.len()).filter(|&i| names[i].starts_with("ml_dsa_lean::api::")).collect();
     // When LTO inlined an api function into its exported wrapper (`stk_<name>`), root at the wrapper instead.
     let present: HashSet<String> = roots.iter().map(|&i| names[i].rsplit("::").next().unwrap().to_string()).collect();
     for i in 0..g.funcs.len() {
@@ -325,7 +325,7 @@ fn report(g: &Graph, exclude: &[String], min_frame: u64) {
             .collect();
         println!(
             "| {} | {} | {} | {} | {} |",
-            names[r].trim_start_matches("ml_dsa_verified::api::").replace("stk_", "wrapper:"),
+            names[r].trim_start_matches("ml_dsa_lean::api::").replace("stk_", "wrapper:"),
             a,
             b,
             w_all.frame(r),
@@ -381,7 +381,7 @@ fn report(g: &Graph, exclude: &[String], min_frame: u64) {
 }
 
 fn short(n: &str) -> String {
-    let n = n.trim_start_matches("ml_dsa_verified::");
+    let n = n.trim_start_matches("ml_dsa_lean::");
     let n = if let Some(p) = n.find('<') { format!("{}{}", &n[..p], "<..>") } else { n.to_string() };
     n
 }

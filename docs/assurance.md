@@ -1,6 +1,6 @@
 # Assurance case for reviewers
 
-What `ml-dsa-verified` establishes about its public `api`, under which assumptions, what it does not cover, and how to
+What `ml-dsa-lean` establishes about its public `api`, under which assumptions, what it does not cover, and how to
 reproduce each piece of evidence. Every statement cites `STATUS.md`, a Lean source, or a script; where this document
 and `STATUS.md` differ, `STATUS.md` wins (it is updated as work lands). Line numbers are for the tree this file was
 written on. Nothing here is a FIPS validation or certification: ACVP vectors are test vectors, not a CMVP validation,

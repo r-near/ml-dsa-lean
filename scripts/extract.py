@@ -21,7 +21,7 @@ ap.add_argument('--out', default=str(repo / 'lean/Impl'))
 a = ap.parse_args()
 src, work, out = Path(a.src).resolve(), Path(a.work).resolve(), Path(a.out).resolve()
 
-CRATE = 'ml_dsa_verified'
+CRATE = 'ml_dsa_lean'
 NS = 'Impl'
 AENEAS_PIN, CHARON_PIN = 'build-183e4f0', 'nightly-2026.09.02'
 T = Path.home() / 'hax-tools'

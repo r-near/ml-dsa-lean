@@ -1,6 +1,6 @@
 # crosscheck: cross-implementation differential testing
 
-Standalone crate (own `[workspace]`, like `fuzz/`) that compares `ml-dsa-verified`, through its public `api` only,
+Standalone crate (own `[workspace]`, like `fuzz/`) that compares `ml-dsa-lean`, through its public `api` only,
 against three independent implementations:
 
 | Oracle | Pinned | Backends exercised |
