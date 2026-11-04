@@ -107,5 +107,18 @@ disclosure only.
   NTT code shape. It looks like one solver query that never returns. Possible report: a reproducer with the probe's
   BINSEC script and binary, and whether a solver timeout option exists. Evidence: `checkct/README.md` "Full sweep at
   e9a1c74". Status: open (needs a minimal reproducer).
+- **U-43 (2026-11-03): cargo-checkct drops `RUSTUP_TOOLCHAIN`.** It clears the variable before building the driver
+  (`src/run.rs:263` in the version we use), so a toolchain override through the environment is silently ignored and
+  the driver is built with the directory's pinned toolchain. Workaround: select the toolchain with a
+  `rust-toolchain.toml` and check the driver's `.comment` section (`checkct/run-select.sh`, `nearcore-exact`).
+  Status: open (behavior report).
+- **U-44 (2026-11-03): BINSEC 0.11.3 can't lift x86_64 `vtestps`.** With nearcore's target features (`+fma` implies
+  AVX), LLVM emits VEX `vtestps` for some reductions and BINSEC stops there (`unknown`). Same class as U-40.
+  Evidence: `checkct/README.md`, nearcore-exact rewrite experiments. Status: open.
+- **U-45 (2026-11-03): BINSEC stalls at overflow-check guards on secret values.** With `overflow-checks = true`, 67
+  probes end `unknown` at a conditional jump to the panic thunk after `a + Q - b`, a Montgomery step and similar
+  (`checkct/README.md`, stop table). The guards are never taken for in-range inputs, but the analysis does not get
+  past them. Possibly expected behavior (the guard's condition is secret-dependent); a small reproducer would settle
+  it. Our side: make the arithmetic independent of overflow checks. Status: open (needs a reproducer).
 - **U-41 (2026-10-30): cargo-checkct does not support aarch64 targets.** We call BINSEC directly with
   `-isa aarch64` (`checkct/aarch64.sh`). Status: open (feature request).
