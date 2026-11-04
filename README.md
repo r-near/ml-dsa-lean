@@ -76,8 +76,9 @@ untrusted expanded secret keys; `sign_NN` itself follows FIPS 204 and does not c
 
 Features:
 
-- `zeroize` (off by default): wipes the secret material the library handles. Stack-residue wiping holds for optimized builds
-  only; the stack-residue scans fail at opt-level 0 (Z-1 in the assurance document).
+- `zeroize` (off by default): wipes the secret material the library handles. Stack-residue wiping holds for release builds
+  only; the stack-residue scans fail at opt-level 0, and for `keygen_44`/`keygen_65` at opt-level 1 (Z-1 in the assurance
+  document).
 - `avx2` (off by default, x86_64 only): runtime CPUID dispatch to an AVX2 compilation of the NTT bodies. This is the crate's
   only `unsafe` and is outside the proof; without the feature the crate has `forbid(unsafe_code)`.
 
@@ -117,7 +118,7 @@ the Rust to Lean and diffing `lean/Impl`, the Lean gates, the Rust check list, a
 
 Short list; the assurance document has the full one (section 7):
 
-- Stack residue wiping fails to hold at opt-level 0 (Z-1, open).
+- Stack residue wiping fails to hold at opt-level 0, and for `keygen_44`/`keygen_65` at opt-level 1 (Z-1, open).
 - BINSEC 0.11.3 cannot lift AVX/VEX instructions. Under nearcore's exact release build (`+fma` implies AVX), 49 of 113
   probes (the NTT, `hint_step`, `response`, `compute_t`, `prepare_sk`, `signing_key` and others) and both Sign censuses have
   no verdict; the same flags with the vectorizers off give a verdict for every probe, which is evidence about a different

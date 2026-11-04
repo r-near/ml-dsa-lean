@@ -180,7 +180,7 @@ fn t0_and_header_bytes_do_not_matter() {
 }
 
 /// Signing is unchanged: `sign_NN` does not consult the check and still signs with an out-of-range key
-/// (ISSUES E-4; FIPS 204 Algorithm 25 leaves that case undefined).
+/// (E-4 in `docs/assurance.md`; FIPS 204 Algorithm 25 leaves that case undefined).
 #[test]
 fn sign_does_not_call_the_check() {
     let set = &sets()[0];

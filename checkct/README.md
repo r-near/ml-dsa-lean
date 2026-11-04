@@ -548,7 +548,7 @@ Expected-insecure probes. `rej_bounded_poly_eta{2,4}` leak by design: the loop b
 nibble is accepted, and which positions are rejected is public (it only changes how many XOF bytes are consumed).
 `census_sign_internal_44` finds the same kind of branch (a rejection sampler) first. These are not constant-time
 bugs; they show what BINSEC cannot distinguish (secret data versus public outcome of a secret-derived value), which
-is why the proof of "no secret-dependent branch" is done per step.
+is why the check for "no secret-dependent branch" is done per step.
 
 ## Split probes (`driver/src/split.rs`, `split-run.sh`)
 
@@ -605,6 +605,6 @@ a smaller instantiation that includes the K = 8 glue; claim it at that strength.
 - Shake absorb/squeeze with a secret input is covered through `keccak_f1600` and the hash probes
   (`keygen_seed_hash`, `sign_rho_pp_hash`, `expand_mask_*`) only for the parameter sets listed; verify (public data) and
   `use_hint` are not probed; zeroization is outside this tool.
-- BINSEC proves absence of secret-dependent control flow/memory/division operands, not absence of data-dependent
+- BINSEC checks the absence of secret-dependent control flow/memory/division operands, not absence of data-dependent
   instruction timing (e.g. variable-latency multiplies on some cores; the `multiplication` check is experimental and
   not enabled).
