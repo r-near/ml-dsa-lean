@@ -303,7 +303,7 @@ for i in "${!NAMES[@]}"; do
 done
 if [ "$STRICT" -eq 1 ] && [ "$skip" -gt 0 ]; then fail=$((fail+skip)); fi
 if [ "$ZEROIZE_SKIPPED" -eq 1 ]; then
-  echo "NOTE: skipping stack_residue_* in test-zeroize (fails at opt-level 0, see the notes at the top of scripts/ci.sh); test-zeroize-release and nearcore-test-zeroize cover them in release"
+  echo "NOTE: skipping stack_residue_* in test-zeroize (fails at opt-level 0, see the header of this script and Z-1 in docs/assurance.md); test-zeroize-release and nearcore-test-zeroize cover them in release"
 fi
 if [ "${#NAMES[@]}" -eq 0 ]; then
   echo "no step ran (--only matched nothing that was enabled)"; fail=$((fail+1))
