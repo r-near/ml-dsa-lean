@@ -177,8 +177,8 @@ unexpected leak. Three real leaks were found and fixed (ISSUES CT-1, CT-2, CT-3)
   censuses have no verdict, because BINSEC 0.11.3 cannot lift the VEX instructions (`vinsertps`, `vblendvps`, `vblendps`
   on `ymm`) that `+fma` (which implies AVX) lets LLVM emit; one more probe is a solver stall (ISSUES T-9, upstream U-44).
   With the vectorizers off (`nearcore-exact-novec`) all 113 get a verdict: 108 secure, 5 expected insecure. Elsewhere:
-  two on riscv32imac plus three new riscv32imac split pieces (a solver stall at one store; the full-size probes they split
-  are secure) and eleven on AArch64 (one stuck solver query each), partly covered by split probes (STATUS.md line 221;
+  two on riscv32imac (`vec_power2round_87`, one census), the three `split_vec_power2round_{5,6,7}` capacity probes there, and three new
+  riscv32imac `split_prepare_sk` pieces (a solver stall at one store; the full-size probes they split are secure) and eleven on AArch64 (one stuck solver query each), partly covered by split probes (STATUS.md line 221;
   `checkct/README.md`, "Split probes"). `sk_is_well_formed` is branch-free since ae6023c (CT-3) and `secure` on every target
   and profile measured, including `nearcore-exact` (`src/api.rs`, doc of `sk_is_well_formed_NN`).
 - **The `nearcore-exact` CT profile is nearcore's exact release build for the crate in isolation** (`overflow-checks =

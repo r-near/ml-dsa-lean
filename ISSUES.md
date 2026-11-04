@@ -36,7 +36,7 @@ Bugs found, tool problems and errata, newest last. Each entry: ID, date, what, i
   `vec_infinity_norm` running maximum gets `opaque_u32`. Proofs changed only in bodies (770 headline names, witness
   146). Under `nearcore-exact` after the fix: the six `sk_is_well_formed*` probes, `sk_decode`, `sk_encode` and
   `expand_mask` are secure; the remaining unknowns stop at AVX/VEX instructions BINSEC 0.11.3 cannot lift (`vinsertps`,
-  `vblendvps`, `vblendps ymm`) and are secure with vectorization off (`checkct/README.md`).
+  `vblendvps`, `vblendps ymm`) and are secure with vectorization off (49 probes; T-9, `checkct/README.md`).
 
 - **Z-1 (2026-11-03): zeroize stack-residue scans fail in unoptimized builds.** `tests/zeroize.rs` has 15 stack
   scans. At opt-level 0, 8 find copies of s1, s2, ŝ1, t0 or K in dead stack frames: `keygen` (44/65/87),

@@ -333,8 +333,8 @@ nearcore's compiler actually emits.
   control of the e9a1c74 sweep (the branch is lowered to a select). The two censuses were not rerun (OOM at 120 GB, below). No
   verdict changed.
 - **riscv32imac** (default profile, 114 probes): 101 secure, 5 expected insecure (`rej_bounded_poly_eta2/4`,
-  `control_early_exit_44`, `control_prepared_index_44`, and the standalone `ct_lt_mask`, one control-flow leak at 0x03d456 as at
-  e9a1c74), 8 unknown in the sweep run (`JOBS=8`, 3600 s): the known `vec_power2round_87` (190,098 instructions, 1 pending path) and
+  `control_early_exit_44`, `control_prepared_index_44`, and the standalone `ct_lt_mask`: `insecure` as at
+  e9a1c74, one control-flow leak, 0x03d456 in this run), 8 unknown in the sweep run (`JOBS=8`, 3600 s): the known `vec_power2round_87` (190,098 instructions, 1 pending path) and
   `split_vec_power2round_{5,6,7}`; `control_prepared_branch_44`, which is `insecure` in a rerun alone (`JOBS=2`, 7200 s; the
   leak was found, as in the e9a1c74 rerun, so the result depends on exploration order); and **three verdicts that are new:
   `split_prepare_sk_65_col`, `split_prepare_sk_65_row`, `split_prepare_sk_87_6x1` are `unknown`, and were `secure` at the tree
@@ -383,7 +383,7 @@ kill of any process on the box in that window; no probe of the 113 per profile e
 
 Other deviations from the README method, for reference:
 
-- Up to eleven containers ran at once in the first hours (`JOBS=8` each, 64 GB cap each, `--cpus 24` each on 60 cores), and 7200 s
+- Up to ten containers ran at once in the first hours (`JOBS=8` each, 64 GB cap each, `--cpus 24` each on 60 cores), and 7200 s
   reruns used `JOBS=2`. Where contention could matter (the three riscv32imac split probes), a rerun alone gave the same result.
 - `cargo-checkct`'s build pass runs every probe with `-sse-timeout 1`, which BINSEC checks only between paths: in the census containers
   it held one container for about 110 minutes on a single probe (the `nearcore-exact` census run, `split_prepare_sk_87_col` of the build pass)
