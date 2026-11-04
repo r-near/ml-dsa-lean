@@ -6,7 +6,7 @@ against three independent implementations:
 | Oracle | Pinned | Backends exercised |
 |---|---|---|
 | libcrux-ml-dsa (Cryspen) | crates.io `=0.0.11` (with `libcrux-sha3 0.0.11`, `libcrux-intrinsics 0.0.9`, `libcrux-platform 0.0.4`), features `acvp` (Sign_internal/Verify_internal) and `simd256` | portable and AVX2 (each called explicitly, AVX2 only after a run-time `is_x86_feature_detected!`) |
-| mldsa-native (pq-code-package, C) | tag `v2.0.0`, commit `834a90d5e846ffa1e1611bd24e160bb2e9b86d35`, vendored verbatim in `vendor/mldsa-native/mldsa` and built by `build.rs` with the `cc` crate (cc 1.10.0; gcc 13.3 on the box) | portable C, and x86_64 AVX2 (native arithmetic and Keccak plus the `.S` files); two namespaced builds linked into one binary |
+| mldsa-native (pq-code-package, C) | tag `v2.0.0`, commit `834a90d5e846ffa1e1611bd24e160bb2e9b86d35`, vendored verbatim in `vendor/mldsa-native/mldsa` and built by `build.rs` with the `cc` crate (cc 1.10.0; gcc 13.3) | portable C, and x86_64 AVX2 (native arithmetic and Keccak plus the `.S` files); two namespaced builds linked into one binary |
 | RustCrypto `ml-dsa` | git `a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e` (the revision the main crate's tests and `fuzz/` use; deprecated expanded-key API for skEncode bytes) | its single portable backend |
 
 All versions are locked in `Cargo.lock`. `XC_NO_AVX2=1` (build time and run time) drops the AVX2 backends.
@@ -65,12 +65,12 @@ in hex.
 
 ## How to run
 
-On the build box (see the repository's rules; plain `cargo`, no target-dir overrides):
+On a Linux x86_64 machine with the Rust toolchains and a C compiler (plain `cargo`):
 
 ```
-rx run -- 'set -o pipefail; cd crosscheck && cargo run --release --bin xcheck -- --cases 50000 --exhaustive 60 --out /tmp/xc-out'
-rx run -- 'set -o pipefail; cd crosscheck && cargo +nightly fuzz run verify_xdiff --target x86_64-unknown-linux-gnu -s none -- -fork=14 -max_len=16384 -max_total_time=1800'
-rx run -- 'set -o pipefail; cd crosscheck && cargo +nightly fuzz run sign_xdiff   --target x86_64-unknown-linux-gnu -s none -- -fork=14 -max_len=16384 -max_total_time=1800'
+(cd crosscheck && cargo run --release --bin xcheck -- --cases 50000 --exhaustive 60 --out /tmp/xc-out)
+(cd crosscheck && cargo +nightly fuzz run verify_xdiff --target x86_64-unknown-linux-gnu -s none -- -fork=14 -max_len=16384 -max_total_time=1800)
+(cd crosscheck && cargo +nightly fuzz run sign_xdiff   --target x86_64-unknown-linux-gnu -s none -- -fork=14 -max_len=16384 -max_total_time=1800)
 ```
 
 `xcheck` options: `--seed N --cases N --threads N --exhaustive N --sets 44,65,87 --sig-flips N --pk-flips N
@@ -79,7 +79,7 @@ Cases are per parameter set.
 
 ## Results
 
-All runs on the build box (AMD EPYC, AVX2 present, so both AVX2 backends ran; the box was shared with other jobs). Master
+All runs on one Linux machine (AMD EPYC, AVX2 present, so both AVX2 backends ran; the machine was shared with other jobs). Master
 seed `0x5EED0204`. The deterministic run took 97 minutes wall (503 CPU-minutes), mostly the exhaustive flips, which run
 serially inside a 16-case work chunk (so `--exhaustive N` uses only about N/16 threads; use a smaller N or a smaller
 chunk if wall time matters).
@@ -186,5 +186,5 @@ are a type-level matter except for RustCrypto's rejection above.
   would not show, and the mutation classes are chosen by hand plus random bit flips.
 - libcrux 0.0.11 and mldsa-native v2.0.0 are the pins; the AVX2 backends were run on one CPU model.
 - Sign cases with extremely rare κ exhaustion were not observed (every case signed).
-- The fuzz runs had a shared, loaded box; `sign_xdiff` is slow per execution (about 100 ms), so its execution count is
+- The fuzz runs had a shared, loaded machine; `sign_xdiff` is slow per execution (about 100 ms), so its execution count is
   small compared with the 12 M of `fuzz/verify_diff`.
