@@ -196,7 +196,7 @@ OOM kill occurred in any run (below), so the "no verdict" column is empty; `unkn
 | profile (x86_64) | secure | expected insecure | insecure, new | unknown | no verdict (OOM) |
 |---|---|---|---|---|---|
 | `nearcore-exact` | 38 | 3 | 6 | 67 | 0 |
-| `nearcore-exact-dispatch` | 38 | 3 | 6 | @@DISP_UNKNOWN@@ | 0 |
+| `nearcore-exact-dispatch` | 38 | 3 | 6 | 67 | 0 |
 
 Verdicts per probe are identical in the two profiles for all 112 probes (stage 1, and stage 3 for the 14 reruns); only
 the censuses are listed separately below. "Secure" means exactly what the README defines everywhere else; every secure row
@@ -379,12 +379,13 @@ to `field.rs`/`ntt.rs` for the other 65 unknowns.
 
 | run | container cap | result |
 |---|---|---|
-| `nearcore-exact` `census_sign_internal_44` | 120 GB, `JOBS=1`, 3600 s | `unknown`: 1 pending path after 1,372,577 instructions (167,830 control-flow and 427,006 memory-access checks passed, no leak), stuck at `sk_decode` `field.rs:39`; resident memory stayed under 2 GB at sampled points. No `sampling.rs:35` leak was reached (the earlier profiles found it first), so this census says nothing about it |
+| `nearcore-exact` `census_sign_internal_44` | 120 GB, `JOBS=1`, 3600 s | `unknown`: 1 pending path after 1,372,577 instructions (167,830 control-flow and 427,006 memory-access checks passed, no leak), stuck at `sk_decode` `field.rs:39`; resident memory was 1.2 to 1.9 GB at the two samples taken. No `sampling.rs:35` leak was reached (the earlier profiles found it first), so this census says nothing about it |
 | `nearcore-exact` `census_sign_prepared_44` | 120 GB, `JOBS=1`, 3600 s | `unknown`: 1 pending path after 54,314 instructions, stuck at the same instruction (0x211ce7), no leak |
-@@DISPATCH_CENSUS@@
+| `nearcore-exact-dispatch` `census_sign_internal_44` | 120 GB, `JOBS=1`, 3600 s | `unknown`: 1 pending path after 1,371,009 instructions (167,983 control-flow and 427,222 memory-access checks passed, no leak), stuck at the same `sk_decode` guard (`field.rs:39`, 0x21177d) |
+| `nearcore-exact-dispatch` `census_sign_prepared_44` | 120 GB, `JOBS=1`, 3600 s | `unknown`: 1 pending path after 54,809 instructions (15,182 control-flow and 18,080 memory-access checks passed, no leak), same stop |
 
-OOM ledger: none of the runs of this section was killed. The kernel log (`journalctl -k -g 'Killed process'`, last 12 hours
-at the time of the sweeps and again after the censuses) shows only kills of `lean` processes of other jobs on the box; no
+OOM ledger: none of the runs of this section was killed. The kernel log (`journalctl -k -g 'Killed process'`, checked after the stage-1 sweeps (last 12 hours) and again after
+the last census (last 6 hours, which covers the four census runs)) shows only kills of `lean` processes of other jobs on the box; no
 `binsec` kill. Every result of the sweep is `secure`, `insecure` or `unknown`; no `error`. The censuses were not
 restricted to `JOBS=1` in stage 1/2 because they were excluded from them (`EXCLUDE`); the old "needs more than 120 GB" rows do
 not carry over to this build: the overflow-check stall ends the census long before memory matters.
