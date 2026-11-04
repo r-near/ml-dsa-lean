@@ -86,9 +86,9 @@ pub fn mul_mont(a: u32, b: u32) -> u32 {
 
 /// Optimization barrier: the identity, but opaque to LLVM, so that the mask idioms below are not turned back
 /// into branches on targets without a conditional move (checkct found this on riscv32imac; ISSUES.md CT-1).
-/// Only RISC-V gets it on every mask: the mask idioms check clean on x86_64 and thumbv7em without it (the one
-/// exception, `decompose`'s edge mask, uses `opaque_u32` below), and `black_box` on every mask costs about 25% in
-/// signing there. Extraction runs with `--cfg miri`, so the extracted (proved) code is the plain identity;
+/// Only RISC-V gets it on every mask: the mask idioms check clean on x86_64 and thumbv7em without it (the two
+/// exceptions, `decompose`'s edge mask and the running maximum in `vec_infinity_norm`, use `opaque_u32` below),
+/// and `black_box` on every mask costs about 25% in signing there. Extraction runs with `--cfg miri`, so the extracted (proved) code is the plain identity;
 /// the compiled code differs from it only by `core::hint::black_box`, which is the identity on values.
 #[cfg(all(not(miri), any(target_arch = "riscv32", target_arch = "riscv64")))]
 fn barrier_u64(x: u64) -> u64 {

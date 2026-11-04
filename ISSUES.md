@@ -25,14 +25,18 @@ Bugs found, tool problems and errata, newest last. Each entry: ID, date, what, i
   probe is secure in both the default and nearcore-like profiles; thumbv7em and riscv32imac unchanged. Cost: Sign
   about +2–3%, Verify and KeyGen unchanged.
 
-- **CT-3 (2026-11-03): `sk_is_well_formed` branches on secret coefficients when built with overflow checks.** Under
-  nearcore's release settings (`overflow-checks = true`, checkct profile `nearcore-exact`), the `&&` in `poly_in_eta`
-  (`src/encode.rs`) stays a conditional branch, because its right operand can panic; BINSEC reports two `jb` leaks
-  that reveal the sign of each s1/s2 coefficient. Affects the optional key check `sk_is_well_formed_*` and its
-  callers (`pk_from_sk_*`); Sign does not call it. Builds without overflow checks were secure. Root cause, shared
-  with 67 `unknown` probes: overflow-check guards on secret arithmetic (`field.rs`). Fix in progress: mask
-  accumulation without short-circuit, and `wrapping_*` arithmetic where the proofs already exclude overflow.
-  Workaround for integrators: `[profile.release.package.<this crate>] overflow-checks = false`.
+- **CT-3 (2026-11-03, resolved 2026-11-04 in ae6023c): `sk_is_well_formed` branched on secret coefficients when built
+  with overflow checks.** Under nearcore's release settings (`overflow-checks = true`, checkct profile `nearcore-exact`),
+  the `&&` in the old `poly_in_eta` (`src/encode.rs`) stayed a conditional branch, because its right operand could
+  panic; BINSEC reported two `jb` leaks revealing the sign of each s1/s2 coefficient. Affected the optional key check
+  `sk_is_well_formed_*` and its callers (`pk_from_sk_*`); Sign never called it. Fix: `poly_eta_bad`/`eta_block_bad`
+  OR per-coefficient mask bits from wrapping differences and `sk_is_well_formed` compares once with zero (exact
+  because coefficients are canonical, below 2³¹); `field.rs`, `rounding.rs` and the range test use `wrapping_*`
+  arithmetic where the proofs already exclude overflow, so no overflow-check guard remains on secret values; the
+  `vec_infinity_norm` running maximum gets `opaque_u32`. Proofs changed only in bodies (770 headline names, witness
+  146). Under `nearcore-exact` after the fix: the six `sk_is_well_formed*` probes, `sk_decode`, `sk_encode` and
+  `expand_mask` are secure; the remaining unknowns stop at AVX/VEX instructions BINSEC 0.11.3 cannot lift (`vinsertps`,
+  `vblendvps`, `vblendps ymm`) and are secure with vectorization off (`checkct/README.md`).
 
 - **Z-1 (2026-11-03): zeroize stack-residue scans fail in unoptimized builds.** `tests/zeroize.rs` has 15 stack
   scans. At opt-level 0, 8 find copies of s1, s2, ŝ1, t0 or K in dead stack frames: `keygen` (44/65/87),
