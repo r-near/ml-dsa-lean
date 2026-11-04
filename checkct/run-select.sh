@@ -17,6 +17,7 @@
 #            nearcore-exact    the exact nearcore release build (see the block comment below): nearcore's [profile.release] incl.
 #                              overflow-checks = true, nearcore's x86_64 target features and Rust 1.95.0 (CT_TOOLCHAIN)
 #            nearcore-exact-dispatch  nearcore-exact plus the driver's `avx2` feature, cache pre-set as in nearcore-dispatch
+#            nearcore-exact-novec     nearcore-exact plus -C llvm-args=-vectorize-loops=false -vectorize-slp=false
 #            In a dispatch profile the dispatch cache (a static in .bss) is pre-set to "no AVX2" in every x86_64 BINSEC
 #            script, see run_one below; the run fails if the static or the script anchor is not found. In every other
 #            profile no dispatch is compiled and nothing is pre-set (the log says so).
@@ -33,7 +34,7 @@ set -o pipefail
 : "${ONLY:?set ONLY to a regex over the probe names}"
 TIMEOUT="${TIMEOUT:-7200}"
 NAME="${NAME:-ct-select}"
-case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch) TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}"
+case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch|nearcore-exact-novec) TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}"
   case " $TARGETS " in *" x86_64-unknown-linux-gnu "*) ;; *) echo "PROFILE=$PROFILE is x86_64 only (nearcore's settings); TARGETS=$TARGETS" >&2; exit 2 ;; esac ;; esac
 TARGETS="${TARGETS:-riscv32imac-unknown-none-elf thumbv7em-none-eabihf x86_64-unknown-linux-gnu}"
 JOBS="${JOBS:-4}"
@@ -45,9 +46,9 @@ PENV=""
 DISPATCH=""
 case "$PROFILE" in
   ""|nearcore|nearcore-novec|avx2|nearcore-avx2) ;;
-  nearcore-exact) ;;
+  nearcore-exact|nearcore-exact-novec) ;;
   dispatch|nearcore-dispatch|nearcore-exact-dispatch) DISPATCH=1 ;;
-  *) echo "unknown PROFILE=$PROFILE (known: nearcore, nearcore-novec, avx2, nearcore-avx2, dispatch, nearcore-dispatch, nearcore-exact, nearcore-exact-dispatch)" >&2; exit 2 ;;
+  *) echo "unknown PROFILE=$PROFILE (known: nearcore, nearcore-novec, avx2, nearcore-avx2, dispatch, nearcore-dispatch, nearcore-exact, nearcore-exact-dispatch, nearcore-exact-novec)" >&2; exit 2 ;;
 esac
 case "$PROFILE" in nearcore|nearcore-novec|nearcore-dispatch)
   PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort" ;; esac
@@ -80,9 +81,11 @@ fi
 # and fails if it is not the requested one. RUSTC_BOOTSTRAP=1 lets that stable compiler take the -Zbuild-std of
 # checkct/.cargo/config.toml (the driver is no_std and needs build-std's compiler-builtins-mem for memcpy/memset;
 # RUSTC_BOOTSTRAP does not change code generation). CT_TOOLCHAIN=nightly-2026-10-06 builds with the checkct nightly instead.
-case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch)
+case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch|nearcore-exact-novec)
   PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort -e CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false -e RUSTC_BOOTSTRAP=1 -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
-  export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -C force-unwind-tables=y" ;; esac
+  export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -C force-unwind-tables=y"
+  # nearcore-exact-novec: nearcore-exact plus the loop and SLP vectorizers off (as nearcore-novec), to see which unknowns are VEX artifacts
+  [ "$PROFILE" = nearcore-exact-novec ] && CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="$CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS -C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false" ;; esac
 # PROFILE=avx2: the default profile with `-C target-feature=+avx2` (nearcore-avx2: plus the nearcore settings). The
 # crate then takes its static-AVX2 arm (src/ntt.rs "Dispatch"): no cpuid, one compilation of each NTT body, compiled
 # for AVX2. BINSEC 0.11.3 cannot lift the VEX-encoded vector instructions LLVM emits there (status unknown at the
@@ -93,7 +96,7 @@ if [ "$PROFILE" = avx2 ] || [ "$PROFILE" = nearcore-avx2 ]; then
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
 EXACT=""
-case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch) EXACT=1 ;; esac
+case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch|nearcore-exact-novec) EXACT=1 ;; esac
 docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPERIMENTS" -e TRACE="$TRACE" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
   -v "$PWD":/src:ro ct-binsec bash -c '
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
