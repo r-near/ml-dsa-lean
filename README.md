@@ -1,9 +1,12 @@
 # ml-dsa-lean
 
-An ML-DSA (FIPS 204) implementation in Rust with a machine-checked Lean proof that its public API computes what the
-standard's algorithms compute. The Rust is written so that Charon and Aeneas can extract it to Lean unchanged: one function
-per FIPS 204 algorithm, plain loops over native arrays, `no_std`, no allocation, no dependencies (the optional `zeroize`
-feature adds one). It supports ML-DSA-44, ML-DSA-65 and ML-DSA-87.
+An ML-DSA (FIPS 204) implementation in Rust with a machine-checked Lean proof that its public API computes exactly what a
+Lean transcription of the standard's algorithms computes (partial correctness plus absence of panics); the transcription
+is trusted, see "What this does not say" below. The Rust is written so that Charon and Aeneas can extract it to Lean: one
+function per FIPS 204 algorithm, plain loops over native arrays, `no_std`, no allocation, no dependencies (the optional
+`zeroize` feature adds one). Extraction runs with `--cfg miri`, so the proved code is the source with its `cfg(miri)` variants:
+the `black_box` barriers (`field::opaque_u32` and the RISC-V mask barrier) are the identity there, and the AVX2 dispatch is
+absent. Those are not in the proved code (`docs/assurance.md` section 2). It supports ML-DSA-44, ML-DSA-65 and ML-DSA-87.
 
 Version 0.1.0. **Not audited by any third party, not FIPS-validated, and not a certified module.** An independent personal
 project; not affiliated with or endorsed by NEAR or any employer. [nearcore](https://github.com/near/nearcore) appears
@@ -26,8 +29,10 @@ the standard Lean axioms (`propext`, `Classical.choice`, `Quot.sound`).
 
 **What this does not say.** The proof is about the Rust *source* as modeled by Aeneas: stack exhaustion, out-of-memory,
 rustc and LLVM, and the instruction set are trusted. The specification (`lean/Spec`) is our transcription of FIPS 204 and is
-trusted; it has been cross-checked against test vectors and against ocaml-pq's independent transcription (proved equal),
-but the standard itself is not formalized. The `zeroize` and `avx2` features are outside the proof. HashML-DSA and external μ
+trusted; it has been cross-checked against test vectors and against ocaml-pq's independent transcription (proved equal, with
+the qualifiers in `docs/assurance.md` section 1.8: their Sign loop stops after 821 attempts, their key import rejects
+inconsistent keys that FIPS 204 accepts, and some directions assume their rejection samplers terminate), but the standard
+itself is not formalized. The `zeroize` and `avx2` features are outside the proof. HashML-DSA and external μ
 are not implemented. Constant time is **not** proved: it is checked on compiled code with BINSEC (below). The exact scope,
 the trusted base and the list of what is not covered are in [docs/assurance.md](docs/assurance.md); please read it before
 relying on any claim here.
@@ -71,8 +76,8 @@ untrusted expanded secret keys; `sign_NN` itself follows FIPS 204 and does not c
 
 Features:
 
-- `zeroize` (off by default): wipes the secret material the library handles. Stack-residue wiping is tested for optimized
-  builds only (Z-1 in the assurance document).
+- `zeroize` (off by default): wipes the secret material the library handles. Stack-residue wiping holds for optimized builds
+  only; the stack-residue scans fail at opt-level 0 (Z-1 in the assurance document).
 - `avx2` (off by default, x86_64 only): runtime CPUID dispatch to an AVX2 compilation of the NTT bodies. This is the crate's
   only `unsafe` and is outside the proof; without the feature the crate has `forbid(unsafe_code)`.
 
@@ -81,20 +86,27 @@ Minimum supported Rust version: 1.86. A benchmark table (ML-DSA-87, with dates a
 
 ## Evidence
 
-All of it can be re-run; see "Check it yourself" below.
+Nearly all of it can be re-run; see "Check it yourself" below, which also lists the exceptions.
 
 - **Proof gates.** `scripts/lean-check.sh` (770 declarations, standard axioms only), `scripts/witness-check.sh` (146 names,
   kernel-checked instances showing the premises are satisfiable for one ML-DSA-44 input), and `scripts/ci.sh` (17 Rust
-  steps) all passed at the recorded head.
-- **Constant time.** BINSEC checks on compiled probes of every function that touches secret data in KeyGen and Sign, on
-  x86_64 (several build profiles), thumbv7em, riscv32imac and AArch64 without NEON. No unexpected leak is open; three real
-  ones were found and fixed. Whole-Sign has no verdict, some probes have none, and the vectorized x86_64 NTT cannot be lifted
-  by BINSEC. Details and limits: `checkct/README.md`, assurance document section 4.
+  steps) all passed at 9d51b57, with extraction byte-identical to the committed `lean/Impl`. The only later commit to the
+  gated tree, 3fac023, changed one echo string in `scripts/ci.sh` (`docs/assurance.md` section 0).
+- **Constant time.** BINSEC checks compiled probes of every secret-touching step of KeyGen and Sign (listed in
+  `checkct/README.md`), on x86_64 (several build profiles), thumbv7em, riscv32imac and AArch64 without NEON. The whole KeyGen,
+  Sign and `pk_from_sk` functions have no verdict, and the glue between steps is covered by code reading only. No unexpected
+  leak is open; three real ones were found and fixed. Under nearcore's exact release build (`nearcore-exact`), 49 of 113
+  probes and both Sign censuses have no verdict (61 secure / 3 expected insecure / 0 unexpected / 51 unknown, including
+  `hint_step`, `response`, `compute_t`, `prepare_sk` and `signing_key`), because BINSEC cannot lift the AVX instructions
+  that `+fma` allows; the same flags with the vectorizers off get a verdict for every probe, but that is a different binary.
+  AArch64 builds with NEON, and therefore macOS and Apple Silicon builds, have no BINSEC coverage. Details and limits:
+  `checkct/README.md`, assurance document section 4.
 - **Differential tests** against RustCrypto `ml-dsa`, `aws-lc-rs` (verdict differences: 0 in about 3.2M verify
-  comparisons), libcrux-ml-dsa and mldsa-native (`crosscheck/`).
-- **Test vectors:** NIST ACVP (keyGen, sigGen, sigVer) and Wycheproof.
+  comparisons; empty context only; a test, not a proof), libcrux-ml-dsa and mldsa-native (`crosscheck/`).
+- **Test vectors:** NIST ACVP (keyGen, sigGen, sigVer; the preHash and external-μ cases are skipped) and Wycheproof.
 - **Fuzzing:** differential fuzz targets against RustCrypto (`fuzz/`) and the other implementations (`crosscheck/`).
-- **Spec cross-check:** `xspec/` proves `lean/Spec` equal to ocaml-pq's independent Lean transcription.
+- **Spec cross-check:** `xspec/` proves `lean/Spec` equal to ocaml-pq's independent Lean transcription, with the
+  qualifiers in `docs/assurance.md` section 1.8 (Sign attempt bound, key-import difference, sampler-termination assumption).
 
 ## Check it yourself
 
@@ -106,8 +118,11 @@ the Rust to Lean and diffing `lean/Impl`, the Lean gates, the Rust check list, a
 Short list; the assurance document has the full one (section 7):
 
 - Stack residue wiping fails to hold at opt-level 0 (Z-1, open).
-- BINSEC 0.11.3 cannot lift AVX/VEX instructions, so the NTT in a build with `+fma` and the AVX2 copy have no verdict; some
-  probes and the whole-Sign censuses have no verdict either.
+- BINSEC 0.11.3 cannot lift AVX/VEX instructions. Under nearcore's exact release build (`+fma` implies AVX), 49 of 113
+  probes (the NTT, `hint_step`, `response`, `compute_t`, `prepare_sk`, `signing_key` and others) and both Sign censuses have
+  no verdict; the same flags with the vectorizers off give a verdict for every probe, which is evidence about a different
+  binary. The AVX2 copy has no verdict either, and AArch64 builds with NEON (so macOS and Apple Silicon) have no BINSEC
+  coverage. Some probes on other targets and the whole-Sign censuses have no verdict too.
 - Expanded secret keys with out-of-range coefficients are accepted by `sign_NN` as FIPS 204 specifies; use
   `sk_is_well_formed_NN` on untrusted keys.
 - The crate-private internals (visible only with the `internals` feature, meant for tests) can panic on wrong-length slices.
@@ -123,8 +138,10 @@ MIT OR Apache-2.0, at your option (`LICENSE-MIT`, `LICENSE-APACHE`).
 
 - The code skeleton started from RustCrypto's [`ml-dsa`](https://github.com/RustCrypto/signatures) (MIT OR Apache-2.0),
   which is also the main differential-test oracle.
-- `crosscheck/` vendors parts of [mldsa-native](https://github.com/pq-code-package/mldsa-native) for comparison tests.
-- The `checkct/` harness is ported from RustCrypto's `ml-dsa` constant-time harness.
+- `crosscheck/` vendors parts of [mldsa-native](https://github.com/pq-code-package/mldsa-native) (Apache-2.0 OR ISC OR MIT)
+  for comparison tests.
+- The `checkct/` harness is ported from RustCrypto's `ml-dsa` constant-time harness (a3690c4); origin notes are in the
+  copied files and in `checkct/README.md`.
 - Test vectors come from NIST ACVP and C2SP [Wycheproof](https://github.com/C2SP/wycheproof); their licenses and sources are in
   `tests/data/*/README.md`.
 - `xspec/` compares against [ocaml-pq](https://github.com/thevilledev/ocaml-pq) (ISC license).

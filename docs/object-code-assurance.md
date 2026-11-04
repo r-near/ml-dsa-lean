@@ -253,10 +253,11 @@ timeout is BINSEC's default of 5 s per query (cargo-checkct does not override it
 
 ### 3.3 What our runs cover and do not
 
-`checkct/` probes every function that touches secret data in KeyGen and Sign (field and mask primitives, rounding, the NTT
+BINSEC checks compiled probes of every secret-touching step of KeyGen and Sign (field and mask primitives, rounding, the NTT
 and pointwise product, Keccak-f and the SHAKE paths with secret input, ExpandS, ExpandMask, bit packing, skEncode/skDecode,
-`sk_is_well_formed`, the KeyGen steps, the Sign steps, `prepare_sk` and `signing_key`), two whole-Sign censuses and positive
-controls, on x86_64-unknown-linux-gnu (several profiles), thumbv7em-none-eabihf, riscv32imac-unknown-none-elf and AArch64 built
+`sk_is_well_formed`, the KeyGen steps, the Sign steps, `prepare_sk` and `signing_key`; the list is in `checkct/README.md`),
+two whole-Sign censuses and positive controls. The whole KeyGen, Sign and `pk_from_sk` functions have no verdict, and the
+glue between steps is covered by code reading only. The probes ran on x86_64-unknown-linux-gnu (several profiles), thumbv7em-none-eabihf, riscv32imac-unknown-none-elf and AArch64 built
 without NEON. The counts per target and profile, the unknowns and the out-of-memory ledger are in `checkct/README.md` and
 `docs/assurance.md` section 4; they change when the code or the tools change, so they are not repeated here.
 

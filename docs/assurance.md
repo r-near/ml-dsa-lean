@@ -13,8 +13,9 @@ inputs it covered. "Spec" is `lean/Spec`, our transcription of FIPS 204 (Algorit
 
 ## 0. Gates and pins
 
-The latest recorded gates passed at 50b964c (the rename head; main 1da4cdb contains it and differs only by a Cargo
-category change):
+The latest recorded gates passed at 9d51b57 (after the Lake package rename to `MlDsaLean`; extraction was byte-identical
+to the committed `lean/Impl`). The only later commit that touches the gated tree is 3fac023, which changed one echo string in
+`scripts/ci.sh`; the commits after 9d51b57 otherwise add only `SECURITY.md` and `.github/` (CI workflows), which no gate reads:
 
 | Gate | Result |
 |---|---|
@@ -39,7 +40,7 @@ Pins and decisions:
 
 ## 1. What is proved
 
-### 1.1 The `*_exact` theorems: the API against the unbounded FIPS 204 algorithms, no premises
+### 1.1 The `*_exact` theorems: the API against the Lean transcription of the unbounded FIPS 204 algorithms, no premises
 
 For each parameter set NN ∈ {44, 65, 87} and every value of the API argument types:
 
@@ -125,8 +126,8 @@ representation relations of `Proofs/Repr.lean`.
 | `Witnesses`, `SampleBallWitness`, `TopWitness*` | kernel witnesses for the premises (below) | none |
 
 Internal reviews covered the leaf proofs, the three internal top theorems, the API theorems, the `verify_internal` length guard
-and the Sign exhaustion change, and the optional-check proofs: no blockers, findings folded in. These reviews were passes within
-this project (independent of the author of the code, not third parties).
+and the Sign exhaustion change, and the optional-check proofs: no blockers, findings folded in. These reviews were separate review
+passes within this project, not third-party reviews.
 
 ### 1.7 Witnesses for the premises
 
@@ -171,8 +172,10 @@ is only as independent as ocaml-pq's FIPS 202 transcription is of ours; its anch
 two kernel known-answer tests (empty message) are tests, not an equivalence.
 
 This is a proof about specs, not about the Rust. Other fidelity evidence for the spec: ACVP (`spec-acvp` 63/63 in Lean; the
-Rust runs ACVP keyGen 75/75, sigGen 60/60, sigVer 30/30), Wycheproof (below), a component differential against VCVio (1,345,635
-in-precondition cases, 0 mismatches, plus a FIPS-literal Python reference), and three spec reviews against the FIPS PDFs (every
+Rust runs ACVP keyGen 75/75, sigGen 60/60 and sigVer 30/30 of the vendored 120 and 60 cases, with the preHash and external-μ
+cases skipped), Wycheproof (below), a component differential against VCVio (1,345,635
+in-precondition cases, 0 mismatches, plus a FIPS-literal Python reference; the only difference is HintBitPack with more than ω
+ones, which is outside Algorithm 20's precondition and handled differently by the two sides), and three spec reviews against the FIPS PDFs (every
 `lean/Spec` def checked step by step; whole-domain rounding check against a FIPS-literal Python reference; SHAKE vs hashlib
 around the rate; no transcription errors). Those reviews were internal and the notes of the third are not committed. **No
 third-party audit and no CMVP or other validation of this crate or its spec exists.**
@@ -186,7 +189,9 @@ third-party audit and no CMVP or other validation of this crate or its spec exis
    absent (CT-1, CT-2 below; `docs/object-code-assurance.md` §3.5). Evidence: the extracted code compiled and run against the
    native Rust on 345,360 cases (Keccak, field, NTT, rounding, samplers, codecs and the full public API incl. 225 ACVP-derived
    cases), 100% agreement; 4 injected bugs all detected (`scripts/impl-eval.sh`, `lean/SpecTests/ImplEval.lean`).
-3. **rustc/LLVM** compile the source faithfully. The theorems are about source semantics, not object code.
+3. **rustc/LLVM** compile the source faithfully. The theorems are about source semantics, not object code. The compiled code
+   differs from the proved code by the `black_box` barriers of item 2 (and, with the `avx2` feature, the dispatch); `black_box`
+   is trusted to be the identity on values.
 4. **The Lean kernel** with `propext`, `Classical.choice`, `Quot.sound`.
 
 Zeroize, the opt-in AVX2 dispatch shim and anything above `api` are outside the proof.
@@ -221,10 +226,12 @@ Constant time is checked on compiled probes with BINSEC (relational symbolic exe
 or division operand for all secret values; the lifter, the solver and "instructions take operand-independent time" are
 trusted (`docs/object-code-assurance.md` §3.2). Verify handles only public data; the property matters for KeyGen and Sign.
 
-Full sweep at 15b4ce2 (November 4, 2026): 113 entrypoints per run plus two whole-Sign censuses, on x86_64 (checkct profile,
-`nearcore`, `avx2` dispatch, `nearcore-dispatch`, `nearcore-exact*`), thumbv7em, riscv32imac and AArch64 without NEON. Every
-function that touches secret data in KeyGen and Sign is probed: `sk_is_well_formed`, the SHAKE paths with secret input,
-ExpandS, NTT, t, Power2Round, skEncode/Decode, the Sign steps, `prepare_sk`/`signing_key`, plus positive controls. Counts
+Full sweep at 15b4ce2 (November 4, 2026): 113 entrypoints per run (114 on riscv32imac and in the `dispatch` build) plus two whole-Sign censuses, on x86_64 (checkct profile,
+`nearcore`, `avx2` dispatch, `nearcore-dispatch`, `nearcore-exact*`), thumbv7em, riscv32imac and AArch64 without NEON. BINSEC
+checks compiled probes of every secret-touching step of KeyGen and Sign (listed in `checkct/README.md`): `sk_is_well_formed`,
+the SHAKE paths with secret input, ExpandS, NTT, t, Power2Round, skEncode/Decode, the Sign steps, `prepare_sk`/`signing_key`,
+plus positive controls. The whole KeyGen, Sign and `pk_from_sk` functions have no verdict (`sign::attempt` and `sign_internal`
+are not probed whole), and the glue between steps is covered by code reading only. Counts
 secure / expected insecure / unexpected insecure / unknown / no verdict (OOM), on the 87-probe basis (85 entrypoints and the
 two censuses):
 
@@ -233,19 +240,26 @@ two censuses):
 | x86_64 default | 80 / 6 / 0 / 0 / 1 |
 | x86_64 `nearcore` | 80 / 7 / 0 / 0 / 0 |
 | x86_64 `avx2` dispatch | 80 / 6 / 0 / 0 / 1 |
-| x86_64 `nearcore-dispatch` | 80 / 6 / 0 / 0 / 1 |
-| thumbv7em | 81 / 4 / 0 / 0 / 2 |
-| riscv32imac | 78 / 6 / 0 / 2 / 1 |
-| AArch64 without NEON | 73 / 3 / 0 / 11 / 0 |
-| x86_64 `nearcore-exact` (113 probes + 2 censuses) | 61 / 3 / 0 / 51 / 0 |
-| x86_64 `nearcore-exact-novec` (same flags, vectorizers off) | 108 / 7 / 0 / 0 / 0 |
+| x86_64 `nearcore-dispatch` (note 3) | 80 / 6 / 0 / 0 / 1 |
+| thumbv7em (note 3) | 81 / 4 / 0 / 0 / 2 |
+| riscv32imac (notes 1 and 3) | 78 / 6 / 0 / 2 / 1 |
+| AArch64 without NEON (note 2) | 73 / 3 / 0 / 11 / 0 |
+| x86_64 `nearcore-exact` (113 entrypoints + 2 censuses, not the 87-probe basis) | 61 / 3 / 0 / 51 / 0 |
+| x86_64 `nearcore-exact-novec` (same flags, vectorizers off; 113 entrypoints + 2 censuses) | 108 / 7 / 0 / 0 / 0 |
+
+1. The riscv32imac row counts `control_prepared_branch_44` as expected insecure from its 7200 s rerun alone (`JOBS=2`); in the
+   sweep run it is `unknown`, and the sweep alone gives 78 / 5 / 0 / 3 / 1. The result depends on exploration order.
+2. AArch64 has 13 `unknown` rows in all: the 11 above (on the 87-probe basis, two of them censuses) plus the two split pieces
+   `split_prepare_sk_87_{7x1,col}`.
+3. Not rerun at 15b4ce2: the thumbv7em and riscv32imac censuses and the `nearcore-dispatch` prepared census. Their cells are the
+   results of the previous sweep (e9a1c74), whose `field.rs` differs from this one (`checkct/README.md`, "Not rerun, and why").
 
 No unexpected leak. Details, the split-probe results and the stop-site evidence for every unknown are in `checkct/README.md`.
 Three real leaks were found and fixed (CT-1, CT-2, CT-3 in section 6). Limits:
 
 - **Whole-Sign** has no verdict: the censuses report only the public `sample_in_ball` accept branch, run out of memory
   (thumbv7em, riscv32imac, and the x86_64 default and `dispatch` prepared census at 120 GB), or are cut at the NTT under
-  nearcore's exact build. Sign is covered by its secret-touching pieces (`response_*`, `hint_step_*`, ExpandMask, hashing,
+  nearcore's exact build (the riscv32imac internal census is unresolved, with 4 pending paths at 7200 s). Sign is covered by its secret-touching pieces (`response_*`, `hint_step_*`, ExpandMask, hashing,
   `prepare_sk`, `signing_key`).
 - **Unknowns** (no leak found, no conclusion): under nearcore's exact build (`nearcore-exact`) the NTT, `compute_t`,
   `prepare_sk`/`signing_key`, `hint_step`, `response` and the two censuses have no verdict, because BINSEC 0.11.3 cannot lift the
@@ -253,13 +267,12 @@ Three real leaks were found and fixed (CT-1, CT-2, CT-3 in section 6). Limits:
   is a solver stall (T-9 in section 7). With the vectorizers off all 113 entrypoints get a verdict (108 secure, 5 expected insecure; 7 with the two censuses), which is
   evidence about a different binary, not about nearcore's. Elsewhere: two on riscv32imac (`vec_power2round_87`, one census), the
   three `split_vec_power2round_{5,6,7}` capacity probes there, three riscv32imac `split_prepare_sk` pieces (a solver stall at one
-  store; the full-size probes they split are secure) and eleven on AArch64 (one stuck solver query each), partly covered by split
-  probes.
+  store; the full-size probes they split are secure) and eleven on AArch64 (one stuck solver query each; thirteen `unknown` rows with the two `split_prepare_sk_87_{7x1,col}`
+  pieces), partly covered by split probes.
 - **The `nearcore-exact` CT profile is nearcore's exact release build for the crate in isolation** (`overflow-checks = true`,
   nearcore's x86_64 target features, Rust 1.95.0, read from nearcore cd5a94457). It is not nearcore's binary: callers, allocator,
   glibc `memcpy` and the prebuilt `core` differ (`checkct/README.md`, "What this does and does not show").
-- **AVX2 and NEON code:** the AVX2 NTT copy is covered by a static scan only; AArch64 builds with NEON cannot be lifted; macOS is
-  not covered.
+- **AVX2 and NEON code:** the AVX2 NTT copy is covered by a static scan only; AArch64 builds with NEON cannot be lifted, so macOS and Apple Silicon builds have no BINSEC coverage.
 - **Other builds:** verdicts depend on code shape and hold for the builds measured; `zeroize` builds are not probed.
 - Hardware timing (variable-latency instructions, speculation, power) is outside the model.
 
@@ -267,13 +280,14 @@ Three real leaks were found and fixed (CT-1, CT-2, CT-3 in section 6). Limits:
 
 | Evidence | Result |
 |---|---|
-| ACVP (NIST, vendored subset) | keyGen 75/75, sigGen 60/60 (pure internal and external, deterministic and hedged), sigVer pure 30/30 (`tests/acvp.rs`) |
+| ACVP (NIST, vendored subset) | keyGen 75/75, sigGen 60/60 (pure internal and external, deterministic and hedged), sigVer pure 30/30 (`tests/acvp.rs`). The vendored subset has 120 sigGen and 60 sigVer cases; the other half of each (preHash and external-μ groups) is skipped because HashML-DSA and external μ are not implemented |
 | Wycheproof (C2SP, d17cc89) | Rust: 1063 vectors pass, 0 fail, 6 known (E-4: out-of-range secret keys), 69 skipped (external-μ only, out of scope); Lean spec: 928/928 agree (631 verify, 236 sign, 61 keygen) (`tests/wycheproof.rs`, `lean/SpecTests/Wycheproof.lean`) |
 | RustCrypto `ml-dsa` a3690c4 (oracle) | pk and sk match on 30 seeds per set; Sign matches on 25 cases per set; Verify agrees on 1,260 cases per set (valid, bit flips in c̃/z/h, wrong M, wrong pk); randomized: 200 keygen + 200 sign/verify (M′ up to 10 kB) + 2,000 sign per set; hint-region differential 30k per set; the public API matches upstream's external interface on 72 cases incl. \|ctx\| = 0, 255, 256 (`tests/diff.rs`, `keygen.rs`, `verify.rs`, `random_diff.rs`, `api.rs`) |
 | aws-lc-rs 1.18.2 (aws-lc-sys 0.46.0), the backend nearcore calls for ML-DSA-65 | 0 verdict differences in about 3.22M verify comparisons on fixed-length and wrong-length inputs (2.54M also through `api::verify_NN` and `verify_prepared_NN`): bit flips, multi-bit, fill and splice of σ, pk and M; hint encodings; wrong lengths; c̃; edge-value keys; valid cross-signing both ways; forged z at and beyond ±(γ1−β) and ω hints. 610 empty-ctx Wycheproof verify vectors agree. KeyGen from 15,000 seeds byte-identical. aws-lc signs hedged, so signatures are cross-verified, not compared; aws-lc-rs has no ctx parameter, so only ctx = "" is compared. Known API difference: aws-lc-rs also accepts a DER-SPKI-wrapped pk. Limit: verdict-level testing cannot see a dropped "decreasing count" hint check (c̃ rejects anyway); that check is proved (HintBitUnpack) and unit-tested (`tests/leaf.rs`). 4 of 5 injected verifier weaknesses detected (`tests/awslc_diff.rs`). A test, not an equivalence proof |
 | libcrux-ml-dsa 0.0.11 (portable + AVX2), mldsa-native v2.0.0 (C + AVX2), RustCrypto | 0 disagreements, 0 crashes: 1.05M keygens and 1.5M signatures byte-identical; 15.4M verify cases (every single-bit flip of σ and pk for 60 cases per set, plus mutation classes covering c̃, z, hint encodings, pk; about 185M verify calls), all 150k honest signatures accepted by all; fuzzing 3.66M `verify_xdiff` and 195k `sign_xdiff` executions. Sensitivity: with the hint zero-padding check removed, 4,012 disagreements. Malformed sk (FIPS-undefined): ours, libcrux and mldsa-native sign identically; RustCrypto panics; mldsa-native's `pk_from_sk` also rejects inconsistent t0/tr/ρ (`crosscheck/`) |
 | Differential fuzzing vs RustCrypto (`fuzz/`) | about 50 minutes per target, 0 crashes, 0 disagreements: `verify_diff` 12.1M execs (mutated c̃/z/hints/pk, ctx 0–256, wrong lengths; 96.7% region coverage of `src`), `sign_diff` 787k (98.2%), `decode_roundtrip` 1.1M (Sign on arbitrary sk bytes never panics; matches upstream wherever upstream accepts the key). Sensitivity: with the hint zero-padding check removed, `verify_diff` found it after about 3,800 runs; a removed `count > ω` check was not found in 180 s (it rarely changes the verdict). The κ-exhaustion path was never reached |
-| Proof mutation testing | 29 semantic mutants of `src` (rounding edge cases, hint checks, norm bounds, NTT⁻¹ layers and scale, sampler indices, seeds and hash inputs, κ budget, ctx and length guards, parameter constants): every one breaks the Lean build at the spec theorem of the mutated function. `cargo test` missed 5 (λ/4-byte c̃ compare, `infinity_norm` threshold, HintBitUnpack's count > ω check, Verify's ‖z‖∞ `<`, κ budget); regression tests now kill four (`tests/mutants.rs`, the `prefix_eq` unit test in `src/verify.rs`); the κ budget stays proof-only. The mutation harness itself is not committed |
+| Proof mutation testing | 29 semantic mutants of `src` (rounding edge cases, hint checks, norm bounds, NTT⁻¹ layers and scale, sampler indices, seeds and hash inputs, κ budget, ctx and length guards, parameter constants): every one breaks the Lean build at the spec theorem of the mutated function. `cargo test` missed 5 (λ/4-byte c̃ compare, `infinity_norm` threshold, HintBitUnpack's count > ω check, Verify's ‖z‖∞ `<`, κ budget); regression tests now kill four (`tests/mutants.rs`, the `prefix_eq` unit test in `src/verify.rs`); the κ budget stays proof-only. Of the 29 mutants, about a third fail the Lean build as unprovable goals and the rest as proof-script shape breaks (from an earlier status
+note; the per-mutant record is not kept). The mutation harness itself is not committed, so this row cannot be re-run |
 | Leaf and API tests | round trips on upstream bytes, naive references, every HintBitUnpack ⊥ case (`tests/leaf.rs`); optional key checks against 200 random mutations per set (`tests/sk_well_formed.rs`, `tests/pk_from_sk.rs`); SHAKE KATs (`tests/shake_kat.rs`, `shake_lanes.rs`); dispatch vs portable NTT (`tests/dispatch.rs`) |
 | zeroize | `tests/zeroize.rs` scans the stack below `sign`, `sign_prepared` and `signing_key` for residue of K, s1, s2, t0 and ρ″ and checks the drop wipe; see Z-1 for the optimization-level caveat |
 | Rust CI (`scripts/ci.sh`) | tests for default, `zeroize` (all scans in release; 7 of 15 at opt-level 0) and `avx2`; thumbv7em; MSRV 1.86; wasm32; nearcore profile on 1.95.0 (fat LTO, overflow checks, panic = abort for the build) incl. zeroize; 60 s fuzz smoke of three targets; the aws-lc differential; `cargo deny` |
@@ -295,19 +309,26 @@ virtual machine at 3.40 GHz, rustc 1.99.1, shared with other jobs (load average 
 Uncached ML-DSA-87 for comparison on the same machine and profile: libcrux AVX2 sign 219 / verify 109; mldsa-native AVX2 sign 122
 / verify 55. Prepared-key verify skips pk decoding, ExpandA and the NTT of t1, so it is a different operation from the uncached
 one; uncached sign and verify here are 1.7–3.8× behind the AVX2 implementations. Spread over the 15 rounds is at most 0.55% for
-this crate; one key pair per set, hot caches. Not measured: aarch64, wasm32, Intel. Reproduce with `bench/build.sh`, `bench/run.sh`
+this crate; one key pair per set, hot caches. The C libraries were built with gcc 13.3 `-O3` and no LTO (a different C compiler
+or flags would change their columns). Sign medians depend on the message set through the number of attempts and move by a few
+percent with it, the same for all implementations because their signatures are byte-identical. A 4-way Keccak without
+intrinsics was measured and not adopted: plain loops reached at most 1.2–1.3× over four scalar permutations, below the 1.6× bar,
+and intrinsics would need hand-written AVX2 in the dispatch that Lean could only model, not prove. Not measured: aarch64, wasm32, Intel. Reproduce with `bench/build.sh`, `bench/run.sh`
 and `bench/compare.sh` ([reproduce.md](reproduce.md)).
 
 ## 6. Found and fixed
 
 - **CT-1** (riscv32imac): the mask-select idiom (`ct_select`, `ct_lt_mask` and callers) was turned back into branches on secret
   data because RISC-V has no conditional move. Fixed with a `core::hint::black_box` barrier compiled only for RISC-V and not under
-  `cfg(miri)`, so the proved code is unchanged. Applying it on every target cost about 25% in signing.
+  `cfg(miri)`, so the proved code is unchanged. Applying it on every target cost about 25% in signing. The standalone `ct_lt_mask` probe is insecure on riscv32imac
+  anyway: the probe masks its inputs below 2^63, so LLVM folds the compare back into a branch; every in-crate caller is secure.
 - **CT-2** (x86_64): LLVM turned the `diff == q − 1` edge select in `rounding::decompose` into a branch around the multiply that
   computes r1, visible only in the inlined signing-step probes. Fixed in 069b439 by `field::opaque_u32` (`black_box` on every
   target, identity under `cfg(miri)`). Cost about +2–3% in Sign.
 - **CT-3** (all targets with overflow checks): `sk_is_well_formed` branched on the sign of secret s1/s2 coefficients because the
-  `&&` in the old `poly_in_eta` stayed a conditional branch (its right operand could panic). Fixed in ae6023c: per-coefficient
+  `&&` in the old `poly_in_eta` stayed a conditional branch (its right operand could panic). The six `sk_is_well_formed` and
+  `encode_sk_is_well_formed` probes were `insecure` under `nearcore-exact` on the earlier tree
+  (`checkct/results/nearcore-exact.stage1-600s.txt`) and are `secure` at 15b4ce2. Fixed in ae6023c: per-coefficient
   mask bits from wrapping differences, one compare at the end, and `wrapping_*` arithmetic where the proofs already exclude
   overflow, so no overflow-check guard remains on a secret value. Affected only the optional key check and `pk_from_sk_*`; Sign
   never called it. Proofs changed only in bodies.
@@ -336,7 +357,9 @@ and `bench/compare.sh` ([reproduce.md](reproduce.md)).
   `mem::forget`; registers, swap and core dumps are out of reach.
 - **T-9: two BINSEC limits decide what a `nearcore-exact` sweep can show.** (1) *Overflow-check guards on secret values stall
   BINSEC*: with `overflow-checks = true`, the conditional jump to the panic path after arithmetic such as `a + Q - b` left 65 probes
-  at one pending path through 600 to 3600 s on the earlier tree. The crate no longer has those guards on secret values (CT-3), and
+  at one pending path through 600 to 3600 s on the earlier tree (68 `unknown` at 600 s, 3 of them `secure` at 3600 s;
+  `checkct/results/nearcore-exact.stage1-600s.txt`, `.stage2-trace-300s.txt` and `.stage3-trace-3600s.txt`, all stuck at the
+  overflow-check guard in `field.rs:39`). The crate no longer has those guards on secret values (CT-3), and
   those probes are no longer stuck there; source that keeps such guards could stall the same way (not tested). One probe,
   `prepare_sk_1x1_65`, still ends with one pending path at 600 s and 3600 s at a `movdqu` store in `ntt_body_mut`, and is `secure`
   under `-novec` with overflow checks on, so the cause is unknown. (2) *BINSEC 0.11.3 cannot lift AVX/VEX instructions.* nearcore
@@ -351,7 +374,7 @@ and `bench/compare.sh` ([reproduce.md](reproduce.md)).
   dispatch prepared census, have no verdict for this reason.
 - **Other CT unknowns:** riscv32imac `vec_power2round_87` and one census; the three `split_vec_power2round_{5,6,7}` capacity probes;
   three riscv32imac `split_prepare_sk` pieces (solver stall at a store in `ntt_body_mut`, cause not pinned down); eleven AArch64
-  probes stuck in one solver query. AArch64 `prepare_sk_87`/`signing_key_87` are covered only stage by stage (skDecode, then the
+  probes (and two split pieces, `split_prepare_sk_87_{7x1,col}`: thirteen rows in all) stuck in one solver query. AArch64 `prepare_sk_87`/`signing_key_87` are covered only stage by stage (skDecode, then the
   in-place NTT of 8 polynomials, both secure); the K = 8 glue has no single verdict. Split pieces are separate monomorphizations,
   so that argument is about the source, not the full-size machine code. The AVX2 copy of the dispatched NTT, AArch64 NEON builds
   and nearcore's vectorized x86_64 NTT cannot be lifted.

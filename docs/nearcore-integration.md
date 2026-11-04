@@ -16,7 +16,8 @@ for the existing ML-DSA-65 paths, and a possible source of 44/87 if nearcore eve
 existing 65 paths is consensus-critical: every node must return the same verdict for every (key, message, signature),
 including malformed ones. The nearcore doc states the message is passed with an empty context string
 (`post_quantum_signatures.md` §7), which is `ctx = &[]` in our `api`. Our crate's evidence that its Verify equals
-FIPS 204 on every input is in `docs/assurance.md` §1.1; the verdict differential against aws-lc-rs 1.18.2
+the Lean transcription of FIPS 204's Verify on every input on which either returns (the transcription is trusted, not
+the standard itself) is in `docs/assurance.md` §1.1; the verdict differential against aws-lc-rs 1.18.2
 (`tests/awslc_diff.rs`, `docs/assurance.md` §5) found 0 differences in about 3.2M verify comparisons, incl. malformed
 inputs, with ctx = "" as nearcore uses it. It is a test, not a proof about aws-lc.
 
@@ -235,8 +236,8 @@ What would need to stabilize, as options rather than recommendations:
    `SigningKeyNN` is deliberately not `Clone`. Whether these are public API or an implementation detail of a cache is open.
 6. **Feature semantics.** `avx2` caches a CPUID check and contains the only `unsafe`; `zeroize` changes `Drop` behavior; Cargo
    unifies features across a dependency graph, so enabling `internals` anywhere in the graph exposes panicking internals (E-1 in `docs/assurance.md` §7).
-7. **Behavior contracts.** Verify returns `false` for malformed hint encodings and `ctx.len() > 255` (it equals the spec's
-   verdict on every input, `docs/assurance.md` §1.1); the possible non-termination of ExpandA/SampleInBall on adversarial input (probability
+7. **Behavior contracts.** Verify returns `false` for malformed hint encodings and `ctx.len() > 255` (it equals the verdict of the Lean
+   transcription of FIPS 204's Verify on every input on which either returns, `docs/assurance.md` §1.1); the possible non-termination of ExpandA/SampleInBall on adversarial input (probability
    negligible but not zero) is documented in `Divergence.lean`, not by a timeout. Sign can return `None`.
 8. **MSRV.** 1.86 today; the policy for raising it is not written down.
 
