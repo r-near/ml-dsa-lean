@@ -117,7 +117,8 @@ cap, `JOBS=8`), `EXCLUDE=census_sign` (the censuses ran separately, below). `TIM
 `nearcore-exact`, `nearcore-exact-dispatch` and `nearcore-exact-novec`, as for the e9a1c74-era `nearcore-exact` sweep. Up to
 ten containers ran at the same time on the 60-core box, which is why three riscv32imac probes were rerun alone (below). The x86_64 profiles
 other than `nearcore-exact*` use `nightly-2026-10-06` (LLVM 23.1.3), `nearcore-exact*` use rustc 1.95.0 (LLVM 22.1.2); the
-`.comment` check passed in every run (`*.header.txt`).
+`.comment` check passed in every x86_64 run (`x86_64-*.header.txt`); the thumbv7em, riscv32imac and AArch64 headers do not
+record it.
 
 **Count basis.** The e9a1c74 tables count 87 probes per target: 85 entrypoints (the `split_*` probes of `split.rs` came after those
 tables and are counted separately) plus the two censuses. A run now has 113 entrypoints without the censuses
