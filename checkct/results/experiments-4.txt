@@ -1,0 +1,24 @@
+
+driver::experiments::exp_sk_wf_maskw_2x2_44  secure
+   last  after 34177 steps: 0xffffffff8badf00d  ?   [?]   in ?
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  34177
+   stat: [checkct:info] 9399 / 9399 control flow checks pass
+
+driver::experiments::exp_sk_wf_maskw_44  secure
+   last  after 52773 steps: 0xffffffff8badf00d  ?   [?]   in ?
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  52773
+   stat: [checkct:info] 12706 / 12706 control flow checks pass
+
+driver::experiments::exp_sk_wf_maskw_65  secure
+   last  after 78838 steps: 0xffffffff8badf00d  ?   [?]   in ?
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  78838
+   stat: [checkct:info] 18907 / 18907 control flow checks pass
+
+driver::experiments::exp_sk_wf_maskw_87  secure
+   last  after 99470 steps: 0xffffffff8badf00d  ?   [?]   in ?
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  99470
+   stat: [checkct:info] 24019 / 24019 control flow checks pass
