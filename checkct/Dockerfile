@@ -12,3 +12,9 @@ RUN git clone https://github.com/Ledger-Donjon/cargo-checkct /home/opam/cargo-ch
  && cargo install --locked --path .
 RUN rustup toolchain install nightly-2026-10-06 --profile minimal -c rust-src \
     -t riscv32imac-unknown-none-elf -t thumbv7em-none-eabihf -t x86_64-unknown-linux-gnu
+# Rust 1.95.0, the toolchain nearcore builds with (nearcore rust-toolchain.toml, cd5a94457). The nearcore-exact profiles of
+# run-select.sh select it by rewriting the container's copy of checkct/rust-toolchain.toml (RUSTUP_TOOLCHAIN does not work:
+# cargo-checkct removes it from its cargo's environment) and set RUSTC_BOOTSTRAP=1 for the driver's -Zbuild-std (README
+# "Toolchain"). The nightly above stays the default for every other profile.
+RUN rustup toolchain install 1.95.0 --profile minimal -c rust-src \
+    -t riscv32imac-unknown-none-elf -t thumbv7em-none-eabihf -t x86_64-unknown-linux-gnu

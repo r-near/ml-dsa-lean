@@ -19,8 +19,8 @@
 #            AVX2 arm and stop at its first VEX instruction). Use e.g.
 #            PROFILE=dispatch ONLY='.' bash checkct/run-select.sh, or bash checkct/select-ntt.sh dispatch.
 set -o pipefail
-case "$PROFILE" in dispatch|nearcore-dispatch)
-  echo "run.sh does not support PROFILE=$PROFILE: use checkct/run-select.sh (it pre-sets the dispatch cache); see the header of this file" >&2
+case "$PROFILE" in dispatch|nearcore-dispatch|nearcore-exact|nearcore-exact-dispatch)
+  echo "run.sh does not support PROFILE=$PROFILE: use checkct/run-select.sh (dispatch cache pre-set, nearcore-exact toolchain and flags); see the header of this file" >&2
   exit 2 ;; esac
 TIMEOUT="${TIMEOUT:-900}"
 NAME="${NAME:-ct-run}"

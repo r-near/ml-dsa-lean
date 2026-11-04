@@ -9,7 +9,10 @@ use params::Params;
 // guard would itself fail the analysis).
 pub(crate) fn secret_elem() -> u32 {
     let x = PrivateRng.next_u32() & 0x7f_ffff;
-    field::ct_select(x, x - field::Q, !(field::ct_lt_mask(x as u64, field::Q as u64) as u32))
+    // wrapping_sub: `x - Q` is computed for every x (the select picks afterwards), so with overflow checks on it
+    // would branch on the secret `x < Q` in the harness itself (seen under PROFILE=nearcore-exact: every probe
+    // built on secret_elem reported 2 control-flow leaks at probes.rs:12). Same machine code without overflow checks.
+    field::ct_select(x, x.wrapping_sub(field::Q), !(field::ct_lt_mask(x as u64, field::Q as u64) as u32))
 }
 
 pub(crate) fn secret_poly() -> [u32; 256] {

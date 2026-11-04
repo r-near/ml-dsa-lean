@@ -1,0 +1,84 @@
+
+driver::extra::vec_power2round_44  secure
+   last  after 56566 steps: 0xffffffff8badf00d  ?   [?]   in ?
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  56566
+   stat: [checkct:info] 15729 / 15729 control flow checks pass
+
+driver::extra::vec_power2round_87  unknown
+   last  after 88813 steps: 0x21e48a  jae    21e5e7 <driver::extra::vec_power2round_87+0x277>   [src/field.rs:39]   in driver::field::sub   prev: mov    (%r14,%rax,4),%ecx ; cmp    $0xff801fff,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  88813
+   stat: [checkct:info] 22274 / 22274 control flow checks pass
+
+driver::prepared::prepare_sk_1x1_44  unknown
+   last  after 44320 steps: 0x218b0d  ja     219770 <driver::ntt::ntt_in_place+0xd30>   [src/field.rs:39]   in driver::field::sub   prev: cmovb  %r9d,%esi ; cmp    $0xff801ffe,%edx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  44320
+   stat: [checkct:info] 11201 / 11201 control flow checks pass
+
+driver::prepared::prepare_sk_44  unknown
+   last  after 53853 steps: 0x2117a7  ja     211ffa <driver::encode::sk_decode::<4, 4>+0xf2a>   [src/field.rs:39]   in driver::field::sub   prev: mov    0x408(%rsp,%rax,4),%ecx ; cmp    $0x7fe003,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  53853
+   stat: [checkct:info] 15040 / 15040 control flow checks pass
+
+driver::prepared::prepare_sk_65  unknown
+   last  after 71322 steps: 0x21279d  jae    21365a <driver::encode::sk_decode::<6, 5>+0x156a>   [src/field.rs:39]   in driver::field::sub   prev: mov    0x404(%rsp,%rax,4),%ecx ; cmp    $0x7fe006,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  71322
+   stat: [checkct:info] 25251 / 25251 control flow checks pass
+
+driver::probes::sk_decode_44  unknown
+   last  after 53739 steps: 0x2117a7  ja     211ffa <driver::encode::sk_decode::<4, 4>+0xf2a>   [src/field.rs:39]   in driver::field::sub   prev: mov    0x408(%rsp,%rax,4),%ecx ; cmp    $0x7fe003,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  53739
+   stat: [checkct:info] 15154 / 15154 control flow checks pass
+
+driver::probes::sk_decode_65  unknown
+   last  after 64724 steps: 0x2127c7  ja     21365a <driver::encode::sk_decode::<6, 5>+0x156a>   [src/field.rs:39]   in driver::field::sub   prev: mov    0x408(%rsp,%rax,4),%ecx ; cmp    $0x7fe005,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  64724
+   stat: [checkct:info] 18936 / 18936 control flow checks pass
+
+driver::probes::sk_decode_87  unknown
+   last  after 69547 steps: 0x21392a  jae    213cd4 <driver::encode::sk_decode::<8, 7>+0x504>   [src/field.rs:39]   in driver::field::sub   prev: mov    0x24(%rsp,%rax,4),%ecx ; cmp    $0x7fe004,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  69547
+   stat: [checkct:info] 21259 / 21259 control flow checks pass
+
+driver::probes::sk_encode_44  unknown
+   last  after 118500 steps: 0x21418b  jae    214993 <driver::encode::sk_encode::<4, 4>+0xc93>   [src/field.rs:39]   in driver::field::sub   prev: mov    -0x4(%r15,%rax,4),%ecx ; cmp    $0x7fe004,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  118500
+   stat: [checkct:info] 25558 / 25558 control flow checks pass
+
+driver::probes::sk_encode_65  unknown
+   last  after 157427 steps: 0x23005a  ja     230d40 <driver::probes::sk_encode_65+0x1cd0>   [src/field.rs:39]   in driver::field::sub   prev: mov    0x4ecc(%rsp,%rax,4),%ecx ; cmp    $0x7fe005,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  157427
+   stat: [checkct:info] 34182 / 34182 control flow checks pass
+
+driver::probes::sk_encode_87  unknown
+   last  after 199057 steps: 0x2318fb  jae    231c68 <driver::probes::sk_encode_87+0xf18>   [src/field.rs:39]   in driver::field::sub   prev: mov    -0x4(%r12,%rax,4),%ecx ; cmp    $0x7fe004,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  199057
+   stat: [checkct:info] 43921 / 43921 control flow checks pass
+
+driver::probes::vec_infinity_norm  secure
+   last  after 40089 steps: 0xffffffff8badf00d  ?   [?]   in ?
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  40089
+   stat: [checkct:info] 8115 / 8115 control flow checks pass
+
+driver::split::split_prepare_sk_44_row  unknown
+   last  after 59656 steps: 0x223ffd  jae    2245bb <driver::split::split_prepare_sk_44_row+0xd4b>   [src/field.rs:39]   in driver::field::sub   prev: mov    0x504(%rsp,%rax,4),%ecx ; cmp    $0x7ff002,%ecx
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  59656
+   stat: [checkct:info] 15832 / 15832 control flow checks pass
+
+driver::split::split_vec_power2round_3  secure
+   last  after 42362 steps: 0xffffffff8badf00d  ?   [?]   in ?
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  42362
+   stat: [checkct:info] 11710 / 11710 control flow checks pass

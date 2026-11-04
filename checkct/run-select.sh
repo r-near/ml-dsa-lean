@@ -3,6 +3,8 @@
 #   rx submit ct4 -- 'set -o pipefail; ONLY="hint_step|vec_power2round" TIMEOUT=7200 bash checkct/run-select.sh 2>&1 | tee sel.log'
 # Environment:
 #   ONLY     extended regex over the entrypoint names (driver__module__probe); required
+#   EXCLUDE  optional extended regex over the entrypoint names to leave out of the selection (the censuses of a sweep that
+#            runs several probes in parallel: they need more than 64 GB, so they run alone)
 #   TIMEOUT  seconds per probe (default 7200)
 #   TARGETS  space separated target list (default: all three)
 #   JOBS     parallel BINSEC instances (default 4: they share the container cap, and 16 at 64g got large probes killed).
@@ -12,9 +14,15 @@
 #            dispatch          the checkct profile with the driver's `avx2` cargo feature, which turns on the crate's
 #                              `cfg(feature = "avx2")`: the runtime AVX2 dispatch of src/ntt.rs is compiled in (x86_64 only)
 #            nearcore-dispatch the nearcore settings plus the same feature
+#            nearcore-exact    the exact nearcore release build (see the block comment below): nearcore's [profile.release] incl.
+#                              overflow-checks = true, nearcore's x86_64 target features and Rust 1.95.0 (CT_TOOLCHAIN)
+#            nearcore-exact-dispatch  nearcore-exact plus the driver's `avx2` feature, cache pre-set as in nearcore-dispatch
 #            In a dispatch profile the dispatch cache (a static in .bss) is pre-set to "no AVX2" in every x86_64 BINSEC
 #            script, see run_one below; the run fails if the static or the script anchor is not found. In every other
 #            profile no dispatch is compiled and nothing is pre-set (the log says so).
+#   TRACE    1 runs BINSEC with -sse-debug-level 3 -sse-loglevel debug and keeps only the last executed instruction and the
+#            executed-instruction count of each probe (a "last:" line in the Summary): where a path was cut or stuck
+#   EXPERIMENTS  1 compiles driver/src/experiments.rs (the throwaway rewrite probes `exp_*`) via its cargo feature
 #   NAME     container name (default ct-select)
 #   CT_MEMORY / CT_CPUS  docker --memory / --cpus caps for the container (default 64g / 24). BINSEC runs can grow to
 #            tens of GB each; without a cap they have pushed the box out of memory and killed unrelated Lean builds.
@@ -35,8 +43,9 @@ PENV=""
 DISPATCH=""
 case "$PROFILE" in
   ""|nearcore|nearcore-novec|avx2|nearcore-avx2) ;;
-  dispatch|nearcore-dispatch) DISPATCH=1 ;;
-  *) echo "unknown PROFILE=$PROFILE (known: nearcore, nearcore-novec, avx2, nearcore-avx2, dispatch, nearcore-dispatch)" >&2; exit 2 ;;
+  nearcore-exact) ;;
+  dispatch|nearcore-dispatch|nearcore-exact-dispatch) DISPATCH=1 ;;
+  *) echo "unknown PROFILE=$PROFILE (known: nearcore, nearcore-novec, avx2, nearcore-avx2, dispatch, nearcore-dispatch, nearcore-exact, nearcore-exact-dispatch)" >&2; exit 2 ;;
 esac
 case "$PROFILE" in nearcore|nearcore-novec|nearcore-dispatch)
   PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort" ;; esac
@@ -46,6 +55,32 @@ if [ "$PROFILE" = nearcore-novec ]; then
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false"
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
+# PROFILE=nearcore-exact, nearcore-exact-dispatch: the build settings of nearcore's release binary, read from the
+# nearcore clone at commit cd5a94457 (2026-11-03). The older "nearcore" profiles above stay as they were (historical
+# numbers refer to them).
+#   Cargo.toml:388-392      [profile.release] overflow-checks = true, panic = 'abort', lto = "fat", codegen-units = 1
+#                           (opt-level is not set: the release default 3; debug-assertions: default off)
+#   .cargo/config.toml:8-9  [target.'cfg(target_arch = "x86_64")'] rustflags = ["-Ctarget-feature=+sse2,+ssse3,+sse4.1,
+#                           +sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq", "-Cforce-unwind-tables=y"] (no AVX2)
+#   rust-toolchain.toml:12  channel = "1.95.0"
+# overflow-checks = true is set for the driver package only ([profile.release.package.driver], appended to the container's
+# copy of checkct/.cargo/config.toml below), NOT through CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: -Zbuild-std takes the
+# release profile for core and compiler_builtins too (verified with `cargo build -v`: overflow-checks=on for every std
+# crate), whereas nearcore links the prebuilt core, whose own MIR has no overflow checks (only `rustc_inherit_overflow_checks`
+# operators take the user's setting). The driver includes the crate sources as modules, so the package override covers
+# exactly what nearcore compiles with checks: the crate.
+# cargo-checkct drops RUSTFLAGS, so the x86_64 flags go through the per-target variable, which replaces the x86_64
+# rustflags of checkct/.cargo/config.toml: its linker flags are repeated here. The other targets are not changed.
+# Toolchain: CT_TOOLCHAIN (default 1.95.0, installed in the image by checkct/Dockerfile), written into the container's
+# copy of checkct/rust-toolchain.toml. RUSTUP_TOOLCHAIN does NOT work: cargo-checkct removes it from the environment of its
+# cargo (src/run.rs:263, `.env_remove("RUSTUP_TOOLCHAIN")`) so that rust-toolchain.toml decides; the first nearcore-exact
+# drivers were built with the nightly that way. The run therefore reads the compiler back from the driver's .comment section
+# and fails if it is not the requested one. RUSTC_BOOTSTRAP=1 lets that stable compiler take the -Zbuild-std of
+# checkct/.cargo/config.toml (the driver is no_std and needs build-std's compiler-builtins-mem for memcpy/memset;
+# RUSTC_BOOTSTRAP does not change code generation). CT_TOOLCHAIN=nightly-2026-10-06 builds with the checkct nightly instead.
+case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch)
+  PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort -e CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false -e RUSTC_BOOTSTRAP=1 -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
+  export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -C force-unwind-tables=y" ;; esac
 # PROFILE=avx2: the default profile with `-C target-feature=+avx2` (nearcore-avx2: plus the nearcore settings). The
 # crate then takes its static-AVX2 arm (src/ntt.rs "Dispatch"): no cpuid, one compilation of each NTT body, compiled
 # for AVX2. BINSEC 0.11.3 cannot lift the VEX-encoded vector instructions LLVM emits there (status unknown at the
@@ -55,18 +90,40 @@ if [ "$PROFILE" = avx2 ] || [ "$PROFILE" = nearcore-avx2 ]; then
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+avx2"
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
-docker run --rm -e DISPATCH="$DISPATCH" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
+EXACT=""
+case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch) EXACT=1 ;; esac
+docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPERIMENTS" -e TRACE="$TRACE" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
   -v "$PWD":/src:ro ct-binsec bash -c '
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
   rm -rf /home/opam/w/checkct/target && cd /home/opam/w && eval $(opam env) &&
+  if [ -n "$EXACT" ]; then
+    printf "[toolchain]\nchannel = \"%s\"\nprofile = \"minimal\"\ncomponents = [\"rust-src\"]\n" "${CT_TOOLCHAIN:-1.95.0}" > checkct/rust-toolchain.toml &&
+    printf "\n[profile.release.package.driver]\noverflow-checks = true\n" >> checkct/.cargo/config.toml &&
+    echo "driver package override appended to checkct/.cargo/config.toml: $(tail -2 checkct/.cargo/config.toml | tr "\n" " ")"
+  fi &&
+  echo "toolchain for PROFILE=$PROFILE_NAME (checkct/rust-toolchain.toml: $(grep ^channel checkct/rust-toolchain.toml), RUSTC_BOOTSTRAP=${RUSTC_BOOTSTRAP:-unset}):" &&
+  (cd checkct && rustc -vV | sed "s/^/  /") &&
+  echo "x86_64 rustflags: ${CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS:-(checkct/.cargo/config.toml)}; CARGO_PROFILE_RELEASE_*: $(env | grep ^CARGO_PROFILE_RELEASE_ | tr "\n" " ")" &&
   # Dispatch profiles: make `avx2` a default feature of the driver (cargo-checkct has no --features option). The
   # feature is declared in checkct/driver/Cargo.toml; the #[path]-included sources see it as cfg(feature = "avx2").
   if [ -n "$DISPATCH" ]; then
     sed -i "s/^avx2 = \[\]\$/avx2 = []\ndefault = [\"avx2\"]/" checkct/driver/Cargo.toml &&
     grep -q "^default = \[\"avx2\"\]\$" checkct/driver/Cargo.toml || { echo "PRESET FAILED: could not enable the avx2 feature in checkct/driver/Cargo.toml"; exit 1; }
   fi
+  # EXPERIMENTS=1: also compile driver/src/experiments.rs (throwaway rewrite probes, off in every other run so the
+  # sweep drivers stay byte-identical to a build without it).
+  if [ -n "$EXPERIMENTS" ]; then
+    if grep -q "^default = " checkct/driver/Cargo.toml; then sed -i "s/^default = \[/default = [\"experiments\", /" checkct/driver/Cargo.toml
+    else printf "default = [\"experiments\"]\n" >> checkct/driver/Cargo.toml; fi &&
+    grep -q "experiments" checkct/driver/Cargo.toml || { echo "could not enable the experiments feature"; exit 1; }
+  fi
   cargo-checkct run --dir /home/opam/w --timeout 1 --jobs 60 --skip-unknown >/dev/null 2>&1
   cd /home/opam/w/checkct/target || exit 1
+  for t in $TARGETS; do case "$t" in x86_64*)
+    cm=$(readelf -p .comment "$t/release/driver" 2>/dev/null | sed -n "s/^ *\[ *[0-9a-f]*\] *//p" | tr "\n" "|")
+    echo "driver .comment ($t): $cm"
+    if [ -n "$EXACT" ] && [ "${CT_TOOLCHAIN:-1.95.0}" = 1.95.0 ] && ! echo "$cm" | grep -q "rustc version 1.95.0 "; then
+      echo "TOOLCHAIN MISMATCH: PROFILE=$PROFILE_NAME wants rustc 1.95.0 but the driver was built by something else"; exit 1; fi ;; esac; done
   # The dispatch static of src/ntt.rs (mod dispatch, static AVX2: AtomicU8): print the address of exactly that symbol.
   # v0 mangling _RNvNtNtC<crate hash>_6driver3ntt8dispatch4AVX2 (legacy: _ZN6driver3ntt8dispatch4AVX217h<hash>E), plus
   # the suffixes LTO adds (.0, .llvm.<number>). No other symbol of the binary matches (the NTT bodies are functions, type t).
@@ -106,12 +163,17 @@ docker run --rm -e DISPATCH="$DISPATCH" -e PROFILE_NAME="${PROFILE:-default}" --
         return 0
       fi
     fi ;; esac
+    # TRACE=1: BINSEC prints every executed instruction ([sse:step] lines); only the last one and the count are kept.
+    # That is the instruction a path was at when the run ended (a cut path, or the query a timed-out path is stuck in).
+    trace=""; [ -n "$TRACE" ] && trace="-sse-debug-level 3 -sse-loglevel debug"
     out=$(binsec -sse -checkct -sse-depth 1000000000 -sse-jump-enum 64 -sse-script "$s" -sse-timeout "$TIMEOUT" \
-      -checkct-leak-info instr $isa -checkct-features control-flow,memory-access,dividend,divisor "$t/release/driver" 2>&1)
+      -checkct-leak-info instr $isa -checkct-features control-flow,memory-access,dividend,divisor $trace "$t/release/driver" 2>&1 |
+      awk '"'"'/^\[sse:step\]/ { last=$0; n++; next } { print } END { if (n) print "LASTSTEP " n " " last }'"'"')
     st=$(echo "$out" | sed -n "s/.*Program status is : \([a-z]*\).*/\1/p" | head -1)
     {
       echo "  driver  $t  $ep  ${st:-error}"
       echo "$out" | sed -n "s/.*\[checkct:result\] Instruction \(.*\)/      \1/p"
+      echo "$out" | grep "^LASTSTEP" | sed "s/^LASTSTEP /      last: /"
       echo "$out" | grep -E "visited instructions \(unrolled\)|branching points|checks pass|pending paths" | sed "s/^ */      stat: /"
       [ "$st" = secure ] || echo "$out" | grep -iE "warning|error|unsupported|unknown|undefined|abort|not executable|cannot|failed" | sort | uniq -c | sort -rn | head -8 | sed "s/^ */      note: /"
     } > "/tmp/sel.$t.$ep.out"
@@ -120,7 +182,7 @@ docker run --rm -e DISPATCH="$DISPATCH" -e PROFILE_NAME="${PROFILE:-default}" --
   export -f run_one
   for t in $TARGETS; do for s in $t/release/driver.*.binsec; do
     n=$(basename "$s" .binsec); n=${n#driver.}
-    echo "$n" | grep -Eq "$ONLY" && echo "$t $s"
+    echo "$n" | grep -Eq "$ONLY" && { [ -z "$EXCLUDE" ] || ! echo "$n" | grep -Eq "$EXCLUDE"; } && echo "$t $s"
   done; done > /tmp/jobs.txt
   echo "selected $(wc -l < /tmp/jobs.txt) probes"
   xargs -P "$JOBS" -L1 bash -c "run_one \$0 \$1" < /tmp/jobs.txt

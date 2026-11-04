@@ -28,7 +28,10 @@ Scripts (all start from the repository root; `rx kill` does not stop containers,
 | script | purpose | environment |
 |---|---|---|
 | `run.sh` | all probes, all three targets (`cargo-checkct run --all-leaks`); `JOBS` defaults to every CPU, which does not fit a 64 GB container, so the full sweep of e9a1c74 used `run-select.sh` with `ONLY=.` instead | `TIMEOUT` (900 s per probe), `JOBS`, `OUT` (copies the three `<target>.driver` binaries), `NAME`, `PROFILE=nearcore` |
-| `run-select.sh` | only probes matching a regex, long timeouts; builds with `cargo-checkct`, then calls `binsec` directly. Streams a `done <target> <probe> <status>` line per probe and ends with a `Summary:` block like `run.sh` | `ONLY` (regex), `TARGETS`, `TIMEOUT` (7200), `JOBS` (4), `OUT`, `NAME`, `PROFILE` |
+| `run-select.sh` | only probes matching a regex, long timeouts; builds with `cargo-checkct`, then calls `binsec` directly. Streams a `done <target> <probe> <status>` line per probe and ends with a `Summary:` block like `run.sh` | `ONLY` (regex), `EXCLUDE` (regex), `TARGETS`, `TIMEOUT` (7200), `JOBS` (4), `OUT`, `NAME`, `PROFILE`, `TRACE=1` (last executed instruction per probe), `EXPERIMENTS=1` (the `exp_*` probes), `CT_TOOLCHAIN` (nearcore-exact; default 1.95.0) |
+| `unknowns.py BIN LOG...` | maps every leak address, every cut path (`uninterpreted "KO"`) and every `TRACE` last instruction of a `Summary:` block to function, source line and instruction (GNU `objdump`, runs on the box host; `leaks.sh` needs `llvm-objdump`, which the host does not have). `python3 -I checkct/unknowns.py DIR/x86_64-unknown-linux-gnu.driver LOG` | |
+| `leak-context.sh BIN ADDR...` | disassembly around an address with source lines (`BEFORE`, `AFTER` bytes) | |
+| `probe-now.sh CONTAINER PROBE [T] [binsec args]` | reruns one probe inside a running `run-select.sh` container for a few seconds with the full BINSEC log (diagnosis of a sweep in flight; not for verdicts) | |
 | `leaks.sh LOG BINDIR` | maps every leaking instruction address of a `Summary:` block to `file:line` and the instruction (`llvm-objdump -d -l` on the `OUT` binaries) | `OBJDUMP` as third argument |
 | `aarch64.sh` | experiment: AArch64 (see below); `cargo-checkct` does not support the target, so it builds the driver for `aarch64-unknown-linux-gnu` in the container and writes the BINSEC scripts itself | `ONLY`, `TIMEOUT`, `JOBS`, `NAME`, `OUT`, `NONEON=1` |
 | `split-run.sh [round2]` | the split probes of `driver/src/split.rs` on AArch64 (`NONEON=1`) and riscv32imac, two containers in parallel, exit status nonzero if either fails (see "Split probes") | `TIMEOUT` (3600), `JOBS` (2 per container), `AONLY`, `RONLY` |
@@ -39,8 +42,9 @@ Scripts (all start from the repository root; `rx kill` does not stop containers,
 `CARGO_PROFILE_RELEASE_*`). It approximates nearcore's release build but does not match it: nearcore (checked at
 nearcore cd5a94457, 2026-11-03) also sets `overflow-checks = true`, builds x86_64 with
 `-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq` and
-`-Cforce-unwind-tables=y`, and uses Rust 1.95.0. The `nearcore` results below are for this approximation only; a
-profile that matches nearcore and an x86_64 re-sweep with it are in progress. The default is the checkct workspace profile (release plus debug info, `panic = "abort"`,
+`-Cforce-unwind-tables=y`, and uses Rust 1.95.0. The `nearcore` results below are for this approximation only; the
+profiles that take all of those settings are `nearcore-exact` and `nearcore-exact-dispatch`
+(section "`nearcore-exact` and `nearcore-exact-dispatch`" below; x86_64 only, `run-select.sh`). The default is the checkct workspace profile (release plus debug info, `panic = "abort"`,
 16 codegen units). BINSEC's `-sse-timeout` is only checked between paths, so a probe stuck in a long solver query
 can run well past `TIMEOUT`.
 
@@ -58,6 +62,8 @@ the dispatch profiles of `run-select.sh` make `avx2` a default feature in the co
 | `dispatch` | the checkct profile with the `avx2` feature | yes, on x86_64 (a no-op on the other targets) | yes |
 | `nearcore-dispatch` | the nearcore settings with the `avx2` feature | as above | yes |
 | `avx2`, `nearcore-avx2` | `-C target-feature=+avx2`, no feature | no: the static-AVX2 arm, one AVX2 compilation of each body | none |
+| `nearcore-exact` | nearcore's `[profile.release]` incl. `overflow-checks` (driver package), nearcore's x86_64 target features, rustc 1.95.0; no `avx2` feature | no | none |
+| `nearcore-exact-dispatch` | `nearcore-exact` with the `avx2` feature | yes, as `nearcore-dispatch` | yes |
 
 In a dispatch profile `run-select.sh` pre-sets the dispatch cache (`static AVX2: AtomicU8` in `.bss`) to 1 ("checked, no
 AVX2") in every x86_64 BINSEC script, which is what `cargo-checkct`'s stubbed `cpuid` would have produced; without it
@@ -83,13 +89,320 @@ dispatch compiled; with the pre-set disabled, `dispatch` gives `unknown` ("Cut p
 `ntt_inverse` and `multiply_ntt`. `scan-avx2.sh` reports `ntt_avx2`, `ntt_inverse_avx2` and `multiply_ntt_avx2`.
 The full sweep at e9a1c74 below covers every probe in both dispatch profiles.
 
-Toolchain: `nightly-2026-10-06` with `rust-src` (`checkct/rust-toolchain.toml`), `-Zbuild-std=core,panic_abort` with
+Toolchain (every profile except `nearcore-exact*`, which use 1.95.0, see below): `nightly-2026-10-06` with `rust-src` (`checkct/rust-toolchain.toml`), `-Zbuild-std=core,panic_abort` with
 `compiler-builtins-mem` (`.cargo/config.toml`, copied from upstream). BINSEC 0.11.3, unisim_archisec 0.0.14,
 cargo-checkct @ 85271e5. Checks: `control-flow,memory-access,dividend,divisor`. Building only (no BINSEC) works
 anywhere with the toolchain: `cd checkct && cargo build --release -p driver --target x86_64-unknown-linux-gnu`.
 
 `checkct_macros/src/lib.rs` and `.cargo/config.toml` are copied from upstream (Apache-2.0 OR MIT), as
 `cargo-checkct init` generates them. `driver/src/rng.rs` is the same hook pair without the `rand_core` impls.
+
+## `nearcore-exact` and `nearcore-exact-dispatch` (x86_64; November 3, 2026)
+
+The older `nearcore` profile approximates nearcore's release build. These two profiles take their settings from nearcore
+itself (read-only clone at commit cd5a94457, 2026-11-03); the older profiles are unchanged because the historical
+numbers above refer to them. `nearcore-exact-dispatch` is `nearcore-exact` plus the crate's `avx2` feature with the
+dispatch cache pre-set, exactly as `nearcore-dispatch` does. x86_64 only; the other targets are not part of nearcore's
+x86_64 flags and were not rerun.
+
+| setting | value | source (nearcore cd5a94457) |
+|---|---|---|
+| `overflow-checks` | `true` | `Cargo.toml:389` (`[profile.release]`, lines 388-392) |
+| `panic` | `abort` | `Cargo.toml:390` |
+| `lto` | `"fat"` | `Cargo.toml:391` |
+| `codegen-units` | `1` | `Cargo.toml:392` |
+| `opt-level`, `debug-assertions` | not set: release defaults 3 and off | `Cargo.toml:388-392` (no other `[profile.release]` override) |
+| x86_64 `target-feature` | `+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq` (no AVX2) | `.cargo/config.toml:9` (`[target.'cfg(target_arch = "x86_64")']`) |
+| `force-unwind-tables` | `y` | `.cargo/config.toml:6` and `:9` |
+| toolchain | Rust 1.95.0 | `rust-toolchain.toml:12` |
+
+How `run-select.sh` builds it: `CARGO_PROFILE_RELEASE_{OPT_LEVEL=3,LTO=fat,CODEGEN_UNITS=1,PANIC=abort,DEBUG_ASSERTIONS=false}`,
+and the x86_64 flags through `CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS` (cargo-checkct drops `RUSTFLAGS`; the per-target
+variable replaces the x86_64 rustflags of `checkct/.cargo/config.toml`, so its three linker flags are repeated, as in
+`nearcore-novec`). The log of every run prints the flags, the toolchain file, the driver package override and the
+compiler read back from the driver's `.comment` section; the run aborts if that is not rustc 1.95.0.
+
+Three things differ from "the same settings with the checkct workspace":
+
+1. **Overflow checks apply to the `driver` package only.** `CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true` also reaches the
+   `-Zbuild-std` crates (`cargo build -v` shows `overflow-checks=on` for `core`, `compiler_builtins`, `panic_abort`), whereas
+   nearcore links the prebuilt `core`, whose own MIR has no overflow checks. The run appends
+   `[profile.release.package.driver] overflow-checks = true` to its working copy of `checkct/.cargo/config.toml` instead;
+   `-v` then shows `-C overflow-checks=on` on the `driver` command line and none on `core`. The driver includes the crate
+   sources as modules (and the harness), so exactly the crate and the probes are checked, as nearcore checks the crate.
+2. **`+fma` enables AVX.** `rustc --print cfg` with nearcore's feature list shows `target_feature="avx"`; without the list
+   it does not. LLVM therefore emits VEX-encoded SSE (`vpminud`, `vtestps`, `vpor`, ...) and 256-bit `vmovups`/`vandps`/
+   `vzeroupper` for copies and zeroing. The driver of the sweep contains 695 `vmovups`, 160 `vandps`, 158 `vzeroupper`,
+   41 `vxorps` and about 70 other VEX instructions. The one instruction confirmed unliftable by BINSEC 0.11.3 in these runs is
+   `vtestps` (cut path, "uninterpreted KO", experiment `exp_sk_wf_wrapadd_44`); no probe of the sweep (112 per profile) had a
+   cut path, so either the other VEX forms are lifted or no explored path reaches them. This was not tested further.
+3. **The harness had to change.** `probes.rs` `secret_elem()` computed `x - Q` for every `x` (the select picks afterwards).
+   With overflow checks that subtraction is a branch on the secret `x < Q`, in the harness itself: every probe built on
+   `secret_elem` (the first attempt: `field_small_reduce`) reported two control-flow leaks at `probes.rs:12`. It is now
+   `x.wrapping_sub(Q)`, which is the same machine code without overflow checks (the other profiles are unaffected).
+   `secret_elem` is the only harness arithmetic on secrets that can overflow.
+
+### Toolchain
+
+| | checkct pin | nearcore |
+|---|---|---|
+| toolchain | `nightly-2026-10-06` (`checkct/rust-toolchain.toml`) | `1.95.0` (`rust-toolchain.toml:12`) |
+| `rustc -vV` | `rustc 1.101.0-nightly (ea137335b 2026-10-05)`, commit ea137335b78829b4514bf1b4c16302f74fab8581, **LLVM 23.1.3**, host x86_64-unknown-linux-gnu | `rustc 1.95.0 (59807616e 2026-04-14)`, commit 59807616e1fa2540724bfbac14d7976d7e4a3860, **LLVM 22.1.2**, host x86_64-unknown-linux-gnu |
+| driver `.comment` | `rustc version 1.101.0-nightly (ea137335b 2026-10-05)`, `Linker: LLD 23.1.3` | `rustc version 1.95.0 (59807616e 2026-04-14)`, `Linker: LLD 22.1.2` |
+
+The driver is `#![no_std] #![no_main]` with `panic = "abort"` and links with `rust-lld` and no libc, so it needs
+`-Zbuild-std=core,panic_abort` with `compiler-builtins-mem` (`memcpy`, `memset`, `memcmp` come from `compiler_builtins`).
+Build-std is required: a 1.95.0 build without it (prebuilt `core`) fails at link time with `undefined symbol: memcpy` and
+`undefined symbol: memset` (checked in the image with nearcore's flags). Stable 1.95.0 takes build-std with
+`RUSTC_BOOTSTRAP=1`, which unlocks unstable flags and does not change code generation.
+**The `nearcore-exact*` drivers are therefore built with rustc 1.95.0, LLVM 22.1.2** (installed in the image by
+`checkct/Dockerfile`, selected through the working copy's `rust-toolchain.toml`: `RUSTUP_TOOLCHAIN` does not work because
+cargo-checkct removes it from its cargo's environment, `cargo-checkct/src/run.rs:263`; the first nearcore-exact drivers
+were silently built with the nightly that way, which the `.comment` check now rules out). `CT_TOOLCHAIN=nightly-2026-10-06`
+builds the same flags with the nightly. A nightly build of the same flags gave the same `sk_is_well_formed_44` verdict
+(insecure, same two branches); no other probe was compared across the two LLVM versions.
+
+Remaining differences from nearcore's binary (limitations): `core` is built from source with nearcore's target features and
+opt-level 3 and without overflow checks, while nearcore links the prebuilt `core` (generic and `#[inline]` code from `core`
+is instantiated in the driver in both cases, so it matches; non-inline `core` functions are compiled with SSE4.2/AVX here and for
+baseline x86-64 there); `memcpy`/`memset` are `compiler_builtins`', nearcore's are glibc's; only the crate is probed,
+not nearcore's callers, so inlining contexts differ (the `decompose` finding above shows that matters); the driver is a static,
+non-PIE `no_std` binary.
+
+### Method and what ran
+
+All runs: `run-select.sh`, x86_64 only, `ONLY=.` minus the two censuses, one container per profile (`ct-ne`, `ct-ne2`),
+64 GB cap. The README's 3600 s per probe at `JOBS=2` was not workable here: with overflow checks the NTT-family probes
+stall for the whole timeout (two probes per hour per container, about two days for the sweep), so the sweep was done in stages:
+
+1. **Stage 1:** all 112 probes, `TIMEOUT=600`, `JOBS=8` (a probe that is `secure` or `insecure` has a verdict at that point;
+   an `unknown` can only get more time).
+2. **Stage 2:** the 68 stage-1 `unknown`s again with `TRACE=1` (BINSEC `-sse-debug-level 3 -sse-loglevel debug`; the run keeps
+   only the last executed instruction and the count) at `TIMEOUT=300`: *the instruction BINSEC stopped at*.
+3. **Stage 3:** 14 representative `unknown`s whose instruction count was still rising between 300 s and 600 s, at `TIMEOUT=3600`,
+   `JOBS=14`, with `TRACE=1`. Three of them finished `secure` (`vec_power2round_44`, `vec_infinity_norm`,
+   `split_vec_power2round_3`); the others did not, and moved by a few thousand instructions in 3000 s.
+4. The two censuses alone at 120 GB, `JOBS=1`, `TIMEOUT=3600` (below).
+
+The unknown rows were not rerun at 7200 s. Raw summaries, with every leak and stop address mapped to function, source line and
+instruction by `checkct/unknowns.py`, are in `checkct/results/`.
+
+### Results (x86_64, rustc 1.95.0, BINSEC 0.11.3)
+
+112 probes per profile (84 non-split entrypoints and the 28 `split_*` probes of `split.rs`) plus the two censuses. No `error` result and no
+OOM kill occurred in any run (below), so the "no verdict" column is empty; `unknown` is a path BINSEC could not finish
+(timeout with one pending path), not an unliftable instruction (see the stop table).
+
+| profile (x86_64) | secure | expected insecure | insecure, new | unknown | no verdict (OOM) |
+|---|---|---|---|---|---|
+| `nearcore-exact` | 38 | 3 | 6 | 67 | 0 |
+| `nearcore-exact-dispatch` | 38 | 3 | 6 | 67 | 0 |
+
+Verdicts per probe are identical in the two profiles for all 112 probes (stage 1, and stage 3 for the 14 reruns); only
+the censuses are listed separately below. "Secure" means exactly what the README defines everywhere else; every secure row
+here has 0 pending paths and a nonzero number of control-flow checks passed (`checkct/results/`).
+
+- **secure (38):** `field_small_reduce`, `field_sub`, `field_neg`, `field_mul_shoup`, `field_mul_mont`, `field_mont_reduce`,
+  `ct_lt_mask`, `ct_select`, `power2round`, `decompose_44`, `decompose_65_87`, `high_bits_*`, `low_bits_*`, `make_hint_*`,
+  `infinity_norm`, `vec_infinity_norm` (3600 s), `keccak_f1600`, `bit_pack_{3,4,13,18,20}`, `keygen_seed_hash`,
+  `sign_rho_pp_hash`, `coeff_from_half_byte_eta{2,4}`, `poly_power2round`, `vec_power2round_44` (3600 s),
+  `split_vec_power2round_{1,2,3,8_q0..q3}` (`_3` at 3600 s). The standalone Decompose-family probes are `secure`, but CT-2
+  showed up inside `hint_step`'s inlining context, and every `hint_step_*` is `unknown` in this build: the CT-2 context has no
+  verdict under `nearcore-exact`.
+- **expected insecure (3):** `rej_bounded_poly_eta2/4` (`sampling.rs:129`, `:132`, public accept pattern) and the positive
+  control `control_early_exit_44` (`extra.rs:221`, 8 leaks), which must be and is `insecure`: the method sees a leak in this build.
+  The other two positive controls (`control_prepared_branch_44`, `control_prepared_index_44`) are `unknown` (below), so the
+  `prepare_sk` rows are uncontrolled.
+- **insecure, new (6):** `sk_is_well_formed_{44,65,87}`, `encode_sk_is_well_formed_{44,65,87}`: a real secret-dependent branch,
+  analysis below.
+- **unknown (67):** 65 probes plus the two censuses. All stop at an overflow-check guard in `field.rs`, below.
+
+### Where the 67 `unknown`s stop
+
+`unknown` here is always "timeout has left 1 pending path", no leak among the checks that passed, and the instruction BINSEC
+was at (`TRACE=1`) is a conditional jump to the panic path: the overflow check of an arithmetic operation in `field.rs`
+or `rounding.rs`, never an instruction the lifter rejects. Counts at 300 s and 600 s are equal or within a few thousand
+instructions (a path that creeps: 4 to 20 instructions per second at most), and the 14 reruns at 3600 s moved on by about 2,000 to
+19,000 instructions without finishing (three finished `secure`). So these rows are solver capacity on overflow-check guards;
+they are not findings, and they are not proofs.
+
+| stop site (source) | probes (count) | instruction pattern |
+|---|---|---|
+| `field.rs:39` `sub`: `a + Q - b` | 47: `sk_decode_*`, `sk_encode_*`, `prepare_sk_*`, `signing_key_*`, `expand_mask_*`, `vec_power2round_87`, all NTT-based `compute_t_*`, `ntt`, `ntt_vec_44`, the `split_*` pieces | `cmp $Q+k, %ecx; ja/jae panic` after the load of a decoded coefficient, or `lea Q(%rdx),%r8d; sub %esi,%r8d; jb panic` in `ntt_body_mut` (0x218f8d) |
+| `field.rs:71` `mont_reduce`: `a + m * Q` (u64) | 15: `hint_step_*`, `response_*`, `matrix_vector_ntt_{1x1,65,87}`, `scalar_vector_ntt_inverse_1`, `multiply_ntt` | `imul $0x7fe001,%rdx,%rdx; add %rsi,%rdx; jb panic` |
+| `field.rs:35` `add`; `:21` `small_reduce`; `:29` `barrett_reduce` | 1 each: `ntt_inverse`; `matrix_vector_ntt_44`; `barrett_reduce` (stops after 84 instructions: `cmp; sbb; jb`) | `add; jb panic`; `sub; jb panic`; `cmp %rcx,%rax; sbb %rdx,%rsi; jb panic` |
+| `census_sign_*_44` | 2 | `sk_decode::<4,4>` `field.rs:39`, `ja` at 0x211ce7 (after 1,372,577 and 54,314 instructions) |
+
+The guards are not reachable with canonical operands (`barrett_reduce` and `field::mul` are not even called by the crate:
+`mul` is `#[allow(dead_code)]`, the NTT uses the Shoup/Montgomery products), so a stuck guard is BINSEC failing to prove a
+nonlinear bound, not a panic path that exists. The SSE4.1 hint ("reductions may lower to different instructions") did not
+materialize as unliftable instructions in the probes that finish: the only unliftable instruction reached anywhere is the
+VEX `vtestps` of the experiment `exp_sk_wf_wrapadd_44` (which removes the overflow check from the original test); the
+`sk_is_well_formed` loop, which was `movmskpd` in the `nearcore` profile, is scalar here (the overflow check blocks the
+vectorization).
+
+Per probe (stop = the last executed instruction; 300 s trace unless the stage column says 3600 s; the instruction before it is
+the flag setter; `nearcore-exact-dispatch` stops at the same sites with other addresses, `checkct/results/`):
+
+| probe | stage | steps | stopped at | source | preceding instructions |
+|---|---|---|---|---|---|
+| `compute_t_1x1` | 300 s | 22173 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `compute_t_44` | 300 s | 188684 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `compute_t_65` | 300 s | 324310 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `compute_t_87` | 300 s | 564628 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `expand_mask_44` | 300 s | 35336 | `0x217af8` ja | src/field.rs:39 | `mov  0x36c(%rsp,%rax,4),%ecx; cmp  $0x81e001,%ecx` |
+| `expand_mask_65` | 300 s | 38090 | `0x21bf7d` jae | src/field.rs:39 | `mov  0x3d8(%rsp,%rax,4),%ecx; cmp  $0x87e002,%ecx` |
+| `expand_mask_87` | 300 s | 38336 | `0x21c7fb` ja | src/field.rs:39 | `mov  0x3dc(%rsp,%rax,4),%ecx; cmp  $0x87e001,%ecx` |
+| `matrix_vector_ntt_1x1` | 300 s | 15679 | `0x20627b` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `matrix_vector_ntt_44` | 300 s | 160367 | `0x20646e` jb | src/field.rs:21 | `cmova %r13d,%edx; sub  %edx,%ecx` |
+| `matrix_vector_ntt_65` | 300 s | 281585 | `0x20696b` jb | src/field.rs:71 | `imul  $0x7fe001,%rcx,%rcx; add  %rdx,%rcx` |
+| `matrix_vector_ntt_87` | 300 s | 507450 | `0x206fcb` jb | src/field.rs:71 | `imul  $0x7fe001,%rcx,%rcx; add  %rdx,%rcx` |
+| `ntt_vec_44` | 300 s | 29504 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `scalar_vector_ntt_inverse_1` | 300 s | 15666 | `0x2212f3` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `vec_power2round_87` | 3600 s | 88718 | `0x21ddea` jae | src/field.rs:39 | `mov  (%r14,%rax,4),%ecx; cmp  $0xff801fff,%ecx` |
+| `control_prepared_branch_44` | 300 s | 35245 | `0x21196d` ja | src/field.rs:39 | `mov  0x404(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `control_prepared_index_44` | 300 s | 35392 | `0x21196d` ja | src/field.rs:39 | `mov  0x404(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `prepare_sk_1x1_44` | 3600 s | 44292 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `prepare_sk_1x1_65` | 300 s | 51820 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `prepare_sk_44` | 3600 s | 53874 | `0x211ce7` ja | src/field.rs:39 | `mov  0x408(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `prepare_sk_65` | 3600 s | 71280 | `0x212cdd` jae | src/field.rs:39 | `mov  0x404(%rsp,%rax,4),%ecx; cmp  $0x7fe006,%ecx` |
+| `prepare_sk_87` | 300 s | 61750 | `0x213e6a` jae | src/field.rs:39 | `mov  0x24(%rsp,%rax,4),%ecx; cmp  $0x7fe004,%ecx` |
+| `signing_key_44` | 300 s | 35297 | `0x211997` ja | src/field.rs:39 | `mov  0x408(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `signing_key_65` | 300 s | 52139 | `0x2129a8` ja | src/field.rs:39 | `mov  0x408(%rsp,%rax,4),%ecx; cmp  $0x7fe005,%ecx` |
+| `signing_key_87` | 300 s | 61763 | `0x213e94` ja | src/field.rs:39 | `mov  0x28(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `barrett_reduce` | 300 s | 84 | `0x232083` jb | src/field.rs:29 | `cmp  %rcx,%rax; sbb  %rdx,%rsi` |
+| `multiply_ntt` | 300 s | 14787 | `0x22e97f` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `ntt` | 300 s | 7269 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `ntt_inverse` | 300 s | 11386 | `0x218365` jb | src/field.rs:35 | `mov  %r8d,%r9d; add  %edi,%r9d` |
+| `sk_decode_44` | 3600 s | 53751 | `0x211cbd` ja | src/field.rs:39 | `mov  0x404(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `sk_decode_65` | 3600 s | 64745 | `0x212d07` ja | src/field.rs:39 | `mov  0x408(%rsp,%rax,4),%ecx; cmp  $0x7fe005,%ecx` |
+| `sk_decode_87` | 3600 s | 69556 | `0x213e94` ja | src/field.rs:39 | `mov  0x28(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `sk_encode_44` | 3600 s | 118458 | `0x2146cb` jae | src/field.rs:39 | `mov  -0x4(%r15,%rax,4),%ecx; cmp  $0x7fe004,%ecx` |
+| `sk_encode_65` | 3600 s | 157439 | `0x23028d` ja | src/field.rs:39 | `mov  0x4ec8(%rsp,%rax,4),%ecx; cmp  $0x7fe005,%ecx` |
+| `sk_encode_87` | 3600 s | 199045 | `0x231b86` ja | src/field.rs:39 | `mov  (%r12,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `hint_step_1_44` | 300 s | 23084 | `0x216c63` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `hint_step_1_65` | 300 s | 23084 | `0x216c63` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `hint_step_44` | 300 s | 67367 | `0x20719b` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `hint_step_65` | 300 s | 96974 | `0x2074fb` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `hint_step_87` | 300 s | 126894 | `0x235a4c` jb | src/field.rs:71 | `imul  $0x7fe001,%rcx,%rcx; add  %rdx,%rcx` |
+| `response_1x1_44` | 300 s | 37515 | `0x216483` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `response_1x1_65` | 300 s | 37515 | `0x216483` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `response_44` | 300 s | 125997 | `0x20719b` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `response_65` | 300 s | 170150 | `0x2334d0` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `response_87` | 300 s | 229274 | `0x23413e` jb | src/field.rs:71 | `imul  $0x7fe001,%rdx,%rdx; add  %rsi,%rdx` |
+| `split_compute_t_44_2x2` | 300 s | 61763 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `split_compute_t_44_col` | 300 s | 69067 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `split_compute_t_44_row` | 300 s | 68919 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `split_ntt_vec_into_1` | 300 s | 7269 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `split_ntt_vec_into_7` | 300 s | 51537 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `split_ntt_vec_into_8` | 300 s | 58883 | `0x218f8d` jb | src/field.rs:39 | `lea  0x7fe001(%rdx),%r8d; sub  %esi,%r8d` |
+| `split_prepare_sk_44_col` | 300 s | 37311 | `0x2088fd` jae | src/field.rs:39 | `mov  0x444(%rsp,%rax,4),%ecx; cmp  $0x7fe004,%ecx` |
+| `split_prepare_sk_44_row` | 3600 s | 59845 | `0x2241bd` jae | src/field.rs:39 | `mov  0x504(%rsp,%rax,4),%ecx; cmp  $0x7ff002,%ecx` |
+| `split_prepare_sk_65_col` | 300 s | 110307 | `0x20a42a` ja | src/field.rs:39 | `mov  0x458(%rsp,%rax,4),%ecx; cmp  $0x7ff001,%ecx` |
+| `split_prepare_sk_65_row` | 300 s | 45791 | `0x224d2a` ja | src/field.rs:39 | `mov  0x508(%rsp,%rax,4),%ecx; cmp  $0x7fe005,%ecx` |
+| `split_prepare_sk_87_2x1` | 300 s | 49979 | `0x225c6d` ja | src/field.rs:39 | `mov  0x514(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `split_prepare_sk_87_4x1` | 300 s | 51850 | `0x2088fd` jae | src/field.rs:39 | `mov  0x444(%rsp,%rax,4),%ecx; cmp  $0x7fe004,%ecx` |
+| `split_prepare_sk_87_6x1` | 300 s | 113992 | `0x20a42a` ja | src/field.rs:39 | `mov  0x458(%rsp,%rax,4),%ecx; cmp  $0x7ff001,%ecx` |
+| `split_prepare_sk_87_7x1` | 300 s | 53757 | `0x226cea` ja | src/field.rs:39 | `mov  0x518(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `split_prepare_sk_87_col` | 300 s | 54774 | `0x227f0d` jae | src/field.rs:39 | `mov  0x504(%rsp,%rax,4),%ecx; cmp  $0x7fe004,%ecx` |
+| `split_prepare_sk_87_row` | 300 s | 51143 | `0x228d1a` ja | src/field.rs:39 | `mov  0x508(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `split_vec_power2round_5` | 300 s | 48548 | `0x22a78d` ja | src/field.rs:39 | `mov  0x5008(%rsp,%r13,4),%eax; cmp  $0xff801ffe,%eax` |
+| `split_vec_power2round_6` | 300 s | 56709 | `0x22ad1a` jae | src/field.rs:39 | `mov  (%r14,%rax,4),%ecx; cmp  $0xff801fff,%ecx` |
+| `split_vec_power2round_7` | 300 s | 64275 | `0x22af9a` jae | src/field.rs:39 | `mov  (%r14,%rax,4),%ecx; cmp  $0xff801fff,%ecx` |
+| `split_vec_power2round_8_hi` | 300 s | 71700 | `0x22b2fd` ja | src/field.rs:39 | `mov  0x8408(%rsp,%r13,4),%eax; cmp  $0xff801ffe,%eax` |
+| `split_vec_power2round_8_lo` | 300 s | 71577 | `0x22b85d` ja | src/field.rs:39 | `mov  0x7408(%rsp,%r15,4),%eax; cmp  $0xff801ffe,%eax` |
+| `census_sign_internal_44` | 3600 s | 1372577 | `0x211ce7` ja | src/field.rs:39 | `mov  0x408(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+| `census_sign_prepared_44` | 3600 s | 54314 | `0x211ce7` ja | src/field.rs:39 | `mov  0x408(%rsp,%rax,4),%ecx; cmp  $0x7fe003,%ecx` |
+
+### The six new `insecure` rows: `sk_is_well_formed_{44,65,87}`, `encode_sk_is_well_formed_{44,65,87}`
+
+Not in the expected list, so analyzed, not labeled. Every one reports exactly two control-flow leaks, both `jb` at
+`src/encode.rs:169` in `poly_in_eta` (for example 44: 0x20fa25 and 0x20fa49), found within 25 s; BINSEC then keeps
+exploring the 2^n paths (257 pending at the timeout; the verdict is "insecure", the leak list is not exhaustive).
+
+    encode.rs:169   if w[i] > eta && w[i] + eta < Q { ok = false }
+    20fa1e: mov    0x14(%rsp,%rax,4),%ecx
+    20fa22: cmp    $0x3,%ecx                  ; w > eta ?
+    20fa25: jb     20fa42                     ; <- leak: skip the rest when w <= eta
+    20fa27: cmp    $0xfffffffd,%ecx           ; w + eta overflows u32 ?
+    20fa2a: ja     panic                      ; the overflow check: not reported (its condition is false for every secret value)
+    20fa30: add    $0xff802001,%ecx           ; w + eta - Q ...
+    20fa36: cmp    $0xff801fff,%ecx
+    20fa3c: setb   %cl
+    20fa3f: and    %cl,%r13b
+
+- It is **not** the overflow-check branch. The `ja panic` at 0x20fa2a is not flagged (its condition is the same for all secrets). The flagged branch is the `&&`: with
+  `overflow-checks = true` the right operand `w[i] + eta` can panic, so LLVM may not evaluate it speculatively and must keep
+  the short-circuit as a branch on `w > eta`. Without the check the same source is if-converted (`nearcore-novec`: `secure`;
+  checkct profile: `secure`) or vectorized (`nearcore`: `unknown`, SSE2 `movmskpd`; here with AVX: `unknown` at the VEX
+  instruction `vtestps`, probe `exp_sk_wf_wrapadd_44` below, which is the original with `wrapping_add`).
+- **Verdict: (b), a real secret-dependent branch in nearcore's build, not a probe artifact.** For a well-formed key
+  `w[i] > eta` is true exactly when the coefficient is negative (`w` is `Q-1` or `Q-2` for `eta = 2`), so the branch leaks the
+  sign of every coefficient of s1 and s2. The probe domain (arbitrary secret bytes) is a superset of the real one, but the leak
+  does not need the extra values: the isolated test on a secret polynomial with canonical coefficients (`exp_poly_orig`,
+  domain `[0, Q)`, which `unpack_signed` always produces by the range fact of `field::sub`) leaks in 0.07 s, and no extra
+  constraint is missing, since the branch outcome already differs between two valid keys. The overflow cannot occur in the real
+  domain (`w < Q`); that is why the guard is not flagged, and why it cannot be assumed away: it is the guard's side effect that
+  forces the branch.
+- Scope: `sk_is_well_formed_NN` is the optional key check (not called by Sign; its doc comment already says it branches on the
+  sign of each coefficient and is to be run "where timing is not observable"). The finding is about nearcore's build of that
+  function, in the probe's inlining context (the crate in isolation, not nearcore's callers). Sign, KeyGen and Verify do not call
+  it. The doc comment of `api::sk_is_well_formed_NN` says "Not covered by the constant-time checks"; with the older profiles the
+  object code happened to be branch-free, with nearcore's it is not.
+
+### Rewrites tested (throwaway probes, `driver/src/experiments.rs`, `EXPERIMENTS=1`; `src/` and `lean/` untouched)
+
+Copies of `poly_in_eta` / `sk_is_well_formed` with only the range test changed. `nearcore-exact`, rustc 1.95.0, 900 s
+(blocks 600 s). `K+L` is the number of η-blocks. "secure" has 0 pending paths.
+
+| probe | change | verdict |
+|---|---|---|
+| `exp_sk_wf_crate_44`, `exp_sk_wf_orig_44`, `exp_sk_wf_orig_1x1_44`, `exp_blk_orig_eta{2,4}`, `exp_poly_orig` | the original, through the crate / a verbatim copy / one block / the polynomial test alone | **insecure** in all of them (two `jb` at the `&&`; copy at `experiments.rs:51`), so the copy is faithful |
+| `exp_blk_wrapadd_eta2`, `exp_sk_wf_wrapadd_44` | original with `w.wrapping_add(eta)` (no overflow check in the test) | unknown at once: vectorized with VEX, cut at `vtestps %xmm6,%xmm0` (0x21b968 / 0x219df8, `experiments.rs:64`). Removing the overflow check alone does not lift it |
+| `exp_blk_bitand_eta2`, `exp_poly_bitand` | `ok &= !((w > eta) & (w.wrapping_add(eta) < Q))` | **secure** (one block 7,724 instructions, 1,527 control-flow checks) |
+| `exp_blk_mask_eta{2,4}`, `exp_poly_mask`, `exp_sk_wf_mask_1x1_44` | integer accumulation: `bad \|= (eta.wrapping_sub(x) >> 31) & (x.wrapping_sub(Q - eta) >> 31)`, one `bad == 0` at the end (also across blocks) | **secure** (1x1: 29,105 instructions, 7,998 control-flow checks) |
+| `exp_blk_maskbb_eta{2,4}`, `exp_poly_maskbb`, `exp_sk_wf_maskbb_1x1_44` | same with `black_box` on each element mask | **secure** (1x1: 33,852 instructions, 8,478 checks) |
+| `exp_sk_wf_bitand_44`, `exp_sk_wf_mask{,bb}_{44,65,87}`, `exp_sk_wf_mask{,bb}_2x2_44` | the same at full size and with 4 blocks | unknown: one pending path stuck at the overflow-check guard of `field::sub` inside `unpack_signed` (`field.rs:39`, `ja`/`jae`, 0x2070dd for 2x2), the same stall as `sk_decode_*`; not the range test |
+| `exp_sk_wf_maskw_{2x2_44,44,65,87}` | the mask test **and** the unpack stage (`bit_unpack`, `field::sub`, `small_reduce`) in `wrapping_*` arithmetic | **secure** at full size: 52,773 / 78,838 / 99,470 instructions, 12,706 / 18,907 / 24,019 control-flow checks, 0 pending paths |
+
+So the integer-mask range test is branch-free and liftable under `nearcore-exact`, and the full-size verdict also needs the
+unpack stage without overflow-check guards (wrapping arithmetic there, or whatever makes BINSEC's guard queries cheap). The
+`black_box` variant is not needed for the one-block verdicts. The mask test relies on `w < 2^31`, which holds because `w` is
+`field::sub(eta, z)`, canonical. Scope of the recommendation: (i) the integer-mask range test is a change to `encode.rs`
+(`poly_in_eta`) only, and is what removes the branch; (ii) the *full-size* verdicts additionally needed the unpack stage in
+`wrapping_*` arithmetic (`exp_sk_wf_maskw_*`), which is the same kind of change in `field::sub`, `field::small_reduce` and
+`encode::bit_unpack`: crate-wide code that Lean extracts, where Aeneas models checked and wrapping operations differently, so
+it would need re-extraction and re-proof. `maskw` shows what lifts the verdict, not a local fix. Not tested: any source change
+to `field.rs`/`ntt.rs` for the other 65 unknowns.
+
+### Censuses and the OOM ledger
+
+| run | container cap | result |
+|---|---|---|
+| `nearcore-exact` `census_sign_internal_44` | 120 GB, `JOBS=1`, 3600 s | `unknown`: 1 pending path after 1,372,577 instructions (167,830 control-flow and 427,006 memory-access checks passed, no leak), stuck at `sk_decode` `field.rs:39`; resident memory was 1.2 to 1.9 GB at the two samples taken. No `sampling.rs:35` leak was reached (the earlier profiles found it first), so this census says nothing about it |
+| `nearcore-exact` `census_sign_prepared_44` | 120 GB, `JOBS=1`, 3600 s | `unknown`: 1 pending path after 54,314 instructions, stuck at the same instruction (0x211ce7), no leak |
+| `nearcore-exact-dispatch` `census_sign_internal_44` | 120 GB, `JOBS=1`, 3600 s | `unknown`: 1 pending path after 1,371,009 instructions (167,983 control-flow and 427,222 memory-access checks passed, no leak), stuck at the same `sk_decode` guard (`field.rs:39`, 0x21177d) |
+| `nearcore-exact-dispatch` `census_sign_prepared_44` | 120 GB, `JOBS=1`, 3600 s | `unknown`: 1 pending path after 54,809 instructions (15,182 control-flow and 18,080 memory-access checks passed, no leak), same stop |
+
+OOM ledger: none of the runs of this section was killed. The kernel log (`journalctl -k -g 'Killed process'`, checked after the stage-1 sweeps (last 12 hours) and again after
+the last census (last 6 hours, which covers the four census runs)) shows only kills of `lean` processes of other jobs on the box; no
+`binsec` kill. Every result of the sweep is `secure`, `insecure` or `unknown`; no `error`. The censuses were not
+restricted to `JOBS=1` in stage 1/2 because they were excluded from them (`EXCLUDE`); the old "needs more than 120 GB" rows do
+not carry over to this build: the overflow-check stall ends the census long before memory matters.
+
+### What this does and does not show
+
+- `nearcore-exact` is a better approximation of nearcore's x86_64 release build than `nearcore`, not the binary: the crate is
+  probed in isolation (inlining context), `core` is built from source (above), `memcpy` is `compiler_builtins`', and the
+  allocator, `std` and nearcore's callers are absent.
+- One class of result: 38 secure, 6 findings that are real in this build (`sk_is_well_formed`), 3 expected, 67 without a
+  verdict. Everything that sits on the NTT, on `sk_decode`/`sk_encode`, on the Sign steps (`response`, `hint_step`) and on
+  ExpandMask has **no verdict under `nearcore-exact`**: with `overflow-checks = true` BINSEC does not finish them (they were
+  `secure` in the checkct profile, and `secure` for `response`/`hint_step` in `nearcore`). That is a loss of evidence for the
+  nearcore build, not a leak. Whether the checks leave a secret-dependent branch in those paths is exactly what BINSEC could
+  not decide there; the 6 `sk_is_well_formed` rows show that overflow checks can introduce one.
+- The panic paths themselves are not analyzed: a reachable panic is outside this tool's questions (abort on a malformed
+  input is a robustness property, covered by the Lean panic-freedom statements in STATUS.md, not here).
 
 ## Known no-verdict probes (skip unless something changed)
 
@@ -110,6 +423,9 @@ says what was tried. When an entry gets a verdict, move it out of this list.
 | `census_sign_prepared_44` | riscv32imac default; x86_64 `nearcore-dispatch` | OOM: needs more than 120 GB, no verdict | 64 GB and 120 GB caps |
 | `control_prepared_branch_44` | thumbv7em | `secure`: the control is invalid there (branch lowered to a select) | every run; expected |
 | `control_prepared_branch_44`, `control_prepared_index_44` | AArch64 `NONEON=1` | no verdict | 1 h and 2 h |
+| 65 probes: `sk_decode_*`, `sk_encode_*`, `prepare_sk_*`, `signing_key_*`, `expand_mask_*`, `compute_t_*`, `matrix_vector_ntt_*`, `ntt`, `ntt_inverse`, `ntt_vec_44`, `multiply_ntt`, `scalar_vector_ntt_inverse_1`, `response_*`, `hint_step_*`, `vec_power2round_87`, `barrett_reduce`, `control_prepared_*`, `prepare_sk_1x1_*`, 21 `split_*` (full list in the "`nearcore-exact`" section) | x86_64 `nearcore-exact`, `nearcore-exact-dispatch` | unknown: 1 pending path stuck at an overflow-check guard (`field.rs:39`, `:71`, `:35`, `:21`, `:29`); not an unliftable instruction | 600 s for all, 300 s with `TRACE=1` for all, 3600 s with `TRACE=1` for 14 of them (3 of those finished secure: `vec_power2round_44`, `vec_infinity_norm`, `split_vec_power2round_3`); never 7200 s. The same settings again will not help. What could: guards without overflow checks in the source (tested only for `sk_is_well_formed`: `exp_sk_wf_maskw_*` finish `secure`) or a different solver configuration |
+| `census_sign_internal_44`, `census_sign_prepared_44` | x86_64 `nearcore-exact`, `nearcore-exact-dispatch` | unknown (no OOM): stuck at the `sk_decode` guard 0x211ce7 after 1,372,577 / 54,314 instructions | 120 GB, `JOBS=1`, 3600 s |
+| `sk_is_well_formed_{44,65,87}`, `encode_sk_is_well_formed_{44,65,87}` | x86_64 `nearcore-exact*` | not no-verdict: `insecure` (real branch, section above). The `nearcore` / `nearcore-dispatch` row above (movmskpd) is unchanged | |
 
 ## Probes (87 entrypoints x 3 targets: riscv32imac-unknown-none-elf, thumbv7em-none-eabihf, x86_64-unknown-linux-gnu)
 
