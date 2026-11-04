@@ -1,0 +1,22 @@
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_65_col  secure
+      stat: pending paths                    0
+      stat: branching points                 108785
+      stat: visited instructions (unrolled)  1431873
+      stat: [checkct:info] 120105 / 120105 control flow checks pass
+      stat: [checkct:info] 423152 / 423152 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_65_row  secure
+      stat: pending paths                    0
+      stat: branching points                 69464
+      stat: visited instructions (unrolled)  991518
+      stat: [checkct:info] 80137 / 80137 control flow checks pass
+      stat: [checkct:info] 312196 / 312196 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_6x1  secure
+      stat: pending paths                    0
+      stat: branching points                 109185
+      stat: visited instructions (unrolled)  1434718
+      stat: [checkct:info] 122233 / 122233 control flow checks pass
+      stat: [checkct:info] 424440 / 424440 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass

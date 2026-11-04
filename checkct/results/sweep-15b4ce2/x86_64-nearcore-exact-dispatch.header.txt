@@ -1,0 +1,13 @@
+driver package override appended to checkct/.cargo/config.toml: [profile.release.package.driver] overflow-checks = true 
+toolchain for PROFILE=nearcore-exact-dispatch (checkct/rust-toolchain.toml: channel = "1.95.0", RUSTC_BOOTSTRAP=1):
+  rustc 1.95.0 (59807616e 2026-04-14)
+  binary: rustc
+  commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+  commit-date: 2026-04-14
+  host: x86_64-unknown-linux-gnu
+  release: 1.95.0
+  LLVM version: 22.1.2
+x86_64 rustflags: -C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -C force-unwind-tables=y; CARGO_PROFILE_RELEASE_*: CARGO_PROFILE_RELEASE_PANIC=abort CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false CARGO_PROFILE_RELEASE_OPT_LEVEL=3 CARGO_PROFILE_RELEASE_LTO=fat CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 
+driver .comment (x86_64-unknown-linux-gnu): rustc version 1.95.0 (59807616e 2026-04-14)|Linker: LLD 22.1.2 (/checkout/src/llvm-project/llvm 1cb4e3833c1919c2e6fb579a23ac0e2b22587b7e)|
+preset x86_64-unknown-linux-gnu: PROFILE=nearcore-exact-dispatch: dispatch compiled in, AVX2 cache static at 0x00000000002590b8; every script gets @[0x..., 1] := 1
+selected 113 probes
