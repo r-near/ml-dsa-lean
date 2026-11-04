@@ -22,7 +22,7 @@
 # nearcore-test, nearcore-test-avx2, nearcore-test-zeroize, wasm32, wasm32-zeroize, diff-awslc,
 # fuzz-<target> (one per target in fuzz/fuzz_targets), deny, lean.
 #
-# NOTE: skipping stack_residue_* (fails at opt-level 0, see the notes at the top of scripts/ci.sh). test-zeroize runs the zeroize feature's tests in
+# NOTE: test-zeroize skips stack_residue_* where they fail at opt-level 0. test-zeroize runs the zeroize feature's tests in
 # the dev profile (opt-level 0) without the 8 failing stack-residue scans (keygen and pk_from_sk for 44/65/87,
 # signing_key for 44/65) and with the 7 that pass (sign and sign_prepared for 44/65/87, signing_key for 87);
 # test-zeroize-release and nearcore-test-zeroize run the full suite, all 15 scans, in release. Counts reproduced on
@@ -120,7 +120,7 @@ need_toolchain() {
 
 step_test_default() { cargo test; }
 step_test_zeroize() {
-  echo "NOTE: skipping stack_residue_* (fails at opt-level 0, see the notes at the top of scripts/ci.sh); running the 7 that pass at opt-level 0"
+  echo "NOTE: skipping stack_residue_* (fails at opt-level 0, see the header of this script and Z-1 in docs/assurance.md); running the 7 that pass at opt-level 0"
   ZEROIZE_SKIPPED=1
   # `--skip` matches substrings of the full test path (ml_dsa_44::stack_residue_keygen, ...). Skipped: keygen and
   # pk_from_sk for all sets, signing_key for 44 and 65. Run: sign, sign_prepared (all sets) and signing_key for 87.

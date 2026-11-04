@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stack measurement for the public api functions. From the repository root:
-#   rx submit stack -- 'set -o pipefail; bash tools/stack/run.sh 2>&1 | tee stack.log'
+#   bash tools/stack/run.sh 2>&1 | tee stack.log
 # Output goes to tools/stack/out/<variant>/ (ignored by git) and to stdout.
 #
 # Two build variants, because inlining decides the frame sizes:
