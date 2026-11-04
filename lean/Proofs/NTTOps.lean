@@ -26,9 +26,15 @@ open Impl
 
 theorem neg_spec (a : U32) (ha : a.val < 8380417) :
     field.neg a ⦃ y => y.val = (8380417 - a.val) % 8380417 ∧ y.val < 8380417 ⦄ := by
+  have hq : (8380417#u32).val = 8380417 := rfl
+  have h1 : (core.num.U32.wrapping_sub 8380417#u32 a).val = 8380417 - a.val := by
+    rw [wrapping_sub_val_u32, hq]; omega
   unfold field.neg
-  simp only [global_simps]
-  step*
+  simp only [global_simps, lift, bind_tc_ok]
+  apply WP.spec_mono (small_reduce_spec _ (by rw [h1]; omega))
+  intro y hy
+  rw [h1] at hy
+  exact hy
 
 theorem neg_zmod (a : U32) (ha : a.val < 8380417) :
     field.neg a ⦃ y => y.val < 8380417 ∧ ((y.val : Nat) : ZMod 8380417) = -((a.val : Nat) : ZMod 8380417) ⦄ := by

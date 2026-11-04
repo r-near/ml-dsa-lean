@@ -4,6 +4,10 @@ import Proofs.FieldFast
 Proofs.mul_shoup_spec
 Proofs.mont_reduce_spec
 Proofs.mul_mont_spec
+Proofs.small_reduce_spec
+Proofs.barrett_reduce_spec
+Proofs.add_spec
+Proofs.sub_spec
 import Proofs.NTT
 Proofs.shoup_tables
 Proofs.f_shoup_eq
@@ -260,8 +264,9 @@ import Proofs.SkWellFormed
 Proofs.skWellFormed_eq_true_iff
 Proofs.SkWF_iff_blocks
 Proofs.okAt_iff
-Proofs.poly_in_eta_loop_spec
-Proofs.eta_block_in_range_spec
+Proofs.eta_bit_nat
+Proofs.poly_eta_bad_loop_spec
+Proofs.eta_block_bad_spec
 Proofs.sk_is_well_formed_loop_spec
 Proofs.sk_is_well_formed_spec
 Proofs.skWellFormedAPI_spec

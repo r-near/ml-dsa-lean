@@ -14,32 +14,37 @@ const BARRETT_MULTIPLIER: u128 = (1u128 << BARRETT_SHIFT) / (Q as u128);
 // targets keep ordinary inlining: forcing it crate-wide changed the code shape enough that BINSEC no longer finished the
 // riscv32imac `response`/`hint_step` probes within an hour (they were `secure` before).
 
+// Overflow checks (nearcore builds with `overflow-checks = true`): every `+ - *` on a possibly secret value is a
+// branch to a panic, and BINSEC cannot decide those guards on secret data (checkct/README.md). The operations below are
+// `wrapping_*` wherever the proofs (lean/Proofs/Field.lean, FieldFast.lean) already show that the exact result fits,
+// so the wrapping result is the exact one and the compiled code has no guard.
+
 /// x - q if x >= q, else x. Requires x < 2q.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn small_reduce(x: u32) -> u32 {
     let mask = 0u32.wrapping_sub((x >= Q) as u32);
-    x - (Q & mask)
+    x.wrapping_sub(Q & mask)
 }
 
 /// x mod q for x < q^2.
 pub fn barrett_reduce(x: u64) -> u32 {
     let x = x as u128;
-    let product = x * BARRETT_MULTIPLIER;
+    let product = x.wrapping_mul(BARRETT_MULTIPLIER);
     let quotient = product >> BARRETT_SHIFT;
-    let remainder = x - quotient * (Q as u128);
+    let remainder = x.wrapping_sub(quotient.wrapping_mul(Q as u128));
     small_reduce(remainder as u32)
 }
 
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn add(a: u32, b: u32) -> u32 {
-    small_reduce(a + b)
+    small_reduce(a.wrapping_add(b))
 }
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn sub(a: u32, b: u32) -> u32 {
-    small_reduce(a + Q - b)
+    small_reduce(a.wrapping_add(Q).wrapping_sub(b))
 }
 pub fn neg(a: u32) -> u32 {
-    small_reduce(Q - a)
+    small_reduce(Q.wrapping_sub(a))
 }
 /// Reference product. The NTT code uses `mul_shoup` and `mul_mont`; this one has no vector instruction (the u128
 /// multiply), so it is kept as the specification the fast products are tested against.
@@ -68,7 +73,7 @@ const R2: u64 = 2_365_951;
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 pub fn mont_reduce(a: u64) -> u32 {
     let m = (a as u32).wrapping_mul(QNEG);
-    ((a + (m as u64) * (Q as u64)) >> 32) as u32
+    (a.wrapping_add((m as u64).wrapping_mul(Q as u64)) >> 32) as u32
 }
 
 /// `a * b mod q` for canonical `a`, `b`, with two Montgomery reductions: the first leaves `a * b * 2^-32`, the second

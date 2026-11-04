@@ -161,41 +161,44 @@ pub fn sk_decode<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> Secre
     out
 }
 
-/// True iff every coefficient of `w` (canonical mod q) is in [−η, η], i.e. `w ≤ η` or `w ≥ q − η`.
-fn poly_in_eta(w: &[u32; 256], eta: u32) -> bool {
-    let mut ok = true;
+/// Zero iff every coefficient of `w` (canonical mod q) is in [−η, η], i.e. `w ≤ η` or `w ≥ q − η`; otherwise 1.
+/// Branch-free on the coefficients and free of overflow-checked arithmetic on them: each coefficient contributes the
+/// bit `[w > η] & [w < q − η]`, computed as the sign bits of two wrapping differences (exact because `w`, η and q are
+/// below 2³¹), and the bits are OR-ed. A `w[i] > eta && w[i] + eta < Q` test would stay a branch on the sign of every
+/// coefficient of s₁ and s₂ in a build with overflow checks (its right operand can panic), see ISSUES.md CT-3.
+fn poly_eta_bad(w: &[u32; 256], eta: u32) -> u32 {
+    let lo = Q - eta;
+    let mut bad = 0u32;
     let mut i = 0;
     while i < 256 {
-        if w[i] > eta && w[i] + eta < Q {
-            ok = false;
-        }
+        let x = w[i];
+        bad |= (eta.wrapping_sub(x) >> 31) & (x.wrapping_sub(lo) >> 31);
         i += 1;
     }
-    ok
+    bad
 }
 
-/// True iff the η-block `v` (32·bitlen(2η) bytes) decodes, as in skDecode (BitUnpack with a = b = η), to
-/// coefficients all in [−η, η].
-fn eta_block_in_range(p: &Params, v: &[u8]) -> bool {
-    poly_in_eta(&unpack_signed(v, p.eta, p.eta_bits), p.eta)
+/// Zero iff the η-block `v` (32·bitlen(2η) bytes) decodes, as in skDecode (BitUnpack with a = b = η), to
+/// coefficients all in [−η, η]; otherwise 1.
+fn eta_block_bad(p: &Params, v: &[u8]) -> u32 {
+    poly_eta_bad(&unpack_signed(v, p.eta, p.eta_bits), p.eta)
 }
 
 /// True iff every coefficient of s₁ and s₂ as decoded by `sk_decode` (Algorithm 25) lies in [−η, η]. The L + K
 /// η-blocks of `sk` are contiguous from byte 128. (t₀ is a 13-bit field decoded as 4096 − z for z < 2¹³, so
 /// it is always in [−4095, 4096] and needs no check.) Requires `sk.len() == sk_len(p)`.
+/// The blocks are OR-ed into one integer and compared with zero once, at the end: no branch depends on a coefficient.
 pub fn sk_is_well_formed<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> bool {
     let n = 32 * p.eta_bits;
     let mut o = 128;
-    let mut ok = true;
+    let mut bad = 0u32;
     let mut i = 0;
     while i < L + K {
-        if !eta_block_in_range(p, &sk[o..o + n]) {
-            ok = false;
-        }
+        bad |= eta_block_bad(p, &sk[o..o + n]);
         o += n;
         i += 1;
     }
-    ok
+    bad == 0
 }
 
 /// Algorithm 26 sigEncode(c̃, z, h).

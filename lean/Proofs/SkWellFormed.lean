@@ -125,105 +125,116 @@ theorem okAt_iff (w : Array U32 256#usize) (V : RPoly) (hV : ReprInt w V) (η : 
   rw [hq] at hc
   omega
 
-/-! ## One polynomial: `poly_in_eta` -/
+/-! ## One polynomial: `poly_eta_bad` -/
 
-theorem poly_in_eta_loop_spec (w : Array U32 256#usize) (eta : U32) (hw : Canonical w)
-    (hη : eta.val < 1000) (ok1 : Bool) (i : Usize) (hi : i.val ≤ 256) :
-    encode.poly_in_eta_loop w eta ok1 i ⦃ r =>
-      (r = true ↔ ok1 = true ∧ ∀ j, i.val ≤ j → j < 256 → OkAt w eta.val j) ⦄ := by
-  have hQ : field.Q.val = 8380417 := by first | rfl | decide | simp [field.Q]
+/-- The bit `[(η − x) >> 31] & [(x − lo) >> 31]` that `poly_eta_bad` ORs in for coefficient `x` (wrapping `u32`
+differences) is `0` exactly when `OkU η x`, for `x < q`, `η < 1000` and `lo = q − η`. -/
+theorem eta_bit_nat (eta x lo : Nat) (hη : eta < 1000) (hx : x < 8380417) (hlo : lo = 8380417 - eta) :
+    ((2 ^ 32 - x + eta) % 2 ^ 32 / 2 ^ 31) &&& ((2 ^ 32 - lo + x) % 2 ^ 32 / 2 ^ 31) = 0 ↔
+      (x ≤ eta ∨ 8380417 ≤ x + eta) := by
+  by_cases h1 : x ≤ eta
+  · have e : (2 ^ 32 - x + eta) % 2 ^ 32 / 2 ^ 31 = 0 := by omega
+    rw [e, Nat.zero_and]
+    exact ⟨fun _ => Or.inl h1, fun _ => rfl⟩
+  · by_cases h2 : 8380417 ≤ x + eta
+    · have e : (2 ^ 32 - lo + x) % 2 ^ 32 / 2 ^ 31 = 0 := by omega
+      rw [e, Nat.and_zero]
+      exact ⟨fun _ => Or.inr h2, fun _ => rfl⟩
+    · have e1 : (2 ^ 32 - x + eta) % 2 ^ 32 / 2 ^ 31 = 1 := by omega
+      have e2 : (2 ^ 32 - lo + x) % 2 ^ 32 / 2 ^ 31 = 1 := by omega
+      rw [e1, e2]
+      constructor
+      · intro h; exact absurd h (by decide)
+      · intro h; omega
+
+theorem nat_or_eq_zero (a b : Nat) : a ||| b = 0 ↔ a = 0 ∧ b = 0 := by
+  constructor
+  · intro h
+    have key : ∀ i, (a.testBit i || b.testBit i) = false := by
+      intro i
+      have := congrArg (fun n => Nat.testBit n i) h
+      simpa [Nat.testBit_or] using this
+    constructor
+    · apply Nat.eq_of_testBit_eq; intro i
+      rw [Nat.zero_testBit]
+      exact (Bool.or_eq_false_iff.mp (key i)).1
+    · apply Nat.eq_of_testBit_eq; intro i
+      rw [Nat.zero_testBit]
+      exact (Bool.or_eq_false_iff.mp (key i)).2
+  · rintro ⟨rfl, rfl⟩; rfl
+
+theorem poly_eta_bad_loop_spec (w : Array U32 256#usize) (eta lo : U32) (hw : Canonical w)
+    (hη : eta.val < 1000) (hlo : lo.val = 8380417 - eta.val) (bad1 : U32) (i : Usize) (hi : i.val ≤ 256) :
+    encode.poly_eta_bad_loop w eta lo bad1 i ⦃ r =>
+      (r.val = 0 ↔ bad1.val = 0 ∧ ∀ j, i.val ≤ j → j < 256 → OkAt w eta.val j) ⦄ := by
   have hqq : Spec.q = 8380417 := rfl
-  unfold encode.poly_in_eta_loop
+  unfold encode.poly_eta_bad_loop
   apply loop.spec_decr_nat
-    (fun (p : Bool × Usize) => 256 - p.2.val)
+    (fun (p : U32 × Usize) => 256 - p.2.val)
     (fun p => i.val ≤ p.2.val ∧ p.2.val ≤ 256 ∧
-      (p.1 = true ↔ ok1 = true ∧ ∀ j, i.val ≤ j → j < p.2.val → OkAt w eta.val j))
-  · rintro ⟨ok, i2⟩ ⟨h0, h1, h2⟩
+      (p.1.val = 0 ↔ bad1.val = 0 ∧ ∀ j, i.val ≤ j → j < p.2.val → OkAt w eta.val j))
+  · rintro ⟨bad, ix⟩ ⟨h0, h1, h2⟩
     dsimp only at h0 h1 h2
-    simp only [encode.poly_in_eta_loop.body]
+    simp only [encode.poly_eta_bad_loop.body]
     split
     · rename_i hlt
-      have hlt' : i2.val < 256 := by scalar_tac
-      have hl : i2.val < w.val.length := by rw [len256 w]; exact hlt'
-      have hxq : (w.val[i2.val]'hl).val < Spec.q := canon_get hw hl
-      have hOk : OkAt w eta.val i2.val ↔ OkU eta.val (w.val[i2.val]'hl).val := okAt_of_lt w eta.val i2.val hlt'
-      -- extending the invariant by entry `i2`
-      have hgood : OkAt w eta.val i2.val →
-          (ok = true ↔ ok1 = true ∧ ∀ j, i.val ≤ j → j < i2.val + 1 → OkAt w eta.val j) := by
-        intro hok
-        rw [h2]
-        constructor
-        · rintro ⟨a, b⟩
-          refine ⟨a, fun j hj1 hj2 => ?_⟩
-          by_cases e : j = i2.val
-          · subst e; exact hok
-          · exact b j hj1 (by omega)
-        · rintro ⟨a, b⟩
-          exact ⟨a, fun j hj1 hj2 => b j hj1 (by omega)⟩
-      have hbad : ¬ OkAt w eta.val i2.val →
-          (false = true ↔ ok1 = true ∧ ∀ j, i.val ≤ j → j < i2.val + 1 → OkAt w eta.val j) := by
-        intro hok
-        constructor
-        · intro h; exact absurd h (by simp)
-        · rintro ⟨-, b⟩
-          exact absurd (b i2.val h0 (by omega)) hok
-      step with arr_index_spec w i2 hl as ⟨x, hx⟩
-      have hxv : x.val = (w.val[i2.val]'hl).val := by rw [hx]
-      have hxq' : x.val < Spec.q := by rw [hxv]; exact hxq
-      by_cases hgt : x > eta
-      · simp only [hgt, if_true]
-        have hgt' : eta.val < x.val := by scalar_tac
-        step as ⟨s, hs⟩
-        by_cases hlq : s < field.Q
-        · simp only [hlq, if_true]
-          have hlq' : s.val < Spec.q := by scalar_tac
-          have hnok : ¬ OkAt w eta.val i2.val := by
-            rw [hOk, ← hxv]
-            unfold OkU
-            omega
-          step as ⟨i3, hi3⟩
-          refine ⟨by omega, by omega, by rw [hi3]; exact hbad hnok, by omega⟩
-        · simp only [hlq, if_false]
-          have hlq' : Spec.q ≤ s.val := by scalar_tac
-          have hok : OkAt w eta.val i2.val := by
-            rw [hOk, ← hxv]
-            unfold OkU
-            omega
-          step as ⟨i3, hi3⟩
-          refine ⟨by omega, by omega, by rw [hi3]; exact hgood hok, by omega⟩
-      · simp only [hgt, if_false]
-        have hgt' : x.val ≤ eta.val := by scalar_tac
-        have hok : OkAt w eta.val i2.val := by
-          rw [hOk, ← hxv]
-          unfold OkU
-          omega
-        step as ⟨i3, hi3⟩
-        refine ⟨by omega, by omega, by rw [hi3]; exact hgood hok, by omega⟩
+      have hlt' : ix.val < 256 := by scalar_tac
+      have hl : ix.val < w.val.length := by rw [len256 w]; exact hlt'
+      have hxq : (w.val[ix.val]'hl).val < Spec.q := canon_get hw hl
+      have hOk : OkAt w eta.val ix.val ↔ OkU eta.val (w.val[ix.val]'hl).val := okAt_of_lt w eta.val ix.val hlt'
+      step with arr_index_spec w ix hl as ⟨x, hx⟩
+      have hxv : x.val = (w.val[ix.val]'hl).val := by rw [hx]
+      step*
+      have hx8 : x.val < 8380417 := by rw [hxv]; omega
+      have hs1 : i2.val = (2 ^ 32 - x.val + eta.val) % 2 ^ 32 / 2 ^ 31 := by
+        rw [i2_post1, Nat.shiftRight_eq_div_pow, i1_post, wrapping_sub_val_u32]
+      have hs2 : i4.val = (2 ^ 32 - lo.val + x.val) % 2 ^ 32 / 2 ^ 31 := by
+        rw [i4_post1, Nat.shiftRight_eq_div_pow, i3_post, wrapping_sub_val_u32]
+      have hbit : i5.val = i2.val &&& i4.val := by rw [i5_post1, UScalar.val_and]
+      have hb1 : bad1.val = bad.val ||| i5.val := by rw [bad1_post1, UScalar.val_or]
+      have hbz : bad1.val = 0 ↔ bad.val = 0 ∧ i5.val = 0 := by rw [hb1]; exact nat_or_eq_zero _ _
+      have hbitz : i5.val = 0 ↔ OkU eta.val x.val := by
+        rw [hbit, hs1, hs2]
+        exact eta_bit_nat eta.val x.val lo.val hη hx8 hlo
+      have hokx : i5.val = 0 ↔ OkAt w eta.val ix.val := by rw [hOk, ← hxv]; exact hbitz
+      refine ⟨by omega, by omega, ?_, by omega⟩
+      rw [hbz, h2, hokx]
+      constructor
+      · rintro ⟨⟨a, b⟩, c⟩
+        refine ⟨a, fun j hj1 hj2 => ?_⟩
+        by_cases e : j = ix.val
+        · rw [e]; exact c
+        · exact b j hj1 (by omega)
+      · rintro ⟨a, b⟩
+        exact ⟨⟨a, fun j hj1 hj2 => b j hj1 (by omega)⟩, b ix.val h0 (by omega)⟩
     · rename_i hlt
       simp only [WP.spec_ok]
-      have : i2.val = 256 := by scalar_tac
+      have : ix.val = 256 := by scalar_tac
       rw [this] at h2
       exact h2
   · exact ⟨le_refl _, hi, fun h => ⟨h, fun j hj1 hj2 => by dsimp only at hj2; omega⟩, fun h => h.1⟩
 
-/-- The decoded η-block lies in `[−η, η]`: `eta_block_in_range` decides `PolyInEta η (BitUnpack (bytes v) η η)`. -/
-theorem eta_block_in_range_spec {K L : Usize} {ip : Impl.params.Params} {sp : Spec.Params}
+/-- The decoded η-block lies in `[−η, η]`: `eta_block_bad` is `0` iff `PolyInEta η (BitUnpack (bytes v) η η)`. -/
+theorem eta_block_bad_spec {K L : Usize} {ip : Impl.params.Params} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (v : Slice U8) (hlen : v.val.length = 32 * ip.eta_bits.val) :
-    encode.eta_block_in_range ip v ⦃ r =>
-      (r = true ↔ PolyInEta sp.η (BitUnpack (bytes v) sp.η sp.η)) ⦄ := by
+    encode.eta_block_bad ip v ⦃ r =>
+      (r.val = 0 ↔ PolyInEta sp.η (BitUnpack (bytes v) sp.η sp.η)) ⦄ := by
   have hv := hp.valid
   have hη4 : sp.η = 2 ∨ sp.η = 4 := hp.params.eta
   have hb : ip.eta.val < Spec.q := by rw [hv.eta]; simp only [Spec.q]; omega
   have hc : ip.eta_bits.val = bitlen (sp.η + ip.eta.val) := by rw [hv.eta_bits, hv.eta, two_mul]
   have hbits : ip.eta_bits.val ≤ 22 := by
     rw [hv.eta_bits]; rcases hη4 with h | h <;> rw [h] <;> decide +kernel
-  unfold encode.eta_block_in_range
+  have hQ : field.Q.val = 8380417 := by first | rfl | decide | simp [field.Q]
+  unfold encode.eta_block_bad
   refine WP.spec_bind (unpack_signed_spec v ip.eta sp.η ip.eta_bits hb hc hbits hlen) ?_
   intro w hw
-  unfold encode.poly_in_eta
-  refine WP.spec_mono (poly_in_eta_loop_spec w ip.eta hw.1 (by rw [hv.eta]; omega) true 0#usize (by simp)) ?_
+  unfold encode.poly_eta_bad
+  have hη1000 : ip.eta.val < 1000 := by rw [hv.eta]; omega
+  step as ⟨lo, hlo⟩
+  refine WP.spec_mono (poly_eta_bad_loop_spec w ip.eta lo hw.1 hη1000 (by omega) 0#u32 0#usize (by simp)) ?_
   intro r hr
-  have hr' : (r = true ↔ ∀ j, j < 256 → OkAt w ip.eta.val j) := by
+  have hr' : (r.val = 0 ↔ ∀ j, j < 256 → OkAt w ip.eta.val j) := by
     rw [hr]; simp
   rw [hr', hv.eta]
   have hbl : 2 ^ bitlen (sp.η + ip.eta.val) ≤ 16 := by
@@ -245,14 +256,19 @@ theorem eta_block_in_range_spec {K L : Usize} {ip : Impl.params.Params} {sp : Sp
 
 /-! ## All blocks: `sk_is_well_formed` -/
 
+theorem nat_zero_iff_u32 (b : U32) : b = 0#u32 ↔ b.val = 0 := by
+  constructor
+  · intro h; rw [h]; rfl
+  · intro h; exact UScalar.eq_of_val_eq (by rw [h]; rfl)
+
 theorem sk_is_well_formed_loop_spec {K L : Usize} {ip : Impl.params.Params} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (sk : Slice U8) (hL : sk.val.length = sp.skLen)
-    (n : Usize) (hn : n.val = 32 * bitlen (2 * sp.η)) (ok1 : Bool) (o i : Usize)
+    (n : Usize) (hn : n.val = 32 * bitlen (2 * sp.η)) (bad1 : U32) (o i : Usize)
     (hi : i.val ≤ sp.ℓ + sp.k) (ho : o.val = 128 + i.val * n.val) :
     encode.sk_is_well_formed_loop K L ip.k ip.l ip.eta ip.eta_bits ip.tau ip.beta ip.gamma1 ip.gamma1_bits
       ip.gamma2 ip.w1_bits ip.omega ip.c_tilde_len ip.two_gamma2_shift ip.two_gamma2_mult
-      ip.two_gamma2_div_mult sk n o ok1 i ⦃ r =>
-      (r = true ↔ ok1 = true ∧ ∀ j, i.val ≤ j → j < sp.ℓ + sp.k → BlockOK sp (bytes sk) j) ⦄ := by
+      ip.two_gamma2_div_mult sk n o bad1 i ⦃ r =>
+      (r.val = 0 ↔ bad1.val = 0 ∧ ∀ j, i.val ≤ j → j < sp.ℓ + sp.k → BlockOK sp (bytes sk) j) ⦄ := by
   have hv := hp.valid
   have hLen : sk.val.length = 128 + (sp.ℓ + sp.k) * n.val + sp.k * 416 := by
     rw [hL, skLen_eq sp hv.d_eq, hn]
@@ -260,10 +276,10 @@ theorem sk_is_well_formed_loop_spec {K L : Usize} {ip : Impl.params.Params} {sp 
   have hnb : n.val = 32 * ip.eta_bits.val := by rw [hn, hv.eta_bits]
   unfold encode.sk_is_well_formed_loop
   apply loop.spec_decr_nat
-    (fun (p : Usize × Bool × Usize) => sp.ℓ + sp.k - p.2.2.val)
+    (fun (p : Usize × U32 × Usize) => sp.ℓ + sp.k - p.2.2.val)
     (fun p => i.val ≤ p.2.2.val ∧ p.2.2.val ≤ sp.ℓ + sp.k ∧ p.1.val = 128 + p.2.2.val * n.val ∧
-      (p.2.1 = true ↔ ok1 = true ∧ ∀ j, i.val ≤ j → j < p.2.2.val → BlockOK sp (bytes sk) j))
-  · rintro ⟨o2, ok, i2⟩ ⟨h0, h1, h2, h3⟩
+      (p.2.1.val = 0 ↔ bad1.val = 0 ∧ ∀ j, i.val ≤ j → j < p.2.2.val → BlockOK sp (bytes sk) j))
+  · rintro ⟨o2, bad, i2⟩ ⟨h0, h1, h2, h3⟩
     dsimp only at h0 h1 h2 h3
     simp only [encode.sk_is_well_formed_loop.body]
     have hLv := hv.L_eq
@@ -283,38 +299,26 @@ theorem sk_is_well_formed_loop_spec {K L : Usize} {ip : Impl.params.Params} {sp 
         rw [this, hi17]; omega
       have hsb0 := bytes_slice_of sk s o2.val i17.val n.val hs1 (by rw [hi17]; omega)
       have hsb : bytes s = slice (bytes sk) (128 + i2.val * n.val) n.val := by rw [hsb0, h2]
-      refine WP.spec_bind (eta_block_in_range_spec hp s hslen) ?_
+      refine WP.spec_bind (eta_block_bad_spec hp s hslen) ?_
       intro b hb
       rw [hsb, hn] at hb
-      have hblk : BlockOK sp (bytes sk) i2.val ↔ b = true := by
+      have hblk : BlockOK sp (bytes sk) i2.val ↔ b.val = 0 := by
         unfold BlockOK
         exact hb.symm
-      have hgood : BlockOK sp (bytes sk) i2.val →
-          (ok = true ↔ ok1 = true ∧ ∀ j, i.val ≤ j → j < i2.val + 1 → BlockOK sp (bytes sk) j) := by
-        intro hok
-        rw [h3]
-        constructor
-        · rintro ⟨a, c⟩
-          refine ⟨a, fun j hj1 hj2 => ?_⟩
-          by_cases ej : j = i2.val
-          · subst ej; exact hok
-          · exact c j hj1 (by omega)
-        · rintro ⟨a, c⟩
-          exact ⟨a, fun j hj1 hj2 => c j hj1 (by omega)⟩
-      have hbad : ¬ BlockOK sp (bytes sk) i2.val →
-          (false = true ↔ ok1 = true ∧ ∀ j, i.val ≤ j → j < i2.val + 1 → BlockOK sp (bytes sk) j) := by
-        intro hok
-        constructor
-        · intro h; exact absurd h (by simp)
-        · rintro ⟨-, c⟩
-          exact absurd (c i2.val h0 (by omega)) hok
-      by_cases hbt : b = true
-      · simp only [hbt, if_true]
-        step as ⟨i18, hi18⟩
-        refine ⟨by omega, by omega, by rw [hi18]; omega, by rw [hi18]; exact hgood (hblk.mpr hbt), by omega⟩
-      · simp only [hbt, Bool.false_eq_true, if_false]
-        step as ⟨i18, hi18⟩
-        refine ⟨by omega, by omega, by rw [hi18]; omega, by rw [hi18]; exact hbad (fun h => hbt (hblk.mp h)), by omega⟩
+      step as ⟨bad1', hbad1'⟩
+      step as ⟨i18, hi18⟩
+      have hbz : bad1'.val = 0 ↔ bad.val = 0 ∧ b.val = 0 := by
+        rw [hbad1', UScalar.val_or]; exact nat_or_eq_zero _ _
+      refine ⟨by omega, by omega, by rw [hi17, h2, hi18, e]; omega, ?_, by omega⟩
+      rw [hbz, h3]
+      constructor
+      · rintro ⟨⟨a, c⟩, d⟩
+        refine ⟨a, fun j hj1 hj2 => ?_⟩
+        by_cases ej : j = i2.val
+        · rw [ej]; exact hblk.mpr d
+        · exact c j hj1 (by omega)
+      · rintro ⟨a, c⟩
+        exact ⟨⟨a, fun j hj1 hj2 => c j hj1 (by omega)⟩, hblk.mp (c i2.val h0 (by omega))⟩
     · rename_i hlt
       simp only [WP.spec_ok]
       have : i2.val = sp.ℓ + sp.k := by scalar_tac
@@ -334,19 +338,14 @@ theorem sk_is_well_formed_spec {K L : Usize} {ip : Impl.params.Params} {sp : Spe
   have hnv : n.val = 32 * bitlen (2 * sp.η) := by
     have h1 := hv.eta_bits
     scalar_tac
-  refine WP.spec_mono (sk_is_well_formed_loop_spec hp sk hL n hnv true 128#usize 0#usize (by simp) (by simp)) ?_
-  intro r hr
-  have hiff : r = true ↔ SkWF sp (bytes sk) := by
-    rw [hr, SkWF_iff_blocks]
+  refine WP.spec_bind (sk_is_well_formed_loop_spec hp sk hL n hnv 0#u32 128#usize 0#usize (by simp) (by simp)) ?_
+  intro bad hr
+  simp only [WP.spec_ok]
+  have hiff : (bad = 0#u32) ↔ SkWF sp (bytes sk) := by
+    rw [nat_zero_iff_u32, hr, SkWF_iff_blocks]
     simp
-  by_cases hr1 : r = true
-  · rw [hr1]
-    exact ((skWellFormed_eq_true_iff _ _).mpr (hiff.mp hr1)).symm
-  · have hr0 : r = false := by simpa using hr1
-    rw [hr0]
-    have : ¬ SkWF sp (bytes sk) := fun h => hr1 (hiff.mpr h)
-    unfold skWellFormed
-    exact (decide_eq_false this).symm
+  unfold skWellFormed
+  exact decide_eq_decide.mpr hiff
 
 /-! ## The API wrappers -/
 

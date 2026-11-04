@@ -20,16 +20,6 @@ set_option maxRecDepth 8192
 namespace Proofs
 open Impl
 
-theorem wrapping_mul_val_u32 (a b : U32) :
-    (core.num.U32.wrapping_mul a b).val = (a.val * b.val) % 2 ^ 32 := by
-  show (a.bv * b.bv).toNat = _
-  rw [BitVec.toNat_mul, UScalar.bv_toNat, UScalar.bv_toNat]
-
-theorem wrapping_sub_val_u32 (a b : U32) :
-    (core.num.U32.wrapping_sub a b).val = (2 ^ 32 - b.val + a.val) % 2 ^ 32 := by
-  show (a.bv - b.bv).toNat = _
-  rw [BitVec.toNat_sub, UScalar.bv_toNat, UScalar.bv_toNat]
-
 /-! ## Shoup multiplication -/
 
 /-- Shoup's lemma over the naturals: with `zp = ⌊z·M/q⌋` and `hi = ⌊x·zp/M⌋`, `z·x − hi·q` is in `[0, 2q)`. -/
@@ -100,16 +90,18 @@ theorem mont_reduce_spec (a : U64) (ha : a.val < 4294967296 * 8380417) :
   unfold field.mont_reduce
   simp only [global_simps, lift, bind_tc_ok]
   step*
-  all_goals simp only [wrapping_mul_val_u32, UScalar.cast_val_eq, Nat.shiftRight_eq_div_pow] at *
+  all_goals simp only [wrapping_mul_val_u32, wrapping_mul_val_u64, wrapping_add_val_u64, UScalar.cast_val_eq,
+    Nat.shiftRight_eq_div_pow] at *
   all_goals norm_num [U64.numBits, U32.numBits, UScalarTy.numBits] at *
-  all_goals have hd := mont_div a.val
-  all_goals have hm : a.val * 4236238847 % 4294967296 < 4294967296 := Nat.mod_lt _ (by norm_num)
-  all_goals rw [Nat.mod_eq_of_lt (by omega : a.val * 4236238847 % 4294967296 < 18446744073709551616)] at i3_post
-  all_goals have hsplit : i5.val * 4294967296 = a.val + (a.val * 4236238847 % 4294967296) * 8380417 := by omega
-  all_goals have hc := mont_core a.val _ i5.val hm hsplit ha
-  all_goals have h32 : i5.val % 4294967296 = i5.val := Nat.mod_eq_of_lt (by omega)
-  all_goals rw [h32]
-  all_goals omega
+  have hd := mont_div a.val
+  have hm : a.val * 4236238847 % 4294967296 < 4294967296 := Nat.mod_lt _ (by norm_num)
+  have hsum : a.val + a.val * 4236238847 % 4294967296 * 8380417 < 18446744073709551616 := by omega
+  rw [Nat.mod_eq_of_lt hsum] at i5_post1
+  have hsplit : i5.val * 4294967296 = a.val + (a.val * 4236238847 % 4294967296) * 8380417 := by omega
+  have hc := mont_core a.val _ i5.val hm hsplit ha
+  have h32 : i5.val % 4294967296 = i5.val := Nat.mod_eq_of_lt (by omega)
+  rw [h32]
+  omega
 
 attribute [step] mont_reduce_spec
 

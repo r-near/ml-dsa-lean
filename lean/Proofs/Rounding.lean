@@ -65,15 +65,23 @@ theorem reduce_mod_spec (x m shift : U32) (mult : U64) (hx : x.val < 8380417)
   have hxm : x.val * mult.val < 2 ^ 63 := by nlinarith
   unfold rounding.reduce_mod
   step*
-  all_goals have hm64 : m64.val = m.val := by rw [m64_post]; simp
-  all_goals have hx1 : x1.val = x.val := by rw [x1_post]; simp
-  all_goals (have hq : quotient.val = x.val * mult.val / 2 ^ shift.val := by
-                    rw [quotient_post1, Nat.shiftRight_eq_div_pow, i_post, hx1])
-  · rw [hq, hm64]; exact le_trans (hbx.1.trans' (le_refl _)) (by simp [U64.max, U64.numBits]; omega)
-  · rw [i1_post, hq, hm64, hx1]; exact hbx.1
-  · have hrem : remainder.val = x.val - x.val * mult.val / 2 ^ shift.val * m.val := by
-      rw [remainder_post1, i1_post, hq, hm64, hx1]
-    have hmod : x.val % m.val = remainder.val % m.val := by
+  all_goals
+    have hm64 : m64.val = m.val := by rw [m64_post]; simp
+    have hx1 : x1.val = x.val := by rw [x1_post]; simp
+    have hiv : i.val = x.val * mult.val := by
+      rw [i_post, wrapping_mul_val_u64, hx1]
+      exact Nat.mod_eq_of_lt (by omega)
+    have hq : quotient.val = x.val * mult.val / 2 ^ shift.val := by
+      rw [quotient_post1, Nat.shiftRight_eq_div_pow, hiv]
+    have hi1v : i1.val = x.val * mult.val / 2 ^ shift.val * m.val := by
+      rw [i1_post, wrapping_mul_val_u64, hq, hm64]
+      exact Nat.mod_eq_of_lt (lt_of_le_of_lt hbx.1 (by omega))
+    have hrem : remainder.val = x.val - x.val * mult.val / 2 ^ shift.val * m.val := by
+      rw [remainder_post, wrapping_sub_val_u64, hx1, hi1v]
+      have := hbx.1
+      omega
+  · rw [hrem]; omega
+  · have hmod : x.val % m.val = remainder.val % m.val := by
       have h1 : m.val * (x.val * mult.val / 2 ^ shift.val) ≤ x.val := by
         rw [Nat.mul_comm]; exact hbx.1
       have h2 := Nat.sub_mul_mod h1
@@ -111,13 +119,22 @@ theorem mod_plus_minus_spec (x m shift : U32) (mult : U64) (hx : x.val < 8380417
   all_goals have hi1 : i1.val = m.val / 2 := by simp [i1_post, i_post1, Nat.shiftRight_eq_div_pow]
   all_goals have hi2 : i2.val = raw.val := by simp [i2_post]
   all_goals have hmask := lower_of_mask i3 i4 lower i4_post lower_post
+  all_goals
+    have hq8 : (8380417#u32).val = 8380417 := rfl
+    have hi5 : i5.val = raw.val + 8380417 := by
+      rw [i5_post, wrapping_add_val_u32, hq8]
+      exact Nat.mod_eq_of_lt (by omega)
+    have hi6 : i6.val = raw.val + 8380417 - m.val := by
+      rw [i6_post, wrapping_sub_val_u32, hi5]
+      omega
+  · rw [hi6]; omega
   · by_cases h : m.val / 2 < raw.val
     · exact Or.inl (hmask.2 (i3_post1 (by omega)))
     · exact Or.inr (hmask.1 (i3_post2 (by omega)))
   · by_cases h : m.val / 2 < raw.val
     · have hl := (hmask.2 (i3_post1 (by omega)))
       have := y_post1 hl
-      rw [this, i7_post1, i6_post1, i5_post, raw_post1.symm]
+      rw [this, i7_post1, hi6, raw_post1.symm]
       have : ¬ (raw.val ≤ m.val / 2) := by omega
       rw [raw_post1] at this ⊢
       simp only [this, if_false]
@@ -241,7 +258,11 @@ theorem decompose_44 (sp : Spec.Params) (p : params.Params) (hg : p.gamma2 = 952
     have hk44 : k ≤ 44 := by omega
     have hi6 : i6.val = diff.val := by simp [i6_post]
     have hi8 : i8.val = k := by
-      rw [i8_post1, Nat.shiftRight_eq_div_pow, i7_post, hi6, hkd]; exact div48_44 k hk44
+      have hc7 : (1477838210#u64).val = 1477838210 := rfl
+      have hi7 : i7.val = diff.val * 1477838210 := by
+        rw [i7_post, wrapping_mul_val_u64, hi6, hc7]
+        exact Nat.mod_eq_of_lt (by omega)
+      rw [i8_post1, Nat.shiftRight_eq_div_pow, hi7, hkd]; exact div48_44 k hk44
     have hr1 : r1.val = k := by
       rw [r1_post]; simp only [UScalar.cast_val_eq, hi8]
       have h32 : (2 : Nat) ^ UScalarTy.U32.numBits = 4294967296 := by decide
@@ -299,7 +320,11 @@ theorem decompose_65 (sp : Spec.Params) (p : params.Params) (hg : p.gamma2 = 261
     have hk16 : k ≤ 16 := by omega
     have hi6 : i6.val = diff.val := by simp [i6_post]
     have hi8 : i8.val = k := by
-      rw [i8_post1, Nat.shiftRight_eq_div_pow, i7_post, hi6, hkd]; exact div48_65 k hk16
+      have hc7 : (537395713#u64).val = 537395713 := rfl
+      have hi7 : i7.val = diff.val * 537395713 := by
+        rw [i7_post, wrapping_mul_val_u64, hi6, hc7]
+        exact Nat.mod_eq_of_lt (by omega)
+      rw [i8_post1, Nat.shiftRight_eq_div_pow, hi7, hkd]; exact div48_65 k hk16
     have hr1 : r1.val = k := by
       rw [r1_post]; simp only [UScalar.cast_val_eq, hi8]
       have h32 : (2 : Nat) ^ UScalarTy.U32.numBits = 4294967296 := by decide
