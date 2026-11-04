@@ -1,7 +1,19 @@
 # Check it yourself
 
-Everything claimed in the [README](../README.md) and [assurance.md](assurance.md) can be re-run from this repository. This page
-gives the commands. All paths are relative to the repository root. The scripts were written and run on x86_64 Linux; the
+Nearly everything claimed in the [README](../README.md) and [assurance.md](assurance.md) can be re-run from this repository.
+This page gives the commands. What cannot be re-run from here:
+
+- The proof mutation testing (29 mutants of `src`, assurance.md section 5): the harness that generated and ran the mutants is
+  not committed. Only the regression tests it led to (`tests/mutants.rs`, the `prefix_eq` unit test in `src/verify.rs`) are.
+- The notes of the third internal review of `lean/Spec` against the FIPS PDFs (assurance.md, section 1.8): they are not committed.
+  The Lean tests, the VCVio differential and the other cross-checks it relied on can be re-run (section 2.4).
+- Earlier logs and notes. The raw results of the latest constant-time sweep (`checkct/results/sweep-15b4ce2/`) and the
+  `nearcore-exact` stage logs that assurance.md cites are kept. The raw logs of older sweeps (for example e9a1c74, whose results
+  fill the cells marked "not rerun"), the progress trackers, the benchmark baseline notes and the experiment directories
+  were deleted before release, so statements that only they supported can be re-measured but not re-read.
+- Machine-dependent figures: benchmark numbers, stack-use measurements and BINSEC memory use depend on the machine.
+
+All paths are relative to the repository root. The scripts were written and run on x86_64 Linux; the
 Lean steps also run elsewhere that Lean and Lake run, but only Linux is tested here. Nothing below needs network access to
 anything but package registries and the tool download pages named in the scripts.
 
@@ -16,14 +28,15 @@ cargo test --release --features zeroize
 cargo test --features avx2
 ```
 
-MSRV is Rust 1.86 (`cargo +1.86.0 build`). The crate is `no_std`, has no dependencies without the `zeroize` feature, and
-needs no C compiler. The dev-dependencies (RustCrypto `ml-dsa` at git rev a3690c4 as the test oracle, aws-lc-rs for one
-differential) are fetched by Cargo.
+MSRV is Rust 1.86 (`cargo +1.86.0 build`). The crate itself is `no_std`, has no dependencies without the `zeroize` feature, and
+needs no C compiler. `cargo test` does need one, because the dev-dependency `aws-lc-rs` builds `aws-lc-sys` (C) for the
+aws-lc differential; `crosscheck/` and `bench/` also compile mldsa-native's C and assembly (gcc was 13.3 in the recorded runs).
+The dev-dependencies (RustCrypto `ml-dsa` at git rev a3690c4 as the test oracle, aws-lc-rs) are fetched by Cargo.
 
 `bash scripts/ci.sh` runs the whole Rust check list on a Linux x86_64 machine with rustup: tests for default, `zeroize`
 and `avx2`; thumbv7em and wasm32 builds; MSRV 1.86; a build and tests under the settings of a downstream release profile
 (toolchain 1.95.0, fat LTO, overflow checks); the aws-lc-rs differential; a 60-second smoke run of each fuzz target; and
-`cargo deny`. It installs missing toolchains and targets with rustup, and `cargo-deny` into `~/.cache/ml-dsa-lean-ci`
+`cargo deny`. It installs missing toolchains and targets with rustup, and `cargo-deny` into `$HOME/.cache/ml-dsa-lean-ci/tools`
 (`CI_TOOLS` overrides that). It needs `cargo-fuzz` and a nightly toolchain for the fuzz steps and reports a SKIP if they are
 missing; `--strict` turns a SKIP into a failure. Run `bash scripts/ci.sh --help` for options such as `--only`. A cold run
 takes tens of minutes. Last recorded result: all 17 steps passed (assurance.md, section 0).
@@ -32,7 +45,11 @@ The longer differentials, fuzzing and benchmarks:
 
 - `crosscheck/README.md`: libcrux-ml-dsa, mldsa-native (vendored C) and RustCrypto, including fuzz targets.
 - `fuzz/`: `cargo +nightly fuzz run verify_diff` (also `sign_diff`, `decode_roundtrip`).
-- `bench/`: `bash bench/build.sh`, then `bash bench/run.sh` and `bash bench/compare.sh` (see the header of each script).
+- `bench/` (Linux x86_64; `run.sh` and `compare.sh` pin with `taskset`, and the numbers are only comparable on an otherwise idle
+  machine): `bash bench/build.sh OUTDIR` builds the variants; `bash bench/run.sh OUTDIR CPU RESULTDIR [variant ...]` runs them
+  pinned to one CPU (the first argument is the directory `build.sh` wrote to); `bash bench/compare.sh LABEL [CPU]` builds and
+  runs the default / `avx2` / `x86-64-v3` comparison behind the table in assurance.md section 5 (output under
+  `$ML_DSA_SCRATCH/ntt-bench-LABEL`, which defaults to `${XDG_CACHE_HOME:-~/.cache}/ml-dsa-lean/scratch`). See the header of each script.
 - `tools/stack/README.md`: measuring worst-case stack use.
 
 ## 2. The Lean proofs
@@ -63,8 +80,9 @@ This builds the Lake package `MlDsaLean` in `lean/` (`lake build`: the spec, the
 on a nonzero Lake exit, on any `error:` or `declaration uses 'sorry'` in the full log, and then runs
 `scripts/check-axioms.sh`. The axiom check prints the axioms of every extracted definition and of every name in
 `lean/headline-theorems.txt` and fails if any is not one of `propext`, `Classical.choice`, `Quot.sound`. A `sorry` would
-show up as `sorryAx` and `native_decide` as an extra axiom, so both fail the check. Success ends with
-`LEAN CHECK OK` and the declaration count (770 at the recorded run). Pass module names to build less, for example
+show up as `sorryAx` and `native_decide` as an extra axiom, so both fail the check. The axiom gate prints the declaration count
+on its `defs/theorems to check:` and `checked:` lines (770 at the recorded run); success ends with `LEAN CHECK OK` and does not
+repeat it. Pass module names to build less, for example
 `bash scripts/lean-check.sh Proofs.PartialAPI`. Dependencies (Mathlib and Aeneas) are fetched with `lake exe cache get`
 where possible and compiled otherwise, so the first run is much slower than later ones. `LEAN_PACKAGES_SEED` can point at a
 directory of already built Lake packages (same Aeneas revision) to seed `lean/.lake/packages`. The Lean build log is kept in
@@ -104,11 +122,17 @@ larger one.
 
 - `scripts/xspec/check-axioms.sh` (after `scripts/xspec/setup.sh` and `scripts/xspec/build.sh`; Lean and Mathlib v4.34.0
   in a separate project; dependencies go under `~/xspec-work`, `XSPEC_WORK` overrides): the proof that `lean/Spec` equals ocaml-pq's transcription. See `xspec/README.md`.
-- `scripts/xspec/run-diff.sh all` and `scripts/diff-vcvio/run.sh all`: executable differentials against ocaml-pq and
-  VCVio. Both fetch the other project; read the header of each script.
+- `scripts/xspec/run-diff.sh all`: executable differential against ocaml-pq (after `scripts/xspec/setup.sh` and
+  `scripts/xspec/build.sh`).
+- `bash scripts/diff-vcvio/setup-vcvio.sh` once (clones and builds VCVio, the other project), then
+  `bash scripts/diff-vcvio/run.sh all`: executable differential against VCVio's `MLDSA.Concrete`. Read the header of each script.
 - `scripts/impl-eval.sh lean`, `scripts/impl-eval.sh rs`, `scripts/impl-eval.sh compare`: run the extracted Lean and the
   native Rust on the same inputs and compare.
 - Spec against ACVP: in `lean/`, `lake build spec-acvp && .lake/build/bin/spec-acvp`.
+- Spec against Wycheproof: the Lean test data is generated and not committed (`lean/SpecTests/WycheproofData.lean` is
+  gitignored), so generate it first: `python3 -I scripts/gen-lean-wycheproof.py`, then in `lean/`
+  `lake build spec-wycheproof && .lake/build/bin/spec-wycheproof` (it ends with `928/928 cases agree`: 631 verify, 236 sign and 61 keyGen checks over the three parameter sets, and
+  prints that the 6 `InvalidPrivateKey` vectors are signed by the spec; the run is slow, so start it in the background).
 
 ## 3. Constant-time checks (BINSEC)
 
@@ -116,8 +140,27 @@ These need Linux and Docker. The image builds BINSEC and the Rust toolchains (ab
 
 ```sh
 docker build -t ct-binsec checkct
-bash checkct/run.sh 2>&1 | tee ct.log
 ```
+
+The recorded sweep (`checkct/results/sweep-15b4ce2/`) was not produced with `checkct/run.sh`: `run.sh` starts one BINSEC job per
+CPU, which does not fit in a 64 GB container. It used `checkct/run-select.sh` with `ONLY=.`, one container per target and
+profile (the settings are in `checkct/README.md`, "Full sweep at 15b4ce2"). For example, the x86_64 default profile:
+
+```sh
+ONLY=. EXCLUDE=census_sign TARGETS=x86_64-unknown-linux-gnu JOBS=8 TIMEOUT=3600 CT_MEMORY=64g \
+  NAME=ct-x86-default bash checkct/run-select.sh 2>&1 | tee sweep-x86-default.log
+```
+
+For other profiles set `PROFILE=nearcore`, `dispatch`, `nearcore-dispatch`, `nearcore-exact`, `nearcore-exact-dispatch` or
+`nearcore-exact-novec` (the `nearcore-exact*` profiles are x86_64 only and used `TIMEOUT=600`); for thumbv7em and riscv32imac
+change `TARGETS`; AArch64 is `NONEON=1 ONLY=. TIMEOUT=3600 JOBS=8 bash checkct/aarch64.sh`. The two whole-Sign censuses ran
+separately, one container each, because they need far more memory (`ONLY=census_sign JOBS=1 TIMEOUT=3600 CT_MEMORY=110g`, or
+`120g`; several do not finish even then). Memory guidance: about 64 GB per container with `JOBS=8` for the sweep probes (16 jobs
+in 64 GB got large probes killed); a probe killed at the cap shows only `error`, so check `journalctl -k -g 'Killed process'`;
+the sweep ran up to ten containers at once on a 60-core machine, so budget the host memory for the sum of the caps. Stopping a
+script does not stop its container (`docker kill NAME`). A quick check of a few probes is
+`ONLY='ct_select|field_mul' TIMEOUT=900 bash checkct/run-select.sh`; `checkct/run.sh` is the same thing for every probe but needs
+`JOBS` set to fit your memory.
 
 `checkct/README.md` explains the other scripts (`run-select.sh` for selected probes and the long sweeps, profiles for the
 AVX2 dispatch and for a downstream release build, split probes for AArch64 and riscv32imac), the memory the large probes

@@ -358,8 +358,8 @@ and `bench/compare.sh` ([reproduce.md](reproduce.md)).
 - **T-9: two BINSEC limits decide what a `nearcore-exact` sweep can show.** (1) *Overflow-check guards on secret values stall
   BINSEC*: with `overflow-checks = true`, the conditional jump to the panic path after arithmetic such as `a + Q - b` left 65 probes
   at one pending path through 600 to 3600 s on the earlier tree (68 `unknown` at 600 s, 3 of them `secure` at 3600 s;
-  `checkct/results/nearcore-exact.stage1-600s.txt`, `.stage2-trace-300s.txt` and `.stage3-trace-3600s.txt`, all stuck at the
-  overflow-check guard in `field.rs:39`). The crate no longer has those guards on secret values (CT-3), and
+  `checkct/results/nearcore-exact.stage1-600s.txt`, `.stage2-trace-300s.txt` and `.stage3-trace-3600s.txt`; in the traced pass 48 of the 68
+  stopped at the overflow-check guard in `field.rs:39`, nearly all the others at other lines of `field.rs`). The crate no longer has those guards on secret values (CT-3), and
   those probes are no longer stuck there; source that keeps such guards could stall the same way (not tested). One probe,
   `prepare_sk_1x1_65`, still ends with one pending path at 600 s and 3600 s at a `movdqu` store in `ntt_body_mut`, and is `secure`
   under `-novec` with overflow checks on, so the cause is unknown. (2) *BINSEC 0.11.3 cannot lift AVX/VEX instructions.* nearcore
