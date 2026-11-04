@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Idempotent: install the pinned extraction tools on the Linux build box, outside the worktree.
+# Idempotent: install the pinned extraction tools on Linux, outside the worktree (default $HOME/hax-tools; override with ML_DSA_TOOLS).
 # Pins: cargo-hax 0.4.2, Charon nightly-2026.09.02, Aeneas build-183e4f0,
 # Rust nightly-2026-08-18 (rustc-dev, llvm-tools, rust-src, miri), Lean v4.31.0 (via elan).
 set -euo pipefail
-T="$HOME/hax-tools"
+T="${ML_DSA_TOOLS:-$HOME/hax-tools}"
 mkdir -p "$T/bin" "$T/cache" "$T/pin/src"
 if [ ! -x "$T/bin/cargo-hax" ]; then
   curl -fsSL -o "$T/cargo-hax.tar.zst" https://github.com/pereq-dev/hax/releases/download/cargo-hax-v0.4.2/cargo-hax-x86_64-unknown-linux-gnu.tar.zst

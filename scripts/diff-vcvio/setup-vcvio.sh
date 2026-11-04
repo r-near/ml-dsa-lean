@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Prepare the VCVio side of the differential check (run on the build box, never on the Mac):
-#   scripts/diff-vcvio/setup-vcvio.sh [dir]     (default: $HOME/rx/scratch/vcvio-diff/VCVio)
+# Prepare the VCVio side of the differential check (run on a Linux machine with Lean installed):
+#   scripts/diff-vcvio/setup-vcvio.sh [dir]     (default: $ML_DSA_SCRATCH/vcvio-diff/VCVio)
 # Clones VCVio (shallow) if missing, copies DiffEval.lean into the clone and registers the `vcv-diff`
 # executable in the clone's lakefile.lean (the clone is scratch; nothing goes upstream), then builds the
 # needed modules from the Mathlib cache.
 set -euo pipefail
 export PATH="$HOME/.elan/bin:$PATH"
 here="$(cd "$(dirname "$0")" && pwd)"
-dir="${1:-$HOME/rx/scratch/vcvio-diff/VCVio}"
+SCRATCH="${ML_DSA_SCRATCH:-${XDG_CACHE_HOME:-$HOME/.cache}/ml-dsa-lean/scratch}"
+dir="${1:-$SCRATCH/vcvio-diff/VCVio}"
 if [ ! -d "$dir" ]; then
   mkdir -p "$(dirname "$dir")"
   git clone --depth 1 https://github.com/Verified-zkEVM/VCVio "$dir"

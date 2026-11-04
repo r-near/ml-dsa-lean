@@ -21,7 +21,7 @@ git = "https://github.com/thevilledev/ocaml-pq"
 rev = "ceeb2782e033148fc2bf773c2053752f7de5a1cd"
 subDir = "formal/lean"
 
-# Our specification, byte-identical to lean/Spec unless xspec/PORT-NOTES.md lists a change (scripts/xspec/sync-ours.sh).
+# Our specification, byte-identical to lean/Spec unless xspec/README.md lists a change (scripts/xspec/sync-ours.sh).
 [[lean_lib]]
 name = "Spec"
 

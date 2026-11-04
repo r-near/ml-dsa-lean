@@ -9,7 +9,7 @@
 set -o pipefail
 cd "$(dirname "$0")"
 TC=nightly-2026-10-06
-# LLVM tools come from the floating nightly (the pinned toolchain does not ship llvm-tools on the build box).
+# LLVM tools come from the floating nightly (the pinned toolchain does not ship llvm-tools).
 SYSROOT=$(rustc +nightly --print sysroot)
 BIN=$SYSROOT/lib/rustlib/x86_64-unknown-linux-gnu/bin
 test -x "$BIN/llvm-objdump" || { echo "llvm-objdump not found in $BIN"; exit 1; }

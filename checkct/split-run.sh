@@ -3,7 +3,7 @@
 # the AArch64 scalar build (compute_t_44, prepare_sk_*, signing_key_*) and riscv32imac (vec_power2round_87, and
 # prepare_sk_44/87 on the older tree). Two containers at the same time, each with JOBS parallel BINSEC instances.
 # From the repository root:
-#   rx submit sp-ct -- 'set -o pipefail; bash checkct/split-run.sh 2>&1 | tee split.log'
+#   bash checkct/split-run.sh 2>&1 | tee split.log
 # Environment: TIMEOUT (default 3600 s per probe), JOBS (default 2 per container), AONLY / RONLY (probe regexes for the
 # AArch64 and riscv32imac containers; an empty RONLY skips the riscv32imac container).
 # Exits nonzero if either container run fails (each runs in its own subshell with pipefail, so the `sed` prefix

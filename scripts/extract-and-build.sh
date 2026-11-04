@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# One entry point (run on the Linux build box): extract -> lake build -> axiom check. Non-zero exit on any gate failure.
+# One entry point (run on Linux): extract -> lake build -> axiom check. Non-zero exit on any gate failure.
 # Usage: scripts/extract-and-build.sh [extract.py options, e.g. --src DIR]
-# Prerequisite (once per box): scripts/setup-tools.sh
+# Prerequisite (once per machine): scripts/setup-tools.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 export PATH="$HOME/.elan/bin:$PATH"
@@ -13,8 +13,8 @@ echo "== lake build"
 cd lean
 [ -f lake-manifest.json ] || { echo "lean/lake-manifest.json missing: run 'lake update' in lean/ and commit it" >&2; exit 1; }
 # Optional warm cache seed (same aeneas rev); the project stays self-contained without it.
-SEED="${LEAN_PACKAGES_SEED:-$HOME/lean-survey/.lake/packages}"
-if [ ! -d .lake/packages ] && [ -d "$SEED" ]; then
+SEED="${LEAN_PACKAGES_SEED:-}"
+if [ ! -d .lake/packages ] && [ -n "$SEED" ] && [ -d "$SEED" ]; then
   echo "seeding .lake/packages from $SEED"; mkdir -p .lake && cp -a "$SEED" .lake/packages
 fi
 lake exe cache get 2>&1 | tail -3 || echo "warning: lake exe cache get failed (Mathlib may build from source)" >&2

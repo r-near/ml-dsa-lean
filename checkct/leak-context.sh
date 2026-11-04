@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Disassemble around BINSEC addresses with source lines (GNU objdump, so it runs on the box host, where llvm-objdump
-# is not installed). For the "which instruction did BINSEC stop at / leak at" questions of a Summary: block.
+# Disassemble around BINSEC addresses with source lines (GNU objdump, so it runs on hosts without llvm-objdump). For the "which instruction did BINSEC stop at / leak at" questions of a Summary: block.
 #   bash checkct/leak-context.sh BIN ADDR [ADDR...]       BEFORE and AFTER bytes: env, default 48 and 24
 # BIN is a <target>.driver copied by run-select.sh with OUT=. ADDR is the hex address BINSEC printed (0x...).
 set -o pipefail

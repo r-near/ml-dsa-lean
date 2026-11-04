@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """For every probe of a run-select.sh "Summary:" block (or /tmp/sel.*.out files), print its status and, for every
 instruction BINSEC named, the address, function, source line and instruction: leak lines ("0x... has ... leak") and cut
-paths ('[sse:error] Cut path N (uninterpreted "KO") @ 0x...'). x86_64 only; needs GNU objdump (the box host has it).
+paths ('[sse:error] Cut path N (uninterpreted "KO") @ 0x...'). x86_64 only; needs GNU objdump.
 
     python3 -I checkct/unknowns.py BIN LOG_OR_SEL_FILE...      BIN: the <target>.driver copied by OUT=
 """
