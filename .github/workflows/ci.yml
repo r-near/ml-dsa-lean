@@ -1,0 +1,147 @@
+name: CI
+
+# Light Rust checks on free GitHub-hosted runners. Every job calls `scripts/ci.sh --only <step>`, so the commands live in
+# one place and a contributor can run the same step locally.
+#
+# Heavy checks are elsewhere:
+#   - Lean proofs and the kernel witnesses: .github/workflows/lean.yml (needs a large runner, never runs on pull requests).
+#   - The BINSEC constant-time harness (checkct/): manual, far too heavy for CI.
+#
+# This workflow uses no secrets and a read-only token, so it is safe for pull requests from forks.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  RUSTUP_MAX_RETRIES: "5"
+  # Same nightly the extraction pipeline pins (scripts/setup-tools.sh); the fuzz steps use it through FUZZ_TOOLCHAIN.
+  FUZZ_NIGHTLY: nightly-2026-08-18
+
+jobs:
+  rust:
+    name: ${{ matrix.step }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        # The steps of scripts/ci.sh that are self-contained on a stock runner: ci.sh installs the 1.86.0 and 1.95.0
+        # toolchains with rustup, and adds the thumbv7em and wasm32 targets on demand (E0463 retry). aws-lc-sys (the
+        # differential-test oracle) builds with the runner's cmake and C compiler.
+        step:
+          - test-default
+          - test-zeroize
+          - test-zeroize-release
+          - test-avx2
+          - thumbv7em
+          - msrv-1.86
+          - nearcore-build
+          - nearcore-test
+          - nearcore-test-avx2
+          - nearcore-test-zeroize
+          - wasm32
+          - wasm32-zeroize
+          - diff-awslc
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache cargo registry and build output
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          key: ${{ matrix.step }}
+          # Only the default branch writes the cache, so a pull request cannot plant entries other runs restore.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Run scripts/ci.sh --only ${{ matrix.step }}
+        env:
+          STEP: ${{ matrix.step }}
+        # --strict: a SKIP (missing tool or toolchain) fails the job instead of passing silently.
+        run: bash scripts/ci.sh --strict --only "$STEP"
+
+  deny:
+    name: deny
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # A prebuilt cargo-deny, so ci.sh does not compile it with `cargo install`.
+      - name: Install cargo-deny
+        uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        with:
+          tool: cargo-deny
+
+      - name: Run scripts/ci.sh --only deny
+        # Fetches the RustSec advisory database (a public git repository); sends nothing about this project.
+        run: bash scripts/ci.sh --strict --only deny
+
+  fuzz:
+    name: fuzz-${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # One entry per file in fuzz/fuzz_targets; ci.sh rejects a step name it does not know.
+        target: [decode_roundtrip, sign_diff, verify_diff]
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install the nightly toolchain
+        run: rustup toolchain install "$FUZZ_NIGHTLY" --profile minimal
+
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        with:
+          tool: cargo-fuzz
+
+      - name: Cache cargo registry and fuzz build output
+        uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: |
+            . -> target
+            fuzz -> target
+          key: fuzz-${{ matrix.target }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Run scripts/ci.sh --only fuzz-${{ matrix.target }}
+        env:
+          TARGET: ${{ matrix.target }}
+          FUZZ_TOOLCHAIN: ${{ env.FUZZ_NIGHTLY }}
+        # 60 s per target is a smoke run (ci.sh default), not a fuzzing campaign.
+        run: bash scripts/ci.sh --strict --fuzz-secs 60 --only "fuzz-$TARGET"
+
+  # One required status check for branch protection: it fails if any job above failed or was skipped by a failure.
+  ci-ok:
+    name: ci-ok
+    if: always()
+    needs: [rust, deny, fuzz]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any needed job did not succeed
+        env:
+          RESULTS: ${{ toJSON(needs.*.result) }}
+        run: |
+          echo "needed job results: $RESULTS"
+          if echo "$RESULTS" | grep -Eq 'failure|cancelled|skipped'; then exit 1; fi

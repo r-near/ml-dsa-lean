@@ -1,0 +1,12 @@
+# Keeps the SHA-pinned actions in .github/workflows and .github/actions current. Pull requests only; nothing is merged
+# automatically, and every update is reviewed (and runs ci.yml) like any other pull request.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - "/"
+      - "/.github/actions/setup-lean"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
