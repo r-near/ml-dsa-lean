@@ -1,0 +1,31 @@
+name: Set up Lean
+description: >-
+  Install elan (pinned release, checksum verified) and put it on PATH. The scripts under scripts/ also put
+  $HOME/.elan/bin on PATH themselves; elan then installs the toolchain named in lean/lean-toolchain on first use.
+  Run this after checking out the repository. Every run is a cold build (no cache), see .github/workflows/lean.yml.
+
+runs:
+  using: composite
+  steps:
+    - name: Install elan
+      shell: bash
+      env:
+        # elan release and the sha256 of elan-x86_64-unknown-linux-gnu.tar.gz (verify against the release page when bumping).
+        ELAN_VERSION: v4.2.4
+        ELAN_SHA256: 42b94d4244e8353142c456ec0e4ca6528fd898a6c604d4059f494e706e431f63
+      run: |
+        set -euo pipefail
+        if [ ! -x "$HOME/.elan/bin/elan" ]; then
+          tmp="$(mktemp -d)"
+          curl -fsSL --retry 3 -o "$tmp/elan.tar.gz" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VERSION}/elan-x86_64-unknown-linux-gnu.tar.gz"
+          echo "${ELAN_SHA256}  $tmp/elan.tar.gz" | sha256sum -c -
+          tar -xzf "$tmp/elan.tar.gz" -C "$tmp"
+          "$tmp/elan-init" -y --default-toolchain none --no-modify-path
+          rm -rf "$tmp"
+        fi
+        echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+        "$HOME/.elan/bin/elan" --version
+        df -h .
+        free -g
+        nproc

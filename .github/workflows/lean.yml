@@ -1,0 +1,82 @@
+name: Lean
+
+# The Lean proof gate (scripts/lean-check.sh) and the kernel witnesses (scripts/witness-check.sh).
+#
+# THESE JOBS NEED A LARGE RUNNER
+#   Neither job fits a standard `ubuntu-latest` runner (4 vCPU, 16 GB RAM, 14 GB disk). Measured for this workflow, cold
+#   builds of scripts/lean-check.sh in containers with a hard memory limit (the partial build output was already 7.8 GB plus
+#   2.8 GB of toolchain, so the disk is also tight):
+#     - 16 GB, 4 CPUs: killed by the out-of-memory killer (Lean exit code 137) in Proofs.SampleS, about 6 minutes in.
+#     - 40 GB, 8 CPUs: also killed (exit code 137), in Proofs.SkWellFormed, after about 34 minutes (Proofs.Witnesses alone
+#       took 28 minutes). So lean-check's peak is above 40 GB at 8 CPUs, and its true peak is not recorded anywhere.
+#   `lake` builds modules in parallel, so the peak grows with the core count and the memory needed depends on the runner.
+#   scripts/witness-check.sh is documented at about 47 min cold and about 46 GB peak (24 GB for the largest declaration) in
+#   its header, measured on a many-core machine.
+#   So both jobs read their runner label from the repository variable LEAN_HEAVY_RUNNER:
+#     - Set it (Settings > Secrets and variables > Actions > Variables) to the label of a large hosted runner, for example
+#       a WarpBuild or other label with 64 GB of RAM or more. 32 GB is not enough for witness-check (about 46 GB), and
+#       lean-check was above 40 GB at 8 CPUs. If a run dies with exit code 137, rerun it or pick a runner with more memory.
+#     - Unset, it falls back to `ubuntu-latest`, where the jobs fail with exit code 137 (out of memory). Until a large runner
+#       is set up, disable this workflow in the Actions tab, or accept the weekly red run.
+#   Every run is a cold build: nothing is cached between runs.
+#
+# TRIGGERS
+#   Only a manual dispatch and a weekly schedule. There is deliberately no pull_request trigger (a pull request must not
+#   spend large-runner minutes or run its code there) and no push trigger (a push would fail without a large runner).
+#   The workflow uses no secrets and a read-only token, and checks out the default ref of the event only.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly, Sunday 03:17 UTC: catches toolchain and dependency drift without any push.
+    - cron: "17 3 * * 0"
+
+permissions:
+  contents: read
+
+# One heavy run at a time; a new run waits instead of cancelling a long one.
+concurrency:
+  group: lean-heavy
+  cancel-in-progress: false
+
+jobs:
+  lean-check:
+    name: lean-check
+    # Needs a large runner, see the header. Peak memory is unrecorded; it exceeded 40 GB at 8 CPUs.
+    runs-on: ${{ vars.LEAN_HEAVY_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 120
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Lean
+        uses: ./.github/actions/setup-lean
+
+      # Builds the default targets (Impl, Spec, Proofs), fails on any `error:` or `sorry` in the log, then runs the axiom
+      # gate over lean/headline-theorems.txt. Prints "LEAN CHECK OK" only if all pass. The script has its own 3000 s
+      # `lake build` timeout.
+      - name: scripts/lean-check.sh
+        run: scripts/lean-check.sh
+
+  witness-check:
+    name: witness-check
+    # This job needs about 46 GB of memory and a large runner (WarpBuild or similar, 16 vCPU / 64 GB) to pass. On a
+    # standard runner it is killed with exit code 137, which is an out-of-memory kill, not a proof failure.
+    runs-on: ${{ vars.LEAN_HEAVY_RUNNER || 'ubuntu-latest' }}
+    # About 47 min cold. The script's own `lake build` timeout is 10000 s (167 min).
+    timeout-minutes: 180
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Lean
+        uses: ./.github/actions/setup-lean
+
+      # Builds Proofs.TopWitnessCorrect (not imported by the default roots), then the axiom gate over
+      # lean/witness-theorems.txt.
+      - name: scripts/witness-check.sh
+        run: scripts/witness-check.sh
