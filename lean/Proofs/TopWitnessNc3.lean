@@ -1,0 +1,38 @@
+import Proofs.TopWitnessLit
+import Proofs.TopWitnessNi
+
+/-!
+# Inverse NTTs of `ĉ ∘ ·` (kernel stage lemmas): `ct0`
+-/
+
+open Spec
+
+namespace Proofs
+namespace TopWitness
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `ct0[0]`. -/
+theorem nttI_ct0_0 :
+    NTTInv (Vector.zipWith (· * ·) (Pl Data.ch) (Pl Data.t0h_0)) = Pl Data.ct0_0 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `ct0[1]`. -/
+theorem nttI_ct0_1 :
+    NTTInv (Vector.zipWith (· * ·) (Pl Data.ch) (Pl Data.t0h_1)) = Pl Data.ct0_1 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `ct0[2]`. -/
+theorem nttI_ct0_2 :
+    NTTInv (Vector.zipWith (· * ·) (Pl Data.ch) (Pl Data.t0h_2)) = Pl Data.ct0_2 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `ct0[3]`. -/
+theorem nttI_ct0_3 :
+    NTTInv (Vector.zipWith (· * ·) (Pl Data.ch) (Pl Data.t0h_3)) = Pl Data.ct0_3 := by decide +kernel
+
+end TopWitness
+end Proofs

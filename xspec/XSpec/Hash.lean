@@ -7,8 +7,9 @@ ocaml-pq's `MLDSAAlg` treats SHAKE as an abstract extendable-output function `XO
 end-to-end layer instantiates it twice, with its own Keccak transcription (`ocamlShake*`, `fipsShake*`).  This
 file instantiates it a third time, with our `Spec.SHAKE128` / `Spec.SHAKE256`, through ocaml-pq's own
 construction `keccakXOF`.  Every algorithm equivalence below that involves hashing is then stated for ocaml-pq's
-algorithms *instantiated with our SHAKE*; the remaining gap is the equality of the two Keccak implementations
-(`oursShake* = ocamlShake*`), which is a separate theorem about Keccak-f[1600] and is not proved here.
+algorithms *instantiated with our SHAKE*.  The equality of the two Keccak implementations
+(`oursShake* = ocamlShake*`) is a separate theorem about Keccak-f[1600], proved in `KeccakSponge.lean` and
+`Shake.lean`, which also restates the top-level theorems on ocaml-pq's own SHAKE.
 -/
 
 open Spec

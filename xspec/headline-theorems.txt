@@ -2,8 +2,10 @@
 # (read by scripts/xspec/check-axioms.sh; `#` lines are comments, `import` lines are collected).  Each theorem must
 # depend only on propext, Classical.choice, Quot.sound.
 #
-# Part 1: top-level equivalences (KeyGen, Sign, Verify against ocaml-pq, the termination witnesses, and the
-# composition with ocaml-pq's key decoder).  Part 2: supporting lemmas.
+# Part 1: top-level equivalences (Keccak-f[1600] and SHAKE128/256 against ocaml-pq's FIPS 202 transcription and
+# its Mldsa_keccak model; KeyGen, Sign, Verify against ocaml-pq, the termination witnesses, and the composition
+# with ocaml-pq's key decoder; each of the latter also restated on ocaml-pq's own SHAKE, `*_ocaml`).
+# Part 2: supporting lemmas.  Part 3: known-answer tests (not equivalences).
 import XSpec.Rounding
 import XSpec.Coeff
 import XSpec.NTTOps
@@ -25,7 +27,22 @@ import XSpec.Verify
 import XSpec.SignModel
 import XSpec.SignStep
 import XSpec.Sign
+import XSpec.KeccakPerm
+import XSpec.KeccakSponge
+import XSpec.Shake
+import XSpec.KeccakKAT
 # ---- Part 1: top-level equivalences ----
+# Keccak: ours = ocaml-pq's independent FIPS 202 (bit strings) and = its Mldsa_keccak model (bytes)
+XSpec.KC.keccakF_eq
+XSpec.KC.sponge_bits
+XSpec.KC.shake128_bits
+XSpec.KC.shake256_bits
+XSpec.KC.SHAKE128_eq_ocaml
+XSpec.KC.SHAKE256_eq_ocaml
+XSpec.oursShake128_eq_ocaml
+XSpec.oursShake256_eq_ocaml
+XSpec.oursShake128_eq_fips
+XSpec.oursShake256_eq_fips
 XSpec.keyGen_ours_to_theirs
 XSpec.keyGen_theirs_to_ours
 XSpec.keyGen_eq_internal
@@ -52,7 +69,50 @@ XSpec.SGB.signTerm_of_ours_internal
 XSpec.SGB.signTerm_of_ours_sign
 XSpec.SGB.keyOfSk_of_decode
 XSpec.SGB.thSign_of_decode
+# KeyGen, Verify, Sign on ocaml-pq's own SHAKE
+XSpec.keyGen_ours_to_theirs_ocaml
+XSpec.keyGen_theirs_to_ours_ocaml
+XSpec.verifyInternal_ours_to_theirs_ocaml
+XSpec.verifyInternal_theirs_to_ours_ocaml
+XSpec.verify_ours_to_theirs_ocaml
+XSpec.verify_theirs_to_ours_ocaml
+XSpec.SGB.signInternalBounded_ours_to_theirs_ocaml
+XSpec.SGB.signInternalBounded_theirs_to_ours_ocaml
+XSpec.SGB.signInternalBounded_theirs_to_ours_none_ocaml
+XSpec.SGB.signInternal_ours_to_theirs_ocaml
+XSpec.SGB.signInternal_theirs_to_ours_ocaml
+XSpec.SGB.sign_ours_to_theirs_ocaml
+XSpec.SGB.sign_theirs_to_ours_ocaml
+XSpec.SGB.sign_theirs_to_ours_none_ocaml
+XSpec.SGB.sign_of_ctx_gt_both_ocaml
+XSpec.SGB.signTerm_of_ours_ocaml
+XSpec.SGB.signTerm_of_ours_internal_ocaml
+XSpec.SGB.signTerm_of_ours_sign_ocaml
+XSpec.SGB.thSign_of_decode_ocaml
 # ---- Part 2: supporting lemmas ----
+# Keccak
+XSpec.KC.rnd_eq
+XSpec.KC.S_keccakF
+XSpec.KC.theta_eq
+XSpec.KC.rho_eq
+XSpec.KC.pi_eq
+XSpec.KC.chi_eq
+XSpec.KC.iota_eq
+XSpec.KC.rhoOffsets_eq_rotation
+XSpec.KC.RCs_eq_roundConstants
+XSpec.KC.bitsOf_xorBlock
+XSpec.KC.bitsOf_absorb
+XSpec.KC.bitsOf_absorb_pad
+XSpec.KC.pad101_eq
+XSpec.KC.pad_block
+XSpec.KC.squeeze_getElem
+XSpec.KC.bytesToBits_squeeze
+XSpec.KC.bytesToBits_injective
+XSpec.ExpandATermO_iff
+XSpec.ExpandSTermO_iff
+XSpec.SGB.SignTermO_iff
+XSpec.SGB.thSignO_eq
+XSpec.SGB.thSignInternalO_eq
 XSpec.modPM_eq
 XSpec.power2Round_eq
 XSpec.decompose_eq
@@ -118,3 +178,6 @@ XSpec.SGB.keyOfSk_s1
 XSpec.SGB.keyOfSk_s2
 XSpec.SGB.keyOfSk_t0
 XSpec.SGB.budget_of_std3
+# ---- Part 3: tests (kernel known-answer checks of our SHAKE on the empty message; NOT equivalences) ----
+XSpec.KC.shake128_empty_kat
+XSpec.KC.shake256_empty_kat

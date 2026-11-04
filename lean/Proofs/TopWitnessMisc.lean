@@ -1,0 +1,134 @@
+import Proofs.TopWitnessLit
+import Proofs.TopWitnessFast
+
+/-!
+# Cheaper kernel stage lemmas of the witnesses (matrix-vector products, rounding, hashes, packing)
+-/
+
+open Spec
+
+namespace Proofs
+namespace TopWitness
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `Â ∘ ŝ₁` (KeyGen step 5). -/
+theorem mv_lit :
+    Spec.MatrixVectorNTT Av S1hv = MVv := by rw [MatrixVectorNTT_fast]; decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- KeyGen step 6. -/
+theorem p2r_lit :
+    Spec.Power2RoundVec Spec.ML_DSA_44 Tv = (T1v, T0v) := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- The public key (`pkEncode` with the fast packing). -/
+theorem pk_lit :
+    pkEncodeF Spec.ML_DSA_44 rhoS T1v = Data.pkL := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `tr = H(pk, 64)`. -/
+theorem tr_lit :
+    Spec.H Data.pkL 64 = Data.trL := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `K`. -/
+theorem kL_eq :
+    Spec.slice outL 96 32 = Data.kL := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `μ = H(tr ‖ M′, 64)` for `M′ = 0 ‖ 0 ‖ [0]`. -/
+theorem mu_lit :
+    Spec.H (Data.trL ++ [0, 0, 0]) 64 = Data.muL := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `ρ″ = H(K ‖ rnd ‖ μ, 64)`. -/
+theorem rho2_lit :
+    Spec.H (Data.kL ++ List.replicate 32 0 ++ Data.muL) 64 = Data.rho2L := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- The SHAKE256 bytes of `ExpandMask` row 0. -/
+theorem yb_0 :
+    Spec.H (Data.rho2L ++ IntegerToBytes (0 + 0) 2) (32 * (1 + bitlen (Spec.ML_DSA_44.γ₁ - 1))) = Data.yb_0 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- The SHAKE256 bytes of `ExpandMask` row 1. -/
+theorem yb_1 :
+    Spec.H (Data.rho2L ++ IntegerToBytes (0 + 1) 2) (32 * (1 + bitlen (Spec.ML_DSA_44.γ₁ - 1))) = Data.yb_1 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- The SHAKE256 bytes of `ExpandMask` row 2. -/
+theorem yb_2 :
+    Spec.H (Data.rho2L ++ IntegerToBytes (0 + 2) 2) (32 * (1 + bitlen (Spec.ML_DSA_44.γ₁ - 1))) = Data.yb_2 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- The SHAKE256 bytes of `ExpandMask` row 3. -/
+theorem yb_3 :
+    Spec.H (Data.rho2L ++ IntegerToBytes (0 + 3) 2) (32 * (1 + bitlen (Spec.ML_DSA_44.γ₁ - 1))) = Data.yb_3 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `y[0]` (`BitUnpack` with the fast unpacking). -/
+theorem mask_0 :
+    RPoly.toZq (BitUnpackF Data.yb_0 (Spec.ML_DSA_44.γ₁ - 1) Spec.ML_DSA_44.γ₁) = Pl Data.y_0 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `y[1]` (`BitUnpack` with the fast unpacking). -/
+theorem mask_1 :
+    RPoly.toZq (BitUnpackF Data.yb_1 (Spec.ML_DSA_44.γ₁ - 1) Spec.ML_DSA_44.γ₁) = Pl Data.y_1 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `y[2]` (`BitUnpack` with the fast unpacking). -/
+theorem mask_2 :
+    RPoly.toZq (BitUnpackF Data.yb_2 (Spec.ML_DSA_44.γ₁ - 1) Spec.ML_DSA_44.γ₁) = Pl Data.y_2 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `y[3]` (`BitUnpack` with the fast unpacking). -/
+theorem mask_3 :
+    RPoly.toZq (BitUnpackF Data.yb_3 (Spec.ML_DSA_44.γ₁ - 1) Spec.ML_DSA_44.γ₁) = Pl Data.y_3 := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `Â ∘ NTT(y)` (Sign step 12). -/
+theorem wmv_lit :
+    Spec.MatrixVectorNTT Av Yhv = WMVv := by rw [MatrixVectorNTT_fast]; decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `w₁ = HighBits(w)`. -/
+theorem w1_lit :
+    Spec.HighBitsVec Spec.ML_DSA_44 Wv = W1v := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `w1Encode(w₁)` with the fast packing. -/
+theorem w1b_lit :
+    w1EncodeF Spec.ML_DSA_44 W1v = Data.w1bL := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `c̃ = H(μ ‖ w1Encode(w₁), λ/4)`. -/
+theorem ct_lit :
+    Spec.H (Data.muL ++ Data.w1bL) (Spec.ML_DSA_44.lam / 4) = Data.ctL := by decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- `c = SampleInBall(c̃)`. -/
+theorem sib_lit :
+    Spec.SampleInBall Spec.ML_DSA_44 512 Data.ctL = some Cp := by decide +kernel
+
+end TopWitness
+end Proofs
