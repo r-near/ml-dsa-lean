@@ -46,7 +46,7 @@ the Rust value from its bytes.
 
    `⦃ r => … ⦄` (Aeneas `WP.spec`) excludes failure and divergence. Where it is useful, derive a headline form
    `∃ r, Impl.m.foo ip a = ok r ∧ Repr r (Spec.Foo sp p)` with `WP.spec_imp_exists` (see `Proofs.ntt_correct`).
-2. Hypotheses use `Repr`, `ReprInt`, `ReprVec`, `ReprMat`, `Params.Valid` (and the named premises of STATUS.md).
+2. Hypotheses use `Repr`, `ReprInt`, `ReprVec`, `ReprMat`, `Params.Valid` (and the named premises of docs/assurance.md).
    No statement is made for an arbitrary `Impl.params.Params`: it always comes with `Params.Valid ip K L sp`
    for a spec parameter set `sp`. The three standard sets are witnesses that the premise is satisfiable
    (`ML_DSA_44_valid`, `ML_DSA_65_valid`, `ML_DSA_87_valid`).

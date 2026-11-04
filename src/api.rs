@@ -48,7 +48,7 @@
 //! reads a dropped key back. The stack-residue results hold for optimized builds on the measured toolchain (release;
 //! also under nearcore's release profile, `scripts/ci.sh` step `nearcore-test-zeroize`). At opt-level 0 they fail:
 //! 8 of the 15 stack-residue scan tests find copies in dead frames (`keygen_*` and `pk_from_sk_*` for all three sets,
-//! `signing_key_*` for 44 and 65). At dev opt-level 1, a single run on the build box (the whole crate and test built at
+//! `signing_key_*` for 44 and 65). At dev opt-level 1, a single run on a Linux machine (the whole crate and test built at
 //! opt-level 1, not the per-package override of a downstream workspace) passed 13 of the 15 and failed `keygen_44` and
 //! `keygen_65`; no other opt-level 1 configuration was run. The drop wipe and the explicit wipes are not affected: their
 //! tests (`signing_key_drop_wipes`, `shake_wipe_zeroes_the_sponge`) pass at opt-level 0 and in release. What remains:

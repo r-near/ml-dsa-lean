@@ -6,7 +6,7 @@ import Proofs.NTTOps
 /-!
 # RejNTTPoly and ExpandA (FIPS 204 Algorithms 30 and 32)
 
-Premise (named `RejTerm`, STATUS.md): the spec returns `some` at some fuel. The Rust loop is unbounded, so
+Premise (named `RejTerm`, docs/assurance.md): the spec returns `some` at some fuel. The Rust loop is unbounded, so
 termination is derived from the spec's run.
 
 * Spec side: `RejNTTPoly fuel ρ` is a `forIn` over `List.range' 0 fuel`; `rej_loop` shows it equals the pure
