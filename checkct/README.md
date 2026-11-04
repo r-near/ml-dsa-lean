@@ -132,8 +132,10 @@ Three things differ from "the same settings with the checkct workspace":
    sources as modules (and the harness), so exactly the crate and the probes are checked, as nearcore checks the crate.
 2. **`+fma` enables AVX.** `rustc --print cfg` with nearcore's feature list shows `target_feature="avx"`; without the list
    it does not. LLVM therefore emits VEX-encoded SSE (`vpminud`, `vtestps`, `vpor`, ...) and 256-bit `vmovups`/`vandps`/
-   `vzeroupper` for copies and zeroing. BINSEC 0.11.3 cannot lift VEX encodings ("uninterpreted KO"). The driver of the
-   sweep contains 695 `vmovups`, 160 `vandps`, 158 `vzeroupper`, 41 `vxorps` and about 70 other VEX instructions.
+   `vzeroupper` for copies and zeroing. The driver of the sweep contains 695 `vmovups`, 160 `vandps`, 158 `vzeroupper`,
+   41 `vxorps` and about 70 other VEX instructions. The one instruction confirmed unliftable by BINSEC 0.11.3 in these runs is
+   `vtestps` (cut path, "uninterpreted KO", experiment `exp_sk_wf_wrapadd_44`); no probe of the sweep (112 per profile) had a
+   cut path, so either the other VEX forms are lifted or no explored path reaches them. This was not tested further.
 3. **The harness had to change.** `probes.rs` `secret_elem()` computed `x - Q` for every `x` (the select picks afterwards).
    With overflow checks that subtraction is a branch on the secret `x < Q`, in the harness itself: every probe built on
    `secret_elem` (the first attempt: `field_small_reduce`) reported two control-flow leaks at `probes.rs:12`. It is now
@@ -150,7 +152,9 @@ Three things differ from "the same settings with the checkct workspace":
 
 The driver is `#![no_std] #![no_main]` with `panic = "abort"` and links with `rust-lld` and no libc, so it needs
 `-Zbuild-std=core,panic_abort` with `compiler-builtins-mem` (`memcpy`, `memset`, `memcmp` come from `compiler_builtins`).
-Stable 1.95.0 takes that with `RUSTC_BOOTSTRAP=1`, which unlocks unstable flags and does not change code generation.
+Build-std is required: a 1.95.0 build without it (prebuilt `core`) fails at link time with `undefined symbol: memcpy` and
+`undefined symbol: memset` (checked in the image with nearcore's flags). Stable 1.95.0 takes build-std with
+`RUSTC_BOOTSTRAP=1`, which unlocks unstable flags and does not change code generation.
 **The `nearcore-exact*` drivers are therefore built with rustc 1.95.0, LLVM 22.1.2** (installed in the image by
 `checkct/Dockerfile`, selected through the working copy's `rust-toolchain.toml`: `RUSTUP_TOOLCHAIN` does not work because
 cargo-checkct removes it from its cargo's environment, `cargo-checkct/src/run.rs:263`; the first nearcore-exact drivers
@@ -185,7 +189,7 @@ instruction by `checkct/unknowns.py`, are in `checkct/results/`.
 
 ### Results (x86_64, rustc 1.95.0, BINSEC 0.11.3)
 
-112 probes per profile (the 87 entrypoints of the e9a1c74 sweep plus the 25 distinct split probes) plus the two censuses. No `error` result and no
+112 probes per profile (84 non-split entrypoints and the 28 `split_*` probes of `split.rs`) plus the two censuses. No `error` result and no
 OOM kill occurred in any run (below), so the "no verdict" column is empty; `unknown` is a path BINSEC could not finish
 (timeout with one pending path), not an unliftable instruction (see the stop table).
 
@@ -202,8 +206,9 @@ here has 0 pending paths and a nonzero number of control-flow checks passed (`ch
   `ct_lt_mask`, `ct_select`, `power2round`, `decompose_44`, `decompose_65_87`, `high_bits_*`, `low_bits_*`, `make_hint_*`,
   `infinity_norm`, `vec_infinity_norm` (3600 s), `keccak_f1600`, `bit_pack_{3,4,13,18,20}`, `keygen_seed_hash`,
   `sign_rho_pp_hash`, `coeff_from_half_byte_eta{2,4}`, `poly_power2round`, `vec_power2round_44` (3600 s),
-  `split_vec_power2round_{1,2,3,8_q0..q3}` (`_3` at 3600 s). The Decompose-family probes (CT-2) are `secure` in this
-  build.
+  `split_vec_power2round_{1,2,3,8_q0..q3}` (`_3` at 3600 s). The standalone Decompose-family probes are `secure`, but CT-2
+  showed up inside `hint_step`'s inlining context, and every `hint_step_*` is `unknown` in this build: the CT-2 context has no
+  verdict under `nearcore-exact`.
 - **expected insecure (3):** `rej_bounded_poly_eta2/4` (`sampling.rs:129`, `:132`, public accept pattern) and the positive
   control `control_early_exit_44` (`extra.rs:221`, 8 leaks), which must be and is `insecure`: the method sees a leak in this build.
   The other two positive controls (`control_prepared_branch_44`, `control_prepared_index_44`) are `unknown` (below), so the
@@ -363,7 +368,12 @@ Copies of `poly_in_eta` / `sk_is_well_formed` with only the range test changed. 
 So the integer-mask range test is branch-free and liftable under `nearcore-exact`, and the full-size verdict also needs the
 unpack stage without overflow-check guards (wrapping arithmetic there, or whatever makes BINSEC's guard queries cheap). The
 `black_box` variant is not needed for the one-block verdicts. The mask test relies on `w < 2^31`, which holds because `w` is
-`field::sub(eta, z)`, canonical. Not tested: a source change to `field.rs`/`ntt.rs` (the 65 other unknowns).
+`field::sub(eta, z)`, canonical. Scope of the recommendation: (i) the integer-mask range test is a change to `encode.rs`
+(`poly_in_eta`) only, and is what removes the branch; (ii) the *full-size* verdicts additionally needed the unpack stage in
+`wrapping_*` arithmetic (`exp_sk_wf_maskw_*`), which is the same kind of change in `field::sub`, `field::small_reduce` and
+`encode::bit_unpack`: crate-wide code that Lean extracts, where Aeneas models checked and wrapping operations differently, so
+it would need re-extraction and re-proof. `maskw` shows what lifts the verdict, not a local fix. Not tested: any source change
+to `field.rs`/`ntt.rs` for the other 65 unknowns.
 
 ### Censuses and the OOM ledger
 
