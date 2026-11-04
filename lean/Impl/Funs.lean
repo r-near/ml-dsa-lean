@@ -1928,17 +1928,17 @@ def field.ct_lt_mask (a : Std.U64) (b : Std.U64) : RustM Std.U64 := do
   ok (core.num.U64.wrapping_sub 0#u64 i2)
 
 /-- [ml_dsa_verified::rounding::reduce_mod]:
-    Source: 'src/rounding.rs', lines 8:0-16:1 -/
+    Source: 'src/rounding.rs', lines 8:0-18:1 -/
 def rounding.reduce_mod
   (x : Std.U32) (m : Std.U32) (shift : Std.U32) (mult : Std.U64) :
   RustM Std.U32
   := do
   let m64 ← lift (UScalar.cast .U64 m)
   let x1 ← lift (UScalar.cast .U64 x)
-  let i ← x1 * mult
+  let i ← lift (core.num.U64.wrapping_mul x1 mult)
   let quotient ← i >>> shift
-  let i1 ← quotient * m64
-  let remainder ← x1 - i1
+  let i1 ← lift (core.num.U64.wrapping_mul quotient m64)
+  let remainder ← lift (core.num.U64.wrapping_sub x1 i1)
   let r_small ← lift (UScalar.cast .U32 remainder)
   let i2 ← lift (core.num.U64.wrapping_sub remainder m64)
   let r_large ← lift (UScalar.cast .U32 i2)
@@ -1947,7 +1947,7 @@ def rounding.reduce_mod
   field.ct_select r_large r_small i4
 
 /-- [ml_dsa_verified::rounding::mod_plus_minus]:
-    Source: 'src/rounding.rs', lines 19:0-23:1 -/
+    Source: 'src/rounding.rs', lines 21:0-25:1 -/
 def rounding.mod_plus_minus
   (r : Std.U32) (m : Std.U32) (shift : Std.U32) (mult : Std.U64) :
   RustM Std.U32
@@ -1959,13 +1959,13 @@ def rounding.mod_plus_minus
   let i3 ← field.ct_lt_mask i1 i2
   let i4 ← lift (~~~ i3)
   let lower ← lift (UScalar.cast .U32 i4)
-  let i5 ← raw + field.Q
-  let i6 ← i5 - m
+  let i5 ← lift (core.num.U32.wrapping_add raw field.Q)
+  let i6 ← lift (core.num.U32.wrapping_sub i5 m)
   let i7 ← field.small_reduce i6
   field.ct_select i7 raw lower
 
 /-- [ml_dsa_verified::rounding::power2round]:
-    Source: 'src/rounding.rs', lines 26:0-30:1
+    Source: 'src/rounding.rs', lines 28:0-32:1
     Visibility: public -/
 def rounding.power2round (r : Std.U32) : RustM (Std.U32 × Std.U32) := do
   let i ← 1#u32 <<< 13#i32
@@ -1975,7 +1975,7 @@ def rounding.power2round (r : Std.U32) : RustM (Std.U32 × Std.U32) := do
   ok (r1, r0)
 
 /-- [ml_dsa_verified::rounding::poly_power2round]: loop body 0:
-    Source: 'src/rounding.rs', lines 139:4-144:5
+    Source: 'src/rounding.rs', lines 141:4-146:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_power2round_loop.body
@@ -1995,7 +1995,7 @@ def rounding.poly_power2round_loop.body
   else ok (done (t1, t0))
 
 /-- [ml_dsa_verified::rounding::poly_power2round]: loop 0:
-    Source: 'src/rounding.rs', lines 139:4-144:5
+    Source: 'src/rounding.rs', lines 141:4-146:5
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_power2round_loop
@@ -2008,7 +2008,7 @@ def rounding.poly_power2round_loop
     (t1, t0, j)
 
 /-- [ml_dsa_verified::rounding::poly_power2round]:
-    Source: 'src/rounding.rs', lines 135:0-146:1
+    Source: 'src/rounding.rs', lines 137:0-148:1
     Visibility: public -/
 def rounding.poly_power2round
   (t : Array Std.U32 256#usize) :
@@ -2598,7 +2598,7 @@ def field.opaque_u32 (x : Std.U32) : RustM Std.U32 := do
   ok x
 
 /-- [ml_dsa_verified::rounding::decompose]:
-    Source: 'src/rounding.rs', lines 33:0-40:1
+    Source: 'src/rounding.rs', lines 35:0-42:1
     Visibility: public -/
 def rounding.decompose
   (p : params.Params) (r : Std.U32) : RustM (Std.U32 × Std.U32) := do
@@ -2614,7 +2614,7 @@ def rounding.decompose
   let i5 ← lift (UScalar.cast .U32 i4)
   let is_edge ← field.opaque_u32 i5
   let i6 ← lift (UScalar.cast .U64 diff)
-  let i7 ← i6 * p.two_gamma2_div_mult
+  let i7 ← lift (core.num.U64.wrapping_mul i6 p.two_gamma2_div_mult)
   let i8 ← i7 >>> 48#i32
   let r1 ← lift (UScalar.cast .U32 i8)
   let i9 ← field.ct_select r1 0#u32 is_edge
@@ -2623,14 +2623,14 @@ def rounding.decompose
   ok (i9, i11)
 
 /-- [ml_dsa_verified::rounding::high_bits]:
-    Source: 'src/rounding.rs', lines 43:0-45:1
+    Source: 'src/rounding.rs', lines 45:0-47:1
     Visibility: public -/
 def rounding.high_bits (p : params.Params) (r : Std.U32) : RustM Std.U32 := do
   let (i, _) ← rounding.decompose p r
   ok i
 
 /-- [ml_dsa_verified::rounding::make_hint]:
-    Source: 'src/rounding.rs', lines 75:0-79:1
+    Source: 'src/rounding.rs', lines 77:0-81:1
     Visibility: public -/
 def rounding.make_hint
   (p : params.Params) (z : Std.U32) (r : Std.U32) : RustM Bool := do
@@ -2792,14 +2792,14 @@ def sign.hint_step
   ok (hint1, ct0, ones)
 
 /-- [ml_dsa_verified::rounding::low_bits]:
-    Source: 'src/rounding.rs', lines 48:0-50:1
+    Source: 'src/rounding.rs', lines 50:0-52:1
     Visibility: public -/
 def rounding.low_bits (p : params.Params) (r : Std.U32) : RustM Std.U32 := do
   let (_, i) ← rounding.decompose p r
   ok i
 
 /-- [ml_dsa_verified::rounding::poly_low_bits]: loop body 0:
-    Source: 'src/rounding.rs', lines 67:4-70:5
+    Source: 'src/rounding.rs', lines 69:4-72:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_low_bits_loop.body
@@ -2818,7 +2818,7 @@ def rounding.poly_low_bits_loop.body
   else ok (done out)
 
 /-- [ml_dsa_verified::rounding::poly_low_bits]: loop 0:
-    Source: 'src/rounding.rs', lines 67:4-70:5
+    Source: 'src/rounding.rs', lines 69:4-72:5
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_low_bits_loop
@@ -2831,7 +2831,7 @@ def rounding.poly_low_bits_loop
     (out, j)
 
 /-- [ml_dsa_verified::rounding::poly_low_bits]:
-    Source: 'src/rounding.rs', lines 64:0-72:1
+    Source: 'src/rounding.rs', lines 66:0-74:1
     Visibility: public -/
 def rounding.poly_low_bits
   (p : params.Params) (w : Array Std.U32 256#usize) :
@@ -3328,7 +3328,7 @@ def sampling.sample_in_ball
   sampling.sample_in_ball_loop1 p.tau c ctx3 h i
 
 /-- [ml_dsa_verified::rounding::infinity_norm]:
-    Source: 'src/rounding.rs', lines 82:0-85:1
+    Source: 'src/rounding.rs', lines 84:0-87:1
     Visibility: public -/
 def rounding.infinity_norm (r : Std.U32) : RustM Std.U32 := do
   let i ← field.Q >>> 1#i32
@@ -3337,11 +3337,11 @@ def rounding.infinity_norm (r : Std.U32) : RustM Std.U32 := do
   let i3 ← field.ct_lt_mask i1 i2
   let i4 ← lift (~~~ i3)
   let lower ← lift (UScalar.cast .U32 i4)
-  let i5 ← field.Q - r
+  let i5 ← lift (core.num.U32.wrapping_sub field.Q r)
   field.ct_select i5 r lower
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]: loop body 1:
-    Source: 'src/rounding.rs', lines 93:8-97:9
+    Source: 'src/rounding.rs', lines 95:8-99:9
     Visibility: public -/
 @[rust_loop_body]
 def rounding.vec_infinity_norm_loop0_loop0.body
@@ -3364,7 +3364,7 @@ def rounding.vec_infinity_norm_loop0_loop0.body
   else ok (done acc)
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]: loop 1:
-    Source: 'src/rounding.rs', lines 93:8-97:9
+    Source: 'src/rounding.rs', lines 95:8-99:9
     Visibility: public -/
 @[rust_loop]
 def rounding.vec_infinity_norm_loop0_loop0
@@ -3377,7 +3377,7 @@ def rounding.vec_infinity_norm_loop0_loop0
     (acc, j)
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]: loop body 0:
-    Source: 'src/rounding.rs', lines 91:4-99:5
+    Source: 'src/rounding.rs', lines 93:4-101:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.vec_infinity_norm_loop0.body
@@ -3393,7 +3393,7 @@ def rounding.vec_infinity_norm_loop0.body
   else ok (done acc)
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]: loop 0:
-    Source: 'src/rounding.rs', lines 91:4-99:5
+    Source: 'src/rounding.rs', lines 93:4-101:5
     Visibility: public -/
 @[rust_loop]
 def rounding.vec_infinity_norm_loop0
@@ -3406,7 +3406,7 @@ def rounding.vec_infinity_norm_loop0
     (acc, i)
 
 /-- [ml_dsa_verified::rounding::vec_infinity_norm]:
-    Source: 'src/rounding.rs', lines 88:0-101:1
+    Source: 'src/rounding.rs', lines 90:0-103:1
     Visibility: public -/
 @[reducible]
 def rounding.vec_infinity_norm
@@ -3414,7 +3414,7 @@ def rounding.vec_infinity_norm
   rounding.vec_infinity_norm_loop0 w 0#u32 0#usize
 
 /-- [ml_dsa_verified::rounding::poly_high_bits]: loop body 0:
-    Source: 'src/rounding.rs', lines 56:4-59:5
+    Source: 'src/rounding.rs', lines 58:4-61:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_high_bits_loop.body
@@ -3433,7 +3433,7 @@ def rounding.poly_high_bits_loop.body
   else ok (done out)
 
 /-- [ml_dsa_verified::rounding::poly_high_bits]: loop 0:
-    Source: 'src/rounding.rs', lines 56:4-59:5
+    Source: 'src/rounding.rs', lines 58:4-61:5
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_high_bits_loop
@@ -3446,7 +3446,7 @@ def rounding.poly_high_bits_loop
     (out, j)
 
 /-- [ml_dsa_verified::rounding::poly_high_bits]:
-    Source: 'src/rounding.rs', lines 53:0-61:1
+    Source: 'src/rounding.rs', lines 55:0-63:1
     Visibility: public -/
 def rounding.poly_high_bits
   (p : params.Params) (w : Array Std.U32 256#usize) :
@@ -4328,7 +4328,7 @@ def verify.prefix_eq
   ok (diff = 0#u8)
 
 /-- [ml_dsa_verified::rounding::use_hint]:
-    Source: 'src/rounding.rs', lines 104:0-121:1
+    Source: 'src/rounding.rs', lines 106:0-123:1
     Visibility: public -/
 def rounding.use_hint
   (p : params.Params) (h : Bool) (r : Std.U32) : RustM Std.U32 := do
@@ -4353,7 +4353,7 @@ def rounding.use_hint
   else ok r1
 
 /-- [ml_dsa_verified::rounding::poly_use_hint]: loop body 0:
-    Source: 'src/rounding.rs', lines 127:4-130:5
+    Source: 'src/rounding.rs', lines 129:4-132:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_use_hint_loop.body
@@ -4373,7 +4373,7 @@ def rounding.poly_use_hint_loop.body
   else ok (done out)
 
 /-- [ml_dsa_verified::rounding::poly_use_hint]: loop 0:
-    Source: 'src/rounding.rs', lines 127:4-130:5
+    Source: 'src/rounding.rs', lines 129:4-132:5
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_use_hint_loop
@@ -4386,7 +4386,7 @@ def rounding.poly_use_hint_loop
     (out, j)
 
 /-- [ml_dsa_verified::rounding::poly_use_hint]:
-    Source: 'src/rounding.rs', lines 124:0-132:1
+    Source: 'src/rounding.rs', lines 126:0-134:1
     Visibility: public -/
 def rounding.poly_use_hint
   (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)

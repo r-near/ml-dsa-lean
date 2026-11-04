@@ -8,8 +8,10 @@ use crate::params::Params;
 fn reduce_mod(x: u32, m: u32, shift: u32, mult: u64) -> u32 {
     let m64 = m as u64;
     let x = x as u64;
-    let quotient = (x * mult) >> shift;
-    let remainder = x - quotient * m64;
+    // wrapping_*: x < q and mult <= 524800 give x * mult < 2^63, and quotient * m <= x, so nothing wraps; the plain operators
+    // would carry overflow-check guards on secret data (checkct/README.md).
+    let quotient = x.wrapping_mul(mult) >> shift;
+    let remainder = x.wrapping_sub(quotient.wrapping_mul(m64));
     let r_small = remainder as u32;
     let r_large = remainder.wrapping_sub(m64) as u32;
     ct_select(r_large, r_small, ct_lt_mask(remainder, m64) as u32)
@@ -19,7 +21,7 @@ fn reduce_mod(x: u32, m: u32, shift: u32, mult: u64) -> u32 {
 fn mod_plus_minus(r: u32, m: u32, shift: u32, mult: u64) -> u32 {
     let raw = reduce_mod(r, m, shift, mult);
     let lower = !ct_lt_mask((m >> 1) as u64, raw as u64) as u32; // all-ones iff raw <= m/2
-    ct_select(small_reduce(raw + Q - m), raw, lower)
+    ct_select(small_reduce(raw.wrapping_add(Q).wrapping_sub(m)), raw, lower)
 }
 
 /// Algorithm 35 Power2Round(r): returns (r1, r0) with r = r1·2^13 + r0.
@@ -35,7 +37,7 @@ pub fn decompose(p: &Params, r: u32) -> (u32, u32) {
     let r0 = mod_plus_minus(r, two_gamma2, p.two_gamma2_shift, p.two_gamma2_mult);
     let diff = sub(r, r0);
     let is_edge = opaque_u32(!ct_lt_mask(0, (diff ^ (Q - 1)) as u64) as u32); // all-ones iff diff == q - 1
-    let r1 = (((diff as u64) * p.two_gamma2_div_mult) >> 48) as u32;
+    let r1 = (((diff as u64).wrapping_mul(p.two_gamma2_div_mult)) >> 48) as u32;
     (ct_select(r1, 0, is_edge), ct_select(r0, sub(r0, 1), is_edge))
 }
 
@@ -81,7 +83,7 @@ pub fn make_hint(p: &Params, z: u32, r: u32) -> bool {
 /// |r mod± q|.
 pub fn infinity_norm(r: u32) -> u32 {
     let lower = !ct_lt_mask((Q >> 1) as u64, r as u64) as u32; // all-ones iff r <= (q-1)/2
-    ct_select(Q - r, r, lower)
+    ct_select(Q.wrapping_sub(r), r, lower)
 }
 
 /// max_i |w_i mod± q| over a polynomial vector (constant-time max).

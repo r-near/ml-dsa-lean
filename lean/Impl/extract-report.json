@@ -55,7 +55,7 @@
   "ml_dsa_verified::api::sign_internal_prepared_87",
   "ml_dsa_verified::field::mul"
  ],
- "src_sha256": "ac5e232d75dd5dafcd4cf9a3d245f8cc05785ebcac670a2b7005362b6980f15b",
+ "src_sha256": "b12add77a4be68af91753adc32ed60c3192d406ff7e236141491c4b28b0b8356",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",

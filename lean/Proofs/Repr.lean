@@ -430,7 +430,10 @@ theorem infinity_norm_spec (r : U32) (hr : r.val < 8380417) :
     · have := y_post2 (hmask.1 (i3_post2 (by omega)))
       subst this; simp [h]
     · have := y_post1 (hmask.2 (i3_post1 (by omega)))
-      subst this; simp [h, i5_post1]
+      rw [this, i5_post, wrapping_sub_val_u32]
+      have hq : (8380417#u32).val = 8380417 := rfl
+      rw [hq, if_neg h]
+      omega
 
 theorem infNorm_int (x : Int) : ‖x‖∞ = x.natAbs := rfl
 
