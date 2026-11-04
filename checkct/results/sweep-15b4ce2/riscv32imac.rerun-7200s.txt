@@ -1,0 +1,47 @@
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::prepared::control_prepared_branch_44  insecure
+      0x01e01c has control flow leak (0.902s)
+      stat: pending paths                    0
+      stat: branching points                 124303
+      stat: visited instructions (unrolled)  2314119
+      stat: [checkct:info] 129751 / 129752 control flow checks pass
+      stat: [checkct:info] 756905 / 756905 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_65_col  unknown
+      stat: pending paths                    1
+      stat: branching points                 51642
+      stat: visited instructions (unrolled)  387086
+      stat: [checkct:info] 59674 / 59674 control flow checks pass
+      stat: [checkct:info] 68531 / 68531 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (7200.027)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_65_row  unknown
+      stat: pending paths                    1
+      stat: branching points                 34035
+      stat: visited instructions (unrolled)  280586
+      stat: [checkct:info] 42013 / 42013 control flow checks pass
+      stat: [checkct:info] 52439 / 52439 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (7200.027)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_6x1  unknown
+      stat: pending paths                    1
+      stat: branching points                 60940
+      stat: visited instructions (unrolled)  590565
+      stat: [checkct:info] 70756 / 70756 control flow checks pass
+      stat: [checkct:info] 108844 / 108844 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (7200.027)
+      note: 1              failed assertions                0
+      note: 1                unknown        0

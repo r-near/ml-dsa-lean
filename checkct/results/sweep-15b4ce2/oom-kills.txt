@@ -1,0 +1,3 @@
+Nov 04 11:45:09 kernel: Memory cgroup out of memory: Killed process 1445331 (binsec) total-vm:126781300kB, anon-rss:115110456kB, file-rss:21344kB, shmem-rss:0kB, UID:1000 pgtables:225552kB oom_score_adj:0
+Nov 04 16:27:26 kernel: Memory cgroup out of memory: Killed process 2445310 (binsec) total-vm:141639236kB, anon-rss:125576388kB, file-rss:21632kB, shmem-rss:0kB, UID:1000 pgtables:245988kB oom_score_adj:0
+Nov 04 17:42:09 kernel: Memory cgroup out of memory: Killed process 2839785 (binsec) total-vm:134450428kB, anon-rss:125576632kB, file-rss:21812kB, shmem-rss:0kB, UID:1000 pgtables:246064kB oom_score_adj:0

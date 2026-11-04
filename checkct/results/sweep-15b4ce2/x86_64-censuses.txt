@@ -1,0 +1,80 @@
+=== default: first run at the 110 GB cap (census_sign_prepared_44 killed at the cap; rerun at 120 GB below)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x237998  jae    2379b6 <driver::sampling::sample_in_ball+0x246>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2875532
+   stat: [checkct:info] 209729 / 209730 control flow checks pass
+
+driver::prepared::census_sign_prepared_44  error
+=== nearcore (110 GB cap)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x20da3b  jae    20da5c <driver::sign::sign_prepared_internal::<4, 4>+0x112c>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2850363
+   stat: [checkct:info] 202858 / 202859 control flow checks pass
+
+driver::prepared::census_sign_prepared_44  insecure
+   leak  0x20da3b  jae    20da5c <driver::sign::sign_prepared_internal::<4, 4>+0x112c>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  1539485
+   stat: [checkct:info] 106266 / 106267 control flow checks pass
+=== default, census_sign_prepared_44 rerun alone (120 GB cap; killed at the cap)
+
+driver::prepared::census_sign_prepared_44  error
+=== dispatch (120 GB cap; census_sign_prepared_44 killed at the cap)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x24a768  jae    24a786 <driver::sampling::sample_in_ball+0x246>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2869582
+   stat: [checkct:info] 207418 / 207419 control flow checks pass
+
+driver::prepared::census_sign_prepared_44  error
+=== nearcore-dispatch, census_sign_internal_44 only (120 GB cap)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x20d26b  jae    20d28c <driver::sign::sign_prepared_internal::<4, 4>+0x10ec>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2842625
+   stat: [checkct:info] 202950 / 202951 control flow checks pass
+=== nearcore-exact-novec (120 GB cap)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x20cd5a  jae    20cd7a <driver::sign::sign_prepared_internal::<4, 4>+0xd0a>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2834212
+   stat: [checkct:info] 232794 / 232795 control flow checks pass
+
+driver::prepared::census_sign_prepared_44  insecure
+   leak  0x20cd5a  jae    20cd7a <driver::sign::sign_prepared_internal::<4, 4>+0xd0a>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  1566361
+   stat: [checkct:info] 122067 / 122068 control flow checks pass
+=== nearcore-exact-dispatch (110 GB cap)
+
+driver::extra::census_sign_internal_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  726933
+   stat: [checkct:info] 59801 / 59801 control flow checks pass
+   cut   0x229040  vinsertps $0x68,%xmm10,%xmm14,%xmm14   [src/ntt.rs:111]   in driver::ntt::ntt_layer::<8, 16>
+
+driver::prepared::census_sign_prepared_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  85687
+   stat: [checkct:info] 21955 / 21955 control flow checks pass
+   cut   0x225d70  vinsertps $0x68,%xmm10,%xmm14,%xmm14   [src/ntt.rs:111]   in driver::ntt::ntt_layer::<8, 16>
+=== nearcore-exact (110 GB cap)
+
+driver::extra::census_sign_internal_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  726927
+   stat: [checkct:info] 59800 / 59800 control flow checks pass
+   cut   0x224f10  vinsertps $0x68,%xmm10,%xmm14,%xmm14   [src/ntt.rs:111]   in driver::ntt::ntt_layer::<8, 16>
+
+driver::prepared::census_sign_prepared_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  85683
+   stat: [checkct:info] 21954 / 21954 control flow checks pass
+   cut   0x224f10  vinsertps $0x68,%xmm10,%xmm14,%xmm14   [src/ntt.rs:111]   in driver::ntt::ntt_layer::<8, 16>

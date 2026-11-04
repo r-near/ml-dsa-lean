@@ -1,0 +1,817 @@
+Summary:
+  driver  thumbv7em-none-eabihf  driver::extra::coeff_from_half_byte_eta2  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  54
+      stat: [checkct:info] 6 / 6 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::coeff_from_half_byte_eta4  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  48
+      stat: [checkct:info] 6 / 6 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_1x1  secure
+      stat: pending paths                    0
+      stat: branching points                 2383
+      stat: visited instructions (unrolled)  80904
+      stat: [checkct:info] 5476 / 5476 control flow checks pass
+      stat: [checkct:info] 21618 / 21618 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_44  secure
+      stat: pending paths                    0
+      stat: branching points                 20306
+      stat: visited instructions (unrolled)  532563
+      stat: [checkct:info] 45030 / 45030 control flow checks pass
+      stat: [checkct:info] 151306 / 151306 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_65  secure
+      stat: pending paths                    0
+      stat: branching points                 34374
+      stat: visited instructions (unrolled)  865405
+      stat: [checkct:info] 76596 / 76596 control flow checks pass
+      stat: [checkct:info] 247451 / 247451 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_87  secure
+      stat: pending paths                    0
+      stat: branching points                 58126
+      stat: visited instructions (unrolled)  1416902
+      stat: [checkct:info] 131224 / 131224 control flow checks pass
+      stat: [checkct:info] 403321 / 403321 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::control_early_exit_44  insecure
+      0x029494 has control flow leak (0.182s)
+      0x0295fa has control flow leak (2.186s)
+      0x029764 has control flow leak (7.990s)
+      0x0298c6 has control flow leak (18.109s)
+      0x029a2c has control flow leak (32.301s)
+      0x029b90 has control flow leak (51.065s)
+      0x029cf6 has control flow leak (75.341s)
+      0x029e5c has control flow leak (104.812s)
+      stat: pending paths                    0
+      stat: branching points                 10857
+      stat: visited instructions (unrolled)  83238
+      stat: [checkct:info] 13432 / 13440 control flow checks pass
+      stat: [checkct:info] 36050 / 36050 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::extra::encode_sk_is_well_formed_44  secure
+      stat: pending paths                    0
+      stat: branching points                 12517
+      stat: visited instructions (unrolled)  117469
+      stat: [checkct:info] 17437 / 17437 control flow checks pass
+      stat: [checkct:info] 28522 / 28522 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::encode_sk_is_well_formed_65  secure
+      stat: pending paths                    0
+      stat: branching points                 15846
+      stat: visited instructions (unrolled)  155313
+      stat: [checkct:info] 20772 / 20772 control flow checks pass
+      stat: [checkct:info] 37385 / 37385 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::encode_sk_is_well_formed_87  secure
+      stat: pending paths                    0
+      stat: branching points                 18642
+      stat: visited instructions (unrolled)  189345
+      stat: [checkct:info] 23576 / 23576 control flow checks pass
+      stat: [checkct:info] 45917 / 45917 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::expand_mask_44  secure
+      stat: pending paths                    0
+      stat: branching points                 9821
+      stat: visited instructions (unrolled)  408441
+      stat: [checkct:info] 9937 / 9937 control flow checks pass
+      stat: [checkct:info] 185710 / 185710 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::expand_mask_65  secure
+      stat: pending paths                    0
+      stat: branching points                 13149
+      stat: visited instructions (unrolled)  516743
+      stat: [checkct:info] 13275 / 13275 control flow checks pass
+      stat: [checkct:info] 231915 / 231915 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::expand_mask_87  secure
+      stat: pending paths                    0
+      stat: branching points                 18389
+      stat: visited instructions (unrolled)  723171
+      stat: [checkct:info] 18535 / 18535 control flow checks pass
+      stat: [checkct:info] 324525 / 324525 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::keygen_seed_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 200
+      stat: visited instructions (unrolled)  17592
+      stat: [checkct:info] 244 / 244 control flow checks pass
+      stat: [checkct:info] 9026 / 9026 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_1x1  secure
+      stat: pending paths                    0
+      stat: branching points                 1070
+      stat: visited instructions (unrolled)  21685
+      stat: [checkct:info] 3130 / 3130 control flow checks pass
+      stat: [checkct:info] 4945 / 4945 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_44  secure
+      stat: pending paths                    0
+      stat: branching points                 13977
+      stat: visited instructions (unrolled)  284032
+      stat: [checkct:info] 34557 / 34557 control flow checks pass
+      stat: [checkct:info] 77049 / 77049 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_65  secure
+      stat: pending paths                    0
+      stat: branching points                 25214
+      stat: visited instructions (unrolled)  513955
+      stat: [checkct:info] 61226 / 61226 control flow checks pass
+      stat: [checkct:info] 142062 / 142062 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_87  secure
+      stat: pending paths                    0
+      stat: branching points                 45680
+      stat: visited instructions (unrolled)  940443
+      stat: [checkct:info] 110498 / 110498 control flow checks pass
+      stat: [checkct:info] 260194 / 260194 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::ntt_vec_44  secure
+      stat: pending paths                    0
+      stat: branching points                 3524
+      stat: visited instructions (unrolled)  115487
+      stat: [checkct:info] 7651 / 7651 control flow checks pass
+      stat: [checkct:info] 31577 / 31577 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::poly_power2round  secure
+      stat: pending paths                    0
+      stat: branching points                 630
+      stat: visited instructions (unrolled)  11353
+      stat: [checkct:info] 1664 / 1664 control flow checks pass
+      stat: [checkct:info] 2965 / 2965 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::rej_bounded_poly_eta2  insecure
+      0x04f2b2 has control flow leak (117.770s)
+      0x04f2d8 has control flow leak (182.069s)
+      stat: pending paths                    27
+      stat: branching points                 310
+      stat: visited instructions (unrolled)  18573
+      stat: [checkct:info] 371 / 373 control flow checks pass
+      stat: [checkct:info] 9396 / 9396 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 27 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::extra::rej_bounded_poly_eta4  insecure
+      0x04f366 has control flow leak (0.536s)
+      0x04f378 has control flow leak (12.349s)
+      stat: pending paths                    11
+      stat: branching points                 226
+      stat: visited instructions (unrolled)  17781
+      stat: [checkct:info] 295 / 297 control flow checks pass
+      stat: [checkct:info] 9204 / 9204 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 11 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::extra::scalar_vector_ntt_inverse_1  secure
+      stat: pending paths                    0
+      stat: branching points                 1230
+      stat: visited instructions (unrolled)  46110
+      stat: [checkct:info] 3289 / 3289 control flow checks pass
+      stat: [checkct:info] 10940 / 10940 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sign_rho_pp_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 208
+      stat: visited instructions (unrolled)  17837
+      stat: [checkct:info] 349 / 349 control flow checks pass
+      stat: [checkct:info] 9132 / 9132 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sk_is_well_formed_44  secure
+      stat: pending paths                    0
+      stat: branching points                 9889
+      stat: visited instructions (unrolled)  100677
+      stat: [checkct:info] 12473 / 12473 control flow checks pass
+      stat: [checkct:info] 24434 / 24434 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sk_is_well_formed_65  secure
+      stat: pending paths                    0
+      stat: branching points                 14874
+      stat: visited instructions (unrolled)  149101
+      stat: [checkct:info] 18936 / 18936 control flow checks pass
+      stat: [checkct:info] 35873 / 35873 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sk_is_well_formed_87  secure
+      stat: pending paths                    0
+      stat: branching points                 18642
+      stat: visited instructions (unrolled)  189345
+      stat: [checkct:info] 23576 / 23576 control flow checks pass
+      stat: [checkct:info] 45917 / 45917 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::vec_power2round_44  secure
+      stat: pending paths                    0
+      stat: branching points                 5071
+      stat: visited instructions (unrolled)  77698
+      stat: [checkct:info] 9217 / 9217 control flow checks pass
+      stat: [checkct:info] 31274 / 31274 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::vec_power2round_87  secure
+      stat: pending paths                    0
+      stat: branching points                 10251
+      stat: visited instructions (unrolled)  156376
+      stat: [checkct:info] 18533 / 18533 control flow checks pass
+      stat: [checkct:info] 62972 / 62972 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::control_prepared_branch_44  secure
+      stat: pending paths                    0
+      stat: branching points                 63696
+      stat: visited instructions (unrolled)  2018941
+      stat: [checkct:info] 66408 / 66408 control flow checks pass
+      stat: [checkct:info] 868113 / 868113 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::control_prepared_index_44  insecure
+      0x033b10 has memory access leak (2.555s)
+      stat: pending paths                    0
+      stat: branching points                 63957
+      stat: visited instructions (unrolled)  2022307
+      stat: [checkct:info] 66670 / 66670 control flow checks pass
+      stat: [checkct:info] 870187 / 870188 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 12524
+      stat: visited instructions (unrolled)  230689
+      stat: [checkct:info] 15285 / 15285 control flow checks pass
+      stat: [checkct:info] 87407 / 87407 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_1x1_65  secure
+      stat: pending paths                    0
+      stat: branching points                 14584
+      stat: visited instructions (unrolled)  242642
+      stat: [checkct:info] 18817 / 18817 control flow checks pass
+      stat: [checkct:info] 90143 / 90143 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_44  secure
+      stat: pending paths                    0
+      stat: branching points                 65499
+      stat: visited instructions (unrolled)  2042346
+      stat: [checkct:info] 68212 / 68212 control flow checks pass
+      stat: [checkct:info] 882517 / 882517 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_65  secure
+      stat: pending paths                    0
+      stat: branching points                 113377
+      stat: visited instructions (unrolled)  3650639
+      stat: [checkct:info] 117732 / 117732 control flow checks pass
+      stat: [checkct:info] 1600855 / 1600855 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_87  secure
+      stat: pending paths                    0
+      stat: branching points                 192055
+      stat: visited instructions (unrolled)  6491752
+      stat: [checkct:info] 197514 / 197514 control flow checks pass
+      stat: [checkct:info] 2891041 / 2891041 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::signing_key_44  secure
+      stat: pending paths                    0
+      stat: branching points                 64470
+      stat: visited instructions (unrolled)  2028998
+      stat: [checkct:info] 67182 / 67182 control flow checks pass
+      stat: [checkct:info] 874299 / 874299 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::signing_key_65  secure
+      stat: pending paths                    0
+      stat: branching points                 108444
+      stat: visited instructions (unrolled)  3607592
+      stat: [checkct:info] 112798 / 112798 control flow checks pass
+      stat: [checkct:info] 1573439 / 1573439 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::signing_key_87  secure
+      stat: pending paths                    0
+      stat: branching points                 186988
+      stat: visited instructions (unrolled)  6436253
+      stat: [checkct:info] 192446 / 192446 control flow checks pass
+      stat: [checkct:info] 2856431 / 2856431 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::barrett_reduce  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  80
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_13  secure
+      stat: pending paths                    0
+      stat: branching points                 1517
+      stat: visited instructions (unrolled)  16098
+      stat: [checkct:info] 2549 / 2549 control flow checks pass
+      stat: [checkct:info] 2229 / 2229 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_18  secure
+      stat: pending paths                    0
+      stat: branching points                 1837
+      stat: visited instructions (unrolled)  17668
+      stat: [checkct:info] 2869 / 2869 control flow checks pass
+      stat: [checkct:info] 2389 / 2389 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_20  secure
+      stat: pending paths                    0
+      stat: branching points                 1965
+      stat: visited instructions (unrolled)  18180
+      stat: [checkct:info] 2997 / 2997 control flow checks pass
+      stat: [checkct:info] 2453 / 2453 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_3  secure
+      stat: pending paths                    0
+      stat: branching points                 1133
+      stat: visited instructions (unrolled)  12931
+      stat: [checkct:info] 2165 / 2165 control flow checks pass
+      stat: [checkct:info] 1909 / 1909 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_4  secure
+      stat: pending paths                    0
+      stat: branching points                 1197
+      stat: visited instructions (unrolled)  13571
+      stat: [checkct:info] 2229 / 2229 control flow checks pass
+      stat: [checkct:info] 1941 / 1941 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::ct_lt_mask  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  120
+      stat: [checkct:info] 21 / 21 control flow checks pass
+      stat: [checkct:info] 25 / 25 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::ct_select  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  75
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::decompose_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  115
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 35 / 35 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::decompose_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  115
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 35 / 35 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_mont_reduce  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  75
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_mul  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  80
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_mul_mont  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  83
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_mul_shoup  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  61
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_neg  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  57
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_small_reduce  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  72
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_sub  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  72
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::high_bits_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  109
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 34 / 34 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::high_bits_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  109
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 34 / 34 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::infinity_norm  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  56
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::keccak_f1600  secure
+      stat: pending paths                    0
+      stat: branching points                 43
+      stat: visited instructions (unrolled)  17402
+      stat: [checkct:info] 250 / 250 control flow checks pass
+      stat: [checkct:info] 8607 / 8607 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::low_bits_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  108
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 28 / 28 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::low_bits_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  108
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 28 / 28 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::make_hint_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  176
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 50 / 50 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::make_hint_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  176
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 50 / 50 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::multiply_ntt  secure
+      stat: pending paths                    0
+      stat: branching points                 780
+      stat: visited instructions (unrolled)  15791
+      stat: [checkct:info] 2836 / 2836 control flow checks pass
+      stat: [checkct:info] 2658 / 2658 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::ntt  secure
+      stat: pending paths                    0
+      stat: branching points                 710
+      stat: visited instructions (unrolled)  26959
+      stat: [checkct:info] 1743 / 1743 control flow checks pass
+      stat: [checkct:info] 6697 / 6697 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::ntt_inverse  secure
+      stat: pending paths                    0
+      stat: branching points                 774
+      stat: visited instructions (unrolled)  35041
+      stat: [checkct:info] 1807 / 1807 control flow checks pass
+      stat: [checkct:info] 8943 / 8943 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::power2round  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  63
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_decode_44  secure
+      stat: pending paths                    0
+      stat: branching points                 16854
+      stat: visited instructions (unrolled)  148690
+      stat: [checkct:info] 19459 / 19459 control flow checks pass
+      stat: [checkct:info] 39237 / 39237 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_decode_65  secure
+      stat: pending paths                    0
+      stat: branching points                 24954
+      stat: visited instructions (unrolled)  224192
+      stat: [checkct:info] 29046 / 29046 control flow checks pass
+      stat: [checkct:info] 57741 / 57741 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_decode_87  secure
+      stat: pending paths                    0
+      stat: branching points                 32030
+      stat: visited instructions (unrolled)  290398
+      stat: [checkct:info] 37004 / 37004 control flow checks pass
+      stat: [checkct:info] 73307 / 73307 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_encode_44  secure
+      stat: pending paths                    0
+      stat: branching points                 17940
+      stat: visited instructions (unrolled)  212171
+      stat: [checkct:info] 30407 / 30407 control flow checks pass
+      stat: [checkct:info] 41475 / 41475 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_encode_65  secure
+      stat: pending paths                    0
+      stat: branching points                 26163
+      stat: visited instructions (unrolled)  307315
+      stat: [checkct:info] 43765 / 43765 control flow checks pass
+      stat: [checkct:info] 58842 / 58842 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_encode_87  secure
+      stat: pending paths                    0
+      stat: branching points                 34237
+      stat: visited instructions (unrolled)  399631
+      stat: [checkct:info] 58001 / 58001 control flow checks pass
+      stat: [checkct:info] 69685 / 69685 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::vec_infinity_norm  secure
+      stat: pending paths                    0
+      stat: branching points                 2728
+      stat: visited instructions (unrolled)  40766
+      stat: [checkct:info] 6839 / 6839 control flow checks pass
+      stat: [checkct:info] 7842 / 7842 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 2197
+      stat: visited instructions (unrolled)  86244
+      stat: [checkct:info] 5286 / 5286 control flow checks pass
+      stat: [checkct:info] 17905 / 17905 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_1_65  secure
+      stat: pending paths                    0
+      stat: branching points                 2197
+      stat: visited instructions (unrolled)  86244
+      stat: [checkct:info] 5286 / 5286 control flow checks pass
+      stat: [checkct:info] 17905 / 17905 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_44  secure
+      stat: pending paths                    0
+      stat: branching points                 8855
+      stat: visited instructions (unrolled)  310592
+      stat: [checkct:info] 18124 / 18124 control flow checks pass
+      stat: [checkct:info] 72827 / 72827 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_65  secure
+      stat: pending paths                    0
+      stat: branching points                 13235
+      stat: visited instructions (unrolled)  482063
+      stat: [checkct:info] 26617 / 26617 control flow checks pass
+      stat: [checkct:info] 111960 / 111960 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_87  secure
+      stat: pending paths                    0
+      stat: branching points                 17615
+      stat: visited instructions (unrolled)  640810
+      stat: [checkct:info] 35111 / 35111 control flow checks pass
+      stat: [checkct:info] 147857 / 147857 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 4149
+      stat: visited instructions (unrolled)  125809
+      stat: [checkct:info] 9296 / 9296 control flow checks pass
+      stat: [checkct:info] 29897 / 29897 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_1x1_65  secure
+      stat: pending paths                    0
+      stat: branching points                 4149
+      stat: visited instructions (unrolled)  125809
+      stat: [checkct:info] 9296 / 9296 control flow checks pass
+      stat: [checkct:info] 29897 / 29897 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_44  secure
+      stat: pending paths                    0
+      stat: branching points                 18797
+      stat: visited instructions (unrolled)  510690
+      stat: [checkct:info] 36320 / 36320 control flow checks pass
+      stat: [checkct:info] 139932 / 139932 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_65  secure
+      stat: pending paths                    0
+      stat: branching points                 26234
+      stat: visited instructions (unrolled)  705409
+      stat: [checkct:info] 49934 / 49934 control flow checks pass
+      stat: [checkct:info] 196855 / 196855 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_87  secure
+      stat: pending paths                    0
+      stat: branching points                 35700
+      stat: visited instructions (unrolled)  959384
+      stat: [checkct:info] 67636 / 67636 control flow checks pass
+      stat: [checkct:info] 266646 / 266646 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_compute_t_44_2x2  secure
+      stat: pending paths                    0
+      stat: branching points                 6930
+      stat: visited instructions (unrolled)  201263
+      stat: [checkct:info] 15180 / 15180 control flow checks pass
+      stat: [checkct:info] 58062 / 58062 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_compute_t_44_col  secure
+      stat: pending paths                    0
+      stat: branching points                 8584
+      stat: visited instructions (unrolled)  255562
+      stat: [checkct:info] 17865 / 17865 control flow checks pass
+      stat: [checkct:info] 74824 / 74824 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_compute_t_44_row  secure
+      stat: pending paths                    0
+      stat: branching points                 7432
+      stat: visited instructions (unrolled)  217167
+      stat: [checkct:info] 16709 / 16709 control flow checks pass
+      stat: [checkct:info] 60269 / 60269 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_ntt_vec_into_1  secure
+      stat: pending paths                    0
+      stat: branching points                 710
+      stat: visited instructions (unrolled)  26959
+      stat: [checkct:info] 1743 / 1743 control flow checks pass
+      stat: [checkct:info] 6697 / 6697 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_ntt_vec_into_7  secure
+      stat: pending paths                    0
+      stat: branching points                 6230
+      stat: visited instructions (unrolled)  202401
+      stat: [checkct:info] 13441 / 13441 control flow checks pass
+      stat: [checkct:info] 55453 / 55453 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_ntt_vec_into_8  secure
+      stat: pending paths                    0
+      stat: branching points                 7137
+      stat: visited instructions (unrolled)  231410
+      stat: [checkct:info] 15377 / 15377 control flow checks pass
+      stat: [checkct:info] 63439 / 63439 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_44_col  secure
+      stat: pending paths                    0
+      stat: branching points                 37218
+      stat: visited instructions (unrolled)  787682
+      stat: [checkct:info] 40828 / 40828 control flow checks pass
+      stat: [checkct:info] 317310 / 317310 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_44_row  secure
+      stat: pending paths                    0
+      stat: branching points                 30371
+      stat: visited instructions (unrolled)  669060
+      stat: [checkct:info] 33949 / 33949 control flow checks pass
+      stat: [checkct:info] 280517 / 280517 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_65_col  secure
+      stat: pending paths                    0
+      stat: branching points                 55682
+      stat: visited instructions (unrolled)  1173601
+      stat: [checkct:info] 61320 / 61320 control flow checks pass
+      stat: [checkct:info] 472033 / 472033 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_65_row  secure
+      stat: pending paths                    0
+      stat: branching points                 38936
+      stat: visited instructions (unrolled)  833302
+      stat: [checkct:info] 44260 / 44260 control flow checks pass
+      stat: [checkct:info] 350426 / 350426 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_2x1  secure
+      stat: pending paths                    0
+      stat: branching points                 23462
+      stat: visited instructions (unrolled)  430661
+      stat: [checkct:info] 28843 / 28843 control flow checks pass
+      stat: [checkct:info] 166308 / 166308 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_4x1  secure
+      stat: pending paths                    0
+      stat: branching points                 40284
+      stat: visited instructions (unrolled)  804619
+      stat: [checkct:info] 46230 / 46230 control flow checks pass
+      stat: [checkct:info] 321402 / 321402 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_6x1  secure
+      stat: pending paths                    0
+      stat: branching points                 56368
+      stat: visited instructions (unrolled)  1175610
+      stat: [checkct:info] 62870 / 62870 control flow checks pass
+      stat: [checkct:info] 472909 / 472909 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_7x1  secure
+      stat: pending paths                    0
+      stat: branching points                 51834
+      stat: visited instructions (unrolled)  1276402
+      stat: [checkct:info] 56821 / 56821 control flow checks pass
+      stat: [checkct:info] 500132 / 500132 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_col  secure
+      stat: pending paths                    0
+      stat: branching points                 58077
+      stat: visited instructions (unrolled)  1452064
+      stat: [checkct:info] 63086 / 63086 control flow checks pass
+      stat: [checkct:info] 568777 / 568777 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_row  secure
+      stat: pending paths                    0
+      stat: branching points                 38984
+      stat: visited instructions (unrolled)  1047962
+      stat: [checkct:info] 43924 / 43924 control flow checks pass
+      stat: [checkct:info] 431424 / 431424 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_1  secure
+      stat: pending paths                    0
+      stat: branching points                 901
+      stat: visited instructions (unrolled)  14796
+      stat: [checkct:info] 1938 / 1938 control flow checks pass
+      stat: [checkct:info] 5091 / 5091 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_2  secure
+      stat: pending paths                    0
+      stat: branching points                 2477
+      stat: visited instructions (unrolled)  38282
+      stat: [checkct:info] 4554 / 4554 control flow checks pass
+      stat: [checkct:info] 15452 / 15452 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_3  secure
+      stat: pending paths                    0
+      stat: branching points                 3776
+      stat: visited instructions (unrolled)  57776
+      stat: [checkct:info] 6888 / 6888 control flow checks pass
+      stat: [checkct:info] 23366 / 23366 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_5  secure
+      stat: pending paths                    0
+      stat: branching points                 6366
+      stat: visited instructions (unrolled)  97719
+      stat: [checkct:info] 11546 / 11546 control flow checks pass
+      stat: [checkct:info] 39083 / 39083 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_6  secure
+      stat: pending paths                    0
+      stat: branching points                 7661
+      stat: visited instructions (unrolled)  117102
+      stat: [checkct:info] 13875 / 13875 control flow checks pass
+      stat: [checkct:info] 47024 / 47024 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_7  secure
+      stat: pending paths                    0
+      stat: branching points                 8956
+      stat: visited instructions (unrolled)  136714
+      stat: [checkct:info] 16204 / 16204 control flow checks pass
+      stat: [checkct:info] 55064 / 55064 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_hi  secure
+      stat: pending paths                    0
+      stat: branching points                 8443
+      stat: visited instructions (unrolled)  122436
+      stat: [checkct:info] 16695 / 16695 control flow checks pass
+      stat: [checkct:info] 46861 / 46861 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_lo  secure
+      stat: pending paths                    0
+      stat: branching points                 8447
+      stat: visited instructions (unrolled)  122283
+      stat: [checkct:info] 16700 / 16700 control flow checks pass
+      stat: [checkct:info] 46766 / 46766 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_q0  secure
+      stat: pending paths                    0
+      stat: branching points                 7539
+      stat: visited instructions (unrolled)  105149
+      stat: [checkct:info] 15776 / 15776 control flow checks pass
+      stat: [checkct:info] 38690 / 38690 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_q1  secure
+      stat: pending paths                    0
+      stat: branching points                 7547
+      stat: visited instructions (unrolled)  105764
+      stat: [checkct:info] 15786 / 15786 control flow checks pass
+      stat: [checkct:info] 38632 / 38632 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_q2  secure
+      stat: pending paths                    0
+      stat: branching points                 7547
+      stat: visited instructions (unrolled)  105548
+      stat: [checkct:info] 15786 / 15786 control flow checks pass
+      stat: [checkct:info] 38731 / 38731 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_q3  secure
+      stat: pending paths                    0
+      stat: branching points                 7535
+      stat: visited instructions (unrolled)  105486
+      stat: [checkct:info] 15771 / 15771 control flow checks pass
+      stat: [checkct:info] 38719 / 38719 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass

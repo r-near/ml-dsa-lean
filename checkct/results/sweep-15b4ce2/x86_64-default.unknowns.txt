@@ -1,0 +1,579 @@
+
+driver::extra::coeff_from_half_byte_eta2  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  57
+   stat: [checkct:info] 6 / 6 control flow checks pass
+
+driver::extra::coeff_from_half_byte_eta4  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  51
+   stat: [checkct:info] 6 / 6 control flow checks pass
+
+driver::extra::compute_t_1x1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  62350
+   stat: [checkct:info] 6453 / 6453 control flow checks pass
+
+driver::extra::compute_t_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  430586
+   stat: [checkct:info] 57804 / 57804 control flow checks pass
+
+driver::extra::compute_t_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  711263
+   stat: [checkct:info] 99359 / 99359 control flow checks pass
+
+driver::extra::compute_t_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  1191259
+   stat: [checkct:info] 171256 / 171256 control flow checks pass
+
+driver::extra::control_early_exit_44  insecure
+   leak  0x20f73d  ja     20fb41 <driver::extra::control_early_exit_44+0x531>   [checkct/driver/src/extra.rs:221]   in driver::extra::control_early_exit_fn
+   leak  0x20f7dd  ja     20fb41 <driver::extra::control_early_exit_44+0x531>   [checkct/driver/src/extra.rs:221]   in driver::extra::control_early_exit_fn
+   leak  0x20f86d  ja     20fb41 <driver::extra::control_early_exit_44+0x531>   [checkct/driver/src/extra.rs:221]   in driver::extra::control_early_exit_fn
+   leak  0x20f8fd  ja     20fb41 <driver::extra::control_early_exit_44+0x531>   [checkct/driver/src/extra.rs:221]   in driver::extra::control_early_exit_fn
+   leak  0x20f98d  ja     20fb41 <driver::extra::control_early_exit_44+0x531>   [checkct/driver/src/extra.rs:221]   in driver::extra::control_early_exit_fn
+   leak  0x20fa1d  ja     20fb41 <driver::extra::control_early_exit_44+0x531>   [checkct/driver/src/extra.rs:221]   in driver::extra::control_early_exit_fn
+   leak  0x20faad  ja     20fb41 <driver::extra::control_early_exit_44+0x531>   [checkct/driver/src/extra.rs:221]   in driver::extra::control_early_exit_fn
+   leak  0x20fb30  ja     20fb41 <driver::extra::control_early_exit_44+0x531>   [checkct/driver/src/extra.rs:221]   in driver::extra::control_early_exit_fn
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  76541
+   stat: [checkct:info] 15799 / 15807 control flow checks pass
+
+driver::extra::encode_sk_is_well_formed_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  77130
+   stat: [checkct:info] 19200 / 19200 control flow checks pass
+
+driver::extra::encode_sk_is_well_formed_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  99807
+   stat: [checkct:info] 22967 / 22967 control flow checks pass
+
+driver::extra::encode_sk_is_well_formed_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  117723
+   stat: [checkct:info] 26347 / 26347 control flow checks pass
+
+driver::extra::expand_mask_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  185528
+   stat: [checkct:info] 10477 / 10477 control flow checks pass
+
+driver::extra::expand_mask_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  237271
+   stat: [checkct:info] 13940 / 13940 control flow checks pass
+
+driver::extra::expand_mask_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  331961
+   stat: [checkct:info] 19450 / 19450 control flow checks pass
+
+driver::extra::keygen_seed_hash  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  7112
+   stat: [checkct:info] 180 / 180 control flow checks pass
+
+driver::extra::matrix_vector_ntt_1x1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  21564
+   stat: [checkct:info] 3784 / 3784 control flow checks pass
+
+driver::extra::matrix_vector_ntt_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  265113
+   stat: [checkct:info] 45016 / 45016 control flow checks pass
+
+driver::extra::matrix_vector_ntt_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  478901
+   stat: [checkct:info] 80530 / 80530 control flow checks pass
+
+driver::extra::matrix_vector_ntt_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  875956
+   stat: [checkct:info] 145787 / 145787 control flow checks pass
+
+driver::extra::ntt_vec_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  93342
+   stat: [checkct:info] 8819 / 8819 control flow checks pass
+
+driver::extra::poly_power2round  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  8965
+   stat: [checkct:info] 1982 / 1982 control flow checks pass
+
+driver::extra::rej_bounded_poly_eta2  insecure
+   leak  0x237bc3  jne    237be0 <driver::sampling::rej_bounded_poly+0x1b0>   [src/sampling.rs:129]   in driver::sampling::coeff_from_half_byte
+   leak  0x237bcb  jne    237c11 <driver::sampling::rej_bounded_poly+0x1e1>   [src/sampling.rs:129]   in driver::sampling::coeff_from_half_byte
+   stat: pending paths                    5
+   stat: visited instructions (unrolled)  7190
+   stat: [checkct:info] 301 / 303 control flow checks pass
+
+driver::extra::rej_bounded_poly_eta4  insecure
+   leak  0x237cf3  jbe    237d10 <driver::sampling::rej_bounded_poly+0x2e0>   [src/sampling.rs:132]   in driver::sampling::coeff_from_half_byte
+   leak  0x237cf8  jbe    237d2b <driver::sampling::rej_bounded_poly+0x2fb>   [src/sampling.rs:132]   in driver::sampling::coeff_from_half_byte
+   stat: pending paths                    12
+   stat: visited instructions (unrolled)  7265
+   stat: [checkct:info] 316 / 318 control flow checks pass
+
+driver::extra::scalar_vector_ntt_inverse_1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  37009
+   stat: [checkct:info] 3719 / 3719 control flow checks pass
+
+driver::extra::sign_rho_pp_hash  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  7545
+   stat: [checkct:info] 302 / 302 control flow checks pass
+
+driver::extra::sk_is_well_formed_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  62528
+   stat: [checkct:info] 13944 / 13944 control flow checks pass
+
+driver::extra::sk_is_well_formed_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  94405
+   stat: [checkct:info] 21023 / 21023 control flow checks pass
+
+driver::extra::sk_is_well_formed_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  117723
+   stat: [checkct:info] 26347 / 26347 control flow checks pass
+
+driver::extra::vec_power2round_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  41157
+   stat: [checkct:info] 12898 / 12898 control flow checks pass
+
+driver::extra::vec_power2round_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  82445
+   stat: [checkct:info] 26038 / 26038 control flow checks pass
+
+driver::prepared::control_prepared_branch_44  insecure
+   leak  0x21a0fd  jne    21a108 <driver::prepared::control_prepared_branch_44+0x108>   [checkct/driver/src/prepared.rs:76]   in driver::prepared::control_prepared_branch_fn
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  1000409
+   stat: [checkct:info] 75602 / 75603 control flow checks pass
+
+driver::prepared::control_prepared_index_44  insecure
+   leak  0x219fba  mov    0x8(%rsp,%rax,4),%eax   [checkct/driver/src/prepared.rs:96]   in driver::prepared::control_prepared_index_fn
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  1000954
+   stat: [checkct:info] 76126 / 76126 control flow checks pass
+
+driver::prepared::prepare_sk_1x1_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  128276
+   stat: [checkct:info] 14381 / 14381 control flow checks pass
+
+driver::prepared::prepare_sk_1x1_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  138438
+   stat: [checkct:info] 17821 / 17821 control flow checks pass
+
+driver::prepared::prepare_sk_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  1004050
+   stat: [checkct:info] 79216 / 79216 control flow checks pass
+
+driver::prepared::prepare_sk_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  1759296
+   stat: [checkct:info] 135899 / 135899 control flow checks pass
+
+driver::prepared::prepare_sk_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  3058478
+   stat: [checkct:info] 227576 / 227576 control flow checks pass
+
+driver::prepared::signing_key_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  1001969
+   stat: [checkct:info] 77159 / 77159 control flow checks pass
+
+driver::prepared::signing_key_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  1749364
+   stat: [checkct:info] 126014 / 126014 control flow checks pass
+
+driver::prepared::signing_key_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  3048281
+   stat: [checkct:info] 217433 / 217433 control flow checks pass
+
+driver::probes::barrett_reduce  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  92
+   stat: [checkct:info] 13 / 13 control flow checks pass
+
+driver::probes::bit_pack_13  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  17232
+   stat: [checkct:info] 2676 / 2676 control flow checks pass
+
+driver::probes::bit_pack_18  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  18512
+   stat: [checkct:info] 2996 / 2996 control flow checks pass
+
+driver::probes::bit_pack_20  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  19024
+   stat: [checkct:info] 3124 / 3124 control flow checks pass
+
+driver::probes::bit_pack_3  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  12624
+   stat: [checkct:info] 2292 / 2292 control flow checks pass
+
+driver::probes::bit_pack_4  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  13392
+   stat: [checkct:info] 2356 / 2356 control flow checks pass
+
+driver::probes::ct_lt_mask  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  135
+   stat: [checkct:info] 21 / 21 control flow checks pass
+
+driver::probes::ct_select  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  92
+   stat: [checkct:info] 17 / 17 control flow checks pass
+
+driver::probes::decompose_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  111
+   stat: [checkct:info] 10 / 10 control flow checks pass
+
+driver::probes::decompose_65_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  111
+   stat: [checkct:info] 10 / 10 control flow checks pass
+
+driver::probes::field_mont_reduce  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  87
+   stat: [checkct:info] 13 / 13 control flow checks pass
+
+driver::probes::field_mul  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  92
+   stat: [checkct:info] 13 / 13 control flow checks pass
+
+driver::probes::field_mul_mont  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  96
+   stat: [checkct:info] 13 / 13 control flow checks pass
+
+driver::probes::field_mul_shoup  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  68
+   stat: [checkct:info] 9 / 9 control flow checks pass
+
+driver::probes::field_neg  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  65
+   stat: [checkct:info] 9 / 9 control flow checks pass
+
+driver::probes::field_small_reduce  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  86
+   stat: [checkct:info] 13 / 13 control flow checks pass
+
+driver::probes::field_sub  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  86
+   stat: [checkct:info] 13 / 13 control flow checks pass
+
+driver::probes::high_bits_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  103
+   stat: [checkct:info] 10 / 10 control flow checks pass
+
+driver::probes::high_bits_65_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  103
+   stat: [checkct:info] 10 / 10 control flow checks pass
+
+driver::probes::infinity_norm  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  63
+   stat: [checkct:info] 9 / 9 control flow checks pass
+
+driver::probes::keccak_f1600  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  7530
+   stat: [checkct:info] 260 / 260 control flow checks pass
+
+driver::probes::low_bits_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  104
+   stat: [checkct:info] 10 / 10 control flow checks pass
+
+driver::probes::low_bits_65_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  104
+   stat: [checkct:info] 10 / 10 control flow checks pass
+
+driver::probes::make_hint_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  173
+   stat: [checkct:info] 14 / 14 control flow checks pass
+
+driver::probes::make_hint_65_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  173
+   stat: [checkct:info] 14 / 14 control flow checks pass
+
+driver::probes::multiply_ntt  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  19446
+   stat: [checkct:info] 3220 / 3220 control flow checks pass
+
+driver::probes::ntt  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  22989
+   stat: [checkct:info] 1877 / 1877 control flow checks pass
+
+driver::probes::ntt_inverse  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  23893
+   stat: [checkct:info] 1917 / 1917 control flow checks pass
+
+driver::probes::power2round  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  71
+   stat: [checkct:info] 9 / 9 control flow checks pass
+
+driver::probes::sk_decode_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  93065
+   stat: [checkct:info] 22930 / 22930 control flow checks pass
+
+driver::probes::sk_decode_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  139815
+   stat: [checkct:info] 33861 / 33861 control flow checks pass
+
+driver::probes::sk_decode_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  178124
+   stat: [checkct:info] 43456 / 43456 control flow checks pass
+
+driver::probes::sk_encode_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  180376
+   stat: [checkct:info] 33800 / 33800 control flow checks pass
+
+driver::probes::sk_encode_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  265554
+   stat: [checkct:info] 48507 / 48507 control flow checks pass
+
+driver::probes::sk_encode_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  348977
+   stat: [checkct:info] 64382 / 64382 control flow checks pass
+
+driver::probes::vec_infinity_norm  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  45599
+   stat: [checkct:info] 7475 / 7475 control flow checks pass
+
+driver::signing::hint_step_1_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  72545
+   stat: [checkct:info] 5859 / 5859 control flow checks pass
+
+driver::signing::hint_step_1_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  72545
+   stat: [checkct:info] 5859 / 5859 control flow checks pass
+
+driver::signing::hint_step_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  261651
+   stat: [checkct:info] 21372 / 21372 control flow checks pass
+
+driver::signing::hint_step_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  388662
+   stat: [checkct:info] 31583 / 31583 control flow checks pass
+
+driver::signing::hint_step_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  515708
+   stat: [checkct:info] 41804 / 41804 control flow checks pass
+
+driver::signing::response_1x1_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  102775
+   stat: [checkct:info] 10743 / 10743 control flow checks pass
+
+driver::signing::response_1x1_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  102775
+   stat: [checkct:info] 10743 / 10743 control flow checks pass
+
+driver::signing::response_44  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  388798
+   stat: [checkct:info] 44720 / 44720 control flow checks pass
+
+driver::signing::response_65  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  537610
+   stat: [checkct:info] 62200 / 62200 control flow checks pass
+
+driver::signing::response_87  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  728518
+   stat: [checkct:info] 84460 / 84460 control flow checks pass
+
+driver::split::split_compute_t_44_2x2  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  156055
+   stat: [checkct:info] 18946 / 18946 control flow checks pass
+
+driver::split::split_compute_t_44_col  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  183932
+   stat: [checkct:info] 22517 / 22517 control flow checks pass
+
+driver::split::split_compute_t_44_row  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  177091
+   stat: [checkct:info] 20489 / 20489 control flow checks pass
+
+driver::split::split_ntt_vec_into_1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  22989
+   stat: [checkct:info] 1877 / 1877 control flow checks pass
+
+driver::split::split_ntt_vec_into_7  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  163351
+   stat: [checkct:info] 15587 / 15587 control flow checks pass
+
+driver::split::split_ntt_vec_into_8  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  186708
+   stat: [checkct:info] 17848 / 17848 control flow checks pass
+
+driver::split::split_prepare_sk_44_col  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  402209
+   stat: [checkct:info] 38487 / 38487 control flow checks pass
+
+driver::split::split_prepare_sk_44_row  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  328057
+   stat: [checkct:info] 29415 / 29415 control flow checks pass
+
+driver::split::split_prepare_sk_65_col  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  596506
+   stat: [checkct:info] 57613 / 57613 control flow checks pass
+
+driver::split::split_prepare_sk_65_row  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  407354
+   stat: [checkct:info] 38720 / 38720 control flow checks pass
+
+driver::split::split_prepare_sk_87_2x1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  233452
+   stat: [checkct:info] 26935 / 26935 control flow checks pass
+
+driver::split::split_prepare_sk_87_4x1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  416811
+   stat: [checkct:info] 43743 / 43743 control flow checks pass
+
+driver::split::split_prepare_sk_87_6x1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  598548
+   stat: [checkct:info] 59109 / 59109 control flow checks pass
+
+driver::split::split_prepare_sk_87_7x1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  689549
+   stat: [checkct:info] 66810 / 66810 control flow checks pass
+
+driver::split::split_prepare_sk_87_col  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  780425
+   stat: [checkct:info] 74492 / 74492 control flow checks pass
+
+driver::split::split_prepare_sk_87_row  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  543568
+   stat: [checkct:info] 50237 / 50237 control flow checks pass
+
+driver::split::split_vec_power2round_1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  9544
+   stat: [checkct:info] 2509 / 2509 control flow checks pass
+
+driver::split::split_vec_power2round_2  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  20492
+   stat: [checkct:info] 6329 / 6329 control flow checks pass
+
+driver::split::split_vec_power2round_3  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  30840
+   stat: [checkct:info] 9616 / 9616 control flow checks pass
+
+driver::split::split_vec_power2round_5  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  51490
+   stat: [checkct:info] 16188 / 16188 control flow checks pass
+
+driver::split::split_vec_power2round_6  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  61807
+   stat: [checkct:info] 19471 / 19471 control flow checks pass
+
+driver::split::split_vec_power2round_7  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  72128
+   stat: [checkct:info] 22755 / 22755 control flow checks pass
+
+driver::split::split_vec_power2round_8_hi  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  73695
+   stat: [checkct:info] 22688 / 22688 control flow checks pass
+
+driver::split::split_vec_power2round_8_lo  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  73718
+   stat: [checkct:info] 22693 / 22693 control flow checks pass
+
+driver::split::split_vec_power2round_8_q0  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  69312
+   stat: [checkct:info] 21013 / 21013 control flow checks pass
+
+driver::split::split_vec_power2round_8_q1  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  69364
+   stat: [checkct:info] 21023 / 21023 control flow checks pass
+
+driver::split::split_vec_power2round_8_q2  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  69364
+   stat: [checkct:info] 21023 / 21023 control flow checks pass
+
+driver::split::split_vec_power2round_8_q3  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  69288
+   stat: [checkct:info] 21008 / 21008 control flow checks pass

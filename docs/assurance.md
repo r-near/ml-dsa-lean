@@ -158,24 +158,34 @@ samples; probabilistic), the κ budget, `Params.Std` (kernel-checked for 44/65/8
 Constant time is checked on compiled probes with BINSEC (relational symbolic execution), not proved in Lean.
 "Secure" means BINSEC explored the compiled probe to completion and found no secret-dependent branch, memory address
 or division operand for all secret values; the lifter, the solver and "instructions take operand-independent time" are
-trusted (STATUS.md line 215; `docs/object-code-assurance.md` §3.2). Verify handles only public data; the property
+trusted (STATUS.md line 221; `docs/object-code-assurance.md` §3.2). Verify handles only public data; the property
 matters for KeyGen and Sign.
 
-Full sweep at e9a1c74 (2026-11-01), 87 probes per target, counts secure / expected-insecure / unknown / no verdict
-(OOM): x86_64 default 80/7/0/0, `nearcore` profile 74/7/6/0, `avx2` dispatch 80/7/0/0, `nearcore-dispatch` 74/6/6/1,
-thumbv7em 81/4/0/2, riscv32imac 78/6/2/1, AArch64 without NEON 73/3/11/0. No unexpected leak. Two real leaks were found
-and fixed earlier (ISSUES CT-1, CT-2). Limits:
+Full sweep at 15b4ce2 (2026-11-04), 113 entrypoints per run plus two whole-Sign censuses. Counts secure / expected-insecure /
+unexpected-insecure / unknown / no verdict (OOM) on the 87-probe basis of the previous sweep (e9a1c74, 2026-11-01; then
+15b4ce2): x86_64 default 80/7/0/0/0, then 80/6/0/0/1; `nearcore` profile 74/7/0/6/0, then 80/7/0/0/0; `avx2` dispatch
+80/7/0/0/0, then 80/6/0/0/1; `nearcore-dispatch` 74/6/0/6/1, then 80/6/0/0/1; thumbv7em 81/4/0/0/2, unchanged; riscv32imac
+78/6/0/2/1, unchanged (with `control_prepared_branch_44` from its 7200 s rerun; the sweep run alone gives 78/5/0/3/1); AArch64 without NEON 73/3/0/11/0, unchanged (`checkct/README.md`, "Full sweep at 15b4ce2"). No
+unexpected leak. Three real leaks were found and fixed (ISSUES CT-1, CT-2, CT-3). Limits:
 
-- **Whole-Sign** has no verdict: the censuses report only the public `sample_in_ball` accept branch, or run out of
-  memory on thumbv7em and riscv32imac. Sign is covered by its secret-touching pieces (`response_*`, `hint_step_*`,
-  ExpandMask, hashing, `prepare_sk`, `signing_key`).
-- **Unknowns** (no leak found, no conclusion): six `sk_is_well_formed*` probes under the `nearcore` profiles (BINSEC
-  cannot lift SSE2 `movmskpd`); two on riscv32imac; eleven on AArch64 (one stuck solver query each), partly covered by
-  split probes (STATUS.md line 215; `checkct/README.md`, "Split probes"). `sk_is_well_formed` branches on coefficient
-  signs by design and is documented as not constant time (`src/api.rs`, doc of `sk_is_well_formed_NN`).
-- **The `nearcore` CT profile only approximates nearcore's build.** It lacks `overflow-checks = true`, nearcore's x86_64
-  target features, and Rust 1.95.0 (STATUS.md line 215; `checkct/README.md` line 38). A matching profile and re-sweep
-  are in progress per STATUS.md; until they land, the `nearcore` rows say nothing about nearcore's exact binary.
+- **Whole-Sign** has no verdict: the censuses report only the public `sample_in_ball` accept branch, run out of memory
+  (thumbv7em, riscv32imac, and now the x86_64 default and `dispatch` prepared census at 120 GB), or are cut at the NTT
+  under nearcore's exact build. Sign is covered by its secret-touching pieces (`response_*`, `hint_step_*`, ExpandMask,
+  hashing, `prepare_sk`, `signing_key`).
+- **Unknowns** (no leak found, no conclusion): under nearcore's exact build (`nearcore-exact`, 113 probes: 61 secure, 3
+  expected insecure, 49 unknown) the NTT, `compute_t`, `prepare_sk`/`signing_key`, `hint_step`, `response` and the two
+  censuses have no verdict, because BINSEC 0.11.3 cannot lift the VEX instructions (`vinsertps`, `vblendvps`, `vblendps`
+  on `ymm`) that `+fma` (which implies AVX) lets LLVM emit; one more probe is a solver stall (ISSUES T-9, upstream U-44).
+  With the vectorizers off (`nearcore-exact-novec`) all 113 get a verdict: 108 secure, 5 expected insecure; that is evidence
+  about a different binary, not about nearcore's. Elsewhere:
+  two on riscv32imac (`vec_power2round_87`, one census), the three `split_vec_power2round_{5,6,7}` capacity probes there, and three new
+  riscv32imac `split_prepare_sk` pieces (a solver stall at one store; the full-size probes they split are secure) and eleven on AArch64 (one stuck solver query each), partly covered by split probes (STATUS.md line 221;
+  `checkct/README.md`, "Split probes"). `sk_is_well_formed` is branch-free since ae6023c (CT-3) and `secure` on every target
+  and profile measured, including `nearcore-exact` (`src/api.rs`, doc of `sk_is_well_formed_NN`).
+- **The `nearcore-exact` CT profile is nearcore's exact release build for the crate in isolation** (`overflow-checks =
+  true`, nearcore's x86_64 target features, Rust 1.95.0, read from nearcore cd5a94457; the older `nearcore` profile still
+  only approximates it). It is not nearcore's binary: callers, allocator, glibc `memcpy` and the prebuilt `core` differ
+  (`checkct/README.md`, "What this does and does not show").
 - **AVX2 and NEON code:** the AVX2 NTT copy is covered by a static scan only; AArch64 builds with NEON cannot be lifted;
   macOS is not covered.
 - **Other builds:** verdicts depend on code shape and hold for the builds measured; `zeroize` builds are not probed.

@@ -112,9 +112,11 @@ disclosure only.
   the driver is built with the directory's pinned toolchain. Workaround: select the toolchain with a
   `rust-toolchain.toml` and check the driver's `.comment` section (`checkct/run-select.sh`, `nearcore-exact`).
   Status: open (behavior report).
-- **U-44 (2026-11-03): BINSEC 0.11.3 can't lift x86_64 `vtestps`.** With nearcore's target features (`+fma` implies
-  AVX), LLVM emits VEX `vtestps` for some reductions and BINSEC stops there (`unknown`). Same class as U-40.
-  Evidence: `checkct/README.md`, nearcore-exact rewrite experiments. Status: open.
+- **U-44 (2026-11-03, widened 2026-11-04): BINSEC 0.11.3 can't lift x86_64 VEX instructions.** With nearcore's target
+  features (`+fma` implies AVX), LLVM emits VEX forms and BINSEC stops there (`unknown`, "Cut path (uninterpreted
+  KO)", 0 pending paths). Seen: `vtestps` (rewrite experiments), and in the sweep at 15b4ce2 `vinsertps`, `vblendvps`
+  (128-bit) and `vblendps` on `ymm`, which cut 48 of 113 probes under `nearcore-exact`. Same class as U-40. Evidence:
+  `checkct/README.md` (section "Full sweep at 15b4ce2"), `checkct/results/sweep-15b4ce2/`. Status: open.
 - **U-45 (2026-11-03): BINSEC stalls at overflow-check guards on secret values.** With `overflow-checks = true`, 67
   probes end `unknown` at a conditional jump to the panic thunk after `a + Q - b`, a Montgomery step and similar
   (`checkct/README.md`, stop table). The guards are never taken for in-range inputs, but the analysis does not get

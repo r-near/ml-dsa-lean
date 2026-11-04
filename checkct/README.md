@@ -12,8 +12,8 @@ crate's workspace and the main `Cargo.toml` needed no `exclude`. `src/` is not e
 > **Reading `error` results (2026-10-31, ISSUES.md T-8).** BINSEC killed at a container's memory cap shows only `error`
 > in the job log. Every `error` in the tables below is presumed to be an out-of-memory kill, with no verdict, unless
 > the kernel log (`journalctl -k -g 'Killed process'`) shows no kill in its run window. The full sweep at e9a1c74
-> (below) matched every `error` of that sweep to a kernel OOM kill; the `error` rows of the older-tree sections stay
-> "presumed".
+> (below) matched every `error` of that sweep to a kernel OOM kill, and the sweep at 15b4ce2 did the same for its three; the `error`
+> rows of the older-tree sections stay "presumed".
 
 ## Running
 
@@ -64,6 +64,7 @@ the dispatch profiles of `run-select.sh` make `avx2` a default feature in the co
 | `avx2`, `nearcore-avx2` | `-C target-feature=+avx2`, no feature | no: the static-AVX2 arm, one AVX2 compilation of each body | none |
 | `nearcore-exact` | nearcore's `[profile.release]` incl. `overflow-checks` (driver package), nearcore's x86_64 target features, rustc 1.95.0; no `avx2` feature | no | none |
 | `nearcore-exact-dispatch` | `nearcore-exact` with the `avx2` feature | yes, as `nearcore-dispatch` | yes |
+| `nearcore-exact-novec` | `nearcore-exact` plus `-C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false` (x86_64 only) | no | none |
 
 In a dispatch profile `run-select.sh` pre-sets the dispatch cache (`static AVX2: AtomicU8` in `.bss`) to 1 ("checked, no
 AVX2") in every x86_64 BINSEC script, which is what `cargo-checkct`'s stubbed `cpuid` would have produced; without it
@@ -97,7 +98,312 @@ anywhere with the toolchain: `cd checkct && cargo build --release -p driver --ta
 `checkct_macros/src/lib.rs` and `.cargo/config.toml` are copied from upstream (Apache-2.0 OR MIT), as
 `cargo-checkct init` generates them. `driver/src/rng.rs` is the same hook pair without the `rand_core` impls.
 
+## Full sweep at 15b4ce2 (November 4, 2026)
+
+The current results. `src/` at 15b4ce2: the tree after ae6023c (merged in ddf201b), which put `wrapping_*` arithmetic into
+`field.rs` (`small_reduce`, `barrett_reduce`, `add`, `sub`, `neg`, `mont_reduce`), `rounding.rs` (`reduce_mod`,
+`mod_plus_minus`, `decompose`, `infinity_norm`, an `opaque_u32` on the running maximum of `vec_infinity_norm`) and
+`encode.rs` (`poly_eta_bad`/`eta_block_bad` mask accumulation, one compare in `sk_is_well_formed`), so that no
+overflow-check guard is left on a secret value (ISSUES CT-3). The harness is c63f632, which only adds the profile
+`nearcore-exact-novec` to `run-select.sh` (`nearcore-exact` plus `-C llvm-args=-vectorize-loops=false
+-C llvm-args=-vectorize-slp=false`). The previous full sweep is at e9a1c74 (below). Raw per-probe results, with every
+leak and stop address mapped to function, source line and instruction by `unknowns.py`, are in
+`checkct/results/sweep-15b4ce2/` (`<target>-<profile>.verdicts.tsv`, `.unknowns.txt`/`.summary.txt`, `.header.txt` with the
+toolchain and flags the run printed).
+
+Method: `run-select.sh` (AArch64: `aarch64.sh` with `NONEON=1`), `ONLY=.`, one container per target and profile (64 GB
+cap, `JOBS=8`), `EXCLUDE=census_sign` (the censuses ran separately, below). `TIMEOUT=3600` for the checkct-profile,
+`nearcore`, `dispatch` and `nearcore-dispatch` x86_64 runs and for thumbv7em, riscv32imac and AArch64; `TIMEOUT=600` for
+`nearcore-exact`, `nearcore-exact-dispatch` and `nearcore-exact-novec`, as for the e9a1c74-era `nearcore-exact` sweep. Up to
+ten containers ran at the same time on the 60-core box, which is why three riscv32imac probes were rerun alone (below). The x86_64 profiles
+other than `nearcore-exact*` use `nightly-2026-10-06` (LLVM 23.1.3), `nearcore-exact*` use rustc 1.95.0 (LLVM 22.1.2); the
+`.comment` check passed in every run (`*.header.txt`).
+
+**Count basis.** The e9a1c74 tables count 87 probes per target: 85 entrypoints (the `split_*` probes of `split.rs` came after those
+tables and are counted separately) plus the two censuses. A run now has 113 entrypoints without the censuses
+(114 on riscv32imac and in the `dispatch` build, where `split_vec_power2round_4` stays its own entrypoint): 85 non-split and 28 split
+(29 where noted); the AArch64 run has 115 rows with the two censuses. The "same basis" column is the 85
+non-split entrypoints plus the two censuses, which is the e9a1c74 basis and gives 87; the split probes have their own column. The
+e9a1c74-era `nearcore-exact` sweep had 84 non-split entrypoints because LTO had merged `field_add`; its totals (114 with the
+censuses) are not on the 87 basis, so the `nearcore-exact*` rows compare all probes. Which field probe survives LTO as its own
+entrypoint differs by profile: the default TSVs list `field_mul` and not `field_add`, the `nearcore-exact*` TSVs the reverse; the
+count of 85 holds in both.
+
+Columns: secure / expected insecure / unexpected insecure / unknown / no verdict (OOM).
+
+| target / profile | e9a1c74, 87 probes | 15b4ce2, same 87-probe basis | 15b4ce2, split probes |
+|---|---|---|---|
+| x86_64, default | 80 / 7 / 0 / 0 / 0 | 80 / 6 / 0 / 0 / 1 | 28 / 0 / 0 / 0 / 0 |
+| x86_64, `nearcore` | 74 / 7 / 0 / 6 / 0 | 80 / 7 / 0 / 0 / 0 | 28 / 0 / 0 / 0 / 0 |
+| x86_64, `dispatch` | 80 / 7 / 0 / 0 / 0 | 80 / 6 / 0 / 0 / 1 | 29 / 0 / 0 / 0 / 0 |
+| x86_64, `nearcore-dispatch` | 74 / 6 / 0 / 6 / 1 | 80 / 6 / 0 / 0 / 1 (prepared census not rerun) | 28 / 0 / 0 / 0 / 0 |
+| thumbv7em, default | 81 / 4 / 0 / 0 / 2 | 81 / 4 / 0 / 0 / 2 (censuses not rerun) | 28 / 0 / 0 / 0 / 0 |
+| riscv32imac, default | 78 / 6 / 0 / 2 / 1 | 78 / 6 / 0 / 2 / 1 (censuses not rerun; counts `control_prepared_branch_44` as insecure from its 7200 s rerun, it is `unknown` in the sweep TSV, which strictly gives 78 / 5 / 0 / 3 / 1) | 23 / 0 / 0 / 6 / 0 |
+| AArch64 `NONEON=1` | 73 / 3 / 0 / 11 / 0 | 73 / 3 / 0 / 11 / 0 | 26 / 0 / 0 / 2 / 0 |
+
+Not on the 87 basis, all probes of the run (113 entrypoints plus the two censuses):
+
+| x86_64 profile | e9a1c74-era tree (112 entrypoints plus the 2 censuses) | 15b4ce2 (113 plus the 2 censuses) |
+|---|---|---|
+| `nearcore-exact` | 38 / 3 / 6 / 67 / 0 | 61 / 3 / 0 / 51 / 0 |
+| `nearcore-exact-dispatch` | 38 / 3 / 6 / 67 / 0 | 61 / 3 / 0 / 51 / 0 |
+| `nearcore-exact-novec` (new) | not run | 108 / 7 / 0 / 0 / 0 |
+
+Reading the first table: the "expected insecure" cells are `rej_bounded_poly_eta2/4`, the positive controls (`control_early_exit_44`,
+`control_prepared_branch_44`, `control_prepared_index_44`; on thumbv7em only the first and the third, the branch control is the invalid
+`secure` one; on riscv32imac also the standalone `ct_lt_mask`) and, on x86_64, the censuses, which report only the public
+`sampling.rs:35` leak (then 1 pending path) (below). Every probe of the first table has a verdict except the unknown and OOM cells shown, and each `secure`
+row has 0 pending paths and all checks passing. **No unexpected `insecure` result on any target or profile; no new leak.**
+
+**Verdict changes against e9a1c74**, probe by probe:
+
+- x86_64 `nearcore` and `nearcore-dispatch`: `sk_is_well_formed_{44,65,87}` and `encode_sk_is_well_formed_{44,65,87}`, `unknown`
+  (SSE2 `movmskpd` cut) to `secure`. The six probes are secure in all seven x86_64 profiles, on thumbv7em, riscv32imac and
+  AArch64 (`*.verdicts.tsv`).
+- x86_64 `nearcore-exact`, `nearcore-exact-dispatch`: 22 probes improve (6 `insecure` to `secure`, 16 `unknown` to `secure`), none
+  gets worse; see "`nearcore-exact` and `nearcore-exact-dispatch` at 15b4ce2".
+- x86_64 `default` and `dispatch` `census_sign_prepared_44`: `insecure` (public leak, 1 pending path) at e9a1c74 after a 120 GB run,
+  now killed at the 120 GB cap (kernel log: binsec at 125.6 GB RSS), so no verdict. A census proves nothing either way; the other
+  census verdicts are unchanged.
+- riscv32imac `split_prepare_sk_65_col`, `split_prepare_sk_65_row`, `split_prepare_sk_87_6x1`: `secure` to `unknown`
+  (solver stall, below). This is the only verdict that got worse.
+- Nothing else changed: thumbv7em and AArch64 are identical to e9a1c74 probe for probe (every non-secure probe is the same
+  one), and riscv32imac differs only as stated. The only cut-path unknowns of the e9a1c74 sweep (SSE2 `movmskpd`) were the six
+  `sk_is_well_formed` rows above.
+
+Every non-secure probe of the sweep that is not an `nearcore-exact*` unknown:
+
+| probe | where | result | reason |
+|---|---|---|---|
+| `rej_bounded_poly_eta2/4` | every row above | insecure, expected | sampler accept test, public outcome (`sampling.rs:129`, `:132`) |
+| `control_early_exit_44` | every row above | insecure, expected | positive control, `extra.rs:221` (8 leaks on x86_64) |
+| `control_prepared_branch_44` | x86_64 (all profiles but `nearcore-exact` and `nearcore-exact-dispatch`), riscv32imac (`insecure` in the 7200 s rerun, `unknown` at 3600 s in the sweep run) | insecure, expected | positive control, `prepared.rs:76` |
+| `control_prepared_index_44` | x86_64 (all but `nearcore-exact` and `nearcore-exact-dispatch`), riscv32imac, thumbv7em | insecure, expected | positive control, `prepared.rs:96` |
+| `control_prepared_branch_44` | thumbv7em | secure, invalid control | branch lowered to a select, as at e9a1c74 |
+| `control_prepared_{branch,index}_44` | AArch64 | unknown | built on `prepare_sk_44`, which does not finish (uncontrolled `prepare_sk` rows) |
+| `control_prepared_{branch,index}_44` | x86_64 `nearcore-exact`, `nearcore-exact-dispatch` | unknown | cut path in `prepare_sk`'s NTT (`vinsertps`) before the control site; the `prepare_sk_*` rows there are uncontrolled |
+| `ct_lt_mask` | riscv32imac | insecure, documented | standalone probe, in-crate callers are secure (as at e9a1c74) |
+| `vec_power2round_87`, `split_vec_power2round_{5,6,7}` | riscv32imac | unknown | 1 pending path, no leak (unchanged, solver capacity) |
+| `split_prepare_sk_65_col`, `split_prepare_sk_65_row`, `split_prepare_sk_87_6x1` | riscv32imac | unknown | new; below |
+| `compute_t_44`, `prepare_sk_{44,65,87}`, `signing_key_{44,65,87}`, `split_prepare_sk_87_{7x1,col}`, the two censuses | AArch64 | unknown | 1 pending path stuck in one solver query (unchanged, U-42) |
+
+Censuses (`census_sign_internal_44`, `census_sign_prepared_44`; `checkct/results/sweep-15b4ce2/x86_64-censuses.txt`), x86_64,
+`JOBS=1`, `TIMEOUT=3600`, one container per profile. A census proves nothing (the rejection samplers of Sign are public-outcome
+branches); the aim is to catch an obvious leak. The caps were 110 GB for the first batch (`default`, `nearcore`, `nearcore-exact`,
+`nearcore-exact-dispatch`) and 120 GB, as in the earlier runs, for the later runs (`nearcore-exact-novec`, `dispatch`,
+`nearcore-dispatch`, and the rerun of the default prepared census after it was killed at 110 GB):
+
+| profile | `census_sign_internal_44` | `census_sign_prepared_44` |
+|---|---|---|
+| default | insecure: one leak, `sampling.rs:35` (`sample_in_ball` accept test, public outcome) at 0x237998; 1 pending path, 2,875,532 instructions, 209,729 of 209,730 control-flow checks passed | **no verdict, OOM**: killed at the 110 GB cap (binsec at 115.1 GB RSS, 11:45:09Z) and again alone at the 120 GB cap (125.6 GB RSS, 16:27:26Z). It was `insecure` at e9a1c74 after a 120 GB run |
+| `nearcore` | insecure: `sampling.rs:35` only (0x20da3b); 2,850,363 instructions | insecure: `sampling.rs:35` only; 1,539,485 instructions |
+| `dispatch` | insecure: `sampling.rs:35` only (0x24a768); 2,869,582 instructions | **no verdict, OOM** at the 120 GB cap (125.6 GB RSS, 17:42:09Z); `insecure` at e9a1c74 |
+| `nearcore-dispatch` | insecure: `sampling.rs:35` only (0x20d26b); 2,842,625 instructions | not rerun: OOM above 120 GB at e9a1c74 |
+| `nearcore-exact`, `nearcore-exact-dispatch` | unknown: cut at `vinsertps` (`ntt.rs:111`) after 726,927 / 726,933 instructions, 0 pending paths; no `sampling.rs:35` leak reached | unknown: cut at the same instruction after 85,683 / 85,687 instructions |
+| `nearcore-exact-novec` | insecure: `sampling.rs:35` only (0x20cd5a); 1 pending path, 2,834,212 instructions, 232,794 of 232,795 control-flow checks passed | insecure: `sampling.rs:35` only; 1,566,361 instructions |
+
+So the whole of Sign gets no better than "the only leak found is the public `sample_in_ball` accept test" where the census runs
+(four x86_64 profiles and the novec one); under nearcore's exact build it is still cut at the NTT. The census needs more memory
+under `default` and `dispatch` than at e9a1c74 (the prepared census no longer fits in 120 GB); the code shape changed, and the
+census is not evidence either way.
+
+### `nearcore-exact` and `nearcore-exact-dispatch` at 15b4ce2
+
+Both profiles give the same verdict for every probe (113 entrypoints, 600 s per probe):
+61 secure, 3 expected insecure (`rej_bounded_poly_eta2/4` at `sampling.rs:129`/`:132`, and the positive control
+`control_early_exit_44` at `extra.rs:221`), 0 unexpected insecure, 49 unknown. The six `sk_is_well_formed` probes that were
+`insecure` at the e9a1c74-era tree (ISSUES CT-3) are `secure`.
+
+**What changed against the e9a1c74-era sweep of the same profiles** (`checkct/results/nearcore-exact.stage1-600s.txt` and
+`.stage3-trace-3600s.txt` against `sweep-15b4ce2/x86_64-nearcore-exact.verdicts.tsv`; the dispatch profile changes the same
+probes; no probe went from `secure` to anything else):
+
+- `insecure` to `secure` (6): `sk_is_well_formed_{44,65,87}`, `encode_sk_is_well_formed_{44,65,87}` (51,583 / 76,740 / 97,281 and
+  65,893 / 82,034 / 97,281 instructions, 12,707 / 18,908 / 24,020 and 17,671 / 20,744 / 24,020 control-flow checks, 0 pending paths).
+- `unknown` to `secure` (16): `sk_decode_{44,65,87}`, `sk_encode_{44,65,87}`, `expand_mask_{44,65,87}`, `barrett_reduce`,
+  `vec_power2round_87`, `split_vec_power2round_{5,6,7,8_hi,8_lo}`. These were stuck at an overflow-check guard in
+  `field.rs`; the guards are gone.
+- new entrypoint `field_add` (secure).
+- the other 49 unknown probes were unknown at the e9a1c74-era tree too, but for a different reason (below).
+
+**What `unknown` means now.** At e9a1c74 it was "timeout with 1 pending path stuck at an overflow-check guard". At 15b4ce2 it is
+"0 pending paths, no leak among the checks that passed, one path cut at an instruction BINSEC cannot lift" (`[sse:error]
+Cut path 0 (uninterpreted "KO")`, the 600 s limit is not reached: 0.08 to 1.7 s per probe; every cut line and status time in
+`sweep-15b4ce2/x86_64-nearcore-exact.cut-paths.txt`) for 48 of the 49, and a solver stall for one:
+
+| unliftable instruction | where | probes |
+|---|---|---|
+| `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `ntt.rs:111` (`ntt_layer::<8, 16>`, forward NTT layer), `0x224f10` | 31: `ntt`, `ntt_vec_44`, `compute_t_*` (4), `prepare_sk_*` (3), `prepare_sk_1x1_44`, `signing_key_*` (3), `control_prepared_{branch,index}_44`, and the `split_*` NTT, `compute_t` and `prepare_sk` pieces (16) |
+| `vblendvps` with `xmm` operands | vectorized `small_reduce` (the `wrapping_sub(Q & mask)` select, `field.rs:25`) right after `mont_reduce` (`field.rs:76`) in the pointwise product; objdump labels every one of these addresses `<u32>::wrapping_sub`, `uint_macros.rs:2494`, and the enclosing frames were checked for `0x2077e1` (`hint_step_44`, `response_44`) only | 16: `matrix_vector_ntt_*` (4), `scalar_vector_ntt_inverse_1`, `multiply_ntt`, `hint_step_*` (5), `response_*` (5) |
+| `vblendps $0xf0,%ymm7,%ymm13,%ymm6` | `ntt.rs:131` (`ntt_inverse_layer::<4, 32>`, inverse NTT layer), `0x21faa9`: a 256-bit (`ymm`) blend | 1: `ntt_inverse` |
+
+All three are VEX encodings (`vinsertps`, `vblendvps`, `vblendps`); BINSEC 0.11.3 does not lift them, the same limit as `vtestps` in
+the experiments (upstream U-44). Under nearcore's target features (`+fma` implies AVX) LLVM emits them for the vectorized loops.
+Unknown rows are not findings: they are probes about which BINSEC says nothing for nearcore's exact build, and the two censuses
+are in the same state (cut at `vinsertps` after 726,927 and 85,683 instructions; `x86_64-censuses.txt`).
+Per probe (steps = executed instructions when the path was cut, `nearcore-exact`; the last column is the address in
+`nearcore-exact-dispatch`, which cuts at the same mnemonic for every probe; nine `vblendvps` rows have other register operands
+there, in `sweep-15b4ce2/x86_64-nearcore-exact-dispatch.unknowns.txt`):
+
+| probe | steps | stop address | instruction | address in `-dispatch` |
+|---|---|---|---|---|
+| `compute_t_1x1` | 25971 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x229040` |
+| `compute_t_44` | 192481 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x229040` |
+| `compute_t_65` | 328107 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x229040` |
+| `compute_t_87` | 568425 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x229040` |
+| `matrix_vector_ntt_1x1` | 15301 | `0x22ba23` | `vblendvps %xmm7,%xmm14,%xmm5,%xmm7` | `0x2309aa` |
+| `matrix_vector_ntt_44` | 159967 | `0x2063d0` | `vblendvps %xmm1,%xmm13,%xmm14,%xmm1` | `0x22f550` |
+| `matrix_vector_ntt_65` | 281173 | `0x206ce0` | `vblendvps %xmm1,%xmm13,%xmm14,%xmm1` | `0x22f980` |
+| `matrix_vector_ntt_87` | 507044 | `0x22aea0` | `vblendvps %xmm1,%xmm13,%xmm14,%xmm1` | `0x22fdb0` |
+| `ntt_vec_44` | 33301 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x229040` |
+| `scalar_vector_ntt_inverse_1` | 15301 | `0x22e65a` | `vblendvps %xmm8,%xmm5,%xmm6,%xmm8` | `0x23394e` |
+| `control_prepared_branch_44` | 85662 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `control_prepared_index_44` | 85683 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `prepare_sk_1x1_44` | 41492 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `prepare_sk_1x1_65` | 50277 | (1 pending path, see text) | | |
+| `prepare_sk_44` | 85663 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `prepare_sk_65` | 132210 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `prepare_sk_87` | 172553 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `signing_key_44` | 85663 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `signing_key_65` | 132214 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `signing_key_87` | 172557 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `multiply_ntt` | 14376 | `0x24011d` | `vblendvps %xmm8,%xmm5,%xmm6,%xmm8` | `0x24446d` |
+| `ntt` | 11066 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x229040` |
+| `ntt_inverse` | 10155 | `0x21faa9` | `vblendps $0xf0,%ymm7,%ymm13,%ymm6` | `0x220889` |
+| `hint_step_1_44` | 22376 | `0x21e04a` | `vblendvps %xmm8,%xmm5,%xmm6,%xmm8` | `0x21ed9a` |
+| `hint_step_1_65` | 22376 | `0x21e04a` | `vblendvps %xmm8,%xmm5,%xmm6,%xmm8` | `0x21ed9a` |
+| `hint_step_44` | 66979 | `0x2077e1` | `vblendvps %xmm2,%xmm14,%xmm0,%xmm2` | `0x210fa1` |
+| `hint_step_65` | 96605 | `0x207ed1` | `vblendvps %xmm2,%xmm14,%xmm0,%xmm2` | `0x206540` |
+| `hint_step_87` | 126261 | `0x208921` | `vblendvps %xmm2,%xmm14,%xmm0,%xmm2` | `0x2072e0` |
+| `response_1x1_44` | 36515 | `0x21d55b` | `vblendvps %xmm2,%xmm9,%xmm0,%xmm2` | `0x21e1aa` |
+| `response_1x1_65` | 36515 | `0x21d55b` | `vblendvps %xmm2,%xmm9,%xmm0,%xmm2` | `0x21e1aa` |
+| `response_44` | 125615 | `0x2077e1` | `vblendvps %xmm2,%xmm14,%xmm0,%xmm2` | `0x20f2e2` |
+| `response_65` | 169790 | `0x2456bf` | `vblendvps %xmm2,%xmm9,%xmm0,%xmm2` | `0x249a4e` |
+| `response_87` | 228822 | `0x24686f` | `vblendvps %xmm2,%xmm9,%xmm0,%xmm2` | `0x24af0e` |
+| `split_compute_t_44_2x2` | 65559 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x229040` |
+| `split_compute_t_44_col` | 72713 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x229040` |
+| `split_compute_t_44_row` | 72716 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x229040` |
+| `split_ntt_vec_into_1` | 11066 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_ntt_vec_into_7` | 55334 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_ntt_vec_into_8` | 62680 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_44_col` | 86494 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_44_row` | 52920 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_65_col` | 135272 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_65_row` | 68255 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_87_2x1` | 68910 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_87_4x1` | 101096 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_87_6x1` | 138210 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_87_7x1` | 143318 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_87_col` | 157611 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+| `split_prepare_sk_87_row` | 81189 | `0x224f10` | `vinsertps $0x68,%xmm10,%xmm14,%xmm14` | `0x225d70` |
+
+The 49th unknown, `prepare_sk_1x1_65`, is not a cut path: 1 pending path at the 600 s limit (50,277 instructions) and at a 3600 s
+rerun with `TRACE=1` (50,277 again, last step 50,296: `0x22396e movdqu %xmm6,0x3c0(%rdi)` in `ntt_body_mut`, the same
+place), 13,884 control-flow checks passed, no leak. A solver stall, not a VEX cut; same in `nearcore-exact-dispatch` at 600 s.
+It is `secure` in `nearcore-exact-novec` (below). 
+
+### `nearcore-exact-novec`: the same flags with the loop and SLP vectorizers off
+
+New profile (`run-select.sh`, `PROFILE=nearcore-exact-novec`, c63f632): `nearcore-exact` plus `-C llvm-args=-vectorize-loops=false
+-C llvm-args=-vectorize-slp=false` (what `nearcore-novec` does for the older profile). Overflow checks, nearcore's target features
+(`+fma`, so AVX is on) and rustc 1.95.0 are unchanged (`x86_64-nearcore-exact-novec.header.txt`). 113 probes, 600 s each:
+**108 secure, 5 expected insecure, 0 unexpected insecure, 0 unknown**: no cut path and no timeout. The five insecure are
+`rej_bounded_poly_eta2/4`, `control_early_exit_44` and, now that the NTT is analyzable, both prepared positive controls
+`control_prepared_branch_44` (`prepared.rs:76`) and `control_prepared_index_44` (`prepared.rs:96`). So every one of the 49 probes that
+is `unknown` under `nearcore-exact` (the NTT, `hint_step`, `response`, `prepare_sk`, `signing_key`, `compute_t` family and the
+splits) is `secure` with the vectorizers off, including `prepare_sk_1x1_65`, and the `prepare_sk_*` rows are controlled there
+(under `nearcore-exact*` the two prepared controls are cut in `prepare_sk`'s NTT before the control site, so the `prepare_sk_*`
+rows of those profiles are uncontrolled as well as unknown). What this is: evidence about a build that is not nearcore's, since
+nearcore leaves the vectorizers on. It shows that the scalar code, with nearcore's overflow checks and target features, has no
+secret-dependent branch, address or division operand in these probes; it does not cover the vectorized NTT and product code that
+nearcore's compiler actually emits.
+
+### The review of `nearcore-exact` (confirmed or corrected)
+
+| claim | measured | where |
+|---|---|---|
+| default x86_64: 39/39 secure | confirmed and wider: 108 secure, 5 expected insecure, 0 unknown over 113 probes | `x86_64-default.verdicts.tsv` |
+| `nearcore-exact`: 6 `sk_is_well_formed` probes insecure to secure | confirmed (the three `sk_is_well_formed_NN` and the three `encode_sk_is_well_formed_NN`, both exact profiles) | `x86_64-nearcore-exact*.verdicts.tsv` |
+| `sk_decode`, `sk_encode`, `expand_mask`: unknown to secure | confirmed (all nine probes; also `barrett_reduce`, `vec_power2round_87` and five `split_vec_power2round_*`) | same |
+| `barrett_reduce` secure | confirmed (92 instructions, 13 control-flow checks) | same |
+| 17 NTT, `hint_step` and `response` probes unknown at VEX instructions (`vinsertps`, `vblendvps`, `vblendps ymm`) | the instructions are right; the count is not: **48 probes** are cut at a VEX instruction, plus one solver stall (`prepare_sk_1x1_65`), 49 unknown in all, in each exact profile | stop table above |
+| those are secure with vectorization off | confirmed: `nearcore-exact-novec` has a verdict for all 113 probes, 108 secure | `x86_64-nearcore-exact-novec.verdicts.tsv` |
+
+### thumbv7em, riscv32imac, AArch64 without NEON
+
+- **thumbv7em** (default profile, 113 probes, 3600 s): 109 secure, 4 expected insecure (`rej_bounded_poly_eta2/4`,
+  `control_early_exit_44`, `control_prepared_index_44`), 0 unknown. `control_prepared_branch_44` is `secure` here, the invalid
+  control of the e9a1c74 sweep (the branch is lowered to a select). The two censuses were not rerun (OOM at 120 GB, below). No
+  verdict changed.
+- **riscv32imac** (default profile, 114 probes): 101 secure, 5 expected insecure (`rej_bounded_poly_eta2/4`,
+  `control_early_exit_44`, `control_prepared_index_44`, and the standalone `ct_lt_mask`: `insecure` as at
+  e9a1c74, one control-flow leak, 0x03d456 in this run), 8 unknown in the sweep run (`JOBS=8`, 3600 s): the known `vec_power2round_87` (190,098 instructions, 1 pending path) and
+  `split_vec_power2round_{5,6,7}`; `control_prepared_branch_44`, which is `insecure` in a rerun alone (`JOBS=2`, 7200 s; the
+  leak was found, as in the e9a1c74 rerun, so the result depends on exploration order); and **three verdicts that are new:
+  `split_prepare_sk_65_col`, `split_prepare_sk_65_row`, `split_prepare_sk_87_6x1` are `unknown`, and were `secure` at the tree
+  that added them (d1f4da0, 120,105 / 80,137 / 122,233 control-flow checks, 0 pending paths).** This is a change, not noise: the
+  three probes ran again alone with `JOBS=2` and 7200 s (`sweep-15b4ce2/riscv32imac.rerun-7200s.txt`): `unknown` again, 1 pending
+  path, 387,086 / 280,586 / 590,565 instructions and 59,674 / 42,013 / 70,756 control-flow checks passed, no leak, the same counts as in
+  the sweep run at 3600 s (that run shared the box with other containers; the rerun alone shows contention was not the cause).
+  With `TRACE=1` at 600 s (`riscv32imac.rerun-trace-600s.txt`) all three stop at the same instruction, `0x045e28 sw s1,0(a7)` in
+  `ntt_body_mut` (+0xaba). As a control the same three probes were built from d1f4da0
+  (checkct harness and `src/` of that commit, same image and command, `JOBS=3`): all `secure` within the run
+  (`riscv32imac.control-d1f4da0.txt`: 1,431,873 / 991,518 / 1,434,718 instructions). Building the riscv driver from three trees (d1f4da0
+  harness and source; 9000537 harness and source; 9000537 source with the d1f4da0 harness) shows the harness changes are
+  irrelevant (the last two are byte-identical) and `ntt_body_mut` is essentially unchanged (3136 bytes, 3 bytes differ, apparently
+  one byte in each of three immediates); what changed is that the `split_prepare_sk_*` wrappers now inline `prepare_sk_into`
+  (`65_col` 340 → 1296 bytes, `65_row` 216 → 854). Other pieces inlined the same way (`44_col`, `87_4x1`, `87_7x1`, `87_col`,
+  `87_row`) stayed `secure`, so the cause of the stall at the `ntt_body_mut` store is not pinned down. Coverage is not reduced: the full-size riscv
+  `prepare_sk_{44,65,87}` and `signing_key_{44,65,87}` are `secure` at 15b4ce2 (the reason the pieces were run is gone), and
+  the 23 other riscv split pieces and both one-polynomial `prepare_sk_1x1_*` are `secure`. No leak was found.
+- **AArch64 without NEON** (`aarch64.sh`, 115 probes with the two censuses, 3600 s): 99 secure, 3 expected insecure
+  (`rej_bounded_poly_eta2/4`, `control_early_exit_44`), 13 unknown: the 11 of e9a1c74 (`compute_t_44`, `prepare_sk_{44,65,87}`,
+  `signing_key_{44,65,87}`, `census_sign_internal_44`, `census_sign_prepared_44`, `control_prepared_{branch,index}_44`) and the two
+  split pieces that were already unknown (`split_prepare_sk_87_{7x1,col}`). Run as part of the sweep
+  (not skipped), because the arithmetic of `field.rs` changed; none changed verdict. They are the solver stall of U-42 again.
+  All 28 split probes ran (26 secure, 2 unknown).
+- Every `secure` row of the thumbv7em, riscv32imac and AArch64 runs has 0 pending paths and all of its (nonzero) control-flow and
+  memory-access checks passing (`*.verdicts.tsv`); the x86_64 rows too.
+
+### Not rerun, and why
+
+Per the known no-verdict list below, these were not rerun at 15b4ce2; their results are the e9a1c74 ones (about an hour each, and
+the result at the same cap would not be a verdict). `field.rs` changed, so a different outcome is possible, but nothing points to one;
+the x86_64 default and `dispatch` prepared censuses, which did fit in 120 GB at e9a1c74 and no longer do, show that this can go
+either way.
+
+- thumbv7em `census_sign_internal_44`, `census_sign_prepared_44`, riscv32imac `census_sign_prepared_44` and x86_64
+  `nearcore-dispatch` `census_sign_prepared_44`: out of memory at the 120 GB cap at e9a1c74.
+- riscv32imac `census_sign_internal_44`: 4 pending paths at 3600 s and 7200 s at e9a1c74.
+- Static-AVX2 profiles `avx2` and `nearcore-avx2` (`select-ntt.sh avx2`): not part of the e9a1c74 sweep tables either.
+- The nightly-versus-1.95.0 comparison of one probe and the rewrite experiments (`EXPERIMENTS=1`) stay as measured; no experiment
+  was rerun.
+
+### OOM ledger and the other runs of this sweep
+
+Every `error` of this sweep is an out-of-memory kill: three `census_sign_prepared_44` runs, each matched to a kernel log entry
+(`journalctl -k -g 'Killed process'`, checked at 18:43Z for the whole day since 08:50Z): 11:45:09Z (`default`, 110 GB cap, binsec at
+115.1 GB RSS), 16:27:26Z (`default`, 120 GB cap, 125.6 GB RSS) and 17:42:09Z (`dispatch`, 120 GB cap, 125.6 GB RSS). There was no other
+kill of any process on the box in that window; no probe of the 113 per profile ended `error`. Per README rule, a census killed alone at
+120 GB is recorded as "needs more than 120 GB" and the cap was not raised again.
+
+Other deviations from the README method, for reference:
+
+- Up to ten containers ran at once in the first hours (`JOBS=8` each, 64 GB cap each, `--cpus 24` each on 60 cores), and 7200 s
+  reruns used `JOBS=2`. Where contention could matter (the three riscv32imac split probes), a rerun alone gave the same result.
+- `cargo-checkct`'s build pass runs every probe with `-sse-timeout 1`, which BINSEC checks only between paths: in the census containers
+  it held one container for about 110 minutes on a single probe (the `nearcore-exact` census run, `split_prepare_sk_87_col` of the build pass)
+  before the real run started. No verdict depends on it.
+- One census container (`nearcore-exact-novec`, started while a 98 GB `default` census was running) was stopped at 36 GB RSS
+  with `docker kill` to keep the box clear of a host-level OOM (a deliberate stop, not a kernel kill) and rerun later alone.
+- `nearcore-exact-novec` (c63f632) is a profile added by this sweep; the nightly-versus-1.95.0 comparison under "Toolchain"
+  was not repeated.
+
 ## `nearcore-exact` and `nearcore-exact-dispatch` (x86_64; November 3, 2026)
+
+> **Superseded by the sweep at 15b4ce2 (above).** The tables below were measured at the e9a1c74-era tree, before the wrapping
+> arithmetic of ae6023c: their `insecure` and overflow-guard `unknown` results no longer hold (`sk_is_well_formed` is `secure`; the
+> unknowns are now VEX cuts). They stay as the 'before' of that sweep and for the method, which is unchanged.
 
 The older `nearcore` profile approximates nearcore's release build. These two profiles take their settings from nearcore
 itself (read-only clone at commit cd5a94457, 2026-11-03); the older profiles are unchanged because the historical
@@ -414,19 +720,18 @@ says what was tried. When an entry gets a verdict, move it out of this list.
 
 | probe | target / profile | outcome | already tried |
 |---|---|---|---|
-| `sk_is_well_formed_{44,65,87}`, `encode_sk_is_well_formed_{44,65,87}` | x86_64 `nearcore`, `nearcore-dispatch` | unknown: BINSEC can't lift SSE2 `movmskpd` (stops at 0.1 s) | 1 h and 2 h at e9a1c74. Only a non-vectorized build helps (`PROFILE=nearcore-novec`) |
-| `vec_power2round_87` (full size) | riscv32imac default | unknown, 1 pending path | 1 h and 2 h at e9a1c74. Covered by the split windows `split_vec_power2round_8_*` (secure) |
-| `split_vec_power2round_{5,6,7}` | riscv32imac | unknown | 1 h (capacity probing only; the 8-wide windows cover the loop) |
+| `vec_power2round_87` (full size) | riscv32imac default | unknown, 1 pending path | 1 h and 2 h at e9a1c74, 1 h at 15b4ce2 (190,098 instructions, still 1 pending path). Covered by the split windows `split_vec_power2round_8_*` (secure) |
+| `split_vec_power2round_{5,6,7}` | riscv32imac | unknown | 1 h, again 1 h at 15b4ce2 (capacity probing only; the 8-wide windows cover the loop) |
 | `census_sign_internal_44` | riscv32imac default | unknown, 4 pending paths | 1 h and 2 h at e9a1c74 |
-| `compute_t_44`, `prepare_sk_{44,65,87}`, `signing_key_{44,65,87}`, `census_sign_internal_44`, `census_sign_prepared_44` | AArch64 `NONEON=1` | unknown: one pending path stuck in one solver query (instruction count identical at 300, 600, 3600 and 7200 s; upstream log U-42) | 1 h and 2 h at e9a1c74. Pieces covered by split probes, except the K = 8 glue of `prepare_sk_87` / `signing_key_87` |
-| `split_prepare_sk_87_7x1`, `split_prepare_sk_87_8x1` | AArch64 `NONEON=1` | unknown, same stall | 1 h (round 2 of `split-run.sh`) |
+| `compute_t_44`, `prepare_sk_{44,65,87}`, `signing_key_{44,65,87}`, `census_sign_internal_44`, `census_sign_prepared_44` | AArch64 `NONEON=1` | unknown: one pending path stuck in one solver query (instruction count identical at 300, 600, 3600 and 7200 s; upstream log U-42) | 1 h and 2 h at e9a1c74, 1 h again at 15b4ce2 (same probes, `control_prepared_*` too). Pieces covered by split probes, except the K = 8 glue of `prepare_sk_87` / `signing_key_87` |
+| `split_prepare_sk_87_7x1`, `split_prepare_sk_87_8x1` | AArch64 `NONEON=1` | unknown, same stall | 1 h (round 2 of `split-run.sh`), again 1 h at 15b4ce2 (`split_prepare_sk_87_col` is the `_8x1` probe) |
 | `census_sign_internal_44`, `census_sign_prepared_44` | thumbv7em default | OOM: needs more than 120 GB, no verdict | 64 GB and 120 GB caps (ISSUES T-8). Don't raise the cap again; a split would be needed |
-| `census_sign_prepared_44` | riscv32imac default; x86_64 `nearcore-dispatch` | OOM: needs more than 120 GB, no verdict | 64 GB and 120 GB caps |
+| `census_sign_prepared_44` | riscv32imac default; x86_64 `nearcore-dispatch`; x86_64 default and `dispatch` (since 15b4ce2) | OOM: needs more than 120 GB, no verdict | 64 GB and 120 GB caps; x86_64 default also at 110 GB, `dispatch` at 120 GB (15b4ce2, killed at 125.6 GB RSS). It was `insecure` at e9a1c74 for default and `dispatch` after a 120 GB run |
 | `control_prepared_branch_44` | thumbv7em | `secure`: the control is invalid there (branch lowered to a select) | every run; expected |
 | `control_prepared_branch_44`, `control_prepared_index_44` | AArch64 `NONEON=1` | no verdict | 1 h and 2 h |
-| 65 probes: `sk_decode_*`, `sk_encode_*`, `prepare_sk_*`, `signing_key_*`, `expand_mask_*`, `compute_t_*`, `matrix_vector_ntt_*`, `ntt`, `ntt_inverse`, `ntt_vec_44`, `multiply_ntt`, `scalar_vector_ntt_inverse_1`, `response_*`, `hint_step_*`, `vec_power2round_87`, `barrett_reduce`, `control_prepared_*`, `prepare_sk_1x1_*`, 21 `split_*` (full list in the "`nearcore-exact`" section) | x86_64 `nearcore-exact`, `nearcore-exact-dispatch` | unknown: 1 pending path stuck at an overflow-check guard (`field.rs:39`, `:71`, `:35`, `:21`, `:29`); not an unliftable instruction | 600 s for all, 300 s with `TRACE=1` for all, 3600 s with `TRACE=1` for 14 of them (3 of those finished secure: `vec_power2round_44`, `vec_infinity_norm`, `split_vec_power2round_3`); never 7200 s. The same settings again will not help. What could: guards without overflow checks in the source (tested only for `sk_is_well_formed`: `exp_sk_wf_maskw_*` finish `secure`) or a different solver configuration |
-| `census_sign_internal_44`, `census_sign_prepared_44` | x86_64 `nearcore-exact`, `nearcore-exact-dispatch` | unknown (no OOM): stuck at the `sk_decode` guard 0x211ce7 after 1,372,577 / 54,314 instructions | 120 GB, `JOBS=1`, 3600 s |
-| `sk_is_well_formed_{44,65,87}`, `encode_sk_is_well_formed_{44,65,87}` | x86_64 `nearcore-exact*` | not no-verdict: `insecure` (real branch, section above). The `nearcore` / `nearcore-dispatch` row above (movmskpd) is unchanged | |
+| 49 probes: `ntt`, `ntt_inverse`, `multiply_ntt`, `ntt_vec_44`, `compute_t_*`, `matrix_vector_ntt_*`, `scalar_vector_ntt_inverse_1`, `prepare_sk_*`, `signing_key_*`, `prepare_sk_1x1_*`, `control_prepared_*`, `hint_step_*`, `response_*`, 16 `split_*` (list in "`nearcore-exact` and `nearcore-exact-dispatch` at 15b4ce2") | x86_64 `nearcore-exact`, `nearcore-exact-dispatch` | unknown: 48 are cut paths at VEX instructions BINSEC 0.11.3 cannot lift (`vinsertps`, `vblendvps`, `vblendps ymm`), 0 pending paths, stopped in 0.08 to 1.7 s; `prepare_sk_1x1_65` is a solver stall (1 pending path) | 600 s for all, 3600 s with `TRACE=1` for `prepare_sk_1x1_65`. A longer timeout cannot help a cut path. What helps: a build without the vectorizers (`PROFILE=nearcore-exact-novec`: all 49 `secure`) or a BINSEC that lifts VEX (U-44) |
+| `census_sign_internal_44`, `census_sign_prepared_44` | x86_64 `nearcore-exact`, `nearcore-exact-dispatch` | unknown: cut at `vinsertps` (`ntt.rs:111`) after 726,927 / 85,683 instructions | 110 GB, `JOBS=1`, 3600 s at 15b4ce2 (cut within 2 s). `nearcore-exact-novec` has a result: `insecure`, only the public `sampling.rs:35` leak |
+| `split_prepare_sk_65_col`, `split_prepare_sk_65_row`, `split_prepare_sk_87_6x1` | riscv32imac default | unknown, 1 pending path, stuck at `0x045e28 sw s1,0(a7)` in `ntt_body_mut` (new at 15b4ce2; `secure` at d1f4da0) | 3600 s (sweep), 7200 s alone with `JOBS=2`, 600 s with `TRACE=1`: the same instruction counts every time. Covered by the full-size `prepare_sk_*` / `signing_key_*` rows, which are `secure` |
 
 ## Probes (87 entrypoints x 3 targets: riscv32imac-unknown-none-elf, thumbv7em-none-eabihf, x86_64-unknown-linux-gnu)
 
@@ -525,7 +830,7 @@ is why the proof of "no secret-dependent branch" is done per step.
 
 ## Full sweep at e9a1c74 (October 31 to November 1, 2026)
 
-The current results. Every probe of `checkct/driver` (87 distinct entrypoints per target; `field_add` is merged with
+Superseded by the sweep at 15b4ce2 (above); the counts below are its 'before' column. Every probe of `checkct/driver` (87 distinct entrypoints per target; `field_add` is merged with
 `field_small_reduce` in the binary) on the tree at e9a1c74 (lane-wise SHAKE sponge, Shoup/Montgomery NTT, prepared keys
 with in-place construction, sponge wipes under `zeroize`), `nightly-2026-10-06`, BINSEC 0.11.3. Everything measured
 before this section is on an older tree and is kept below only as history (each table is labeled). Method: the full runs
