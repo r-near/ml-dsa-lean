@@ -17,9 +17,9 @@ include = ["/src/**/*.rs", "/README.md", "/LICENSE-MIT", "/LICENSE-APACHE"]
 
 [dependencies]
 # Optional: wipes the secret material the library handles. Dropping a prepared signing key wipes it; keygen, sign and the
-# key constructors wipe the decoded or derived secrets in their locals (K, s1, s2, t0, rho', rho'', the decoded key) and
+# key constructors wipe the decoded or derived secrets in their locals (K, s1, s2, t0, rho', rho'', the decoded key, and for Sign the mask y and the values derived from it in each attempt) and
 # the SHAKE states that absorbed a secret, before they return. The `api` module docs list what is not covered (moves of
-# the returned objects, the per-attempt vectors of Sign, t0 and one K in KeyGen). Not part of the Lean proof: the
+# the returned objects, the accepted signature, t0 and one K in KeyGen). Not part of the Lean proof: the
 # extracted code is the code without this feature.
 zeroize = { version = "1", default-features = false, optional = true }
 

@@ -1,30 +1,44 @@
 //! Algorithm 7 ML-DSA.Sign_internal(sk, M′, rnd). Step numbers refer to FIPS 204.
 
-#[cfg(feature = "zeroize")]
-use crate::encode::SecretKey;
-use crate::encode::{sig_encode, sk_decode, w1_encode};
+use crate::encode::{SecretKey, sig_encode, sk_decode_into, w1_encode};
 use crate::field::{add, neg};
 use crate::keccak::Shake;
-use crate::ntt::{matrix_vector_ntt, ntt, ntt_inverse, ntt_vec, ntt_vec_into, scalar_vector_ntt_inverse, sub_poly};
+#[cfg(not(feature = "zeroize"))]
+use crate::ntt::matrix_vector_ntt;
+#[cfg(feature = "zeroize")]
+use crate::ntt::matrix_vector_ntt_into;
+#[cfg(not(feature = "zeroize"))]
+use crate::ntt::{ntt, ntt_inverse};
+#[cfg(feature = "zeroize")]
+use crate::ntt::{ntt_in_place, ntt_inverse_in_place};
+use crate::ntt::{ntt_vec_into, scalar_vector_ntt_inverse_into, sub_poly};
+#[cfg(not(feature = "zeroize"))]
+use crate::ntt::ntt_vec;
 use crate::params::Params;
 use crate::rounding::{make_hint, poly_high_bits, poly_low_bits, vec_infinity_norm};
 use crate::sampling::{expand_a, expand_mask, sample_in_ball};
 
-/// Steps 18–21: ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩, z, w − ⟨⟨cs2⟩⟩ and r0. Returns (z, w − ⟨⟨cs2⟩⟩, r0).
-#[allow(clippy::type_complexity)]
-pub(crate) fn response<const K: usize, const L: usize>(
+/// Steps 18–21: ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩, z, w − ⟨⟨cs2⟩⟩ and r0, written into the caller's `z`, `w_cs2` and `r0` (every entry is
+/// overwritten, so their previous contents do not matter). The caller owns the three buffers, so with the `zeroize`
+/// feature `attempt` can wipe them: nothing secret is returned by value, which would leave a copy in a dead frame.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn response_into<const K: usize, const L: usize>(
     p: &Params,
     y: &[[u32; 256]; L],
     c_hat: &[u32; 256],
     s1_hat: &[[u32; 256]; L],
     s2_hat: &[[u32; 256]; K],
     w: &[[u32; 256]; K],
-) -> ([[u32; 256]; L], [[u32; 256]; K], [[u32; 256]; K]) {
+    z: &mut [[u32; 256]; L],
+    w_cs2: &mut [[u32; 256]; K],
+    r0: &mut [[u32; 256]; K],
+) {
     // 18–19: ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩
-    let cs1 = scalar_vector_ntt_inverse::<L>(c_hat, s1_hat);
-    let cs2 = scalar_vector_ntt_inverse::<K>(c_hat, s2_hat);
+    let mut cs1 = [[0u32; 256]; L];
+    scalar_vector_ntt_inverse_into::<L>(c_hat, s1_hat, &mut cs1);
+    let mut cs2 = [[0u32; 256]; K];
+    scalar_vector_ntt_inverse_into::<K>(c_hat, s2_hat, &mut cs2);
     // 20: z ← y + ⟨⟨cs1⟩⟩
-    let mut z = [[0u32; 256]; L];
     let mut i = 0;
     while i < L {
         let mut j = 0;
@@ -35,30 +49,67 @@ pub(crate) fn response<const K: usize, const L: usize>(
         i += 1;
     }
     // 21: r0 ← LowBits(w − ⟨⟨cs2⟩⟩)
-    let mut w_cs2 = [[0u32; 256]; K];
-    let mut r0 = [[0u32; 256]; K];
     let mut i = 0;
     while i < K {
-        w_cs2[i] = sub_poly(&w[i], &cs2[i]);
-        r0[i] = poly_low_bits(p, &w_cs2[i]);
+        // With `zeroize` each by-value result goes through a named local that is wiped after the copy.
+        #[cfg(not(feature = "zeroize"))]
+        {
+            w_cs2[i] = sub_poly(&w[i], &cs2[i]);
+            r0[i] = poly_low_bits(p, &w_cs2[i]);
+        }
+        #[cfg(feature = "zeroize")]
+        {
+            use zeroize::Zeroize;
+            let mut t = sub_poly(&w[i], &cs2[i]);
+            w_cs2[i] = t;
+            t.zeroize();
+            let mut u = poly_low_bits(p, &w_cs2[i]);
+            r0[i] = u;
+            u.zeroize();
+        }
         i += 1;
     }
+    // ⟨⟨cs1⟩⟩ and ⟨⟨cs2⟩⟩ are secret and dead here; z, w − ⟨⟨cs2⟩⟩ and r0 are the caller's to wipe.
+    #[cfg(feature = "zeroize")]
+    {
+        use zeroize::Zeroize;
+        cs1.zeroize();
+        cs2.zeroize();
+    }
+}
+
+/// Steps 18–21 returning (z, w − ⟨⟨cs2⟩⟩, r0) by value: `response_into` on fresh buffers. The default build's `attempt`
+/// uses this form; with the `zeroize` feature `attempt` calls `response_into` instead (see there).
+#[allow(clippy::type_complexity)]
+#[cfg_attr(feature = "zeroize", allow(dead_code))]
+pub(crate) fn response<const K: usize, const L: usize>(
+    p: &Params,
+    y: &[[u32; 256]; L],
+    c_hat: &[u32; 256],
+    s1_hat: &[[u32; 256]; L],
+    s2_hat: &[[u32; 256]; K],
+    w: &[[u32; 256]; K],
+) -> ([[u32; 256]; L], [[u32; 256]; K], [[u32; 256]; K]) {
+    let mut z = [[0u32; 256]; L];
+    let mut w_cs2 = [[0u32; 256]; K];
+    let mut r0 = [[0u32; 256]; K];
+    response_into::<K, L>(p, y, c_hat, s1_hat, s2_hat, w, &mut z, &mut w_cs2, &mut r0);
     (z, w_cs2, r0)
 }
 
-/// Steps 25–26: ⟨⟨ct0⟩⟩, h = MakeHint(−⟨⟨ct0⟩⟩, w − ⟨⟨cs2⟩⟩ + ⟨⟨ct0⟩⟩) and the number of ones in h.
-/// Returns (h, ⟨⟨ct0⟩⟩, ones).
-#[allow(clippy::type_complexity)]
-pub(crate) fn hint_step<const K: usize>(
+/// Steps 25–26: ⟨⟨ct0⟩⟩, h = MakeHint(−⟨⟨ct0⟩⟩, w − ⟨⟨cs2⟩⟩ + ⟨⟨ct0⟩⟩) and the number of ones in h. Writes ⟨⟨ct0⟩⟩ into
+/// `ct0` and h into `hint` (every entry is overwritten) and returns the number of ones; the caller owns both buffers.
+pub(crate) fn hint_step_into<const K: usize>(
     p: &Params,
     c_hat: &[u32; 256],
     t0_hat: &[[u32; 256]; K],
     w_cs2: &[[u32; 256]; K],
-) -> ([[bool; 256]; K], [[u32; 256]; K], usize) {
+    hint: &mut [[bool; 256]; K],
+    ct0: &mut [[u32; 256]; K],
+) -> usize {
     // 25: ⟨⟨ct0⟩⟩ ← NTT⁻¹(ĉ ∘ t̂0)
-    let ct0 = scalar_vector_ntt_inverse::<K>(c_hat, t0_hat);
+    scalar_vector_ntt_inverse_into::<K>(c_hat, t0_hat, ct0);
     // 26: h ← MakeHint(−⟨⟨ct0⟩⟩, w − ⟨⟨cs2⟩⟩ + ⟨⟨ct0⟩⟩)
-    let mut hint = [[false; 256]; K];
     let mut ones = 0;
     let mut i = 0;
     while i < K {
@@ -70,10 +121,30 @@ pub(crate) fn hint_step<const K: usize>(
         }
         i += 1;
     }
+    ones
+}
+
+/// Steps 25–26 returning (h, ⟨⟨ct0⟩⟩, ones) by value: `hint_step_into` on fresh buffers. The default build's `attempt`
+/// uses this form; with the `zeroize` feature `attempt` calls `hint_step_into` instead.
+#[allow(clippy::type_complexity)]
+#[cfg_attr(feature = "zeroize", allow(dead_code))]
+pub(crate) fn hint_step<const K: usize>(
+    p: &Params,
+    c_hat: &[u32; 256],
+    t0_hat: &[[u32; 256]; K],
+    w_cs2: &[[u32; 256]; K],
+) -> ([[bool; 256]; K], [[u32; 256]; K], usize) {
+    let mut hint = [[false; 256]; K];
+    let mut ct0 = [[0u32; 256]; K];
+    let ones = hint_step_into::<K>(p, c_hat, t0_hat, w_cs2, &mut hint, &mut ct0);
     (hint, ct0, ones)
 }
 
-/// One iteration of the loop body, steps 11–29. `None` is the ⊥ outcome.
+/// One iteration of the loop body, steps 11–29. `None` is the ⊥ outcome. With the `zeroize` feature every exit wipes
+/// the secret vectors of the attempt (y, ŷ, w, w1, ĉ, ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩, w − ⟨⟨cs2⟩⟩, r0, ⟨⟨ct0⟩⟩) and, when the attempt is
+/// rejected, also z, h and c̃, which are only published for an accepted attempt. For that, the `zeroize` build calls
+/// `response_into` and `hint_step_into` on buffers `attempt` owns; the default build calls the by-value `response` and
+/// `hint_step`, which are those functions on fresh buffers (the Lean model is of the default build).
 #[allow(clippy::type_complexity)]
 fn attempt<const K: usize, const L: usize>(
     p: &Params,
@@ -86,17 +157,49 @@ fn attempt<const K: usize, const L: usize>(
     kappa: u16,
 ) -> Option<([u8; 64], [[u32; 256]; L], [[bool; 256]; K])> {
     // 11: y ← ExpandMask(ρ″, κ)
-    let y = expand_mask::<L>(p, rho_pp, kappa);
-    // 12: w ← NTT⁻¹(Â ∘ NTT(y))
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+    let mut y = expand_mask::<L>(p, rho_pp, kappa);
+    // 12: w ← NTT⁻¹(Â ∘ NTT(y)). With `zeroize`, ŷ is built in a local that is wiped (`ntt_vec_into` transforms in
+    // place) instead of the temporary `ntt_vec` returns.
+    #[cfg(feature = "zeroize")]
+    let mut y_hat = [[0u32; 256]; L];
+    #[cfg(feature = "zeroize")]
+    ntt_vec_into(&y, &mut y_hat);
+    #[cfg(feature = "zeroize")]
+    let mut w_hat = [[0u32; 256]; K];
+    #[cfg(feature = "zeroize")]
+    matrix_vector_ntt_into::<K, L>(a_hat, &y_hat, &mut w_hat);
+    #[cfg(not(feature = "zeroize"))]
     let w_hat = matrix_vector_ntt::<K, L>(a_hat, &ntt_vec(&y));
+    #[cfg(feature = "zeroize")]
+    {
+        use zeroize::Zeroize;
+        y_hat.zeroize();
+    }
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
     let mut w = [[0u32; 256]; K];
+    #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
     let mut w1 = [[0u32; 256]; K];
     let mut i = 0;
     while i < K {
-        w[i] = ntt_inverse(&w_hat[i]);
+        #[cfg(not(feature = "zeroize"))]
+        {
+            w[i] = ntt_inverse(&w_hat[i]);
+        }
+        // With `zeroize`, NTT⁻¹ runs on the copy in `w` itself, not on a by-value result.
+        #[cfg(feature = "zeroize")]
+        {
+            w[i] = w_hat[i];
+            ntt_inverse_in_place(&mut w[i]);
+        }
         // 13: w1 ← HighBits(w)
         w1[i] = poly_high_bits(p, &w[i]);
         i += 1;
+    }
+    #[cfg(feature = "zeroize")]
+    {
+        use zeroize::Zeroize;
+        w_hat.zeroize();
     }
     // 15: c̃ ← H(μ || w1Encode(w1), λ/4)
     let mut w1_enc = [0u8; 8 * 192];
@@ -113,22 +216,99 @@ fn attempt<const K: usize, const L: usize>(
         use zeroize::Zeroize;
         h.wipe();
         w1_enc.zeroize();
+        w1.zeroize();
     }
     // 16–17: c ← SampleInBall(c̃); ĉ ← NTT(c)
+    #[cfg(not(feature = "zeroize"))]
     let c_hat = ntt(&sample_in_ball(p, &c_tilde[..p.c_tilde_len]));
+    // With `zeroize`, ĉ is transformed where it lies (`ntt_in_place`), in this function's own frame: a block that
+    // returned it would leave a second copy behind. The untransformed c is wiped, and a by-value NTT result is avoided
+    // for the same reason.
+    #[cfg(feature = "zeroize")]
+    let mut c = sample_in_ball(p, &c_tilde[..p.c_tilde_len]);
+    #[cfg(feature = "zeroize")]
+    let mut c_hat = c;
+    #[cfg(feature = "zeroize")]
+    zeroize::Zeroize::zeroize(&mut c);
+    #[cfg(feature = "zeroize")]
+    ntt_in_place(&mut c_hat);
     // 18–21: z, w − ⟨⟨cs2⟩⟩, r0
+    #[cfg(not(feature = "zeroize"))]
     let (z, w_cs2, r0) = response::<K, L>(p, &y, &c_hat, s1_hat, s2_hat, &w);
+    #[cfg(feature = "zeroize")]
+    let mut z = [[0u32; 256]; L];
+    #[cfg(feature = "zeroize")]
+    let mut w_cs2 = [[0u32; 256]; K];
+    #[cfg(feature = "zeroize")]
+    let mut r0 = [[0u32; 256]; K];
+    #[cfg(feature = "zeroize")]
+    response_into::<K, L>(p, &y, &c_hat, s1_hat, s2_hat, &w, &mut z, &mut w_cs2, &mut r0);
     // 23: reject on ‖z‖∞ ≥ γ1 − β or ‖r0‖∞ ≥ γ2 − β
     if vec_infinity_norm(&z) >= p.gamma1 - p.beta || vec_infinity_norm(&r0) >= p.gamma2 - p.beta {
+        #[cfg(feature = "zeroize")]
+        wipe_attempt::<K, L>(&mut y, &mut w, &mut c_hat, &mut w_cs2, &mut r0, Some((&mut c_tilde, &mut z)));
         return None;
     }
     // 25–26: ct0, h, number of ones
+    #[cfg(not(feature = "zeroize"))]
     let (hint, ct0, ones) = hint_step::<K>(p, &c_hat, t0_hat, &w_cs2);
+    #[cfg(feature = "zeroize")]
+    let mut hint = [[false; 256]; K];
+    #[cfg(feature = "zeroize")]
+    let mut ct0 = [[0u32; 256]; K];
+    #[cfg(feature = "zeroize")]
+    let ones = hint_step_into::<K>(p, &c_hat, t0_hat, &w_cs2, &mut hint, &mut ct0);
     // 28: reject on ‖ct0‖∞ ≥ γ2 or more than ω ones in h
     if vec_infinity_norm(&ct0) >= p.gamma2 || ones > p.omega {
+        #[cfg(feature = "zeroize")]
+        {
+            use zeroize::Zeroize;
+            wipe_attempt::<K, L>(&mut y, &mut w, &mut c_hat, &mut w_cs2, &mut r0, Some((&mut c_tilde, &mut z)));
+            ct0.zeroize();
+            hint.zeroize();
+        }
         return None;
     }
+    // Accepted: c̃, z and h are the signature; everything else is secret.
+    #[cfg(feature = "zeroize")]
+    {
+        use zeroize::Zeroize;
+        wipe_attempt::<K, L>(&mut y, &mut w, &mut c_hat, &mut w_cs2, &mut r0, None);
+        ct0.zeroize();
+    }
     Some((c_tilde, z, hint))
+}
+
+/// Zeroizes the secret per-attempt vectors of `attempt` that are dead at one of its exits: y, w, ĉ, w − ⟨⟨cs2⟩⟩ and r0,
+/// and, for a rejected attempt (`rejected` is `Some`), also c̃ and z, which are only published for an accepted one.
+/// Only compiled with the `zeroize` feature; outside the Lean proof.
+#[cfg(feature = "zeroize")]
+fn wipe_attempt<const K: usize, const L: usize>(
+    y: &mut [[u32; 256]; L],
+    w: &mut [[u32; 256]; K],
+    c_hat: &mut [u32; 256],
+    w_cs2: &mut [[u32; 256]; K],
+    r0: &mut [[u32; 256]; K],
+    rejected: Option<(&mut [u8; 64], &mut [[u32; 256]; L])>,
+) {
+    use zeroize::Zeroize;
+    y.zeroize();
+    w.zeroize();
+    c_hat.zeroize();
+    w_cs2.zeroize();
+    r0.zeroize();
+    if let Some((c_tilde, z)) = rejected {
+        c_tilde.zeroize();
+        z.zeroize();
+    }
+}
+
+/// Whether the κ budget allows another attempt at `kappa`: ExpandMask uses the 16-bit nonces κ, …, κ + ℓ − 1, so they
+/// must all be at most 2¹⁶ − 1. This is the guard of Sign's rejection loop (`sign_prepared_internal`), a function of
+/// its own so that `tests/mutants.rs` can pin its boundary: the attempt at the largest allowed κ (65532 for ML-DSA-44)
+/// is reached only after thousands of rejections, which no test of `sign_*` can produce.
+pub fn more_attempts<const L: usize>(kappa: u32) -> bool {
+    kappa + (L as u32) - 1 <= 0xFFFF
 }
 
 /// The part of Algorithm 7 that depends on the secret key alone: ŝ1, ŝ2, t̂0 (steps 2-4), Â (step 5), and the
@@ -168,6 +348,23 @@ impl<const K: usize, const L: usize> PreparedSk<K, L> {
             (self.t0_hat.as_ptr() as *const u8, core::mem::size_of_val(&self.t0_hat)),
             (self.key.as_ptr(), core::mem::size_of_val(&self.key)),
         ]
+    }
+}
+
+/// For `tests/zeroize.rs` (feature `internals`): one iteration of Sign's rejection loop (steps 11-29) at `kappa`, so the
+/// test can scan the stack after a rejected attempt, which `sign_*` overwrites with the next attempt. `Some` is the
+/// accepted outcome (c̃, z, h), `None` the ⊥ outcome. `mu` and `rho_pp` are μ and ρ″ of the message being signed.
+#[cfg(feature = "internals")]
+impl<const K: usize, const L: usize> PreparedSk<K, L> {
+    #[allow(clippy::type_complexity)]
+    pub fn attempt_at(
+        &self,
+        p: &Params,
+        mu: &[u8; 64],
+        rho_pp: &[u8; 64],
+        kappa: u16,
+    ) -> Option<([u8; 64], [[u32; 256]; L], [[bool; 256]; K])> {
+        attempt::<K, L>(p, &self.a_hat, &self.s1_hat, &self.s2_hat, &self.t0_hat, mu, rho_pp, kappa)
     }
 }
 
@@ -242,7 +439,15 @@ pub fn prepare_sk<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> Prep
 pub fn prepare_sk_into<const K: usize, const L: usize>(p: &Params, sk: &[u8], out: &mut PreparedSk<K, L>) {
     // 1: (ρ, K, tr, s1, s2, t0) ← skDecode(sk)
     #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
-    let mut key = sk_decode::<K, L>(p, sk);
+    let mut key = SecretKey {
+        rho: [0; 32],
+        key: [0; 32],
+        tr: [0; 64],
+        s1: [[0; 256]; L],
+        s2: [[0; 256]; K],
+        t0: [[0; 256]; K],
+    };
+    sk_decode_into::<K, L>(p, sk, &mut key);
     // 2–4: ŝ1, ŝ2, t̂0
     ntt_vec_into(&key.s1, &mut out.s1_hat);
     ntt_vec_into(&key.s2, &mut out.s2_hat);
@@ -269,7 +474,8 @@ fn wipe_decoded<const K: usize, const L: usize>(key: &mut SecretKey<K, L>) {
 /// Steps 6-33 of Algorithm 7 on a prepared key: μ, ρ″, the rejection loop and sigEncode. Same contract as
 /// `sign_internal` for the key `ps` was built from (`sign_internal` is `prepare_sk` followed by this function).
 /// The operations and their order on secret data are those of `sign_internal`; there is no branch on a secret
-/// beyond the algorithm's own rejection tests. With the `zeroize` feature ρ″ is wiped before returning.
+/// beyond the algorithm's own rejection tests. With the `zeroize` feature ρ″ is wiped before returning, and each
+/// attempt wipes its own secret vectors (y, ŷ, w, ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩, ⟨⟨ct0⟩⟩ and the rest, see `attempt`) before it returns.
 pub fn sign_prepared_internal<const K: usize, const L: usize>(
     p: &Params,
     ps: &PreparedSk<K, L>,
@@ -300,7 +506,7 @@ pub fn sign_prepared_internal<const K: usize, const L: usize>(
     h.wipe();
     // 8–32: rejection loop, κ ← κ + ℓ
     let mut kappa: u32 = 0;
-    while kappa + (L as u32) - 1 <= 0xFFFF {
+    while more_attempts::<L>(kappa) {
         if let Some((c_tilde, z, hint)) =
             attempt::<K, L>(p, &ps.a_hat, &ps.s1_hat, &ps.s2_hat, &ps.t0_hat, &mu, &rho_pp, kappa as u16)
         {
@@ -318,8 +524,9 @@ pub fn sign_prepared_internal<const K: usize, const L: usize>(
 }
 
 /// Zeroizes ρ″ (Algorithm 7 step 7). Only compiled with the `zeroize` feature; outside the Lean proof.
-/// Not wiped: the per-attempt vectors y, cs1, cs2, ct0, w (locals of `attempt` and its callees, returned by value),
-/// and any copies the compiler makes of them.
+/// The per-attempt secrets are wiped by `attempt` itself on every exit (`wipe_attempt`); this one value outlives the
+/// attempts and is wiped when the loop ends. Not wiped: z, c̃ and h of the accepted attempt (they are the signature),
+/// and anything the compiler keeps in registers or spills into unnamed temporaries.
 #[cfg(feature = "zeroize")]
 fn wipe_rho_pp(rho_pp: &mut [u8; 64]) {
     use zeroize::Zeroize;

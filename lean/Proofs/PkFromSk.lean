@@ -415,7 +415,7 @@ theorem pk_from_sk_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Param
   · try dsimp only
     rw [if_pos hwf]
     have hwf' : skWellFormed sp (bytes sk) = true := by rw [← hb]; exact hwf
-    refine WP.spec_bind (sk_decode_spec ip sp hv hstd.eta_lt sk hsk) ?_
+    refine WP.spec_bind (sk_decode_into_spec ip sp hv hstd.eta_lt sk hsk _) ?_
     intro dec hdec
     obtain ⟨hρ, hK, htr, hs1, hs2, ht0⟩ := hdec
     obtain ⟨ρ, Kk, trs, S₁, S₂, T₀, hdd⟩ := skDecode_tuple sp (bytes sk)
@@ -478,7 +478,7 @@ theorem pk_from_sk_dspec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Para
   · try dsimp only
     rw [if_pos hwf]
     have hwf' : skWellFormed sp (bytes sk) = true := by rw [← hb]; exact hwf
-    refine dspec_bind_of_spec (sk_decode_spec ip sp hv hstd.eta_lt sk hsk) ?_
+    refine dspec_bind_of_spec (sk_decode_into_spec ip sp hv hstd.eta_lt sk hsk _) ?_
     intro dec hdec
     obtain ⟨hρ, hK, htr, hs1, hs2, ht0⟩ := hdec
     obtain ⟨ρ, Kk, trs, S₁, S₂, T₀, hdd⟩ := skDecode_tuple sp (bytes sk)

@@ -166,16 +166,15 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
      and where the stacks are largest (the dev-profile table in section 3).
 
   Our stack figures are measured for release and for opt-level 0, not for 1. The `zeroize` feature's stack-residue tests
-  (`tests/zeroize.rs`: 15 scan tests, five per parameter set) pass in release (15 of 15) and at opt-level 0 fail for 8 of
-  the 15 (`keygen_*` and `pk_from_sk_*` for 44, 65 and 87, and `signing_key_*` for 44 and 65; `sign_*`, `sign_prepared_*`
-  and `signing_key_87` pass), finding copies of s1, s2, ŝ1, t0 or K in dead stack frames (Z-1 in `docs/assurance.md` §7). Run with
-  `CARGO_PROFILE_DEV_OPT_LEVEL=1` (the whole crate and test at opt-level 1, which approximates case 1) 13 of the 15 pass and
-  `keygen_44` and `keygen_65` fail (2026-11-03). `scripts/ci.sh` runs the 7 that pass at opt-level 0 in `test-zeroize`
-  and all 15 in release (`test-zeroize-release`, and `nearcore-test-zeroize` under nearcore's profile). So the wipe
-  behavior documented in `src/api.rs` should be read as a property of optimized builds on the measured toolchain; drop
-  and the explicit wipes (`signing_key_*` drop, `Shake::wipe`, the decoded-key wipes) are not affected, which the
-  `signing_key_drop_wipes` and `shake_wipe_zeroes_the_sponge` tests check, and they pass at opt-level 0 and in release. A nearcore test run in its
-  dev profile would not show the stack-residue results.
+  (`tests/zeroize.rs`: 24 scan tests, eight per parameter set) pass in release (24 of 24) and at opt-level 0 fail for 21 of
+  the 24 (everything except `signing_key_*`), finding copies of secrets in dead stack frames (Z-1 in `docs/assurance.md` §7).
+  Run with `CARGO_PROFILE_DEV_OPT_LEVEL=1` (the whole crate and test at opt-level 1, which approximates case 1) 26 of the 28 tests
+  of the file passed on a Linux x86_64 machine (`keygen_44` and `keygen_65` fail) and all 28 on an aarch64 macOS machine. `scripts/ci.sh` runs the 3 scans
+  that pass at opt-level 0 in `test-zeroize` and all 24 in release (`test-zeroize-release`, and `nearcore-test-zeroize` under
+  nearcore's profile). So the wipe behavior documented in `src/api.rs` should be read as a property of optimized builds on
+  the measured toolchain; drop and the explicit wipes (`signing_key_*` drop, `Shake::wipe`, the decoded-key wipes) are not
+  affected, which the `signing_key_drop_wipes` and `shake_wipe_zeroes_the_sponge` tests check, and they pass at opt-level 0
+  and in release. A nearcore test run in its dev profile would not show the stack-residue results.
 - x86_64 target features: `+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq`, plus
   `-Cforce-unwind-tables=y` (`.cargo/config.toml:9`; the profiling config adds frame pointers). **There is no `avx` or `avx2`**
   in that list. Our NTT is vectorized by LLVM only with AVX2, so nearcore's build gets the numbers in the "default"

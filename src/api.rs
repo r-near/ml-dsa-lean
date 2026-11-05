@@ -42,23 +42,32 @@
 //! `sign_prepared_*`, `signing_key_*` and `pk_from_sk_*`, the decoded or derived secrets held in locals (the decoded
 //! key, ρ′, K, ρ″, the raw bit fields behind y, s1 and s2) and the SHAKE states that absorbed a secret (ξ, ρ′, ρ″,
 //! K ‖ rnd ‖ μ, w1; `Shake::wipe`). `signing_key_*` and `sign_*` build ŝ1, ŝ2, t̂0 and K directly in the key object
-//! (`sign::prepare_sk_into`, `ntt::ntt_vec_into`: the secret vectors are transformed in place) and `signing_key_*`
-//! returns the object through `mem::replace`, so that no copy is left in the dead stack frames below the call.
-//! `tests/zeroize.rs` checks this: it scans the stack below each call for K, s1, s2, t0, their NTT forms and ρ″, and
-//! reads a dropped key back. The stack-residue results hold for optimized builds on the measured toolchain (release;
-//! also under nearcore's release profile, `scripts/ci.sh` step `nearcore-test-zeroize`). At opt-level 0 they fail:
-//! 8 of the 15 stack-residue scan tests find copies in dead frames (`keygen_*` and `pk_from_sk_*` for all three sets,
-//! `signing_key_*` for 44 and 65). At dev opt-level 1, a single run on a Linux machine (the whole crate and test built at
-//! opt-level 1, not the per-package override of a downstream workspace) passed 13 of the 15 and failed `keygen_44` and
-//! `keygen_65`; no other opt-level 1 configuration was run. The drop wipe and the explicit wipes are not affected: their
+//! (`sign::prepare_sk_into`, `encode::sk_decode_into`, `ntt::ntt_vec_into`: the secret vectors are decoded and
+//! transformed where they lie) and `signing_key_*` returns the object through `mem::replace`, so that no copy is left
+//! in the dead stack frames below the call. Each Sign attempt (`sign::attempt`) wipes, on every exit (accepted,
+//! rejected before or after the hint step), the mask y and everything derived from it: ŷ, Â ∘ ŷ, w, w1, ĉ, ⟨⟨cs1⟩⟩,
+//! ⟨⟨cs2⟩⟩, w − ⟨⟨cs2⟩⟩, r0, ⟨⟨ct0⟩⟩ and, for a rejected attempt, z, h and c̃ (which an accepted attempt publishes). It
+//! does so by having the secrets live in buffers `attempt` owns (`response_into`, `hint_step_into`,
+//! `ntt::scalar_vector_ntt_inverse_into`, `ntt::matrix_vector_ntt_into`, `ntt::ntt_in_place`,
+//! `ntt::ntt_inverse_in_place`) rather than in values returned from callees, whose dead frames keep a copy.
+//! `tests/zeroize.rs` checks this: it scans the stack below each call for K, s1, s2, t0, their NTT forms and ρ″, and,
+//! for every attempt of a `sign_*` / `sign_prepared_*` call (accepted and rejected) and for one call of `attempt` that
+//! ends in each of the three ways, for y, ŷ, Â ∘ ŷ, w, ĉ ∘ ŝ1, ĉ ∘ ŝ2, ĉ ∘ t̂0, ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩, w − ⟨⟨cs2⟩⟩, r0, ⟨⟨ct0⟩⟩ and,
+//! for a rejected attempt, z and c̃. It also reads a dropped key back. A needle is the first 16 coefficients of a vector
+//! (the whole value for a seed), so a copy that is partly overwritten is still found. The stack-residue results hold for optimized builds on the measured toolchain (release;
+//! also under nearcore's release profile, `scripts/ci.sh` step `nearcore-test-zeroize`). At opt-level 0 most of them
+//! fail: 21 of the 24 stack-residue scan tests find copies in dead frames (everything except `signing_key_*`, which
+//! passes for all three sets). The exact counts are for one Linux x86_64 machine and one aarch64 macOS machine. At dev
+//! opt-level 1 (the whole crate and test built at opt-level 1, not the per-package override of a downstream workspace)
+//! 28 of 28 tests of `tests/zeroize.rs` passed on macOS and 26 of 28 on Linux (`keygen_44`, `keygen_65` fail). The drop wipe and the explicit wipes are not affected: their
 //! tests (`signing_key_drop_wipes`, `shake_wipe_zeroes_the_sponge`) pass at opt-level 0 and in release. What remains:
 //!
 //! - Copies the compiler makes when it moves a returned value are in the caller's frame and are the caller's concern:
 //!   a `SigningKey*` (keep it in a `Box`, build it there, and do not move it), and the secret-key array `keygen_*`
 //!   returns. The key bytes passed in (`sk`) are the caller's too.
-//! - `sign_*`: the per-attempt vectors y, cs1, cs2, ct0, w and their intermediates are locals of `attempt`,
-//!   `response` and `hint_step`, returned by value. They are not wiped, and the stack scan does not look for them. y and
-//!   the NTT of y pass through `ntt_vec`, whose result temporaries are not wiped either.
+//! - `sign_*`: z, c̃ and h of the accepted attempt are the signature and are not wiped; the intermediate values the
+//!   scan does not look for (a needle is a prefix of a vector, so a copy of a vector shorter than 16 coefficients, or
+//!   one the compiler stores in pieces, would be missed); registers and unnamed spills.
 //! - `keygen_*` and `pk_from_sk_*`: t0 survives in the tuple `vec_power2round` returns by value, and `keygen_*` leaves
 //!   one copy of K (the scan finds both, `tests/zeroize.rs`, `KEYGEN_KNOWN`). s1, s2, ξ, ρ′ and the expanded seed are
 //!   wiped.

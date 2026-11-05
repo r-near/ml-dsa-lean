@@ -427,11 +427,11 @@ theorem response_inner_spec {L : Usize} {ℓ : Nat} (y cs1 : Array (Array U32 25
     (hz0 : ∀ r, r ≠ i.val → z.val[r]? = z0.val[r]?)
     (hrow : ∃ row : Array U32 256#usize, z.val[i.val]? = some row ∧ ∀ c, c < j.val → ∃ x : U32,
       row.val[c]? = some x ∧ x.val < Spec.q ∧ ((x.val : Nat) : Zq) = (Y[i.val]!)[c]! + (CS[i.val]!)[c]!) :
-    sign.response_loop0_loop0 y cs1 z i j ⦃ o => (∀ r, r ≠ i.val → o.val[r]? = z0.val[r]?) ∧
+    sign.response_into_loop0_loop0 y z cs1 i j ⦃ o => (∀ r, r ≠ i.val → o.val[r]? = z0.val[r]?) ∧
       ∃ row : Array U32 256#usize, o.val[i.val]? = some row ∧ ∀ c, c < 256 → ∃ x : U32,
       row.val[c]? = some x ∧ x.val < Spec.q ∧ ((x.val : Nat) : Zq) = (Y[i.val]!)[c]! + (CS[i.val]!)[c]! ⦄ := by
   have hL : L.val = ℓ := hy.len
-  unfold sign.response_loop0_loop0
+  unfold sign.response_into_loop0_loop0
   apply loop.spec_decr_nat
     (fun (p : Array (Array U32 256#usize) L × Usize) => 256 - p.2.val)
     (fun p => p.2.val ≤ 256 ∧ (∀ r, r ≠ i.val → p.1.val[r]? = z0.val[r]?) ∧
@@ -439,7 +439,7 @@ theorem response_inner_spec {L : Usize} {ℓ : Nat} (y cs1 : Array (Array U32 25
       row.val[c]? = some x ∧ x.val < Spec.q ∧ ((x.val : Nat) : Zq) = (Y[i.val]!)[c]! + (CS[i.val]!)[c]!)
   · rintro ⟨z, j⟩ ⟨h1, h2, h3⟩
     dsimp only at h1 h2 h3
-    simp only [sign.response_loop0_loop0.body]
+    simp only [sign.response_into_loop0_loop0.body]
     split
     · rename_i hj
       have hj' : j.val < 256 := hj
@@ -490,15 +490,15 @@ theorem response_outer_spec {L : Usize} {ℓ : Nat} (y cs1 : Array (Array U32 25
     (Y CS : Vector Poly ℓ) (hy : ReprVec y Y) (hcs : ReprVec cs1 CS)
     (z : Array (Array U32 256#usize) L) (i : Usize) (hi : i.val ≤ L.val)
     (h : Rows z (fun r x => Repr x (Y + CS)[r]!) i.val) :
-    sign.response_loop0 y cs1 z i ⦃ o => Rows o (fun r x => Repr x (Y + CS)[r]!) L.val ⦄ := by
+    sign.response_into_loop0 y z cs1 i ⦃ o => Rows o (fun r x => Repr x (Y + CS)[r]!) L.val ⦄ := by
   have hL : L.val = ℓ := hy.len
-  unfold sign.response_loop0
+  unfold sign.response_into_loop0
   apply loop.spec_decr_nat
     (fun (p : Array (Array U32 256#usize) L × Usize) => L.val - p.2.val)
     (fun p => p.2.val ≤ L.val ∧ Rows p.1 (fun r x => Repr x (Y + CS)[r]!) p.2.val)
   · rintro ⟨z, i⟩ ⟨h1, h2⟩
     dsimp only at h1 h2
-    simp only [sign.response_loop0.body]
+    simp only [sign.response_into_loop0.body]
     split
     · rename_i hi
       have hi' : i.val < L.val := hi
@@ -554,17 +554,17 @@ theorem response_loop1_spec {K L : Usize} {k : Nat} (ip : Impl.params.Params) (s
     (wc r0 : Array (Array U32 256#usize) K) (i : Usize) (hi : i.val ≤ K.val)
     (h1 : Rows wc (fun r x => Repr x (W - CS2)[r]!) i.val)
     (h0 : Rows r0 (fun r x => ReprInt x (LowBitsVec sp (W - CS2))[r]!) i.val) :
-    sign.response_loop1 ip w cs2 wc r0 i ⦃ o => Rows o.1 (fun r x => Repr x (W - CS2)[r]!) K.val ∧
+    sign.response_into_loop1 ip w wc r0 cs2 i ⦃ o => Rows o.1 (fun r x => Repr x (W - CS2)[r]!) K.val ∧
       Rows o.2 (fun r x => ReprInt x (LowBitsVec sp (W - CS2))[r]!) K.val ⦄ := by
   have hN : K.val = k := hw.len
-  unfold sign.response_loop1
+  unfold sign.response_into_loop1
   apply loop.spec_decr_nat
     (fun (p : Array (Array U32 256#usize) K × Array (Array U32 256#usize) K × Usize) => K.val - p.2.2.val)
     (fun p => p.2.2.val ≤ K.val ∧ Rows p.1 (fun r x => Repr x (W - CS2)[r]!) p.2.2.val ∧
       Rows p.2.1 (fun r x => ReprInt x (LowBitsVec sp (W - CS2))[r]!) p.2.2.val)
   · rintro ⟨wc, r0, i⟩ ⟨hi1, h2, h3⟩
     dsimp only at hi1 h2 h3
-    simp only [sign.response_loop1.body]
+    simp only [sign.response_into_loop1.body]
     split
     · rename_i hi
       have hi' : i.val < K.val := hi
@@ -608,9 +608,9 @@ theorem response_spec {K L : Usize} {k ℓ : Nat} (ip : Impl.params.Params) (sp 
       ReprVec r.1 (Y + NTTInvVec (ScalarVectorNTT C S1)) ∧
       ReprVec r.2.1 (W - NTTInvVec (ScalarVectorNTT C S2)) ∧
       ReprIntVec r.2.2 (LowBitsVec sp (W - NTTInvVec (ScalarVectorNTT C S2))) ⦄ := by
-  unfold sign.response
-  step with scalar_vector_ntt_inverse_spec c_hat C hc s1_hat S1 hs1 as ⟨cs1, hcs1⟩
-  step with scalar_vector_ntt_inverse_spec c_hat C hc s2_hat S2 hs2 as ⟨cs2, hcs2⟩
+  unfold sign.response sign.response_into
+  step with scalar_vector_ntt_inverse_into_spec c_hat C hc s1_hat S1 hs1 _ as ⟨cs1, hcs1⟩
+  step with scalar_vector_ntt_inverse_into_spec c_hat C hc s2_hat S2 hs2 _ as ⟨cs2, hcs2⟩
   step with response_outer_spec y cs1 Y _ hy hcs1 (Array.repeat L (Array.repeat 256#usize 0#u32)) 0#usize
     (by simp) (Rows.zero _ _) as ⟨z1, hz1⟩
   step with response_loop1_spec ip sp hp hg w cs2 W _ hw hcs2 (Array.repeat K (Array.repeat 256#usize 0#u32))
@@ -858,12 +858,12 @@ theorem hint_inner_spec {K L : Usize} {k : Nat} (ip : Impl.params.Params) (sp : 
     (hrow : ∃ row : Array Bool 256#usize, hint.val[i.val]? = some row ∧
       ∀ c, c < j.val → row.val[c]? = some (H[i.val]!)[c]!)
     (hones : ones.val + cntFrom (H[i.val]!) j.val + restW H (i.val + 1) = restW H 0) :
-    sign.hint_step_loop0_loop0 ip w_cs2 ct0 hint ones i j ⦃ o => (∀ r, r ≠ i.val → o.1.val[r]? = hint0.val[r]?) ∧
+    sign.hint_step_into_loop0_loop0 ip w_cs2 hint ct0 ones i j ⦃ o => (∀ r, r ≠ i.val → o.1.val[r]? = hint0.val[r]?) ∧
       (∃ row : Array Bool 256#usize, o.1.val[i.val]? = some row ∧
         ∀ c, c < 256 → row.val[c]? = some (H[i.val]!)[c]!) ∧
       o.2.val + restW H (i.val + 1) = restW H 0 ⦄ := by
   have hN : K.val = k := hw.len
-  unfold sign.hint_step_loop0_loop0
+  unfold sign.hint_step_into_loop0_loop0
   apply loop.spec_decr_nat
     (fun (p : Array (Array Bool 256#usize) K × Usize × Usize) => 256 - p.2.2.val)
     (fun p => p.2.2.val ≤ 256 ∧ (∀ r, r ≠ i.val → p.1.val[r]? = hint0.val[r]?) ∧
@@ -872,7 +872,7 @@ theorem hint_inner_spec {K L : Usize} {k : Nat} (ip : Impl.params.Params) (sp : 
       p.2.1.val + cntFrom (H[i.val]!) p.2.2.val + restW H (i.val + 1) = restW H 0)
   · rintro ⟨hint, ones, j⟩ ⟨hj1, h2, h3, h4⟩
     dsimp only at hj1 h2 h3 h4
-    simp only [sign.hint_step_loop0_loop0.body]
+    simp only [sign.hint_step_into_loop0_loop0.body]
     split
     · rename_i hj
       have hj' : j.val < 256 := hj
@@ -969,17 +969,17 @@ theorem hint_outer_spec {K L : Usize} {k : Nat} (ip : Impl.params.Params) (sp : 
     (hint : Array (Array Bool 256#usize) K) (ones i : Usize) (hi : i.val ≤ K.val)
     (h : Rows hint (fun r x => ReprHint x H[r]!) i.val)
     (hones : ones.val + restW H i.val = restW H 0) :
-    sign.hint_step_loop0 ip w_cs2 ct0 hint ones i ⦃ o =>
+    sign.hint_step_into_loop0 ip w_cs2 hint ct0 ones i ⦃ o =>
       Rows o.1 (fun r x => ReprHint x H[r]!) K.val ∧ o.2.val + restW H K.val = restW H 0 ⦄ := by
   have hN : K.val = k := hw.len
-  unfold sign.hint_step_loop0
+  unfold sign.hint_step_into_loop0
   apply loop.spec_decr_nat
     (fun (p : Array (Array Bool 256#usize) K × Usize × Usize) => K.val - p.2.2.val)
     (fun p => p.2.2.val ≤ K.val ∧ Rows p.1 (fun r x => ReprHint x H[r]!) p.2.2.val ∧
       p.2.1.val + restW H p.2.2.val = restW H 0)
   · rintro ⟨hint, ones, i⟩ ⟨h1, h2, h3⟩
     dsimp only at h1 h2 h3
-    simp only [sign.hint_step_loop0.body]
+    simp only [sign.hint_step_into_loop0.body]
     split
     · rename_i hik'
       have hik : i.val < k := by have : i.val < K.val := hik'; omega
@@ -1017,8 +1017,8 @@ theorem hint_step_spec {K L : Usize} {k : Nat} (ip : Impl.params.Params) (sp : S
       r.2.2.val = HintWeight (MakeHintVec sp (-NTTInvVec (ScalarVectorNTT C T0))
         (WC + NTTInvVec (ScalarVectorNTT C T0))) ⦄ := by
   have hN : K.val = k := hw.len
-  unfold sign.hint_step
-  step with scalar_vector_ntt_inverse_spec c_hat C hc t0_hat T0 ht as ⟨ct0, hct⟩
+  unfold sign.hint_step sign.hint_step_into
+  step with scalar_vector_ntt_inverse_into_spec c_hat C hc t0_hat T0 ht _ as ⟨ct0, hct⟩
   have hH : ∀ i, i < k → ∀ c, c < 256 →
       ((MakeHintVec sp (-NTTInvVec (ScalarVectorNTT C T0))
         (WC + NTTInvVec (ScalarVectorNTT C T0)))[i]!)[c]! =
@@ -1030,7 +1030,7 @@ theorem hint_step_spec {K L : Usize} {k : Nat} (ip : Impl.params.Params) (sp : S
   step with hint_outer_spec ip sp hp hg hK w_cs2 ct0 WC (NTTInvVec (ScalarVectorNTT C T0)) hw hct
     (MakeHintVec sp (-NTTInvVec (ScalarVectorNTT C T0)) (WC + NTTInvVec (ScalarVectorNTT C T0))) hH
     (Array.repeat K (Array.repeat 256#usize false)) 0#usize 0#usize (by simp) (Rows.zero _ _)
-    (by simp) as ⟨hint1, ones, hrows, hw'⟩
+    (by simp) as ⟨hr, hrows, hw'⟩
   rw [hN] at hrows
   refine ⟨hrows.reprHintVec hN, hct, ?_⟩
   rw [hN, restW_len] at hw'

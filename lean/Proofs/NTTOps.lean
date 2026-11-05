@@ -401,30 +401,30 @@ theorem ScalarVectorNTT_eq {ℓ : Nat} (C : Poly) (V : Vector Poly ℓ) :
 
 theorem scalar_vector_loop_spec {N : Usize} {k : Nat} (c : Array U32 256#usize) (C : Poly) (hc : Repr c C)
     (v : Array (Array U32 256#usize) N) (V : Vector Poly k) (hv : ReprVec v V) :
-    ntt.scalar_vector_ntt_inverse_loop c v (Array.repeat N (Array.repeat 256#usize 0#u32)) 0#usize ⦃ r =>
+    ntt.scalar_vector_ntt_inverse_into_loop c v (Array.repeat N (Array.repeat 256#usize 0#u32)) 0#usize ⦃ r =>
       ReprVec r ((List.range' 0 k).foldl (svF C V) (Vector.replicate k Poly.zero)) ⦄ := by
   have hN : N.val = k := hv.len
-  unfold ntt.scalar_vector_ntt_inverse_loop
+  unfold ntt.scalar_vector_ntt_inverse_into_loop
   apply loop.spec_decr_nat
     (fun (p : Array (Array U32 256#usize) N × Usize) => N.val - p.2.val)
     (fun p => p.2.val ≤ N.val ∧
        ReprVec p.1 ((List.range' 0 p.2.val).foldl (svF C V) (Vector.replicate k Poly.zero)))
   · rintro ⟨out, i⟩ ⟨h1, h2⟩
     dsimp only at h1 h2
-    simp only [ntt.scalar_vector_ntt_inverse_loop.body]
+    simp only [ntt.scalar_vector_ntt_inverse_into_loop.body]
     split
     · rename_i hi
       have hi' : i.val < N.val := hi
       have hik : i.val < k := by omega
       step with hv.index_spec i hik as ⟨a, ha⟩
       step with multiply_ntt_spec c a C _ hc ha as ⟨a1, ha1⟩
-      step with ntt_inverse_spec a1 ha1.canon as ⟨a2, ha2, ha3⟩
+      step with ntt_inverse_in_place_spec a1 ha1.canon as ⟨a2, ha2, ha3⟩
       step*
       have e : i1.val = i.val + 1 := by scalar_tac
       rw [e, fold_step_range]
       have hr : Repr a2 (NTTInv (MultiplyNTT C V[i.val]!)) :=
         ⟨ha2, by rw [ha3, ha1.eq, vget! V i.val hik]⟩
-      rw [a3_post]
+      rw [a1_post]
       exact ⟨by scalar_tac, h2.set i a2 _ hr hik, by scalar_tac⟩
     · rename_i hi
       have hi' : i.val = N.val := by scalar_tac
@@ -433,6 +433,19 @@ theorem scalar_vector_loop_spec {N : Usize} {k : Nat} (c : Array U32 256#usize) 
       exact h2
   · exact ⟨by simp, by simpa using ReprVec_repeat_zero N k hN⟩
 
+/-- `scalar_vector_ntt_inverse_into ĉ v̂ out = NTT⁻¹(ĉ ∘ v̂)` for any `out` (it is zeroed first), the combination `⟨⟨c v⟩⟩`
+of Algorithms 47 and 42. -/
+@[step]
+theorem scalar_vector_ntt_inverse_into_spec {N : Usize} {k : Nat} (c : Array U32 256#usize) (C : Poly)
+    (hc : Repr c C) (v : Array (Array U32 256#usize) N) (V : Vector Poly k) (hv : ReprVec v V)
+    (out : Array (Array U32 256#usize) N) :
+    ntt.scalar_vector_ntt_inverse_into c v out ⦃ r =>
+      ReprVec r (Spec.NTTInvVec (Spec.ScalarVectorNTT C V)) ⦄ := by
+  unfold ntt.scalar_vector_ntt_inverse_into
+  apply WP.spec_mono (scalar_vector_loop_spec c C hc v V hv)
+  intro r hr
+  rwa [ScalarVectorNTT_eq]
+
 /-- `scalar_vector_ntt_inverse ĉ v̂ = NTT⁻¹(ĉ ∘ v̂)`, the combination `⟨⟨c v⟩⟩` of Algorithms 47 and 42. -/
 @[step]
 theorem scalar_vector_ntt_inverse_spec {N : Usize} {k : Nat} (c : Array U32 256#usize) (C : Poly)
@@ -440,9 +453,7 @@ theorem scalar_vector_ntt_inverse_spec {N : Usize} {k : Nat} (c : Array U32 256#
     ntt.scalar_vector_ntt_inverse c v ⦃ r =>
       ReprVec r (Spec.NTTInvVec (Spec.ScalarVectorNTT C V)) ⦄ := by
   unfold ntt.scalar_vector_ntt_inverse
-  apply WP.spec_mono (scalar_vector_loop_spec c C hc v V hv)
-  intro r hr
-  rwa [ScalarVectorNTT_eq]
+  exact scalar_vector_ntt_inverse_into_spec c C hc v V hv _
 
 /-! ## `matrix_vector_ntt` (Algorithm 48) -/
 
@@ -467,18 +478,18 @@ theorem mv_inner_loop {K L : Usize} {k ℓ : Nat}
     (v : Array (Array U32 256#usize) L) (V : Vector Poly ℓ) (hv : ReprVec v V)
     (i : Usize) (hi : i.val < k)
     (w0 : Array (Array U32 256#usize) K) (W0 : Vector Poly k) (hw0 : ReprVec w0 W0) :
-    ntt.matrix_vector_ntt_loop0_loop0 m v w0 i 0#usize ⦃ w =>
+    ntt.matrix_vector_ntt_into_loop0_loop0 m v w0 i 0#usize ⦃ w =>
       ReprVec w ((List.range' 0 ℓ).foldl (mvInner M V i.val) W0) ⦄ := by
   have hL : L.val = ℓ := hv.len
   have hK : K.val = k := hM.len
-  unfold ntt.matrix_vector_ntt_loop0_loop0
+  unfold ntt.matrix_vector_ntt_into_loop0_loop0
   apply loop.spec_decr_nat
     (fun (p : Array (Array U32 256#usize) K × Usize) => L.val - p.2.val)
     (fun p => p.2.val ≤ L.val ∧
        ReprVec p.1 ((List.range' 0 p.2.val).foldl (mvInner M V i.val) W0))
   · rintro ⟨w, j⟩ ⟨h1, h2⟩
     dsimp only at h1 h2
-    simp only [ntt.matrix_vector_ntt_loop0_loop0.body]
+    simp only [ntt.matrix_vector_ntt_into_loop0_loop0.body]
     split
     · rename_i hj
       have hj' : j.val < L.val := hj
@@ -509,17 +520,17 @@ theorem mv_inner_loop {K L : Usize} {k ℓ : Nat}
 theorem mv_outer_loop {K L : Usize} {k ℓ : Nat}
     (m : Array (Array (Array U32 256#usize) L) K) (M : Vector (Vector Poly ℓ) k) (hM : ReprMat m M)
     (v : Array (Array U32 256#usize) L) (V : Vector Poly ℓ) (hv : ReprVec v V) :
-    ntt.matrix_vector_ntt_loop0 m v (Array.repeat K (Array.repeat 256#usize 0#u32)) 0#usize ⦃ w =>
+    ntt.matrix_vector_ntt_into_loop0 m v (Array.repeat K (Array.repeat 256#usize 0#u32)) 0#usize ⦃ w =>
       ReprVec w ((List.range' 0 k).foldl (mvOuter M V) (Vector.replicate k Poly.zero)) ⦄ := by
   have hK : K.val = k := hM.len
-  unfold ntt.matrix_vector_ntt_loop0
+  unfold ntt.matrix_vector_ntt_into_loop0
   apply loop.spec_decr_nat
     (fun (p : Array (Array U32 256#usize) K × Usize) => K.val - p.2.val)
     (fun p => p.2.val ≤ K.val ∧
        ReprVec p.1 ((List.range' 0 p.2.val).foldl (mvOuter M V) (Vector.replicate k Poly.zero)))
   · rintro ⟨w, i⟩ ⟨h1, h2⟩
     dsimp only at h1 h2
-    simp only [ntt.matrix_vector_ntt_loop0.body]
+    simp only [ntt.matrix_vector_ntt_into_loop0.body]
     split
     · rename_i hi
       have hi' : i.val < K.val := hi
@@ -536,6 +547,18 @@ theorem mv_outer_loop {K L : Usize} {k ℓ : Nat}
       exact h2
   · exact ⟨by simp, by simpa using ReprVec_repeat_zero K k hK⟩
 
+/-- `matrix_vector_ntt_into M v out` for any `out` (it is zeroed first), Algorithm 48 `MatrixVectorNTT`. -/
+@[step]
+theorem matrix_vector_ntt_into_spec {K L : Usize} {k ℓ : Nat}
+    (m : Array (Array (Array U32 256#usize) L) K) (M : Vector (Vector Poly ℓ) k) (hM : ReprMat m M)
+    (v : Array (Array U32 256#usize) L) (V : Vector Poly ℓ) (hv : ReprVec v V)
+    (out : Array (Array U32 256#usize) K) :
+    ntt.matrix_vector_ntt_into m v out ⦃ w => ReprVec w (Spec.MatrixVectorNTT M V) ⦄ := by
+  unfold ntt.matrix_vector_ntt_into
+  apply WP.spec_mono (mv_outer_loop m M hM v V hv)
+  intro r hr
+  rwa [MatrixVectorNTT_eq]
+
 /-- Algorithm 48 `MatrixVectorNTT`: `w[i] = Σ_j M[i][j] ∘ v[j]` for a `k × ℓ` matrix. -/
 @[step]
 theorem matrix_vector_ntt_spec {K L : Usize} {k ℓ : Nat}
@@ -543,8 +566,6 @@ theorem matrix_vector_ntt_spec {K L : Usize} {k ℓ : Nat}
     (v : Array (Array U32 256#usize) L) (V : Vector Poly ℓ) (hv : ReprVec v V) :
     ntt.matrix_vector_ntt m v ⦃ w => ReprVec w (Spec.MatrixVectorNTT M V) ⦄ := by
   unfold ntt.matrix_vector_ntt
-  apply WP.spec_mono (mv_outer_loop m M hM v V hv)
-  intro r hr
-  rwa [MatrixVectorNTT_eq]
+  exact matrix_vector_ntt_into_spec m M hM v V hv _
 
 end Proofs

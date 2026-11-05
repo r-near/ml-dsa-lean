@@ -46,7 +46,7 @@ structure keccak.Shake where
   rate : Std.Usize
 
 /-- [ml_dsa_lean::sign::PreparedSk]
-    Source: 'src/sign.rs', lines 144:0-157:1
+    Source: 'src/sign.rs', lines 324:0-337:1
     Visibility: public -/
 structure sign.PreparedSk (K : Std.Usize) (L : Std.Usize) where
   a_hat : Array (Array (Array Std.U32 256#usize) L) K
@@ -57,7 +57,7 @@ structure sign.PreparedSk (K : Std.Usize) (L : Std.Usize) where
   tr : Array Std.U8 64#usize
 
 /-- [ml_dsa_lean::encode::SecretKey]
-    Source: 'src/encode.rs', lines 111:0-118:1
+    Source: 'src/encode.rs', lines 120:0-127:1
     Visibility: public -/
 structure encode.SecretKey (K : Std.Usize) (L : Std.Usize) where
   rho : Array Std.U8 32#usize
@@ -76,37 +76,37 @@ structure verify.PreparedVk (K : Std.Usize) (L : Std.Usize) where
   tr : Array Std.U8 64#usize
 
 /-- [ml_dsa_lean::api::VerifyingKey44]
-    Source: 'src/api.rs', lines 156:0-158:1
+    Source: 'src/api.rs', lines 165:0-167:1
     Visibility: public -/
 structure api.VerifyingKey44 where
   inner : verify.PreparedVk 4#usize 4#usize
 
 /-- [ml_dsa_lean::api::SigningKey44]
-    Source: 'src/api.rs', lines 196:0-198:1
+    Source: 'src/api.rs', lines 205:0-207:1
     Visibility: public -/
 structure api.SigningKey44 where
   inner : sign.PreparedSk 4#usize 4#usize
 
 /-- [ml_dsa_lean::api::VerifyingKey65]
-    Source: 'src/api.rs', lines 341:0-343:1
+    Source: 'src/api.rs', lines 350:0-352:1
     Visibility: public -/
 structure api.VerifyingKey65 where
   inner : verify.PreparedVk 6#usize 5#usize
 
 /-- [ml_dsa_lean::api::SigningKey65]
-    Source: 'src/api.rs', lines 381:0-383:1
+    Source: 'src/api.rs', lines 390:0-392:1
     Visibility: public -/
 structure api.SigningKey65 where
   inner : sign.PreparedSk 6#usize 5#usize
 
 /-- [ml_dsa_lean::api::VerifyingKey87]
-    Source: 'src/api.rs', lines 526:0-528:1
+    Source: 'src/api.rs', lines 535:0-537:1
     Visibility: public -/
 structure api.VerifyingKey87 where
   inner : verify.PreparedVk 8#usize 7#usize
 
 /-- [ml_dsa_lean::api::SigningKey87]
-    Source: 'src/api.rs', lines 566:0-568:1
+    Source: 'src/api.rs', lines 575:0-577:1
     Visibility: public -/
 structure api.SigningKey87 where
   inner : sign.PreparedSk 8#usize 7#usize

@@ -796,33 +796,35 @@ theorem bytesA_eq_slice {n : Usize} (a : Array U8 n) (sk : Slice U8) (off : Nat)
   · rw [List.getElem?_eq_none (by simp; omega)]
     simp [slice, hk]
 
-theorem sk_decode_loop0_spec (sk : Slice U8) (a0 b0 : Array U8 32#usize)
-    (a b : Array U8 32#usize) (i : Usize) (hL : 64 ≤ sk.val.length) (hi : i.val ≤ 32)
-    (ha : ∀ k, (bytesA a)[k]? = if k < i.val then (bytes sk)[k]? else (bytesA a0)[k]?)
-    (hb : ∀ k, (bytesA b)[k]? = if k < i.val then (bytes sk)[32 + k]? else (bytesA b0)[k]?) :
-    encode.sk_decode_loop0 sk a b i ⦃ r =>
-      (∀ k, (bytesA r.1)[k]? = if k < 32 then (bytes sk)[k]? else (bytesA a0)[k]?) ∧
-      (∀ k, (bytesA r.2)[k]? = if k < 32 then (bytes sk)[32 + k]? else (bytesA b0)[k]?) ⦄ := by
-  unfold encode.sk_decode_loop0
+theorem sk_decode_loop0_spec {K L : Usize} (sk : Slice U8) (out0 out : encode.SecretKey K L) (i : Usize)
+    (hL : 64 ≤ sk.val.length) (hi : i.val ≤ 32)
+    (hfr : { out with rho := out0.rho, key := out0.key } = out0)
+    (ha : ∀ k, (bytesA out.rho)[k]? = if k < i.val then (bytes sk)[k]? else (bytesA out0.rho)[k]?)
+    (hb : ∀ k, (bytesA out.key)[k]? = if k < i.val then (bytes sk)[32 + k]? else (bytesA out0.key)[k]?) :
+    encode.sk_decode_into_loop0 sk out i ⦃ r =>
+      { r with rho := out0.rho, key := out0.key } = out0 ∧
+      (∀ k, (bytesA r.rho)[k]? = if k < 32 then (bytes sk)[k]? else (bytesA out0.rho)[k]?) ∧
+      (∀ k, (bytesA r.key)[k]? = if k < 32 then (bytes sk)[32 + k]? else (bytesA out0.key)[k]?) ⦄ := by
+  unfold encode.sk_decode_into_loop0
   apply loop.spec_decr_nat
-    (fun (p : Array U8 32#usize × Array U8 32#usize × Usize) => 32 - p.2.2.val)
-    (fun p => p.2.2.val ≤ 32 ∧
-      (∀ k, (bytesA p.1)[k]? = if k < p.2.2.val then (bytes sk)[k]? else (bytesA a0)[k]?) ∧
-      (∀ k, (bytesA p.2.1)[k]? = if k < p.2.2.val then (bytes sk)[32 + k]? else (bytesA b0)[k]?))
-  · rintro ⟨a, b, i⟩ ⟨h2, h3, h4⟩
-    dsimp only at h2 h3 h4
-    simp only [encode.sk_decode_loop0.body]
+    (fun (p : encode.SecretKey K L × Usize) => 32 - p.2.val)
+    (fun p => p.2.val ≤ 32 ∧ { p.1 with rho := out0.rho, key := out0.key } = out0 ∧
+      (∀ k, (bytesA p.1.rho)[k]? = if k < p.2.val then (bytes sk)[k]? else (bytesA out0.rho)[k]?) ∧
+      (∀ k, (bytesA p.1.key)[k]? = if k < p.2.val then (bytes sk)[32 + k]? else (bytesA out0.key)[k]?))
+  · rintro ⟨out, i⟩ ⟨h2, hf, h3, h4⟩
+    dsimp only at h2 hf h3 h4
+    simp only [encode.sk_decode_into_loop0.body]
     split
     · rename_i hi
       have hi' : i.val < 32 := by scalar_tac
       step*
-      subst a2_post a3_post i1_post2 i3_post2
+      subst i1_post2 i3_post2 a_post a1_post
       have hq1 : sk.val[i.val]? = some (sk.val[i.val]'i1) := List.getElem?_eq_getElem i1
       have hq2 : sk.val[32 + i.val]? = some (sk.val[i2.val]'i3) := by
         rw [← i2_post]; exact List.getElem?_eq_getElem i3
-      have hlt : i.val < (bytesA a).length := by simpa using hi'
-      have hlt2 : i.val < (bytesA b).length := by simpa using hi'
-      refine ⟨by omega, fun k => ?_, fun k => ?_, by omega⟩
+      have hlt : i.val < (bytesA out.rho).length := by simpa using hi'
+      have hlt2 : i.val < (bytesA out.key).length := by simpa using hi'
+      refine ⟨by omega, hf, fun k => ?_, fun k => ?_, by omega⟩
       · rw [bytesA_set, List.getElem?_set, h3 k, i4_post]
         by_cases hk : i.val = k
         · subst hk; simp [hi', bytes_getElem?_eq, hq1]
@@ -834,33 +836,35 @@ theorem sk_decode_loop0_spec (sk : Slice U8) (a0 b0 : Array U8 32#usize)
     · rename_i hi
       have hi' : i.val = 32 := by scalar_tac
       simp only [WP.spec_ok]
-      refine ⟨fun k => ?_, fun k => ?_⟩
+      refine ⟨hf, fun k => ?_, fun k => ?_⟩
       · rw [h3 k, hi']
       · rw [h4 k, hi']
-  · exact ⟨hi, ha, hb⟩
+  · exact ⟨hi, hfr, ha, hb⟩
 
-theorem sk_decode_loop1_spec (sk : Slice U8) (a0 a : Array U8 64#usize) (i : Usize) (hL : 128 ≤ sk.val.length)
-    (hi : i.val ≤ 64)
-    (ha : ∀ k, (bytesA a)[k]? = if k < i.val then (bytes sk)[64 + k]? else (bytesA a0)[k]?) :
-    encode.sk_decode_loop1 sk a i ⦃ r =>
-      ∀ k, (bytesA r)[k]? = if k < 64 then (bytes sk)[64 + k]? else (bytesA a0)[k]? ⦄ := by
-  unfold encode.sk_decode_loop1
+theorem sk_decode_loop1_spec {K L : Usize} (sk : Slice U8) (out0 out : encode.SecretKey K L) (i : Usize)
+    (hL : 128 ≤ sk.val.length) (hi : i.val ≤ 64)
+    (hfr : { out with tr := out0.tr } = out0)
+    (ha : ∀ k, (bytesA out.tr)[k]? = if k < i.val then (bytes sk)[64 + k]? else (bytesA out0.tr)[k]?) :
+    encode.sk_decode_into_loop1 sk out i ⦃ r =>
+      { r with tr := out0.tr } = out0 ∧
+      ∀ k, (bytesA r.tr)[k]? = if k < 64 then (bytes sk)[64 + k]? else (bytesA out0.tr)[k]? ⦄ := by
+  unfold encode.sk_decode_into_loop1
   apply loop.spec_decr_nat
-    (fun (p : Array U8 64#usize × Usize) => 64 - p.2.val)
-    (fun p => p.2.val ≤ 64 ∧
-      ∀ k, (bytesA p.1)[k]? = if k < p.2.val then (bytes sk)[64 + k]? else (bytesA a0)[k]?)
-  · rintro ⟨a, i⟩ ⟨h2, h3⟩
-    dsimp only at h2 h3
-    simp only [encode.sk_decode_loop1.body]
+    (fun (p : encode.SecretKey K L × Usize) => 64 - p.2.val)
+    (fun p => p.2.val ≤ 64 ∧ { p.1 with tr := out0.tr } = out0 ∧
+      ∀ k, (bytesA p.1.tr)[k]? = if k < p.2.val then (bytes sk)[64 + k]? else (bytesA out0.tr)[k]?)
+  · rintro ⟨out, i⟩ ⟨h2, hf, h3⟩
+    dsimp only at h2 hf h3
+    simp only [encode.sk_decode_into_loop1.body]
     split
     · rename_i hi
       have hi' : i.val < 64 := by scalar_tac
       step*
-      subst a1_post i2_post2
+      subst i2_post2 a_post
       have hq2 : sk.val[64 + i.val]? = some (sk.val[i1.val]'i2) := by
         rw [← i1_post]; exact List.getElem?_eq_getElem i2
-      have hlt2 : i.val < (bytesA a).length := by simpa using hi'
-      refine ⟨by omega, fun k => ?_, by omega⟩
+      have hlt2 : i.val < (bytesA out.tr).length := by simpa using hi'
+      refine ⟨by omega, hf, fun k => ?_, by omega⟩
       rw [bytesA_set, List.getElem?_set, h3 k, i3_post]
       by_cases hk : i.val = k
       · subst hk; simp [hi', bytes_getElem?_eq, hq2]
@@ -868,49 +872,50 @@ theorem sk_decode_loop1_spec (sk : Slice U8) (a0 a : Array U8 64#usize) (i : Usi
     · rename_i hi
       have hi' : i.val = 64 := by scalar_tac
       simp only [WP.spec_ok]
-      intro k
+      refine ⟨hf, fun k => ?_⟩
       rw [h3 k, hi']
-  · exact ⟨hi, ha⟩
+  · exact ⟨hi, hfr, ha⟩
 
 
-theorem sk_decode_loop2_spec {L : Usize} (bb : U32) (c : Usize) (ea : Nat) (hb : bb.val < Spec.q)
+theorem sk_decode_loop2_spec {K L : Usize} (bb : U32) (c : Usize) (ea : Nat) (hb : bb.val < Spec.q)
     (hc : c.val = bitlen (ea + bb.val)) (hc22 : c.val ≤ 22) (n : Usize) (hn : n.val = 32 * c.val)
     (k : Nat) (hKk : L.val = k) (sk : Slice U8) (o0 : Nat) (hL : o0 + k * n.val ≤ sk.val.length)
-    (arr : Array (Array U32 256#usize) L) (o i2 : Usize) (hi2 : i2.val ≤ k)
+    (out0 out : encode.SecretKey K L) (o i2 : Usize)
+    (hfr : { out with s1 := out0.s1 } = out0) (hi2 : i2.val ≤ k)
     (ho : o.val = o0 + i2.val * n.val)
-    (hinv : ∀ j (_hj : j < i2.val) (hj' : j < arr.val.length),
-      ReprInt (arr.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val)) :
-    encode.sk_decode_loop2 bb c sk arr n o i2 ⦃ r => r.2.val = o0 + k * n.val ∧
-      ∀ j (_hj : j < k) (hj' : j < r.1.val.length),
-        ReprInt (r.1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val) ⦄ := by
-  unfold encode.sk_decode_loop2
+    (hinv : ∀ j (_hj : j < i2.val) (hj' : j < out.s1.val.length),
+      ReprInt (out.s1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val)) :
+    encode.sk_decode_into_loop2 bb c sk out n o i2 ⦃ r => { r.1 with s1 := out0.s1 } = out0 ∧ r.2.val = o0 + k * n.val ∧
+      ∀ j (_hj : j < k) (hj' : j < r.1.s1.val.length),
+        ReprInt (r.1.s1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val) ⦄ := by
+  unfold encode.sk_decode_into_loop2
   apply loop.spec_decr_nat
-    (fun (p : Array (Array U32 256#usize) L × Usize × Usize) => k - p.2.2.val)
-    (fun p => p.2.2.val ≤ k ∧ p.2.1.val = o0 + p.2.2.val * n.val ∧
-      ∀ j (hj : j < p.2.2.val) (hj' : j < p.1.val.length),
-        ReprInt (p.1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val))
-  · rintro ⟨arr, o, i2⟩ ⟨h2, h2', h3⟩
-    dsimp only at h2 h2' h3
-    simp only [encode.sk_decode_loop2.body]
+    (fun (p : encode.SecretKey K L × Usize × Usize) => k - p.2.2.val)
+    (fun p => p.2.2.val ≤ k ∧ { p.1 with s1 := out0.s1 } = out0 ∧ p.2.1.val = o0 + p.2.2.val * n.val ∧
+      ∀ j (hj : j < p.2.2.val) (hj' : j < p.1.s1.val.length),
+        ReprInt (p.1.s1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val))
+  · rintro ⟨out, o, i2⟩ ⟨h2, hf, h2', h3⟩
+    dsimp only at h2 hf h2' h3
+    simp only [encode.sk_decode_into_loop2.body]
     split
     · rename_i hi
       have hik : i2.val < k := by scalar_tac
       have hm1 : (i2.val + 1) * n.val ≤ k * n.val := Nat.mul_le_mul_right _ hik
       have e : (i2.val + 1) * n.val = i2.val * n.val + n.val := by ring
       have hlen := sk.property
-      have hlen2 := arr.property
+      have hlen2 := out.s1.property
       have hbd : o.val + n.val ≤ sk.val.length := by omega
       step*
       have hslen : s.val.length = 32 * c.val := by
         have : s.val.length = i3.val - o.val := s_post2
         rw [this, i3_post]; omega
-      refine WP.spec_bind (unpack_signed_spec s bb ea c hb hc hc22 hslen) ?_
+      refine WP.spec_bind (unpack_signed_into_spec s bb ea c hb hc hc22 hslen _) ?_
       intro w hw
       step*
       have hsb0 := bytes_slice_of sk s o.val i3.val n.val s_post1 (by rw [i3_post]; omega)
       have hsb : bytes s = slice (bytes sk) (o0 + i2.val * n.val) n.val := by rw [hsb0, h2']
-      subst a2_post
-      refine ⟨by omega, by rw [i3_post, i4_post]; omega, ?_, by omega⟩
+      subst a_post3
+      refine ⟨by omega, hf, by rw [i3_post, i4_post]; omega, ?_, by omega⟩
       intro j hj hj'
       simp only [Array.set_val_eq, List.getElem_set]
       split
@@ -922,47 +927,48 @@ theorem sk_decode_loop2_spec {L : Usize} (bb : U32) (c : Usize) (ea : Nat) (hb :
       have hi' : i2.val = k := by scalar_tac
       simp only [WP.spec_ok]
       rw [hi'] at h2' h3
-      exact ⟨h2', h3⟩
-  · exact ⟨hi2, ho, hinv⟩
+      exact ⟨hf, h2', h3⟩
+  · exact ⟨hi2, hfr, ho, hinv⟩
 
-theorem sk_decode_loop3_spec {L : Usize} (bb : U32) (c : Usize) (ea : Nat) (hb : bb.val < Spec.q)
+theorem sk_decode_loop3_spec {K L : Usize} (bb : U32) (c : Usize) (ea : Nat) (hb : bb.val < Spec.q)
     (hc : c.val = bitlen (ea + bb.val)) (hc22 : c.val ≤ 22) (n : Usize) (hn : n.val = 32 * c.val)
-    (k : Nat) (hKk : L.val = k) (sk : Slice U8) (o0 : Nat) (hL : o0 + k * n.val ≤ sk.val.length)
-    (arr : Array (Array U32 256#usize) L) (o i2 : Usize) (hi2 : i2.val ≤ k)
+    (k : Nat) (hKk : K.val = k) (sk : Slice U8) (o0 : Nat) (hL : o0 + k * n.val ≤ sk.val.length)
+    (out0 out : encode.SecretKey K L) (o i2 : Usize)
+    (hfr : { out with s2 := out0.s2 } = out0) (hi2 : i2.val ≤ k)
     (ho : o.val = o0 + i2.val * n.val)
-    (hinv : ∀ j (_hj : j < i2.val) (hj' : j < arr.val.length),
-      ReprInt (arr.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val)) :
-    encode.sk_decode_loop3 bb c sk arr n o i2 ⦃ r => r.2.val = o0 + k * n.val ∧
-      ∀ j (_hj : j < k) (hj' : j < r.1.val.length),
-        ReprInt (r.1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val) ⦄ := by
-  unfold encode.sk_decode_loop3
+    (hinv : ∀ j (_hj : j < i2.val) (hj' : j < out.s2.val.length),
+      ReprInt (out.s2.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val)) :
+    encode.sk_decode_into_loop3 bb c sk out n o i2 ⦃ r => { r.1 with s2 := out0.s2 } = out0 ∧ r.2.val = o0 + k * n.val ∧
+      ∀ j (_hj : j < k) (hj' : j < r.1.s2.val.length),
+        ReprInt (r.1.s2.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val) ⦄ := by
+  unfold encode.sk_decode_into_loop3
   apply loop.spec_decr_nat
-    (fun (p : Array (Array U32 256#usize) L × Usize × Usize) => k - p.2.2.val)
-    (fun p => p.2.2.val ≤ k ∧ p.2.1.val = o0 + p.2.2.val * n.val ∧
-      ∀ j (hj : j < p.2.2.val) (hj' : j < p.1.val.length),
-        ReprInt (p.1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val))
-  · rintro ⟨arr, o, i2⟩ ⟨h2, h2', h3⟩
-    dsimp only at h2 h2' h3
-    simp only [encode.sk_decode_loop3.body]
+    (fun (p : encode.SecretKey K L × Usize × Usize) => k - p.2.2.val)
+    (fun p => p.2.2.val ≤ k ∧ { p.1 with s2 := out0.s2 } = out0 ∧ p.2.1.val = o0 + p.2.2.val * n.val ∧
+      ∀ j (hj : j < p.2.2.val) (hj' : j < p.1.s2.val.length),
+        ReprInt (p.1.s2.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val))
+  · rintro ⟨out, o, i2⟩ ⟨h2, hf, h2', h3⟩
+    dsimp only at h2 hf h2' h3
+    simp only [encode.sk_decode_into_loop3.body]
     split
     · rename_i hi
       have hik : i2.val < k := by scalar_tac
       have hm1 : (i2.val + 1) * n.val ≤ k * n.val := Nat.mul_le_mul_right _ hik
       have e : (i2.val + 1) * n.val = i2.val * n.val + n.val := by ring
       have hlen := sk.property
-      have hlen2 := arr.property
+      have hlen2 := out.s2.property
       have hbd : o.val + n.val ≤ sk.val.length := by omega
       step*
       have hslen : s.val.length = 32 * c.val := by
         have : s.val.length = i3.val - o.val := s_post2
         rw [this, i3_post]; omega
-      refine WP.spec_bind (unpack_signed_spec s bb ea c hb hc hc22 hslen) ?_
+      refine WP.spec_bind (unpack_signed_into_spec s bb ea c hb hc hc22 hslen _) ?_
       intro w hw
       step*
       have hsb0 := bytes_slice_of sk s o.val i3.val n.val s_post1 (by rw [i3_post]; omega)
       have hsb : bytes s = slice (bytes sk) (o0 + i2.val * n.val) n.val := by rw [hsb0, h2']
-      subst a2_post
-      refine ⟨by omega, by rw [i3_post, i4_post]; omega, ?_, by omega⟩
+      subst a_post3
+      refine ⟨by omega, hf, by rw [i3_post, i4_post]; omega, ?_, by omega⟩
       intro j hj hj'
       simp only [Array.set_val_eq, List.getElem_set]
       split
@@ -974,49 +980,50 @@ theorem sk_decode_loop3_spec {L : Usize} (bb : U32) (c : Usize) (ea : Nat) (hb :
       have hi' : i2.val = k := by scalar_tac
       simp only [WP.spec_ok]
       rw [hi'] at h2' h3
-      exact ⟨h2', h3⟩
-  · exact ⟨hi2, ho, hinv⟩
+      exact ⟨hf, h2', h3⟩
+  · exact ⟨hi2, hfr, ho, hinv⟩
 
 
-theorem sk_decode_loop4_spec {K : Usize} (k : Nat) (hKk : K.val = k) (sk : Slice U8) (o0 : Nat)
+theorem sk_decode_loop4_spec {K L : Usize} (k : Nat) (hKk : K.val = k) (sk : Slice U8) (o0 : Nat)
     (hL : o0 + k * 416 ≤ sk.val.length)
-    (arr : Array (Array U32 256#usize) K) (o ii : Usize) (hi2 : ii.val ≤ k)
+    (out0 out : encode.SecretKey K L) (o ii : Usize) (hi2 : ii.val ≤ k)
+    (hfr : { out with t0 := out0.t0 } = out0)
     (ho : o.val = o0 + ii.val * 416)
-    (hinv : ∀ j (hj : j < ii.val) (hj' : j < arr.val.length),
-      ReprInt (arr.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * 416) 416) 4095 4096)) :
-    encode.sk_decode_loop4 sk arr o ii ⦃ r =>
-      ∀ j (hj : j < k) (hj' : j < r.val.length),
-        ReprInt (r.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * 416) 416) 4095 4096) ⦄ := by
-  unfold encode.sk_decode_loop4
+    (hinv : ∀ j (hj : j < ii.val) (hj' : j < out.t0.val.length),
+      ReprInt (out.t0.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * 416) 416) 4095 4096)) :
+    encode.sk_decode_into_loop4 sk out o ii ⦃ r =>
+      { r with t0 := out0.t0 } = out0 ∧ ∀ j (hj : j < k) (hj' : j < r.t0.val.length),
+        ReprInt (r.t0.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * 416) 416) 4095 4096) ⦄ := by
+  unfold encode.sk_decode_into_loop4
   apply loop.spec_decr_nat
-    (fun (p : Array (Array U32 256#usize) K × Usize × Usize) => k - p.2.2.val)
-    (fun p => p.2.2.val ≤ k ∧ p.2.1.val = o0 + p.2.2.val * 416 ∧
-      ∀ j (hj : j < p.2.2.val) (hj' : j < p.1.val.length),
-        ReprInt (p.1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * 416) 416) 4095 4096))
-  · rintro ⟨arr, o, ii⟩ ⟨h2, h2', h3⟩
-    dsimp only at h2 h2' h3
-    simp only [encode.sk_decode_loop4.body]
+    (fun (p : encode.SecretKey K L × Usize × Usize) => k - p.2.2.val)
+    (fun p => p.2.2.val ≤ k ∧ { p.1 with t0 := out0.t0 } = out0 ∧ p.2.1.val = o0 + p.2.2.val * 416 ∧
+      ∀ j (hj : j < p.2.2.val) (hj' : j < p.1.t0.val.length),
+        ReprInt (p.1.t0.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * 416) 416) 4095 4096))
+  · rintro ⟨out, o, ii⟩ ⟨h2, hf, h2', h3⟩
+    dsimp only at h2 hf h2' h3
+    simp only [encode.sk_decode_into_loop4.body]
     split
     · rename_i hi
       have hik : ii.val < k := by scalar_tac
       have hm1 : (ii.val + 1) * 416 ≤ k * 416 := Nat.mul_le_mul_right _ hik
       have e : (ii.val + 1) * 416 = ii.val * 416 + 416 := by ring
       have hlen := sk.property
-      have hlen2 := arr.property
+      have hlen2 := out.t0.property
       have hbd : o.val + 416 ≤ sk.val.length := by omega
       step*
       have hi1 : i2.val = 4096 := by simp [i2_post1, U32.size, U32.numBits]
       have hslen : s.val.length = 32 * (13#usize).val := by
         have : s.val.length = i1.val - o.val := s_post2
         rw [this, i1_post]; simp
-      refine WP.spec_bind (unpack_signed_spec s i2 4095 13#usize (by rw [hi1]; decide)
-        (by rw [hi1]; decide +kernel) (by simp) hslen) ?_
+      refine WP.spec_bind (unpack_signed_into_spec s i2 4095 13#usize (by rw [hi1]; decide)
+        (by rw [hi1]; decide +kernel) (by simp) hslen _) ?_
       intro w hw
       step*
       have hsb0 := bytes_slice_of sk s o.val i1.val 416 s_post1 (by rw [i1_post]; omega)
       have hsb : bytes s = slice (bytes sk) (o0 + ii.val * 416) 416 := by rw [hsb0, h2']
-      subst a2_post
-      refine ⟨by omega, by rw [i1_post, i3_post]; omega, ?_, by omega⟩
+      subst a_post3
+      refine ⟨by omega, hf, by rw [i1_post, i3_post]; omega, ?_, by omega⟩
       intro j hj hj'
       simp only [Array.set_val_eq, List.getElem_set]
       split
@@ -1028,16 +1035,17 @@ theorem sk_decode_loop4_spec {K : Usize} (k : Nat) (hKk : K.val = k) (sk : Slice
       have hi' : ii.val = k := by scalar_tac
       simp only [WP.spec_ok]
       rw [hi'] at h3
-      exact h3
-  · exact ⟨hi2, ho, hinv⟩
+      exact ⟨hf, h3⟩
+  · exact ⟨hi2, hfr, ho, hinv⟩
 
 
 /-- **`sk_decode` is `skDecode`** (Algorithm 25), for *every* byte string `sk` of length `skLen`
 (with `2η < 2^22`): the decoder never fails, `ρ, K, tr` are the corresponding byte ranges, and
 `s₁, s₂, t₀` denote the spec's integer vectors modulo `q` (`ReprIntVec`), whatever the packed values. -/
-theorem sk_decode_spec {K L : Usize} (ip : Impl.params.Params) (sp : Spec.Params)
-    (hp : Params.Valid ip K L sp) (hη : 2 * sp.η < 2 ^ 22) (sk : Slice U8) (hL : sk.val.length = sp.skLen) :
-    encode.sk_decode K L ip sk ⦃ r =>
+theorem sk_decode_into_spec {K L : Usize} (ip : Impl.params.Params) (sp : Spec.Params)
+    (hp : Params.Valid ip K L sp) (hη : 2 * sp.η < 2 ^ 22) (sk : Slice U8) (hL : sk.val.length = sp.skLen)
+    (out : encode.SecretKey K L) :
+    encode.sk_decode_into ip sk out ⦃ r =>
       bytesA r.rho = (Spec.skDecode sp (bytes sk)).1 ∧
       bytesA r.key = (Spec.skDecode sp (bytes sk)).2.1 ∧
       bytesA r.tr = (Spec.skDecode sp (bytes sk)).2.2.1 ∧
@@ -1053,59 +1061,100 @@ theorem sk_decode_spec {K L : Usize} (ip : Impl.params.Params) (sp : Spec.Params
   have hc' : ip.eta_bits.val = bitlen (sp.η + ip.eta.val) := by rw [hp.eta]; exact hc
   have hbits : ip.eta_bits.val ≤ 22 := by rw [hp.eta_bits]; exact bitlen_le_of_lt hη
   have hd := hp.d_eq
-  unfold encode.sk_decode
-  refine WP.spec_bind (sk_decode_loop0_spec sk (Array.repeat 32#usize 0#u8) (Array.repeat 32#usize 0#u8)
-    _ _ 0#usize (by omega) (by simp) (by intro k; simp) (by intro k; simp)) ?_
-  rintro ⟨a9, a10⟩ ⟨h9, h10⟩
-  dsimp only at h9 h10
-  refine WP.spec_bind (sk_decode_loop1_spec sk (Array.repeat 64#usize 0#u8) _ 0#usize (by omega) (by simp)
+  unfold encode.sk_decode_into
+  refine WP.spec_bind (sk_decode_loop0_spec sk out out 0#usize (by omega) (by simp) rfl
+    (by intro k; simp) (by intro k; simp)) ?_
+  intro out1 ⟨hf1, h9, h10⟩
+  try dsimp only at hf1 h9 h10
+  refine WP.spec_bind (sk_decode_loop1_spec sk out1 out1 0#usize (by omega) (by simp) rfl
     (by intro k; simp)) ?_
-  intro a11 h11
+  intro out2 ⟨hf2, h11⟩
+  try dsimp only at hf2 h11
   step as ⟨n, n_post⟩
   have hnv : n.val = 32 * bitlen (2 * sp.η) := by rw [n_post, hp.eta_bits]
   have hLen' : sk.val.length = 128 + sp.ℓ * n.val + sp.k * n.val + sp.k * 416 := by
     rw [hL, hLen, hnv]; ring
   refine WP.spec_bind (sk_decode_loop2_spec ip.eta ip.eta_bits sp.η hb hc' hbits n n_post sp.ℓ hp.L_eq sk 128
-    (by omega) _ 128#usize 0#usize (by simp) (by simp) (fun j hj => absurd hj (by simp))) ?_
-  rintro ⟨a12, o⟩ ⟨ho2, h12⟩
-  dsimp only at ho2 h12
+    (by omega) out2 out2 128#usize 0#usize rfl (by simp) (by simp) (fun j hj => absurd hj (by simp))) ?_
+  rintro ⟨out3, o⟩ ⟨hf3, ho2, h12⟩
+  try dsimp only at hf3 ho2 h12
   refine WP.spec_bind (sk_decode_loop3_spec ip.eta ip.eta_bits sp.η hb hc' hbits n n_post sp.k hp.K_eq sk
-    (128 + sp.ℓ * n.val) (by omega) _ o 0#usize (by simp) (by simpa using ho2)
+    (128 + sp.ℓ * n.val) (by omega) out3 out3 o 0#usize rfl (by simp) (by simpa using ho2)
     (fun j hj => absurd hj (by simp))) ?_
-  rintro ⟨a13, o1⟩ ⟨ho3, h13⟩
-  dsimp only at ho3 h13
-  refine WP.spec_bind (sk_decode_loop4_spec sp.k hp.K_eq sk (128 + sp.ℓ * n.val + sp.k * n.val) (by omega) _
-    o1 0#usize (by simp) (by simpa using ho3) (fun j hj => absurd hj (by simp))) ?_
-  intro a14 h14
-  simp only [WP.spec_ok]
+  rintro ⟨out4, o1⟩ ⟨hf4, ho3, h13⟩
+  try dsimp only at hf4 ho3 h13
+  refine WP.spec_mono (sk_decode_loop4_spec sp.k hp.K_eq sk (128 + sp.ℓ * n.val + sp.k * n.val) (by omega) out4
+    out4 o1 0#usize (by simp) rfl (by simpa using ho3) (fun j hj => absurd hj (by simp))) ?_
+  intro out5 ⟨hf5, h14⟩
+  try dsimp only at hf5 h14
   obtain ⟨f1, f2, f3⟩ := skDecode_fst sp (bytes sk)
-  refine ⟨?_, ?_, ?_, ⟨hp.L_eq, fun i hi => ?_⟩, ⟨hp.K_eq, fun i hi => ?_⟩, ⟨hp.K_eq, fun i hi => ?_⟩⟩
-  · rw [f1]
-    refine bytesA_eq_slice a9 sk 0 (fun k hk => ?_)
+  have eRho : out5.rho = out1.rho := by
+    have e5 : out5.rho = out4.rho := by have h := congrArg encode.SecretKey.rho hf5; exact h
+    have e4 : out4.rho = out3.rho := by have h := congrArg encode.SecretKey.rho hf4; exact h
+    have e3 : out3.rho = out2.rho := by have h := congrArg encode.SecretKey.rho hf3; exact h
+    have e2 : out2.rho = out1.rho := by have h := congrArg encode.SecretKey.rho hf2; exact h
+    rw [e5, e4, e3, e2]
+  have eKey : out5.key = out1.key := by
+    have e5 : out5.key = out4.key := by have h := congrArg encode.SecretKey.key hf5; exact h
+    have e4 : out4.key = out3.key := by have h := congrArg encode.SecretKey.key hf4; exact h
+    have e3 : out3.key = out2.key := by have h := congrArg encode.SecretKey.key hf3; exact h
+    have e2 : out2.key = out1.key := by have h := congrArg encode.SecretKey.key hf2; exact h
+    rw [e5, e4, e3, e2]
+  have eTr : out5.tr = out2.tr := by
+    have e5 : out5.tr = out4.tr := by have h := congrArg encode.SecretKey.tr hf5; exact h
+    have e4 : out4.tr = out3.tr := by have h := congrArg encode.SecretKey.tr hf4; exact h
+    have e3 : out3.tr = out2.tr := by have h := congrArg encode.SecretKey.tr hf3; exact h
+    rw [e5, e4, e3]
+  have eS1 : out5.s1 = out3.s1 := by
+    have e5 : out5.s1 = out4.s1 := by have h := congrArg encode.SecretKey.s1 hf5; exact h
+    have e4 : out4.s1 = out3.s1 := by have h := congrArg encode.SecretKey.s1 hf4; exact h
+    rw [e5, e4]
+  have eS2 : out5.s2 = out4.s2 := by have h := congrArg encode.SecretKey.s2 hf5; exact h
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [f1, eRho]
+    refine bytesA_eq_slice out1.rho sk 0 (fun k hk => ?_)
     have hk' : k < 32 := by simpa using hk
     rw [h9 k]; simp [hk']
-  · rw [f2]
-    refine bytesA_eq_slice a10 sk 32 (fun k hk => ?_)
+  · rw [f2, eKey]
+    refine bytesA_eq_slice out1.key sk 32 (fun k hk => ?_)
     have hk' : k < 32 := by simpa using hk
     rw [h10 k]; simp [hk']
-  · rw [f3]
-    refine bytesA_eq_slice a11 sk 64 (fun k hk => ?_)
+  · rw [f3, eTr]
+    refine bytesA_eq_slice out2.tr sk 64 (fun k hk => ?_)
     have hk' : k < 64 := by simpa using hk
     rw [h11 k]; simp [hk']
-  · rw [skDecode_s1 sp (bytes sk) i hi]
-    have := h12 i hi (by rw [a12.property, hp.L_eq]; exact hi)
+  · rw [eS1]
+    refine ⟨hp.L_eq, fun i hi => ?_⟩
+    rw [skDecode_s1 sp (bytes sk) i hi]
+    have := h12 i hi (by rw [out3.s1.property, hp.L_eq]; exact hi)
     rw [hnv, hp.eta] at this
     exact this
-  · rw [skDecode_s2 sp (bytes sk) i hi]
-    have := h13 i hi (by rw [a13.property, hp.K_eq]; exact hi)
+  · rw [eS2]
+    refine ⟨hp.K_eq, fun i hi => ?_⟩
+    rw [skDecode_s2 sp (bytes sk) i hi]
+    have := h13 i hi (by rw [out4.s2.property, hp.K_eq]; exact hi)
     rw [hnv, hp.eta] at this
     exact this
-  · rw [skDecode_t0 sp (bytes sk) i hi, hd]
-    have := h14 i hi (by rw [a14.property, hp.K_eq]; exact hi)
+  · refine ⟨hp.K_eq, fun i hi => ?_⟩
+    rw [skDecode_t0 sp (bytes sk) i hi, hd]
+    have := h14 i hi (by rw [out5.t0.property, hp.K_eq]; exact hi)
     rw [hnv] at this
     have e : 128 + (sp.ℓ + sp.k) * (32 * bitlen (2 * sp.η)) + i * (32 * 13) =
         128 + sp.ℓ * (32 * bitlen (2 * sp.η)) + sp.k * (32 * bitlen (2 * sp.η)) + i * 416 := by ring
     rw [e]
     exact this
+
+/-- **`sk_decode` is `skDecode`** (Algorithm 25), from the zero destination; see `sk_decode_into_spec`. -/
+theorem sk_decode_spec {K L : Usize} (ip : Impl.params.Params) (sp : Spec.Params)
+    (hp : Params.Valid ip K L sp) (hη : 2 * sp.η < 2 ^ 22) (sk : Slice U8) (hL : sk.val.length = sp.skLen) :
+    encode.sk_decode K L ip sk ⦃ r =>
+      bytesA r.rho = (Spec.skDecode sp (bytes sk)).1 ∧
+      bytesA r.key = (Spec.skDecode sp (bytes sk)).2.1 ∧
+      bytesA r.tr = (Spec.skDecode sp (bytes sk)).2.2.1 ∧
+      ReprIntVec r.s1 (Spec.skDecode sp (bytes sk)).2.2.2.1 ∧
+      ReprIntVec r.s2 (Spec.skDecode sp (bytes sk)).2.2.2.2.1 ∧
+      ReprIntVec r.t0 (Spec.skDecode sp (bytes sk)).2.2.2.2.2 ⦄ := by
+  unfold encode.sk_decode
+  exact sk_decode_into_spec ip sp hp hη sk hL _
 
 end Proofs

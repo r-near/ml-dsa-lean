@@ -200,11 +200,15 @@ pub fn expand_s<const K: usize, const L: usize>(
         s2[r] = rej_bounded_poly(p, &seed);
         r += 1;
     }
-    // `seed` holds ρ′. The returned s1 and s2 are the caller's.
+    // `seed` holds ρ′. The returned s1 and s2 are the caller's. With `zeroize`, the locals are wiped after the copy
+    // into the result tuple (arrays are `Copy`): `s1` and `s2` here would otherwise stay in the dead frame.
+    let out = (s1, s2);
     #[cfg(feature = "zeroize")]
     {
         use zeroize::Zeroize;
         seed.zeroize();
+        s1.zeroize();
+        s2.zeroize();
     }
-    (s1, s2)
+    out
 }

@@ -53,3 +53,6 @@ ml_dsa_lean::api::sign_prepared_87
 ml_dsa_lean::api::sign_internal_prepared_87
 # The Barrett reference product; no longer reachable from the API (the NTT uses mul_shoup and mul_mont), kept for Field.lean and the impl-eval differential.
 ml_dsa_lean::field::mul
+# By-value forms that no api function reaches any more (the secret paths use the `_into` forms, which write into a caller-owned buffer); kept because the proofs state the by-value forms (Proofs.sk_decode_spec, Proofs.scalar_vector_ntt_inverse_spec).
+ml_dsa_lean::encode::sk_decode
+ml_dsa_lean::ntt::scalar_vector_ntt_inverse

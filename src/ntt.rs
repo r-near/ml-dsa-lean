@@ -157,25 +157,31 @@ fn ntt_body(w: &[u32; 256]) -> [u32; 256] {
     o
 }
 
-/// Algorithm 42 NTT⁻¹(ŵ), the shared body.
+/// Algorithm 42 NTT⁻¹(ŵ) in place, the shared body (see "Dispatch" below).
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
-fn ntt_inverse_body(w_hat: &[u32; 256]) -> [u32; 256] {
-    let mut w = *w_hat;
+fn ntt_inverse_body_mut(w: &mut [u32; 256]) {
     let mut m = 256;
-    ntt_inverse_layer::<1, 128>(&mut w, &mut m);
-    ntt_inverse_layer::<2, 64>(&mut w, &mut m);
-    ntt_inverse_layer::<4, 32>(&mut w, &mut m);
-    ntt_inverse_layer::<8, 16>(&mut w, &mut m);
-    ntt_inverse_layer::<16, 8>(&mut w, &mut m);
-    ntt_inverse_layer::<32, 4>(&mut w, &mut m);
-    ntt_inverse_layer::<64, 2>(&mut w, &mut m);
-    ntt_inverse_layer::<128, 1>(&mut w, &mut m);
+    ntt_inverse_layer::<1, 128>(w, &mut m);
+    ntt_inverse_layer::<2, 64>(w, &mut m);
+    ntt_inverse_layer::<4, 32>(w, &mut m);
+    ntt_inverse_layer::<8, 16>(w, &mut m);
+    ntt_inverse_layer::<16, 8>(w, &mut m);
+    ntt_inverse_layer::<32, 4>(w, &mut m);
+    ntt_inverse_layer::<64, 2>(w, &mut m);
+    ntt_inverse_layer::<128, 1>(w, &mut m);
     let f = 8_347_681; // 256⁻¹ mod q
     let mut j = 0;
     while j < 256 {
         w[j] = mul_shoup(f, F_SHOUP, w[j]);
         j += 1;
     }
+}
+
+/// Algorithm 42 NTT⁻¹(ŵ), the shared body: a copy of `w_hat`, transformed in place.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
+fn ntt_inverse_body(w_hat: &[u32; 256]) -> [u32; 256] {
+    let mut w = *w_hat;
+    ntt_inverse_body_mut(&mut w);
     w
 }
 
@@ -220,7 +226,7 @@ fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
 
 #[cfg(any(not(feature = "avx2"), miri, not(target_arch = "x86_64"), target_feature = "avx2"))]
 mod dispatch {
-    use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body};
+    use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body, ntt_inverse_body_mut};
     pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
         ntt_body(w)
     }
@@ -230,6 +236,9 @@ mod dispatch {
     pub fn ntt_inverse(w_hat: &[u32; 256]) -> [u32; 256] {
         ntt_inverse_body(w_hat)
     }
+    pub fn ntt_inverse_in_place(w: &mut [u32; 256]) {
+        ntt_inverse_body_mut(w)
+    }
     pub fn multiply_ntt(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
         multiply_ntt_body(a, b)
     }
@@ -238,7 +247,7 @@ mod dispatch {
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")))]
 #[allow(unsafe_code)]
 mod dispatch {
-    use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body};
+    use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body, ntt_inverse_body_mut};
     use core::sync::atomic::{AtomicU8, Ordering};
 
     #[target_feature(enable = "avx2")]
@@ -252,6 +261,10 @@ mod dispatch {
     #[target_feature(enable = "avx2")]
     fn ntt_inverse_avx2(w_hat: &[u32; 256]) -> [u32; 256] {
         ntt_inverse_body(w_hat)
+    }
+    #[target_feature(enable = "avx2")]
+    fn ntt_inverse_in_place_avx2(w: &mut [u32; 256]) {
+        ntt_inverse_body_mut(w)
     }
     #[target_feature(enable = "avx2")]
     fn multiply_ntt_avx2(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
@@ -320,6 +333,14 @@ mod dispatch {
             ntt_inverse_body(w_hat)
         }
     }
+    pub fn ntt_inverse_in_place(w: &mut [u32; 256]) {
+        if has_avx2() {
+            // SAFETY: as above.
+            unsafe { ntt_inverse_in_place_avx2(w) }
+        } else {
+            ntt_inverse_body_mut(w)
+        }
+    }
     pub fn multiply_ntt(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
         if has_avx2() {
             // SAFETY: as above.
@@ -369,6 +390,12 @@ pub fn ntt_inverse(w_hat: &[u32; 256]) -> [u32; 256] {
     dispatch::ntt_inverse(w_hat)
 }
 
+/// Algorithm 42 NTT⁻¹(ŵ), in place: `w` ← NTT⁻¹(w). The same body as `ntt_inverse`, without the second 1 KiB buffer a
+/// by-value result needs (the counterpart of `ntt_in_place`).
+pub fn ntt_inverse_in_place(w: &mut [u32; 256]) {
+    dispatch::ntt_inverse_in_place(w)
+}
+
 /// Algorithm 45 MultiplyNTT(â, b̂).
 pub fn multiply_ntt(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
     dispatch::multiply_ntt(a, b)
@@ -410,15 +437,67 @@ pub fn sub_poly(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
     c
 }
 
-/// Algorithm 47 ScalarVectorNTT(ĉ, v̂) followed by NTT⁻¹ on each entry: ⟨⟨c·v⟩⟩.
-pub fn scalar_vector_ntt_inverse<const N: usize>(c_hat: &[u32; 256], v_hat: &[[u32; 256]; N]) -> [[u32; 256]; N] {
-    let mut out = [[0u32; 256]; N];
+/// Algorithm 47 ScalarVectorNTT(ĉ, v̂) followed by NTT⁻¹ on each entry: ⟨⟨c·v⟩⟩, written into `out` (any value; it is
+/// zeroed first, like `ntt_vec_into`, so its previous contents do not matter). The callers in Sign pass a secret v̂ (ŝ1, ŝ2, t̂0) and own
+/// `out`, which they wipe; with the `zeroize` feature the per-entry temporaries (ĉ ∘ v̂ᵢ, and the NTT⁻¹ result before it
+/// is copied into `out`) go through named locals that are wiped, and nothing secret is returned by value (a by-value
+/// result is built in the callee's frame and copied out, which leaves a copy in the dead frame).
+pub fn scalar_vector_ntt_inverse_into<const N: usize>(c_hat: &[u32; 256], v_hat: &[[u32; 256]; N], out: &mut [[u32; 256]; N]) {
+    *out = [[0u32; 256]; N];
     let mut i = 0;
     while i < N {
-        out[i] = ntt_inverse(&multiply_ntt(c_hat, &v_hat[i]));
+        #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
+        let mut t = multiply_ntt(c_hat, &v_hat[i]);
+        ntt_inverse_in_place(&mut t);
+        out[i] = t;
+        #[cfg(feature = "zeroize")]
+        {
+            use zeroize::Zeroize;
+            t.zeroize();
+        }
         i += 1;
     }
+}
+
+/// `scalar_vector_ntt_inverse_into` returning a fresh vector. Sign uses the `_into` form; this one is for callers
+/// that do not hold secrets (the tests, the benchmarks).
+#[cfg_attr(not(feature = "internals"), allow(dead_code))]
+pub fn scalar_vector_ntt_inverse<const N: usize>(c_hat: &[u32; 256], v_hat: &[[u32; 256]; N]) -> [[u32; 256]; N] {
+    let mut out = [[0u32; 256]; N];
+    scalar_vector_ntt_inverse_into::<N>(c_hat, v_hat, &mut out);
     out
+}
+
+/// Algorithm 48 MatrixVectorNTT(M̂, v̂), written into `out` (any value; it is zeroed first, so its previous contents do
+/// not matter). Sign passes ŷ, a secret, and owns `out`, which is Â ∘ ŷ and is wiped by the caller; with the `zeroize`
+/// feature the per-term temporaries go through named locals that are wiped, and nothing is returned by value.
+pub fn matrix_vector_ntt_into<const K: usize, const L: usize>(
+    m: &[[[u32; 256]; L]; K],
+    v: &[[u32; 256]; L],
+    out: &mut [[u32; 256]; K],
+) {
+    *out = [[0u32; 256]; K];
+    let mut i = 0;
+    while i < K {
+        let mut j = 0;
+        while j < L {
+            #[cfg(not(feature = "zeroize"))]
+            {
+                out[i] = add_poly(&out[i], &multiply_ntt(&m[i][j], &v[j]));
+            }
+            #[cfg(feature = "zeroize")]
+            {
+                use zeroize::Zeroize;
+                let mut t = multiply_ntt(&m[i][j], &v[j]);
+                let mut s = add_poly(&out[i], &t);
+                out[i] = s;
+                t.zeroize();
+                s.zeroize();
+            }
+            j += 1;
+        }
+        i += 1;
+    }
 }
 
 /// Algorithm 48 MatrixVectorNTT(M̂, v̂).
@@ -427,15 +506,7 @@ pub fn matrix_vector_ntt<const K: usize, const L: usize>(
     v: &[[u32; 256]; L],
 ) -> [[u32; 256]; K] {
     let mut w = [[0u32; 256]; K];
-    let mut i = 0;
-    while i < K {
-        let mut j = 0;
-        while j < L {
-            w[i] = add_poly(&w[i], &multiply_ntt(&m[i][j], &v[j]));
-            j += 1;
-        }
-        i += 1;
-    }
+    matrix_vector_ntt_into::<K, L>(m, v, &mut w);
     w
 }
 
