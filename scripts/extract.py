@@ -7,10 +7,16 @@ Usage: scripts/extract.py [--src DIR] [--roots FILE] [--work DIR] [--out DIR]
   --work   scratch directory (default: <repo>/.extract)
   --out    destination for Types.lean/Funs.lean/FunsExternal*.lean/extract-report.json (default: lean/Impl)
 
+Records src_sha256 (hash of src/*.rs) and impl_sha256 (hash of each file written to --out) in extract-report.json; the
+`extract-hash` step of scripts/ci.sh (scripts/extract_hash.py) fails if either no longer matches the tree.
+
 Needs the tools from scripts/setup-tools.sh (ML_DSA_TOOLS overrides their location, default ~/hax-tools). Exits non-zero on any gate failure; --out is only touched on success.
 """
-import argparse, copy, hashlib, json, os, re, shutil, subprocess, sys
+import argparse, copy, json, os, re, shutil, subprocess, sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import extract_hash  # one definition of the hashes recorded in the report; scripts/ci.sh checks them
 
 repo = Path(__file__).resolve().parent.parent
 ap = argparse.ArgumentParser()
@@ -30,7 +36,7 @@ for tool in [T / 'bin/cargo-hax', AENEAS]:
     if not tool.exists():
         sys.exit(f'missing tool {tool.name}: run scripts/setup-tools.sh')
 
-roots = [l.strip() for l in Path(a.roots).read_text().splitlines() if l.strip() and not l.lstrip().startswith('#')]
+roots = extract_hash.read_roots(a.roots)
 failures = []
 def fail(msg):
     failures.append(msg); print('GATE FAIL:', msg, file=sys.stderr)
@@ -64,8 +70,7 @@ no-default-features = true
 charon-args = []
 env = {{ RUSTFLAGS = "--cfg miri" }}
 ''')
-sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
-src_sha = hashlib.sha256(b''.join(p.read_bytes() for p in sorted((crate / 'src').rglob('*.rs')))).hexdigest()
+src_sha = extract_hash.src_sha256(crate)
 
 env = os.environ.copy()
 for k in ['RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'CARGO_BUILD_RUSTFLAGS', 'CARGO_TARGET_DIR']:
@@ -163,6 +168,7 @@ else:
         referenced = [x for x in axioms if re.search(r'(?<![\w.])' + re.escape(x) + r'(?![\w])', funs_txt)]
         if referenced:
             fail(f'external axioms referenced from Funs.lean: {referenced}')
+        record['impl_sha256'] = extract_hash.generated_sha256s(lean)
         record.update(external_axioms_declared=len(axioms), external_axioms_referenced=len(referenced),
                       lean_defs=len(re.findall(r'^(?:divergent )?def ', funs_txt, re.M)))
 
