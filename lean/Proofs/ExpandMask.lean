@@ -193,7 +193,7 @@ theorem mask_loop {K L : Usize} {ip : Impl.params.Params} {sp : Spec.Params} (hp
     (hγ : sp.γ₁ = 2 ^ 17 ∨ sp.γ₁ = 2 ^ 19) (ρ : Array U8 64#usize) (κ : U16)
     (hκ : κ.val + sp.ℓ ≤ 2 ^ 16) (y0 : Array (Array U32 256#usize) L) (v0 : Array U8 640#usize) :
     sampling.expand_mask_loop0 ip ip.gamma1 ρ κ y0 v0 0#usize ⦃ y =>
-      ∀ j (hj : j < sp.ℓ), ∃ row, y.val[j]? = some row ∧
+      ∀ j (_hj : j < sp.ℓ), ∃ row, y.val[j]? = some row ∧
         ReprInt row (maskPoly sp (bytesA ρ) κ.val j) ⦄ := by
   unfold sampling.expand_mask_loop0
   have hcases := gamma1_cases sp hγ

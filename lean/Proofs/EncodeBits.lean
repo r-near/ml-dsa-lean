@@ -128,8 +128,7 @@ theorem beq_one_toNat (n : Nat) (h : n ≤ 1) : (n == 1).toNat = n := by
   rcases (by omega : n = 0 ∨ n = 1) with h | h <;> simp [h]
 
 theorem bitv_IntegerToBits (x α j : Nat) (hj : j < α) : bitv (IntegerToBits x α) j = dig x j := by
-  simp only [bitv, IntegerToBits_eq, List.getElem?_map, List.getElem?_range, hj, if_true,
-    Option.map_some, Option.getD_some]
+  simp only [bitv, IntegerToBits_eq, List.getElem?_map, List.getElem?_range, hj, Option.map_some, Option.getD_some]
   exact beq_one_toNat _ (dig_le x j)
 
 /-! ## BytesToBits -/
@@ -171,7 +170,7 @@ theorem bitv_BytesToBits (v : List UInt8) (t : Nat) : bitv (BytesToBits v) t = b
   rw [BytesToBits_eq]
   unfold bitv
   by_cases ht : t < 8 * v.length
-  · simp only [List.getElem?_map, List.getElem?_range, ht, if_true, Option.map_some, Option.getD_some]
+  · simp only [List.getElem?_map, List.getElem?_range, ht, Option.map_some, Option.getD_some]
     exact beq_one_toNat _ (byteBit_le v t)
   · have h1 : v[t/8]? = none := by
       rw [List.getElem?_eq_none_iff]; omega
@@ -206,7 +205,7 @@ def bstep (y : List Bool) (b : Array Nat) (a : Nat) : Array Nat :=
 theorem bstep_inv (y : List Bool) : ∀ n, n ≤ y.length →
     (List.foldl (bstep y) (Array.replicate ((y.length + 7) / 8) 0) (List.range' 0 n)).size
         = (y.length + 7) / 8 ∧
-    ∀ k (hk : k < (y.length + 7) / 8),
+    ∀ k (_hk : k < (y.length + 7) / 8),
       (List.foldl (bstep y) (Array.replicate ((y.length + 7) / 8) 0) (List.range' 0 n))[k]!
         = BV (bitv y) (8*k) (min 8 (n - 8*k)) := by
   intro n
@@ -368,7 +367,7 @@ theorem vec_fold (f : Nat → Int) : ∀ n, ∀ i (hi : i < 256),
 
 theorem bitv_window (z : List Bool) (s c j : Nat) (hj : j < c) :
     bitv (List.take c (List.drop s z)) j = bitv z (s + j) := by
-  simp [bitv, List.getElem?_take, List.getElem?_drop, hj]
+  simp [bitv, List.getElem?_drop, hj]
 
 theorem BitsToInteger_window (v : List UInt8) (s c : Nat) :
     BitsToInteger (List.take c (List.drop s (BytesToBits v))) c = BV (byteBit v) s c := by

@@ -54,7 +54,7 @@ theorem nnz_step (c : RPoly) (i j : Nat) (hi : i < 256) (hj : j ≤ i) (hci : c[
       · simp [hk, hx]
       · simp [hk, Ne.symm hk]
     rw [e, Finset.card_insert_of_notMem]
-    simp [Fin.ext_iff, hjc]
+    simp [hjc]
   · have hlt : j < i := by omega
     by_cases hc : c[j] = 0
     · have e : Finset.univ.filter (fun k : Fin 256 => ((c.set! i c[j]).set! j x)[k] ≠ 0) =
@@ -67,7 +67,7 @@ theorem nnz_step (c : RPoly) (i j : Nat) (hi : i < 256) (hj : j ≤ i) (hci : c[
           · subst hk2; simp [hk, hc, hci, Ne.symm hk]
           · simp [hk, hk2, Ne.symm hk]
       rw [e, Finset.card_insert_of_notMem]
-      simp [Fin.ext_iff, hc]
+      simp [hc]
     · have e : Finset.univ.filter (fun k : Fin 256 => ((c.set! i c[j]).set! j x)[k] ≠ 0) =
           insert ⟨i, hi⟩ (Finset.univ.filter (fun k : Fin 256 => c[k] ≠ 0)) := by
         ext k
@@ -75,10 +75,10 @@ theorem nnz_step (c : RPoly) (i j : Nat) (hi : i < 256) (hj : j ≤ i) (hci : c[
         by_cases hk : j = k.val
         · subst hk; simp [hx, hc, hij]
         · by_cases hk2 : i = k.val
-          · subst hk2; simp [hk, hc, Ne.symm hk]
-          · simp [hk, hk2, Ne.symm hk2, Ne.symm hk]
+          · subst hk2; simp [hk, hc]
+          · simp [hk, hk2, Ne.symm hk2]
       rw [e, Finset.card_insert_of_notMem]
-      simp [Fin.ext_iff, hci]
+      simp [hci]
 
 /-- Loop invariant: all coefficients at positions `≥ s` vanish, and `nnz c + (256 - τ) = s`. -/
 def Inv (b s : Nat) (c : RPoly) : Prop := (∀ k (hk : k < 256), s ≤ k → c[k] = 0) ∧ nnz c + b = s

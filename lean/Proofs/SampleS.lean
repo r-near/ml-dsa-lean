@@ -114,12 +114,12 @@ theorem RejBoundedPoly_eq_forIn (p : Params) (fuel : Nat) (ρ : List UInt8) :
     · simp [hj]
     · simp only [hj, if_false, pure_bind]
       rcases hs : H.Squeeze ctx 1 with _ | ⟨ctx', s⟩
-      · simp [hs]
-      · simp only [hs]
+      · simp
+      · simp only
         rcases h0 : CoeffFromHalfByte p.η (s[0]!.toNat % 16) with _ | v
-        · rcases h1 : CoeffFromHalfByte p.η (s[0]!.toNat / 16) with _ | w <;> simp [h0, h1] <;>
+        · rcases h1 : CoeffFromHalfByte p.η (s[0]!.toNat / 16) with _ | w <;> simp;
             (split_ifs <;> simp_all)
-        · rcases h1 : CoeffFromHalfByte p.η (s[0]!.toNat / 16) with _ | w <;> simp [h0, h1] <;>
+        · rcases h1 : CoeffFromHalfByte p.η (s[0]!.toNat / 16) with _ | w <;> simp;
             (split_ifs <;> simp_all)
   rw [hR]
   rcases R with ⟨b, a, ctx, j⟩
@@ -216,7 +216,7 @@ theorem rbStep_bounded (η : Nat) (st : RPoly × Nat) (z : Nat) (h : Bounded η 
     Bounded η (rbStep η st z).1 := by
   unfold rbStep
   rcases h0 : CoeffFromHalfByte η (z % 16) with _ | v <;> rcases h1 : CoeffFromHalfByte η (z / 16) with _ | w <;>
-    simp only [h0, h1]
+    simp only
   · exact h
   · split
     · exact Bounded.set h _ _ (coeffHalf_bound _ _ _ h1)
@@ -406,8 +406,8 @@ theorem rej_bounded_poly_loop_spec {ip : params.Params} {K L : Usize} {sp : Spec
           rw [hnext, c4 c d e0 e1]
         step*
         subst_vars
-        all_goals first
-          | (have hxlt : x.val < 256 := by scalar_tac
+        all_goals
+            (have hxlt : x.val < 256 := by scalar_tac
              have hlt : (rbS sp.η fuel ρ k).2 + 1 < 256 := by omega
              have hset2 := ReprInt.set hset x y0 d hxlt hr1.1 hr1.2
              refine ⟨hkf, ctx1_post1, ?_, ?_⟩
@@ -415,10 +415,6 @@ theorem rej_bounded_poly_loop_spec {ip : params.Params} {K L : Usize} {sp : Spec
                rw [x_post] at hset2
                exact hset2
              · rw [hn4, if_pos hlt, ← hj, j2_post, x_post])
-          | (have hge : ¬ ((rbS sp.η fuel ρ k).2 + 1 < 256) := by scalar_tac
-             refine ⟨hkf, ctx1_post1, ?_, ?_⟩
-             · rw [hn4, if_neg hge, ← hj]; exact hset
-             · rw [hn4, if_neg hge, ← hj]; exact x_post)
     · rename_i hjn
       have h256 : (rbS sp.η fuel ρ k).2 ≥ 256 := by
         have : 256 ≤ j.val := by scalar_tac
@@ -542,12 +538,12 @@ theorem ExpandS_eq (p : Params) (fuel : Nat) (ρ : List UInt8) :
     intro x r
     obtain ⟨b, v⟩ := r
     simp only [fillBody]
-    rcases h : RejBoundedPoly p fuel (ρ ++ IntegerToBytes x 2) with _ | a <;> simp [h]
+    rcases h : RejBoundedPoly p fuel (ρ ++ IntegerToBytes x 2) with _ | a <;> simp
   case s2 =>
     intro x r
     obtain ⟨b, v⟩ := r
     simp only [fillBody]
-    rcases h : RejBoundedPoly p fuel (ρ ++ IntegerToBytes (x + p.ℓ) 2) with _ | a <;> simp [h]
+    rcases h : RejBoundedPoly p fuel (ρ ++ IntegerToBytes (x + p.ℓ) 2) with _ | a <;> simp
   rw [hA, hB]
   rcases A with ⟨a1, v1⟩
   rcases B with ⟨b1, v2⟩
@@ -585,7 +581,7 @@ theorem ExpandS_some (p : Params) (fuel : Nat) (ρ : List UInt8) (s₁ : Vector 
 theorem seed_set (seed : Array U8 66#usize) (ρ0 : List UInt8) (hρ : ρ0.length = 64)
     (hP : ∀ i, i < 64 → (bytesA seed)[i]? = ρ0[i]?) (x y : U8) :
     bytesA ((seed.set 64#usize x).set 65#usize y) = ρ0 ++ [UInt8.ofNat x.val, UInt8.ofNat y.val] := by
-  have hl : (bytesA seed).length = 66 := by simpa using bytesA_length seed
+  have hl : (bytesA seed).length = 66 := by simp
   apply List.ext_getElem?
   intro i
   rw [bytesA_set, bytesA_set, List.getElem?_set, List.getElem?_set]

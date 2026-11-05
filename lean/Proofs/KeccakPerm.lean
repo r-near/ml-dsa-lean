@@ -16,7 +16,7 @@ theorem rotl_spec (x : U64) (n : U32) (hn : n.val < 64) :
     simp only [WP.spec_ok, h0]
     simp only [Spec.Keccak.rotl]
     apply UInt64.toBitVec_inj.mp
-    simp [UInt64.toBitVec_or, UInt64.toBitVec_shiftLeft, UInt64.toBitVec_shiftRight]
+    simp [UInt64.toBitVec_or, UInt64.toBitVec_shiftRight]
   · rename_i h
     have h0 : n.val ≠ 0 := fun e => h (UScalar.eq_of_val_eq (by simpa using e))
     step*
@@ -55,7 +55,7 @@ theorem ln_set {n : Usize} (a : Array U64 n) (i : Usize) (x : U64) (k : Nat) (hi
   · have hne : ¬ i.val = k := by omega
     rw [if_neg hne]
     unfold ln
-    rw [getElem!_neg, getElem!_neg] <;> simp [hl, hl2] <;> omega
+    rw [getElem!_neg, getElem!_neg] <;> simp [hl] <;> omega
 
 theorem toLanes_ln (a : Array U64 25#usize) (k : Nat) (hk : k < 25) : (toLanes a)[k]! = ln a k := by
   rw [ln_eq a k (by rw [len25 a]; exact hk)]
@@ -493,9 +493,7 @@ theorem RC_idx (i : Usize) (hi : i.val < 24) (v : U64) (hv : v = keccak.RC.val[i
   subst hv
   have h' : (toU64 (keccak.RC.val[i.val]'(by rw [RC_len]; exact hi))).toNat =
       (Spec.Keccak.RCs[i.val]!).toNat := h
-  first
-    | exact UInt64.toNat_inj.mp h'
-    | exact UInt64.ext (BitVec.eq_of_toNat_eq h')
+  exact UInt64.toNat_inj.mp h'
 
 /-- **Keccak-f[1600]**: the extracted permutation, on every state, returns the lanes of FIPS 202
 Algorithm 7 applied to the input lanes; it neither fails nor diverges. -/

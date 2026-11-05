@@ -25,7 +25,7 @@ open Impl
 
 /-! ## Algorithm 14 -/
 
-theorem or3_nat (x y w : Nat) (hx : x < 128) (hy : y < 256) (hw : w < 256) :
+theorem or3_nat (x y w : Nat) (_hx : x < 128) (hy : y < 256) (hw : w < 256) :
     ((x <<< 16) ||| (y <<< 8)) ||| w = x * 65536 + y * 256 + w := by
   have h1 := Nat.shiftLeft_add_eq_or_of_lt (i := 8) (b := w) (by omega) y
   have h2 := Nat.shiftLeft_add_eq_or_of_lt (i := 16) (b := (y <<< 8) + w)
@@ -70,7 +70,7 @@ theorem three_val (b0 b1 b2 : U8) (i1 i3 : U32)
     simp [UScalar.cast_val_eq]
     omega
   have hsz : U32.size = 4294967296 := by
-    first | scalar_tac | simp [U32.size_def, U32.numBits] | norm_num [U32.size_def, U32.numBits]
+    scalar_tac
   have e1 : i1.val = (b2.val % 128) * 65536 := by
     rw [h1, hA, Nat.shiftLeft_eq, hsz]
     omega
@@ -85,7 +85,7 @@ theorem three_val (b0 b1 b2 : U8) (i1 i3 : U32)
   omega
 
 theorem t0 (b : U8) (hb : b.val < 256) : (UInt8.ofNat b.val).toNat = b.val := by
-  simp [UInt8.toNat_ofNat, Nat.mod_eq_of_lt hb]
+  simp [Nat.mod_eq_of_lt hb]
 
 @[step]
 theorem coeff_from_three_bytes_spec (b0 b1 b2 : U8) :

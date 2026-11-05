@@ -401,7 +401,7 @@ theorem sign_loop_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Par
       have hbs : bytes s = bytesA ctb := by rw [hs, bytes_to_slice]
       have hsl : sp.lam / 4 ≤ s.length := by
         have hl : ctb.val.length = 64 := ctb.property
-        have : s.length = 64 := by rw [Slice.length, hs]; simpa [Array.to_slice] using hl
+        have : s.length = 64 := by rw [Slice.length, hs]; simp [Array.to_slice]
         have := hstd.lam_le
         omega
       refine dspec_bind_of_spec (sig_encode_signed_spec' ip sp hv hstd.stdSig s hsl zr z hzr hzn hr h hhr hhw sig hsig) ?_

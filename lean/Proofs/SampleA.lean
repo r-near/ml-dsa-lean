@@ -57,7 +57,7 @@ def rejBody (_ : Nat) (r : RejSt) : Id (ForInStep RejSt) :=
         pure (ForInStep.yield ⟨none, a, ctx, j⟩)
       | none => 
         pure (ForInStep.yield ⟨none, a, ctx, j⟩)
-    | x => pure (ForInStep.done ⟨some none, a, ctx, j⟩)
+    | _x => pure (ForInStep.done ⟨some none, a, ctx, j⟩)
   if j ≥ 256 then pure (ForInStep.done ⟨none, a, ctx, j⟩)
   else do
     let y ← pure PUnit.unit
@@ -91,27 +91,27 @@ theorem rej_loop (T : List UInt8) (fuel : Nat) (hT : T.length = 3 * fuel) :
     rw [List.range'_succ, List.forIn_cons]
     by_cases hj : 256 ≤ j
     · have e : stepA T (a, j) s = (a, j) := by simp [stepA, hj]
-      simp only [rejBody, hj, ge_iff_le, if_true, pure_bind]
+      simp only [rejBody, hj, if_true, pure_bind]
       rw [List.foldl_cons, e, foldl_stepA_stable T _ _ hj]
       exact ⟨_, rfl⟩
     · have hlen : 3 * s + 3 ≤ T.length := by omega
       have e3 : 3 * (s + 1) = 3 * s + 3 := by omega
       obtain ⟨c, hc⟩ := ih (s + 1) a j (by omega)
-      simp only [rejBody, hj, ge_iff_le, if_false, pure_bind, Ctx.Squeeze, hlen, if_true]
+      simp only [rejBody, hj, if_false, pure_bind, Ctx.Squeeze, hlen, if_true]
       rw [List.foldl_cons]
       have hCT : CoeffFromThreeBytes (List.take 3 (List.drop (3 * s) T))[0]!
           (List.take 3 (List.drop (3 * s) T))[1]! (List.take 3 (List.drop (3 * s) T))[2]! = triAt T s := rfl
       rw [hCT]
       rcases h : triAt T s with _ | v
       · have e : stepA T (a, j) s = (a, j) := by simp [stepA, hj, h]
-        simp only [h, pure_bind]
+        simp only [pure_bind]
         rw [e]
         rw [e3] at hc
         rw [hc]
         exact ⟨c, rfl⟩
       · obtain ⟨c, hc⟩ := ih (s + 1) (a.set! j v) (j + 1) (by omega)
         have e : stepA T (a, j) s = (a.set! j v, j + 1) := by simp [stepA, hj, h]
-        simp only [h, pure_bind]
+        simp only [pure_bind]
         rw [e]
         rw [e3] at hc
         rw [hc]
@@ -379,12 +379,12 @@ theorem expandA_eq (p : Spec.Params) (fuel : Nat) (ρ : List UInt8) :
       rcases hr : Spec.RejNTTPoly fuel (pSeed ρ r s) with _ | a
       · simp [hr] at h
       · simp only [hr, Option.some.injEq] at h
-        simp only [hr, h]
+        simp only [h]
     · intro s st h
       unfold innerF at h
       unfold eIn
       rcases hr : Spec.RejNTTPoly fuel (pSeed ρ r s) with _ | a
-      · exact ⟨st.snd, by simp only [hr]⟩
+      · exact ⟨st.snd, by simp only⟩
       · simp [hr] at h
   rw [expandA_unfold]
   have hout := forIn_opt (γ := Vector (Vector Poly p.ℓ) p.k) (outerF p fuel ρ) (eOut p fuel ρ) ?_ ?_

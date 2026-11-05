@@ -167,7 +167,7 @@ theorem w1_encode_spec {K L : Usize} (ip : Impl.params.Params) (sp : Spec.Params
 /-! ## Byte-copy loops -/
 
 theorem take_of_pointwise (out : Slice U8) (R : List UInt8) (n : Nat) (hR : R.length = n)
-    (hL : n ≤ out.val.length) (X : Nat → Option UInt8)
+    (_hL : n ≤ out.val.length) (X : Nat → Option UInt8)
     (h : ∀ k, (bytes out)[k]? = if k < n then R[k]? else X k) : (bytes out).take n = R := by
   apply List.ext_getElem?
   intro k
@@ -244,7 +244,7 @@ theorem pk_encode_loop1_spec {K : Usize} (b : Nat) (hb : b < Spec.q) (hc : bitle
       refine WP.spec_bind (bit_pack_spec_repr _ (v[i.val]'hik) ?_ b hb (hrng _ hik) 10#usize (by simp [hc]) s ?_) ?_
       · rw [a_post2]; exact hv.elt _ hik
       · have : s.val.length = i5.val - i2.val := s_post2
-        rw [this, i5_post, i2_post, i4_post, i3_post, i1_post]; simp <;> omega
+        rw [this, i5_post, i2_post, i4_post, i3_post, i1_post]; simp; omega
       · intro s1 hs1
         simp only [WP.spec_ok]
         have hs1' : bytes s1 = SimpleBitPack v[i.val]! b := by rw [hs1, vec_getElem!_eq v _ hik]
@@ -318,7 +318,7 @@ theorem pk_decode_loop0_spec (pk : Slice U8) (hL : 32 ≤ pk.val.length) (rho0 :
       by_cases hk : i.val = k
       · subst hk
         have hlt : i.val < (bytesA rho).length := by simpa using hi'
-        simp [hlt, hi', bytes_getElem?_eq, i1_post2, List.getElem?_eq_getElem (show i.val < pk.val.length from i1)]
+        simp [hi', bytes_getElem?_eq, i1_post2, List.getElem?_eq_getElem (show i.val < pk.val.length from i1)]
       · simp [hk, show (k < i.val + 1) ↔ (k < i.val) from by omega]
     · rename_i hi
       have hi' : i.val = 32 := by scalar_tac
@@ -335,9 +335,9 @@ def pkBlock (pk : List UInt8) (b i : Nat) : RPoly :=
 theorem pk_decode_loop1_spec {K : Usize} (b : Nat) (hc : bitlen b = 10) (k : Nat) (hKk : K.val = k)
     (pk : Slice U8) (hL : pk.val.length = 32 + k * 320)
     (t1 : Array (Array U32 256#usize) K) (i : Usize) (hi : i.val ≤ k)
-    (hinv : ∀ j (hj : j < i.val) (hj' : j < t1.val.length), ReprInt (t1.val[j]'hj') (pkBlock (bytes pk) b j)) :
+    (hinv : ∀ j (_hj : j < i.val) (hj' : j < t1.val.length), ReprInt (t1.val[j]'hj') (pkBlock (bytes pk) b j)) :
     encode.pk_decode_loop1 pk t1 i ⦃ t1' =>
-      ∀ j (hj : j < k) (hj' : j < t1'.val.length), ReprInt (t1'.val[j]'hj') (pkBlock (bytes pk) b j) ⦄ := by
+      ∀ j (_hj : j < k) (hj' : j < t1'.val.length), ReprInt (t1'.val[j]'hj') (pkBlock (bytes pk) b j) ⦄ := by
   unfold encode.pk_decode_loop1
   apply loop.spec_decr_nat
     (fun (p : Array (Array U32 256#usize) K × Usize) => k - p.2.val)
@@ -356,7 +356,7 @@ theorem pk_decode_loop1_spec {K : Usize} (b : Nat) (hc : bitlen b = 10) (k : Nat
         have : s.val.length = i5.val - i2.val := s_post2
         rw [this, i5_post, i2_post, i4_post, i3_post, i1_post]
         have e : (i.val + 1) * 320 = i.val * 320 + 320 := by ring
-        rw [e]; simp <;> omega
+        rw [e]; simp; omega
       refine WP.spec_bind (bit_unpack_spec_repr s 10#usize b (by simp [hc]) (by simp) hslen) ?_
       intro a ha
       step*
@@ -449,11 +449,10 @@ theorem sk_encode_loop0_spec (rho key : Array U8 32#usize) (out0 : Slice U8) (hL
       have hkk := bytesA_getElem? key i.val (by simpa using hi')
       by_cases hk1 : 32 + i.val = k
       · subst hk1
-        simp [hl3, hl1, show ¬ (32 + i.val < i.val + 1) from by omega, show ¬ (32 + i.val < 32) from by omega,
-          show 32 + i.val < 64 from by omega, i2_post2, hkk]
+        simp [hl3, show ¬ (32 + i.val < i.val + 1) from by omega, i2_post2, hkk]
       · by_cases hk2 : i.val = k
         · subst hk2
-          simp [hl1, hl3, i1_post2, hk1, hr]
+          simp [hl1, i1_post2, hr]
         · rw [if_neg hk1, if_neg hk2]
           have : (k < i.val + 1) ↔ (k < i.val) := by omega
           have h4 : (32 ≤ k ∧ k < 32 + (i.val + 1)) ↔ (32 ≤ k ∧ k < 32 + i.val) := by omega
@@ -793,9 +792,9 @@ theorem bytesA_eq_slice {n : Usize} (a : Array U8 n) (sk : Slice U8) (off : Nat)
   intro k
   by_cases hk : k < n.val
   · rw [h k hk]
-    simp [slice, List.getElem?_take, List.getElem?_drop, hk, Nat.add_comm]
+    simp [slice, List.getElem?_drop, hk]
   · rw [List.getElem?_eq_none (by simp; omega)]
-    simp [slice, List.getElem?_take, hk]
+    simp [slice, hk]
 
 theorem sk_decode_loop0_spec (sk : Slice U8) (a0 b0 : Array U8 32#usize)
     (a b : Array U8 32#usize) (i : Usize) (hL : 64 ≤ sk.val.length) (hi : i.val ≤ 32)
@@ -826,11 +825,11 @@ theorem sk_decode_loop0_spec (sk : Slice U8) (a0 b0 : Array U8 32#usize)
       refine ⟨by omega, fun k => ?_, fun k => ?_, by omega⟩
       · rw [bytesA_set, List.getElem?_set, h3 k, i4_post]
         by_cases hk : i.val = k
-        · subst hk; simp [hlt, hi', bytes_getElem?_eq, hq1]
+        · subst hk; simp [hi', bytes_getElem?_eq, hq1]
         · simp [hk, show (k < i.val + 1) ↔ (k < i.val) from by omega]
       · rw [bytesA_set, List.getElem?_set, h4 k, i4_post]
         by_cases hk : i.val = k
-        · subst hk; simp [hlt2, hi', bytes_getElem?_eq, hq2]
+        · subst hk; simp [hi', bytes_getElem?_eq, hq2]
         · simp [hk, show (k < i.val + 1) ↔ (k < i.val) from by omega]
     · rename_i hi
       have hi' : i.val = 32 := by scalar_tac
@@ -864,7 +863,7 @@ theorem sk_decode_loop1_spec (sk : Slice U8) (a0 a : Array U8 64#usize) (i : Usi
       refine ⟨by omega, fun k => ?_, by omega⟩
       rw [bytesA_set, List.getElem?_set, h3 k, i3_post]
       by_cases hk : i.val = k
-      · subst hk; simp [hlt2, hi', bytes_getElem?_eq, hq2]
+      · subst hk; simp [hi', bytes_getElem?_eq, hq2]
       · simp [hk, show (k < i.val + 1) ↔ (k < i.val) from by omega]
     · rename_i hi
       have hi' : i.val = 64 := by scalar_tac
@@ -879,10 +878,10 @@ theorem sk_decode_loop2_spec {L : Usize} (bb : U32) (c : Usize) (ea : Nat) (hb :
     (k : Nat) (hKk : L.val = k) (sk : Slice U8) (o0 : Nat) (hL : o0 + k * n.val ≤ sk.val.length)
     (arr : Array (Array U32 256#usize) L) (o i2 : Usize) (hi2 : i2.val ≤ k)
     (ho : o.val = o0 + i2.val * n.val)
-    (hinv : ∀ j (hj : j < i2.val) (hj' : j < arr.val.length),
+    (hinv : ∀ j (_hj : j < i2.val) (hj' : j < arr.val.length),
       ReprInt (arr.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val)) :
     encode.sk_decode_loop2 bb c sk arr n o i2 ⦃ r => r.2.val = o0 + k * n.val ∧
-      ∀ j (hj : j < k) (hj' : j < r.1.val.length),
+      ∀ j (_hj : j < k) (hj' : j < r.1.val.length),
         ReprInt (r.1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val) ⦄ := by
   unfold encode.sk_decode_loop2
   apply loop.spec_decr_nat
@@ -931,10 +930,10 @@ theorem sk_decode_loop3_spec {L : Usize} (bb : U32) (c : Usize) (ea : Nat) (hb :
     (k : Nat) (hKk : L.val = k) (sk : Slice U8) (o0 : Nat) (hL : o0 + k * n.val ≤ sk.val.length)
     (arr : Array (Array U32 256#usize) L) (o i2 : Usize) (hi2 : i2.val ≤ k)
     (ho : o.val = o0 + i2.val * n.val)
-    (hinv : ∀ j (hj : j < i2.val) (hj' : j < arr.val.length),
+    (hinv : ∀ j (_hj : j < i2.val) (hj' : j < arr.val.length),
       ReprInt (arr.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val)) :
     encode.sk_decode_loop3 bb c sk arr n o i2 ⦃ r => r.2.val = o0 + k * n.val ∧
-      ∀ j (hj : j < k) (hj' : j < r.1.val.length),
+      ∀ j (_hj : j < k) (hj' : j < r.1.val.length),
         ReprInt (r.1.val[j]'hj') (BitUnpack (slice (bytes sk) (o0 + j * n.val) n.val) ea bb.val) ⦄ := by
   unfold encode.sk_decode_loop3
   apply loop.spec_decr_nat

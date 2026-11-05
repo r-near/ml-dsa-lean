@@ -111,7 +111,7 @@ theorem vget_vset {α : Type} [Inhabited α] {n : Nat} (h : Vector α n) (i : Na
   rw [set!_eq', Vector.getElem_setIfInBounds hi]
   simp
 
-theorem vset_self {α : Type} [Inhabited α] {n : Nat} (h : Vector α n) (i : Nat) (hi : i < n) :
+theorem vset_self {α : Type} [Inhabited α] {n : Nat} (h : Vector α n) (i : Nat) (_hi : i < n) :
     h.set! i h[i]! = h := by
   apply Vector.ext; intro j hj
   rw [set!_eq', Vector.getElem_setIfInBounds hj]
@@ -820,7 +820,7 @@ theorem cntFrom_succ (row : HintPoly) (j : Nat) (hj : j < 256) :
   unfold cntFrom
   rw [List.drop_eq_getElem_cons hl, List.countP_cons, getElem!_pos _ _ (by simpa using hj)]
   simp only [Vector.getElem_toList]
-  by_cases hb : row[j] = true <;> simp [hb] <;> omega
+  by_cases hb : row[j] = true <;> simp [hb]; omega
 
 theorem cntFrom_256 (row : HintPoly) : cntFrom row 256 = 0 := by
   unfold cntFrom

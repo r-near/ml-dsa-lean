@@ -89,7 +89,7 @@ theorem sb_ext {S T : State} (h : ∀ k < 200, sb S k = sb T k) : S = T := by
     rwa [show (8 * i + m) / 8 = i by omega, show (8 * i + m) % 8 = m by omega] at this)
   rwa [getElem!_pos S i (by simpa using hi), getElem!_pos T i (by simpa using hi)] at this
 
-theorem sb_xorByte (S : State) (i : Nat) (b : UInt8) (hi : i < 200) (k : Nat) (hk : k < 200) :
+theorem sb_xorByte (S : State) (i : Nat) (b : UInt8) (_hi : i < 200) (k : Nat) (hk : k < 200) :
     sb (xorByte S i b) k = if k = i then sb S k ^^^ b else sb S k := by
   unfold sb xorByte
   rw [getElem!_set!' _ _ _ _ (by omega)]
@@ -97,7 +97,7 @@ theorem sb_xorByte (S : State) (i : Nat) (b : UInt8) (hi : i < 200) (k : Nat) (h
   · rw [if_pos h1, byteOf_xor, byteOf_shl _ _ _ (by omega) (by omega), h1]
     by_cases h2 : k % 8 = i % 8
     · have : k = i := by omega
-      simp [this, h2]
+      simp [this]
     · have : k ≠ i := by omega
       simp [this, h2]
   · rw [if_neg h1]
@@ -347,7 +347,7 @@ theorem getElem?_squeeze (r : Nat) (hr : 0 < r) :
 /-- What `Shake::xor_lane` does: XOR the lane `X` into lane `j` of the state. -/
 def xorLane (S : State) (j : Nat) (X : UInt64) : State := S.set! j (S[j]! ^^^ X)
 
-theorem sb_xorLane (S : State) (j : Nat) (X : UInt64) (hj : j < 25) (k : Nat) (hk : k < 200) :
+theorem sb_xorLane (S : State) (j : Nat) (X : UInt64) (_hj : j < 25) (k : Nat) (hk : k < 200) :
     sb (xorLane S j X) k = if k / 8 = j then sb S k ^^^ byteOf X (k % 8) else sb S k := by
   unfold sb xorLane
   rw [getElem!_set!' _ _ _ _ (by omega)]

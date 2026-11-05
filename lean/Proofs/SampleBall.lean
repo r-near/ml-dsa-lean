@@ -50,7 +50,7 @@ theorem forIn_range'_iterT {σ : Type} (t : Nat → σ → ForInStep σ) (f : Na
   | succ k ih =>
     intro s st
     rw [List.range'_succ, List.forIn_cons, hf]
-    cases h : t s st <;> simp [iterT, h, ih] <;> try rfl
+    cases h : t s st <;> simp [iterT, h, ih]; try rfl
 
 /-- The body of the spec's inner loop (Algorithm 29, steps 8-10). -/
 def innerT (i : Nat) : Nat → InnerState → ForInStep InnerState := fun _ r =>
@@ -58,7 +58,7 @@ def innerT (i : Nat) : Nat → InnerState → ForInStep InnerState := fun _ r =>
   else
     match H.Squeeze r.snd.fst 1 with
     | some (ctx', s₁) => ForInStep.yield ⟨none, ctx', (s₁[0]?.getD default).toNat⟩
-    | x => ForInStep.done ⟨some none, r.snd.fst, r.snd.snd⟩
+    | _x => ForInStep.done ⟨some none, r.snd.fst, r.snd.snd⟩
 
 /-- The inner search: read bytes from position `pos` of the stream until one is `≤ i`, with `k` reads allowed. -/
 def sibFind (S : List UInt8) (i : Nat) : Nat → Nat → Nat → Option (Nat × Nat)
@@ -128,7 +128,7 @@ def outerT (hb : List Bool) (τ fuel : Nat) : Nat → SibState → ForInStep Sib
           ⟨none, (Vector.set! r.snd.fst i r.snd.fst[r_1.2.snd]!).set! r_1.2.snd
             (if hb[i + τ - 256]?.getD false = true then -1 else 1), r_1.2.fst⟩
     | some a => ForInStep.done ⟨some a, r.snd.fst, r_1.2.fst⟩
-  | x => ForInStep.done ⟨some none, r.snd.fst, r.snd.snd⟩
+  | _x => ForInStep.done ⟨some none, r.snd.fst, r.snd.snd⟩
 
 /-- One iteration of the outer loop as a function of `(c, pos)`. -/
 def sibStep (S : List UInt8) (hb : List Bool) (τ fuel : Nat) (st : RPoly × Nat) (i : Nat) :
@@ -381,13 +381,13 @@ theorem h_loop_spec (s : Array U8 8#usize) :
         exact Nat.mod_eq_of_lt (by have : (2:Nat) ^ UScalarTy.U64.numBits = 2 ^ 64 := rfl
                                    omega)
       have hx : ((bytesA s)[k.val]?.getD default).toNat = (s.val[k.val]'hk8).val := by
-        simp [bytesA, List.getElem?_eq_getElem hk8, toNat_ofNat_val]
+        simp [bytesA, List.getElem?_eq_getElem hk8]
       have hi3 : i3.val = (s.val[k.val]'hk8).val <<< (8 * k.val) := by
         rw [i3_post1, hi1, i2_post]
         apply Nat.mod_eq_of_lt
         rw [Nat.shiftLeft_eq]
         have h64 : U64.size = 2 ^ 64 := by
-          first | scalar_tac | simp [U64.size, U64.numBits]
+          scalar_tac
         rw [h64]
         calc (s.val[k.val]'hk8).val * 2 ^ (8 * k.val) < 2 ^ 8 * 2 ^ (8 * k.val) :=
               Nat.mul_lt_mul_of_pos_right hb (by positivity)
@@ -404,7 +404,7 @@ theorem h_loop_spec (s : Array U8 8#usize) :
         · have hu : t - 8 * k.val < 8 := by omega
           have h3 := byteBit_testBit (bytesA s) k.val (t - 8 * k.val) hu
           rw [show 8 * k.val + (t - 8 * k.val) = t by omega, hx] at h3
-          simp [c1, c2, h3, k1_post, show 8 * k.val ≤ t by omega, show t < 8 * (k.val + 1) by omega]
+          simp [c1, h3, k1_post, show 8 * k.val ≤ t by omega, show t < 8 * (k.val + 1) by omega]
         · rw [byte_testBit_high _ hb _ (by omega)]
           simp [c1, k1_post, show ¬ t < 8 * (k.val + 1) by omega]
     · rename_i hk
@@ -430,7 +430,7 @@ theorem byte1 (S : List UInt8) (pos : Nat) (hp : pos < S.length) (s1 : Slice U8)
   simp at h
   have h3 := congrArg (fun l => l[0]?) h
   simp at h3
-  first | simp [← h3, toNat_ofNat_val] | simp [h3, toNat_ofNat_val]
+  simp [← h3]
 
 def bv0 (j : Array U8 1#usize) : Option Nat := j.val[0]?.map (fun x : U8 => x.val)
 
@@ -467,7 +467,7 @@ theorem inner_loop_spec (M : List UInt8) (N : Nat) (i : Usize) (jf posf : Nat)
         simp only [sibFind, show ¬ jcur ≤ i.val by omega, if_false] at hk
         split at hk
         · rename_i hp1
-          have hlen1 : s.val.length = 1 := by rw [s_post1]; simpa using j.property
+          have hlen1 : s.val.length = 1 := by rw [s_post1]; simp
           have hN1 : pos + 1 ≤ N := by omega
           have hb1 : bytes s1 = ((Spec.SHAKE256 M N).drop pos).take 1 := by
             rw [ctx1_post2, hlen1]
@@ -616,7 +616,7 @@ theorem outer_loop_spec (ip : Impl.params.Params) (hτ : ip.tau.val ≤ 64) (M :
             have hQ : field.Q.val = 8380417 := by first | rfl | decide | simp [field.Q]
             have hq1 : (((Spec.q - 1 : Nat)) : Zq) = ((-1 : Int) : Zq) := by
               rw [Nat.cast_sub (by decide : 1 ≤ Spec.q)]
-              simp [ZMod.natCast_self]
+              simp
             have hcond : ((BytesToBits ((Spec.SHAKE256 M (8 + fuel)).take 8))[i1.val + ip.tau.val - 256]?.getD false = true)
                 ↔ bit.val = 1 := by
               rw [bit_cond, hbitv]

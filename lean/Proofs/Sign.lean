@@ -162,7 +162,7 @@ def postSt (sp : Spec.Params) (r : St sp) : Option (List UInt8) :=
     | some (z, h) => some (sigEncode sp r.snd.fst (z.map Poly.modPM) h)
     | none => none
 
-theorem iterG_accepted (sp : Spec.Params) (F : Spec.Fuel) (P : Pre sp) (g : St sp → Id (ForInStep (St sp)))
+theorem iterG_accepted (sp : Spec.Params) (_F : Spec.Fuel) (_P : Pre sp) (g : St sp → Id (ForInStep (St sp)))
     (hg2 : ∀ c x κ, Id.run (g ⟨none, c, some x, κ⟩) = .done ⟨none, c, some x, κ⟩) (c : List UInt8)
     (x : Vector Poly sp.ℓ × Vector HintPoly sp.k) (κ : Nat) :
     ∀ n, iterG g n ⟨none, c, some x, κ⟩ = ⟨none, c, some x, κ⟩ := by
@@ -227,7 +227,7 @@ theorem Sign_internal_bounded_eq (sp : Spec.Params) (B : Nat) (sk M' rnd : List 
         intro c κ
         by_cases hκ : 2 ^ 16 < κ + sp.ℓ
         · simp only [hκ, if_true]
-          simp [hκ]
+          simp
         · simp only [Option.isSome_none, Bool.false_eq_true, hκ, ↓reduceIte]
           dsimp only [attemptAt, ctildeAt, commitAt, maskAt, respond, Pre.ŝ₁, Pre.ŝ₂, Pre.t₀hat, Id.run]
           generalize SampleInBall sp F.sampleInBall _ = S
@@ -406,7 +406,7 @@ theorem sig_encode_spec' {K L : Usize} (ip : Impl.params.Params) (sp : Spec.Para
     exact take_of_pointwise out1 ((bytes ct).take ip.c_tilde_len.val) _ hpre (by omega) (fun k => (bytes out)[k]?)
       (fun k => by
         rw [hp1 k]
-        by_cases hk : k < ip.c_tilde_len.val <;> simp [hk, List.getElem?_take])
+        by_cases hk : k < ip.c_tilde_len.val <;> simp [hk])
   refine WP.spec_bind (sig_encode_loop1_spec ip ip.gamma1 ip.gamma1_bits (sp.γ₁ - 1) hb hab hc' n
     (by rw [hnv, hp.gamma1_bits]) sp.ℓ z zv hz hrng ((bytes ct).take ip.c_tilde_len.val) hpre out1
     (by rw [hl1, houtn]; omega) 0#usize (by simp) hprefix) ?_
@@ -531,7 +531,7 @@ theorem attempt_loop_spec {K L : Usize} {k : Nat} (ip : Impl.params.Params) (sp 
       step as ⟨w2, hw2⟩
       step with arr_index_spec w2 i (by rw [hw2, Array.set_val_eq, List.length_set]; exact hl) as ⟨a2, ha2⟩
       have ha2e : a2 = a1 := by
-        rw [ha2]; subst hw2; simp [Array.set_val_eq, List.getElem_set]
+        rw [ha2]; subst hw2; simp [Array.set_val_eq]
       have hr1 : Repr a1 (NTTInvVec Wh)[i.val]! := by
         refine ⟨ha1c, ?_⟩
         rw [ha1, ha.eq, nttInvVec_getElem! _ _ hik, vget! Wh _ hik]
@@ -859,7 +859,7 @@ theorem sign_loop_spec {ip K L sp} (hp : Params.Std ip K L sp) (hb : SignBuf sp)
         have hbs : bytes s = bytesA ctb := by rw [hs, bytes_to_slice]
         have hsl : sp.lam / 4 ≤ s.length := by
           have hl : ctb.val.length = 64 := ctb.property
-          have : s.length = 64 := by rw [Slice.length, hs]; simpa [Array.to_slice] using hl
+          have : s.length = 64 := by rw [Slice.length, hs]; simp [Array.to_slice]
           have := hstd.lam_le
           omega
         step with sig_encode_signed_spec' ip sp hv hstd.stdSig s hsl zr z hzr hzn hr h hhr hhw sig hsig as ⟨sig1, hsig1⟩
@@ -1119,7 +1119,7 @@ theorem sign_internal_eq_prep {ip : Impl.params.Params} {K L : Usize}
     sign.sign_internal K L ip sk m_prefix m rnd sig =
       (do let ps ← prepSk K L ip sk; sign.sign_prepared_internal ip ps m_prefix m rnd sig) := by
   unfold sign.sign_internal prepSk
-  simp only [sign.PreparedSk.zeroed, Std.bind_tc_ok] <;> rfl
+  simp only [sign.PreparedSk.zeroed, Std.bind_tc_ok]
 
 /-- Steps 6-33 on a prepared key (the Rust `sign_prepared_internal`): if `ps` holds the spec's pre-loop values
 (`P.Â`, `P.ŝ₁`, `P.ŝ₂`, `P.t̂₀`, with `P.μ = H(tr ‖ M′, 64)` and `P.ρ'' = H(K ‖ rnd ‖ μ, 64)` for the `K`, `tr` held in

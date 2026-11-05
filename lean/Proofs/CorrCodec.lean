@@ -132,8 +132,7 @@ theorem beq_one_toNat (n : Nat) (h : n ≤ 1) : (n == 1).toNat = n := by
   rcases (by omega : n = 0 ∨ n = 1) with h | h <;> simp [h]
 
 theorem bitv_IntegerToBits (x α j : Nat) (hj : j < α) : bitv (IntegerToBits x α) j = dig x j := by
-  simp only [bitv, IntegerToBits_eq, List.getElem?_map, List.getElem?_range, hj, if_true,
-    Option.map_some, Option.getD_some]
+  simp only [bitv, IntegerToBits_eq, List.getElem?_map, List.getElem?_range, hj, Option.map_some, Option.getD_some]
   exact beq_one_toNat _ (dig_le x j)
 
 /-! ## BytesToBits -/
@@ -175,7 +174,7 @@ theorem bitv_BytesToBits (v : List UInt8) (t : Nat) : bitv (BytesToBits v) t = b
   rw [BytesToBits_eq]
   unfold bitv
   by_cases ht : t < 8 * v.length
-  · simp only [List.getElem?_map, List.getElem?_range, ht, if_true, Option.map_some, Option.getD_some]
+  · simp only [List.getElem?_map, List.getElem?_range, ht, Option.map_some, Option.getD_some]
     exact beq_one_toNat _ (byteBit_le v t)
   · have h1 : v[t/8]? = none := by
       rw [List.getElem?_eq_none_iff]; omega
@@ -210,7 +209,7 @@ def bstep (y : List Bool) (b : Array Nat) (a : Nat) : Array Nat :=
 theorem bstep_inv (y : List Bool) : ∀ n, n ≤ y.length →
     (List.foldl (bstep y) (Array.replicate ((y.length + 7) / 8) 0) (List.range' 0 n)).size
         = (y.length + 7) / 8 ∧
-    ∀ k (hk : k < (y.length + 7) / 8),
+    ∀ k (_hk : k < (y.length + 7) / 8),
       (List.foldl (bstep y) (Array.replicate ((y.length + 7) / 8) 0) (List.range' 0 n))[k]!
         = BV (bitv y) (8*k) (min 8 (n - 8*k)) := by
   intro n
@@ -372,7 +371,7 @@ theorem vec_fold (f : Nat → Int) : ∀ n, ∀ i (hi : i < 256),
 
 theorem bitv_window (z : List Bool) (s c j : Nat) (hj : j < c) :
     bitv (List.take c (List.drop s z)) j = bitv z (s + j) := by
-  simp [bitv, List.getElem?_take, List.getElem?_drop, hj]
+  simp [bitv, List.getElem?_drop, hj]
 
 theorem BitsToInteger_window (v : List UInt8) (s c : Nat) :
     BitsToInteger (List.take c (List.drop s (BytesToBits v))) c = BV (byteBit v) s c := by
@@ -799,7 +798,7 @@ theorem vget_vset {α : Type} [Inhabited α] {n : Nat} (h : Vector α n) (i : Na
   rw [set!_eq', Vector.getElem_setIfInBounds hi]
   simp
 
-theorem vset_self {α : Type} [Inhabited α] {n : Nat} (h : Vector α n) (i : Nat) (hi : i < n) :
+theorem vset_self {α : Type} [Inhabited α] {n : Nat} (h : Vector α n) (i : Nat) (_hi : i < n) :
     h.set! i h[i]! = h := by
   apply Vector.ext; intro j hj
   rw [set!_eq', Vector.getElem_setIfInBounds hj]
@@ -1286,7 +1285,7 @@ theorem packRow_inv (row : HintPoly) (base : List Nat) (st : MProd Nat (Array UI
       rw [← List.append_assoc]
       refine ⟨?_, ?_, ?_⟩
       · show S1.fst + 1 = _
-        rw [ih1]; simp <;> omega
+        rw [ih1]; simp; omega
       · show (S1.snd.set! S1.fst m.toUInt8).size = _
         simp [ih2]
       · intro idx hidx
@@ -1416,7 +1415,7 @@ theorem hv_zero {k : Nat} (h : Vector HintPoly k) :
   apply Vector.ext; intro i hi; simp [hv]
 
 theorem hv_full {k : Nat} (h : Vector HintPoly k) : hv h k = h := by
-  apply Vector.ext; intro i hi; simp [hv, hi]
+  apply Vector.ext; intro i hi; simp [hv]
 
 theorem hv_bang {k : Nat} (h : Vector HintPoly k) (n : Nat) (hn : n < k) :
     (hv h n)[n]! = Vector.replicate 256 false := by
@@ -1607,13 +1606,13 @@ theorem slice_hdr (ρ K tr A B C : List UInt8) (hρ : ρ.length = 32) (hK : K.le
   · rw [slice_append_right _ _ _ _ (by rw [hρ]), hρ]
     unfold slice
     simp [List.take_left' hK]
-  · rw [slice_append_right _ _ _ _ (by rw [hρ] <;> omega), hρ, slice_append_right _ _ _ _ (by rw [hK] <;> omega), hK]
+  · rw [slice_append_right _ _ _ _ (by rw [hρ]; omega), hρ, slice_append_right _ _ _ _ (by rw [hK]), hK]
     unfold slice
     simp [List.take_left' htr]
 
 theorem three_blocks (H A B C : List UInt8) (f g hh : Nat → List UInt8) (nA nB nC LA LB : Nat)
     (hH : H.length = 128) (hAl : A.length = nA * LA) (hBl : B.length = nB * LA)
-    (hCl : C.length = nC * LB)
+    (_hCl : C.length = nC * LB)
     (hA : ∀ i, i < nA → slice A (i * LA) LA = f i) (hB : ∀ i, i < nB → slice B (i * LA) LA = g i)
     (hC : ∀ i, i < nC → slice C (i * LB) LB = hh i) :
     (∀ i, i < nA → slice (H ++ A ++ B ++ C) (128 + i * LA) LA = f i) ∧
@@ -1696,19 +1695,16 @@ theorem skDecode_skEncode (p : Params) (hd : p.d = 13) (ρ K tr : List UInt8) (h
   · show (skDecode p _).2.2.2.1 = s₁
     apply Vector.ext; intro i hi
     rw [skDecode_s1 p _ i hi, hsk, b1 i hi]
-    beta_reduce
     rw [vget_eq s₁ i hi]
     exact BitUnpack_BitPack _ _ _ (fun j hj => hs₁ i hi j hj)
   · show (skDecode p _).2.2.2.2.1 = s₂
     apply Vector.ext; intro i hi
     rw [skDecode_s2 p _ i hi, hsk, b2 i hi]
-    beta_reduce
     rw [vget_eq s₂ i hi]
     exact BitUnpack_BitPack _ _ _ (fun j hj => hs₂ i hi j hj)
   · show (skDecode p _).2.2.2.2.2 = t₀
     apply Vector.ext; intro i hi
     rw [skDecode_t0 p _ i hi, hsk, b3 i hi]
-    beta_reduce
     rw [vget_eq t₀ i hi, e12]
     refine BitUnpack_BitPack _ _ _ (fun j hj => ?_)
     have := ht₀ i hi j hj
@@ -1750,7 +1746,7 @@ theorem sigDecode_eq (p : Params) (σ : List UInt8) :
   unfold sigDecode sigZ
   simp only [Std.Legacy.Range.forIn_eq_forIn_range', Std.Legacy.Range.size]
   cases hH : HintBitUnpack p (slice σ (p.lam / 4 + p.ℓ * (32 * (1 + bitlen (p.γ₁ - 1)))) (p.ω + p.k)) <;>
-    simp [hH, Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm]
+    simp
 
 theorem sigEncode_length (p : Params) (hγ : p.γ₁ = 2 ^ 17 ∨ p.γ₁ = 2 ^ 19) (c : List UInt8)
     (hc : c.length = p.lam / 4) (z : Vector RPoly p.ℓ) (h : Vector HintPoly p.k) :

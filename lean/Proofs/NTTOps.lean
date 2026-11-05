@@ -277,7 +277,7 @@ theorem foldl_set_replicate {α : Type} (m : Nat) (z : α) (h : Nat → α) (n :
     by_cases e : n = k
     · subst e; simp
     · have hh : (k < n + 1 ↔ k < n) := by omega
-      simp [e, Ne.symm e, hh]
+      simp [e, hh]
 
 theorem foldl_set_replicate_full {α : Type} (m : Nat) (z : α) (h : Nat → α) :
     (List.range' 0 m).foldl (fun (c : Vector α m) j => c.set! j (h j)) (Vector.replicate m z) =
@@ -304,7 +304,7 @@ theorem NTTVec_eq {k : Nat} (V : Vector Poly k) :
   rw [foldl_set_replicate_full k Poly.zero (fun j => NTT V[j]!)]
   apply Vector.ext
   intro j hj
-  simp [Spec.NTTVec, vget! V j hj]
+  simp [Spec.NTTVec]
 
 theorem ntt_vec_loop_spec {N : Usize} {k : Nat} (v : Array (Array U32 256#usize) N) (V : Vector Poly k)
     (hv : ReprVec v V) :
