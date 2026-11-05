@@ -25,6 +25,17 @@ extraction roots and the Charon and Aeneas pins). A symlink or other special fil
 It needs no Lean, Charon or Aeneas. It is a consistency check of committed files (someone who edits both lean/Impl and
 the report passes it); the `lean.yml` workflow extracts into an empty directory and compares every file of the result
 with lean/Impl, which catches that too.
+
+Unsupported inputs. The verified subset is a plain library crate, so extraction refuses (and `check` fails on) anything
+that would change the shipped build without changing the staged crate: a build script (build.rs, or `build =` or
+`links =` in Cargo.toml), env!/option_env!/include!/include_str!/include_bytes! in src/, a `.cargo` directory or a
+rust-toolchain file at the repository root, and file names with control characters or invalid UTF-8 (they would make
+the manifests ambiguous). If the crate ever needs one of these, add the files it reads to the manifest instead.
+
+Threat model. These checks are meant to catch accidental drift between src/ and lean/Impl, and tampering that is hidden
+inside generated or cached files (a hand-edited lean/Impl file, a symlinked or extra file, a modified tool directory).
+They cannot stop anyone who can change the workflows or scripts in a commit from disabling them: that is what code review
+of .github/ and scripts/ is for, not CI.
 """
 import hashlib
 import json
@@ -45,6 +56,9 @@ IMPL_FILES = {
 }
 REPORT = 'extract-report.json'
 
+# Macros that read inputs from outside the staged crate (the environment or other files).
+MACROS = re.compile(r'\b(?:env|option_env|include|include_str|include_bytes)\s*!')
+
 # Pins that go into hax.toml (and so into the digest of the extraction inputs).
 AENEAS_PIN, CHARON_PIN = 'build-183e4f0', 'nightly-2026.09.02'
 LEAN_PIN, HAX_LEAN_LIB_PIN = 'leanprover/lean4:v4.31.0', 'v0.3.30'
@@ -54,9 +68,19 @@ def file_sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def bad_name(name):
+    """True if NAME has a control character or is not valid UTF-8 (the manifests are line based)."""
+    try:
+        name.encode('utf-8')
+    except UnicodeEncodeError:
+        return True
+    return any(ord(c) < 32 or ord(c) == 127 for c in name)
+
+
 def walk_files(root):
     """(files, problems): every regular file under ROOT as {posix relative path: Path}, not following symlinks.
-    Symlinks (to files or directories) and other special files are reported in problems, not followed."""
+    Symlinks (to files or directories), special files and names with control characters or invalid UTF-8 are reported in
+    problems, not followed."""
     root = Path(root)
     files, problems = {}, []
     if root.is_symlink():
@@ -64,13 +88,18 @@ def walk_files(root):
     for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
         for name in list(dirnames):
             p = Path(dirpath) / name
-            if p.is_symlink():
+            if bad_name(name):
+                problems.append(f'{p.relative_to(root).as_posix()!a} has a control character or invalid UTF-8 in its name')
+                dirnames.remove(name)
+            elif p.is_symlink():
                 problems.append(f'{p.relative_to(root).as_posix()} is a symlink')
                 dirnames.remove(name)
         for name in filenames:
             p = Path(dirpath) / name
             rel = p.relative_to(root).as_posix()
-            if p.is_symlink():
+            if bad_name(name):
+                problems.append(f'{rel!a} has a control character or invalid UTF-8 in its name')
+            elif p.is_symlink():
                 problems.append(f'{rel} is a symlink')
             elif not p.is_file():
                 problems.append(f'{rel} is not a regular file')
@@ -126,12 +155,20 @@ def stage_crate(repo, roots, dest):
         raise ValueError('src/: ' + '; '.join(problems))
     if not src_files:
         raise ValueError('src/ has no files')
+    cargo_text = (repo / 'Cargo.toml').read_text()
+    if (repo / 'build.rs').exists() or re.search(r'(?m)^\s*(build|links)\s*=', cargo_text):
+        raise ValueError('a build script (build.rs, `build =` or `links =` in Cargo.toml) is not supported: '
+                         'it changes the shipped build but is not extracted')
+    for rel, p in src_files.items():
+        m = MACROS.search(p.read_bytes().decode('utf-8', 'replace')) if rel.endswith('.rs') else None
+        if m:
+            raise ValueError(f'src/{rel} uses {m.group(0)}, which reads inputs from outside the staged crate')
     for rel, p in src_files.items():
         (dest / 'src' / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(p, dest / 'src' / rel)
     if (repo / 'Cargo.toml').is_symlink():
         raise ValueError('Cargo.toml is a symlink')
-    cargo = (repo / 'Cargo.toml').read_text()
+    cargo = cargo_text
     cargo = re.sub(r'(?ms)^\[dev-dependencies\]\n.*?(?=^\[|\Z)', '', cargo)
     (dest / 'Cargo.toml').write_text(cargo)
     (dest / 'hax.toml').write_text(hax_toml(roots))
@@ -144,6 +181,18 @@ def inputs_sha256(crate_dir):
     if problems:
         raise ValueError('; '.join(problems))
     return manifest_sha256({r: p for r, p in files.items() if r.startswith('src/') or r in ('Cargo.toml', 'hax.toml')})
+
+
+def output_dir_problems(out):
+    """Reasons not to extract into OUT: it is a symlink, or it holds a symlink, a special file or any file that is not
+    one of the files extraction writes (a stale file would survive and the result would not be the extraction)."""
+    out = Path(out)
+    if out.is_symlink():
+        return [f'{out} is a symlink']
+    if not out.exists():
+        return []
+    files, problems = walk_files(out)
+    return problems + [f'{rel} is not a file extraction writes' for rel in sorted(set(files) - set(IMPL_FILES) - {REPORT})]
 
 
 def generated_sha256s(gen_dir):
@@ -166,8 +215,14 @@ def check(repo):
             return [f'{d} is a symlink']
     if not report_path.is_file():
         return [f'{report_path} not found']
-    report = json.loads(report_path.read_text())
     errors = []
+    # Cargo builds the crate from the repository root, so only a root-level config or toolchain file applies (the
+    # subprojects checkct/, tools/ and fuzz/ have their own).
+    for name, why in (('.cargo', 'a .cargo directory'), ('rust-toolchain', 'a toolchain override'),
+                      ('rust-toolchain.toml', 'a toolchain override')):
+        if (repo / name).exists() or (repo / name).is_symlink():
+            errors.append(f'{name}: {why} changes the shipped build but is not part of the extraction inputs')
+    report = json.loads(report_path.read_text())
     recorded = report.get('extract_inputs_sha256')
     try:
         actual = repo_inputs_sha256(repo)

@@ -104,7 +104,8 @@ tools_ok() {
 if ! tools_ok; then
   [ -e "$AENEAS_DIR" ] || [ -e "$CHARON_DIR" ] && echo "Aeneas or Charon in $T/cache does not match the pins; reinstalling them"
   rm -rf "$AENEAS_DIR" "$CHARON_DIR"
-  (cd "$T/pin" && PATH="$T/bin:$PATH" XDG_CACHE_HOME="$T/cache" cargo hax tools install)
+  # The verified binary by absolute path: `cargo hax` would run $CARGO_HOME/bin/cargo-hax first if there is one.
+  (cd "$T/pin" && XDG_CACHE_HOME="$T/cache" "$T/bin/cargo-hax" hax tools install)
   tools_ok || { echo "setup-tools.sh: installed Aeneas/Charon directories do not match the pinned digests" >&2; exit 1; }
 fi
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # One entry point (run on Linux): extract -> lake build -> axiom check. Non-zero exit on any gate failure.
 # Usage: scripts/extract-and-build.sh [extract.py options, e.g. --src DIR]
+# Writes the build and axiom results to lean/.lake/pipeline-result.json, not into lean/Impl/extract-report.json.
 # Prerequisite (once per machine): scripts/setup-tools.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -8,6 +9,8 @@ export PATH="$HOME/.elan/bin:$PATH"
 t0=$(date +%s)
 echo "== extract"
 python3 scripts/extract.py "$@"
+# Validate the written tree (no symlink or stray file in lean/Impl, hashes as recorded) before building it.
+if [ $# -eq 0 ]; then python3 -I scripts/extract_hash.py check; else echo "note: extract.py options given; skipping the lean/Impl check" >&2; fi
 t1=$(date +%s)
 echo "== lake build"
 cd lean
@@ -28,13 +31,12 @@ t2=$(date +%s)
 echo "== axioms"
 scripts/check-axioms.sh | tee lean/.lake/axioms-summary.txt
 t3=$(date +%s)
+# The result goes to an untracked file: extract-report.json stays the deterministic record that plain extraction writes, so
+# that the lean.yml comparison with a fresh extraction passes after this pipeline.
 python3 -I - <<PY
 import json
-p = 'lean/Impl/extract-report.json'
-r = json.load(open(p))
-r['lake_build'] = 'ok'
-r['axiom_gate'] = 'ok'
-r['axioms_summary'] = [l for l in open('lean/.lake/axioms-summary.txt').read().splitlines() if l.startswith('checked')]
-json.dump(r, open(p, 'w'), indent=1); open(p, 'a').write('\n')
+r = {'lake_build': 'ok', 'axiom_gate': 'ok',
+     'axioms_summary': [l for l in open('lean/.lake/axioms-summary.txt').read().splitlines() if l.startswith('checked')]}
+json.dump(r, open('lean/.lake/pipeline-result.json', 'w'), indent=1); open('lean/.lake/pipeline-result.json', 'a').write('\n')
 PY
 echo "PIPELINE OK  extract=$((t1-t0))s lake=$((t2-t1))s axioms=$((t3-t2))s"
