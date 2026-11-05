@@ -39,7 +39,9 @@ and `avx2`; thumbv7em and wasm32 builds; MSRV 1.86; a build and tests under the 
 `cargo deny`. It installs missing toolchains and targets with rustup, and `cargo-deny` into `$HOME/.cache/ml-dsa-lean-ci/tools`
 (`CI_TOOLS` overrides that). It needs `cargo-fuzz` and a nightly toolchain for the fuzz steps and reports a SKIP if they are
 missing; `--strict` turns a SKIP into a failure. Run `bash scripts/ci.sh --help` for options such as `--only`. A cold run
-takes tens of minutes. Last recorded result: all 17 steps passed (assurance.md, section 0).
+takes tens of minutes. It also runs two checks that need no Rust or Lean: `extract-hash` (the digests of the extraction inputs and of
+`lean/Impl` against `lean/Impl/extract-report.json`, section 2.2) and `axiom-gate-selftest` (`scripts/check-axioms.sh` must fail on a missing
+or empty list). Last recorded result: see assurance.md, section 0.
 
 The longer differentials, fuzzing and benchmarks:
 
@@ -65,9 +67,9 @@ The longer differentials, fuzzing and benchmarks:
 | Rust for extraction | nightly-2026-08-18, with rustc-dev, llvm-tools, rust-src and miri | `scripts/setup-tools.sh` |
 | cargo-hax (installs the two tools) | 0.4.2 | `scripts/setup-tools.sh` |
 
-Lean is installed with [elan](https://github.com/leanprover/elan): `curl -fsSL
-https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain
-leanprover/lean4:v4.31.0`. The scripts expect `~/.elan/bin` to hold `lake`. You only need the extraction tools (Charon,
+`scripts/setup-tools.sh` installs Lean with [elan](https://github.com/leanprover/elan) (release v4.2.4, downloaded from its
+GitHub release and checked against a SHA-256 recorded in the script) and the toolchain `leanprover/lean4:v4.31.0`. The scripts
+expect `~/.elan/bin` to hold `lake`. You only need the extraction tools (Charon,
 Aeneas, the nightly) for step 2.2; steps 2.1 and 2.3 need Lean alone, because `lean/Impl` is committed.
 
 ### 2.1 Check the proofs: `scripts/lean-check.sh`
@@ -94,17 +96,37 @@ To read the statements the gate covers, start with the `*_exact` theorems: `lean
 
 ### 2.2 Re-extract the Rust and diff `lean/Impl`
 
+To check that the committed `lean/Impl` is the extraction of the committed `src/` (extract into a new empty directory, never
+into the tree you are checking):
+
 ```sh
-bash scripts/setup-tools.sh          # once; installs the pinned tools under ~/hax-tools (set ML_DSA_TOOLS to move them)
-python3 scripts/extract.py           # runs Charon and Aeneas on src/ (with --cfg miri), writes lean/Impl
-git diff --stat lean/Impl            # empty if the committed Lean code is the extraction of the committed Rust
+bash scripts/setup-tools.sh                 # once; installs the pinned tools under ~/hax-tools (set ML_DSA_TOOLS to move them)
+python3 -I scripts/extract_hash.py check    # no symlinks or stray files in lean/Impl, hashes as recorded in extract-report.json
+out="$(mktemp -d)" && python3 scripts/extract.py --out "$out"   # runs Charon and Aeneas on src/ (with --cfg miri)
+diff -r lean/Impl "$out"                    # no output: every file, including extract-report.json, is identical
 ```
 
-`scripts/setup-tools.sh` needs `rustup`, `curl`, `zstd` and an x86_64 Linux machine. `scripts/extract.py` exits nonzero on
+To regenerate `lean/Impl` after changing `src/`, run `python3 scripts/extract.py` (it refuses an output directory that holds
+symlinks or files it does not write), then `python3 -I scripts/extract_hash.py check`, and commit `lean/Impl`.
+
+`scripts/setup-tools.sh` needs `rustup`, `curl`, `zstd`, `sha256sum` and an x86_64 Linux machine. It downloads cargo-hax and
+elan from tagged releases and checks recorded SHA-256 values. On every run it checks the installed cargo-hax binary and the
+whole Aeneas and Charon tool directories (cargo-hax runs the executables that `hax-metadata.toml` in them names, so every file
+counts, and the execute bit) against recorded digests, reinstalling if they differ, and runs each tool. `scripts/extract.py` exits nonzero on
 any gate failure (an Aeneas error or warning, a local opaque function, a referenced external axiom, an `api` function missing
-from `scripts/extract-roots.txt`) and writes into `lean/Impl` only on success. `lean/Impl/extract-report.json` records the
-SHA-256 of `src/`, so a changed `src/` with an unchanged `Impl` shows up there. `bash scripts/extract-and-build.sh`
-runs extraction, `lake build` and the axiom check in one go.
+from `scripts/extract-roots.txt`) and writes into `lean/Impl` only on success. `lean/Impl/extract-report.json` records a
+digest of the extraction inputs (every file under `src/` with its name, `Cargo.toml` without `[dev-dependencies]`, the roots and
+the tool pins) and the SHA-256 of each file in `lean/Impl`; `bash scripts/ci.sh --only extract-hash` compares them with the
+tree (no tools needed) and rejects symlinks, so a changed input or a hand-edited or added file in `lean/Impl` without a new
+extraction fails it. Someone who edits `lean/Impl` and the report together passes that check; `.github/workflows/lean.yml`
+extracts into a new empty directory and compares every file with `lean/Impl` (`diff -r`), which fails on that too. The commands above
+do the same by hand. Extraction runs the verified cargo-hax by absolute path (not `cargo hax`, which would pick up a
+`$CARGO_HOME/bin/cargo-hax`), on a crate staged in a fresh temporary directory, with a fixed list of environment variables and a
+fresh `CARGO_HOME`; the fast check also rejects a build script, `env!`/`include!`-style macros in `src/`, a root `.cargo`
+directory or toolchain file, and file names with control characters, since those would change the shipped build or the
+manifests without changing the extraction. What is not isolated is listed in the header of `scripts/extract.py` (PATH, HOME,
+RUSTUP_HOME). `bash scripts/extract-and-build.sh` runs extraction, the check, `lake build` and the axiom check in one go; it
+leaves `extract-report.json` alone and writes its build and axiom results to `lean/.lake/pipeline-result.json`.
 
 ### 2.3 The witness check: `scripts/witness-check.sh`
 

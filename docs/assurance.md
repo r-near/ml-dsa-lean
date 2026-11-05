@@ -24,10 +24,35 @@ Wycheproof generator scripts, one echo string in `scripts/ci.sh`, `SECURITY.md` 
 |---|---|
 | `scripts/lean-check.sh` | `LEAN CHECK OK`, 770 declarations (pipefail `lake build` exits 0, no `error:` or `sorry` in the log, axiom gate over every extracted def and every name in `lean/headline-theorems.txt`; axioms used: `propext`, `Classical.choice`, `Quot.sound`) |
 | `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`, 146 names |
-| `scripts/ci.sh` | 17 of 17 steps passed |
+| `scripts/ci.sh` | 19 of 19 steps passed at 98f8ae9 (`src/` unchanged since 9d51b57; the steps `extract-hash` and `axiom-gate-selftest` were added after it) |
 
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
+
+What ties the shipped Rust to the proved Lean (the proofs are about `lean/Impl`, the extraction of `src/`):
+
+- Every push and pull request (`ci.yml`, job `repo-checks`, steps `extract-hash` and `axiom-gate-selftest` of `scripts/ci.sh`):
+  `extract-hash` fails if the digest of the extraction inputs (every file under `src/`, `Cargo.toml` without its
+  dev-dependencies, the roots, the Charon and Aeneas pins; file names are part of the digest), the set and contents of the files in
+  `lean/Impl` (recursively), or the roots in `scripts/extract-roots.txt` no longer match what `lean/Impl/extract-report.json`
+  recorded at the last extraction (`scripts/extract_hash.py`, shared with `scripts/extract.py`), or if there is a symlink under
+  `src/` or `lean/Impl`, a build script, an `env!`/`include!`-style macro in `src/`, a root `.cargo` directory or toolchain
+  file, or a file name with a control character (inputs the extraction does not see, or that make the manifest ambiguous). It checks that committed files agree with each other and does not re-run the extraction, so editing
+  `lean/Impl` and the report together passes it. The self-test runs `scripts/check-axioms.sh` on a missing, an empty and a
+  declaration-free list and requires it to fail.
+- Manual and weekly, on the large runner (`lean.yml`, before `lean-check.sh`): `scripts/setup-tools.sh`, then the fast check, then
+  `scripts/extract.py` into a new empty directory, and the job fails unless every file there is identical to the committed
+  `lean/Impl` and neither has files the other lacks (`diff -r`). This is the check that a coordinated edit of `lean/Impl` and the
+  report does not pass. It runs only when the heavy runner is configured or on manual dispatch.
+- Extraction runs the verified cargo-hax by absolute path, on a crate staged outside the checkout, with a fixed list of
+  environment variables and a fresh `CARGO_HOME`. `PATH`, `HOME` and `RUSTUP_HOME` are still inherited (header of `scripts/extract.py`).
+- Apple Silicon (`ci.yml`, job `macos-arm64`, `macos-15`): the default suite and the release zeroize suite. Until the
+  `stack_residue_signing_key` failures on aarch64 macOS are fixed (three tests, 44/65/87), this job fails.
+
+Threat model. These checks are designed to catch accidental drift between `src/` and `lean/Impl`, and tampering that is hidden
+inside generated or cached files (a hand-edited, symlinked or extra file in `lean/Impl`, a modified or shadowed tool). They cannot
+stop anyone who can change the workflows or scripts in a commit from disabling them; that is covered by code review of
+`.github/` and `scripts/`, not by CI.
 
 Pins and decisions:
 
@@ -37,7 +62,7 @@ Pins and decisions:
 | Lean layout | Lake package `MlDsaLean` in `lean/`: extracted code `lean/Impl/` (Aeneas namespace `Impl`), spec `lean/Spec/`, proofs `lean/Proofs/` | names are fixed so proofs don't churn |
 | M′ | `sign_internal(p, sk, m_prefix, m, rnd, sig)` and `verify_internal(p, pk, m_prefix, m, sig)`, with M′ = `m_prefix ‖ m` absorbed in two calls | the external API builds 0 ‖ \|ctx\| ‖ ctx (≤ 257 bytes) on the stack, no alloc; the proof needs one sponge lemma (absorbing two slices = absorbing their concatenation) |
 | Charon | generic (no `--monomorphize`) | 0 external axioms; `--monomorphize` adds 9 unmodeled index axioms |
-| Extraction toolchain | Charon nightly-2026.09.02, Aeneas build-183e4f0, Rust nightly-2026-08-18, Lean v4.31.0 | pinned in `scripts/setup-tools.sh` and `lean/lean-toolchain` |
+| Extraction toolchain | Charon nightly-2026.09.02, Aeneas build-183e4f0, cargo-hax 0.4.2, elan v4.2.4, Rust nightly-2026-08-18, Lean v4.31.0 | pinned in `scripts/setup-tools.sh` and `lean/lean-toolchain`; the cargo-hax and elan downloads are tagged releases checked against recorded SHA-256 values; on every run the installed cargo-hax binary and the whole Aeneas and Charon tool directories (including `hax-metadata.toml`, which names the executables cargo-hax runs) are checked against recorded digests, and the executables must have the execute bit and run (the nightly and the Lean toolchain are fetched and verified by rustup and elan) |
 | Extraction gate | Aeneas exit 0, no `[Error]`/`[Warning]`, no local opaque function, no referenced external axiom, every extracted def on standard axioms only | any failure is fixed in the Rust code, not worked around |
 | Out of scope | HashML-DSA (Algorithms 4/5) and external μ | no differential oracle for the first; the second is an allowed variant of Algorithms 7/8 that would need its own spec entry and theorems (deferred, not ruled out) |
 
@@ -294,7 +319,7 @@ Three real leaks were found and fixed (CT-1, CT-2, CT-3 in section 6). Limits:
 | Proof mutation testing | 29 semantic mutants of `src` (rounding edge cases, hint checks, norm bounds, NTT⁻¹ layers and scale, sampler indices, seeds and hash inputs, κ budget, ctx and length guards, parameter constants): every one breaks the Lean build at the spec theorem of the mutated function. `cargo test` missed 5 (λ/4-byte c̃ compare, `infinity_norm` threshold, HintBitUnpack's count > ω check, Verify's ‖z‖∞ `<`, κ budget); regression tests now kill four (`tests/mutants.rs`, the `prefix_eq` unit test in `src/verify.rs`); the κ budget guard (`while κ + ℓ − 1 ≤ 0xFFFF`, now the function `sign::more_attempts`) is tested at its boundary by `sign_loop_guard_allows_the_last_attempt` (the `<` variant of the guard fails it), while that Sign's loop calls the guard is shown by the proof only. Of the 29 mutants, about a third fail the Lean build as unprovable goals and the rest as proof-script shape breaks (the per-mutant record is not kept). The mutation harness itself is not committed, so this row cannot be re-run |
 | Leaf and API tests | round trips on upstream bytes, naive references, every HintBitUnpack ⊥ case (`tests/leaf.rs`); optional key checks against 200 random mutations per set (`tests/sk_well_formed.rs`, `tests/pk_from_sk.rs`); SHAKE KATs (`tests/shake_kat.rs`, `shake_lanes.rs`); dispatch vs portable NTT (`tests/dispatch.rs`) |
 | zeroize | `tests/zeroize.rs` scans the stack below `keygen`, `pk_from_sk`, `signing_key`, `sign`, `sign_prepared` and single Sign attempts (rejected early, rejected late, accepted) for residue of K, s1, s2, t0, ρ″, the mask y and the values derived from it (ŷ, Â ∘ ŷ, w, ĉ, ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩, r0, ⟨⟨ct0⟩⟩, and z and c̃ of rejected attempts), and checks the drop wipe; see Z-1 for the optimization-level caveat |
-| Rust CI (`scripts/ci.sh`) | tests for default, `zeroize` (all 24 scans in release; the 3 `signing_key` scans at opt-level 0) and `avx2`; thumbv7em; MSRV 1.86; wasm32; nearcore profile on 1.95.0 (fat LTO, overflow checks, panic = abort for the build) incl. zeroize; 60 s fuzz smoke of three targets; the aws-lc differential; `cargo deny` |
+| Rust CI (`scripts/ci.sh`) | tests for default, `zeroize` (all 24 scans in release; the 3 `signing_key` scans at opt-level 0) and `avx2`; thumbv7em; MSRV 1.86; wasm32; nearcore profile on 1.95.0 (fat LTO, overflow checks, panic = abort for the build) incl. zeroize; 60 s fuzz smoke of three targets; the aws-lc differential; `cargo deny`; `extract-hash` and `axiom-gate-selftest` (section 0); on GitHub, also the default and release zeroize suites on macOS arm64 (`ci.yml`, `macos-arm64`) |
 
 ### Benchmarks
 

@@ -57,7 +57,7 @@
   "ml_dsa_lean::encode::sk_decode",
   "ml_dsa_lean::ntt::scalar_vector_ntt_inverse"
  ],
- "src_sha256": "796ba1dd765216dd12ce6faf51ab8d09ee67ea90d61f8d1dbe524264c9b8c99b",
+ "extract_inputs_sha256": "83d9ac58a74b9e41cd813b4bb5e0aacd62a219285fb20e0a54410b6a18309f60",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -97,6 +97,12 @@
  "aeneas_errors": 0,
  "aeneas_warnings": 0,
  "aeneas_name_clashes": 0,
+ "impl_sha256": {
+  "Types.lean": "198c2cfb238c1eec07063edc48d1e3681f693f766ce4335a1649d4093e80c017",
+  "Funs.lean": "64908fa52871428f22616887f62422a95c6c204ba6491bc83e4ea0aa616894bf",
+  "FunsExternal_Template.lean": "29f2586ab7a71fdd5f3b29b17623b1ac567b3649c116d6107d0f26c5bc55b4d6",
+  "FunsExternal.lean": "29f2586ab7a71fdd5f3b29b17623b1ac567b3649c116d6107d0f26c5bc55b4d6"
+ },
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
  "lean_defs": 368
