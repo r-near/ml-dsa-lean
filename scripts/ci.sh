@@ -23,12 +23,13 @@
 # fuzz-<target> (one per target in fuzz/fuzz_targets), deny, lean.
 #
 # NOTE: test-zeroize skips stack_residue_* where they fail at opt-level 0. test-zeroize runs the zeroize feature's tests in
-# the dev profile (opt-level 0) without the 8 failing stack-residue scans (keygen and pk_from_sk for 44/65/87,
-# signing_key for 44/65) and with the 7 that pass (sign and sign_prepared for 44/65/87, signing_key for 87);
-# test-zeroize-release and nearcore-test-zeroize run the full suite, all 15 scans, in release. Counts reproduced on
-# a Linux machine: of the 15 stack-residue scan tests in tests/zeroize.rs, 8 find copies of s1, s2, ŝ1, t0 or K in dead stack
-# frames at opt-level 0; all 15 pass in release; at dev opt-level 1, 13 pass and keygen 44/65 fail. The wipe claims in
-# src/api.rs are therefore about optimized builds. Reproducer: cargo test --features zeroize --test zeroize stack_residue
+# the dev profile (opt-level 0) without the 21 failing stack-residue scans (keygen, pk_from_sk, sign, sign_prepared and the
+# three attempt scans, for 44/65/87) and with the 3 that pass (signing_key for 44/65/87); the drop and SHAKE wipe tests run
+# too. test-zeroize-release and nearcore-test-zeroize run the full suite, all 24 scans, in release. Counts reproduced on
+# a Linux x86_64 machine and an aarch64 macOS machine: of the 24 stack-residue scan tests in tests/zeroize.rs, 21 find copies
+# of secrets in dead stack frames at opt-level 0; all 24 pass in release; at dev opt-level 1 all 28 tests passed in one run
+# on each machine. The wipe claims in src/api.rs are therefore about optimized builds. Reproducer:
+# cargo test --features zeroize --test zeroize stack_residue
 #
 # "nearcore-*" steps reproduce nearcore's release build as read at nearcore cd5a94457: toolchain 1.95.0
 # (rust-toolchain.toml), [profile.release] overflow-checks = true, panic = "abort", lto = "fat", codegen-units = 1
@@ -120,12 +121,12 @@ need_toolchain() {
 
 step_test_default() { cargo test; }
 step_test_zeroize() {
-  echo "NOTE: skipping stack_residue_* (fails at opt-level 0, see the header of this script and Z-1 in docs/assurance.md); running the 7 that pass at opt-level 0"
+  echo "NOTE: skipping 21 of the 24 stack_residue_* scans (they fail at opt-level 0, see the header of this script and Z-1 in docs/assurance.md); running the 3 signing_key scans and the other tests"
   ZEROIZE_SKIPPED=1
-  # `--skip` matches substrings of the full test path (ml_dsa_44::stack_residue_keygen, ...). Skipped: keygen and
-  # pk_from_sk for all sets, signing_key for 44 and 65. Run: sign, sign_prepared (all sets) and signing_key for 87.
-  cargo test --features zeroize -- --skip stack_residue_keygen --skip stack_residue_pk_from_sk \
-    --skip ml_dsa_44::stack_residue_signing_key --skip ml_dsa_65::stack_residue_signing_key
+  # `--skip` matches substrings of the full test path (ml_dsa_44::stack_residue_keygen, ...), and `stack_residue_` is a
+  # substring of every scan, so the first run skips all of them and the second runs the three that pass.
+  cargo test --features zeroize -- --skip stack_residue_ && \
+    cargo test --features zeroize --test zeroize -- stack_residue_signing_key
 }
 step_test_zeroize_release() { cargo test --release --features zeroize; }
 step_test_avx2() { cargo test --features avx2; }
@@ -222,7 +223,7 @@ step_nearcore_test_avx2() {
   nearcore_env cargo "+$NEARCORE_TC" test --release --features avx2
 }
 step_nearcore_test_zeroize() {
-  # The zeroize feature (tests/zeroize.rs, including all 15 stack-residue scans) under nearcore's release profile.
+  # The zeroize feature (tests/zeroize.rs, including all 24 stack-residue scans) under nearcore's release profile.
   need_toolchain "$NEARCORE_TC" || return $?
   nearcore_profile_check test --features zeroize --test zeroize || { echo "profile check failed"; return 1; }
   nearcore_env cargo "+$NEARCORE_TC" test --release --features zeroize --test zeroize
@@ -304,7 +305,7 @@ for i in "${!NAMES[@]}"; do
 done
 if [ "$STRICT" -eq 1 ] && [ "$skip" -gt 0 ]; then fail=$((fail+skip)); fi
 if [ "$ZEROIZE_SKIPPED" -eq 1 ]; then
-  echo "NOTE: skipping stack_residue_* in test-zeroize (fails at opt-level 0, see the header of this script and Z-1 in docs/assurance.md); test-zeroize-release and nearcore-test-zeroize cover them in release"
+  echo "NOTE: skipping 21 of 24 stack_residue_* scans in test-zeroize (fail at opt-level 0, see the header of this script and Z-1 in docs/assurance.md); test-zeroize-release and nearcore-test-zeroize cover them in release"
 fi
 if [ "${#NAMES[@]}" -eq 0 ]; then
   echo "no step ran (--only matched nothing that was enabled)"; fail=$((fail+1))
