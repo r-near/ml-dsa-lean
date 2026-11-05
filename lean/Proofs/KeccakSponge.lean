@@ -101,7 +101,7 @@ theorem read_byte (i4 i7 : U64) (i6 : Usize) (i8 : U8) (m : Nat) (hm : m < 8) (h
   have : (toU64 i4).toNat = i4.val := by simp [toU64, UInt64.toNat]
   rw [this, h7, h6]
 
-theorem read_sb (a : Array U64 25#usize) (p : Nat) (hp : p < 200) (i3 i6 : Usize) (x i7 : U64) (i8 : U8)
+theorem read_sb (a : Array U64 25#usize) (p : Nat) (_hp : p < 200) (i3 i6 : Usize) (x i7 : U64) (i8 : U8)
     (hlt : i3.val < a.val.length) (h3 : i3.val = p / 8) (hx : x = a.val[i3.val]'hlt)
     (h6 : i6.val = 8 * (p % 8)) (h7 : i7.val = x.val >>> i6.val) (h8 : i8 = UScalar.cast .U8 i7) :
     UInt8.ofNat i8.val = KM.sb (toLanes a) p := by
@@ -243,7 +243,7 @@ theorem byteOf_toUInt64 (b : UInt8) (m : Nat) (hm : m < 8) :
   have h := KM.byteOf_shl b 0 m (by omega) hm
   have e : b.toUInt64 <<< (8 * 0).toUInt64 = b.toUInt64 := by
     apply UInt64.eq_of_toBitVec_eq
-    simp [UInt64.toBitVec_shiftLeft]
+    simp
   rw [e] at h
   exact h
 
@@ -265,7 +265,7 @@ theorem bytes_getElem?_of (data : Slice U8) (j : Nat) (v : U8) (h : data.val[j]?
 
 theorem getD_window (L : List UInt8) (i m : Nat) (hm : m < 8) (v : UInt8) (h : L[i + m]? = some v) :
     ((L.drop i).take 8).getD m 0 = v := by
-  simp [List.getD_eq_getElem?_getD, List.getElem?_take, List.getElem?_drop, hm, h]
+  simp [List.getD_eq_getElem?_getD, List.getElem?_drop, hm, h]
 
 @[step]
 theorem load_lane_spec (data : Slice U8) (i : Usize) (h : i.val + 8 ≤ data.val.length) :
@@ -369,7 +369,7 @@ theorem absorb_loop_spec (st : keccak.Shake) (r : Nat) (M : List UInt8) (data : 
       have hrate : s.rate.val = r := h2.rate
       have hle := h2.rate_le
       have hi' : i.val < data.val.length := by simpa [Slice.len, Slice.length] using hi
-      have hlenv : data.len.val = data.val.length := by simp [Slice.len, Slice.length]
+      have hlenv : data.len.val = data.val.length := by simp [Slice.len]
       step*
       split
       · rename_i hb
@@ -503,7 +503,7 @@ theorem squeeze_loop_spec (st : keccak.Shake) (r : Nat) (M : List UInt8) (n0 : N
     · rename_i hi
       have hi' : i.val < out.val.length := by simpa [Slice.len, Slice.length] using hi
       have hrle : r ≤ 200 := h3.2.1
-      have hlenv : out.len.val = out.val.length := by simp [Slice.len, Slice.length]
+      have hlenv : out.len.val = out.val.length := by simp [Slice.len]
       step with wrap_sqz st1 r M (n0 + i.val) h3 as ⟨k, off, self1, hn, hat⟩
       obtain ⟨hrate1, hoffr, hpos1, hst1⟩ := hat
       step*

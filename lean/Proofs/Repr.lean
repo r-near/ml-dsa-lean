@@ -102,12 +102,6 @@ theorem toZq_get (w : Array U32 256#usize) (k : Nat) (hk : k < 256) :
     (toZq w)[k] = (((w.val[k]'(by rw [len256 w]; exact hk)).val : Nat) : Zq) := by
   simp [toZq]
 
-theorem toZq_getElem! (w : Array U32 256#usize) (k : Nat) (hk : k < 256) :
-    (toZq w)[k]! = (((w[k]!).val : Nat) : Zq) := by
-  have hk' : k < w.val.length := by rw [len256 w]; exact hk
-  rw [getElem!_pos _ _ (by simpa using hk), toZq_get w k hk]
-  simp [Array.getElem!_Nat_eq, List.getElem!_eq_getElem?_getD, List.getElem?_eq_getElem hk']
-
 theorem toZq_getElem (w : Array U32 256#usize) (k : Nat) (hk : k < w.val.length) :
     (toZq w)[k]! = (((w.val[k]).val : Nat) : Zq) := by
   have hk' : k < 256 := by have := len256 w; omega
@@ -168,8 +162,6 @@ structure Repr (a : Array U32 256#usize) (p : Poly) : Prop where
 theorem Repr.unique {a b : Array U32 256#usize} {p : Poly} (ha : Repr a p) (hb : Repr b p) : a = b :=
   toZq_inj ha.canon hb.canon (ha.eq.trans hb.eq.symm)
 
-theorem Repr.of_toZq {a : Array U32 256#usize} (h : Canonical a) : Repr a (toZq a) := ⟨h, rfl⟩
-
 /-- The coefficient at `k` is the residue of `p[k]`. -/
 theorem Repr.coeff {a : Array U32 256#usize} {p : Poly} (h : Repr a p) (k : Nat) (hk : k < 256) :
     ((((a.val[k]'(by rw [len256 a]; exact hk)).val : Nat)) : Zq) = p[k] := by
@@ -178,25 +170,12 @@ theorem Repr.coeff {a : Array U32 256#usize} {p : Poly} (h : Repr a p) (k : Nat)
 theorem repr_repeat_zero : Repr (Array.repeat 256#usize 0#u32) Poly.zero :=
   ⟨canonical_repeat_zero, toZq_repeat_zero⟩
 
-theorem Repr.set {a : Array U32 256#usize} {p : Poly} (h : Repr a p) (i : Usize) (x : U32)
-    (hi : i.val < 256) (hx : x.val < Spec.q) :
-    Repr (a.set i x) (p.set! i.val (x.val : Zq)) :=
-  ⟨canonical_set a i x h.canon hx, by rw [toZq_set a i x hi, h.eq]⟩
-
 /-! ### Vectors of polynomials -/
 
 /-- `a` represents the vector `v` of polynomials: same length, and entry `i` represents `v[i]`. -/
 structure ReprVec {K : Usize} {k : Nat} (a : Array (Array U32 256#usize) K) (v : Vector Poly k) : Prop where
   len : K.val = k
   elt : ∀ (i : Nat) (hi : i < k), Repr (a.val[i]'(by have := a.property; omega)) v[i]
-
-theorem ReprVec.unique {K : Usize} {k : Nat} {a b : Array (Array U32 256#usize) K} {v : Vector Poly k}
-    (ha : ReprVec a v) (hb : ReprVec b v) : a = b := by
-  apply Subtype.ext
-  apply List.ext_getElem (by rw [a.property, b.property])
-  intro i h1 h2
-  have hi : i < k := by have := a.property; have := ha.len; omega
-  exact Repr.unique (ha.elt i hi) (hb.elt i hi)
 
 /-- Entry `i` of a represented vector, as an extracted `Array.index_usize`. -/
 theorem ReprVec.index_spec {K : Usize} {k : Nat} {a : Array (Array U32 256#usize) K} {v : Vector Poly k}
@@ -229,14 +208,6 @@ structure ReprMat {K L : Usize} {k ℓ : Nat} (a : Array (Array (Array U32 256#u
   len : K.val = k
   elt : ∀ (i : Nat) (hi : i < k), ReprVec (a.val[i]'(by have := a.property; omega)) m[i]
 
-theorem ReprMat.unique {K L : Usize} {k ℓ : Nat} {a b : Array (Array (Array U32 256#usize) L) K}
-    {m : Vector (Vector Poly ℓ) k} (ha : ReprMat a m) (hb : ReprMat b m) : a = b := by
-  apply Subtype.ext
-  apply List.ext_getElem (by rw [a.property, b.property])
-  intro i h1 h2
-  have hi : i < k := by have := a.property; have := ha.len; omega
-  exact ReprVec.unique (ha.elt i hi) (hb.elt i hi)
-
 /-! ### Hint polynomials -/
 
 /-- The hint polynomial denoted by a Boolean array. -/
@@ -246,31 +217,11 @@ def toHint (a : Array Bool 256#usize) : HintPoly :=
 /-- `a` represents the hint polynomial `h`. -/
 def ReprHint (a : Array Bool 256#usize) (h : HintPoly) : Prop := toHint a = h
 
-theorem toHint_inj {a b : Array Bool 256#usize} (h : toHint a = toHint b) : a = b := by
-  apply Subtype.ext
-  apply List.ext_getElem (by rw [a.property, b.property])
-  intro k h1 h2
-  have hk : k < 256 := by have : a.val.length = 256 := a.property; omega
-  have := congrArg (fun p : HintPoly => p[k]) h
-  simpa [toHint] using this
-
-theorem ReprHint.unique {a b : Array Bool 256#usize} {h : HintPoly} (ha : ReprHint a h)
-    (hb : ReprHint b h) : a = b :=
-  toHint_inj (ha.trans hb.symm)
-
 /-- `a` represents the vector `h` of hint polynomials. -/
 structure ReprHintVec {K : Usize} {k : Nat} (a : Array (Array Bool 256#usize) K) (h : Vector HintPoly k) :
     Prop where
   len : K.val = k
   elt : ∀ (i : Nat) (hi : i < k), ReprHint (a.val[i]'(by have := a.property; omega)) h[i]
-
-theorem ReprHintVec.unique {K : Usize} {k : Nat} {a b : Array (Array Bool 256#usize) K}
-    {h : Vector HintPoly k} (ha : ReprHintVec a h) (hb : ReprHintVec b h) : a = b := by
-  apply Subtype.ext
-  apply List.ext_getElem (by rw [a.property, b.property])
-  intro i h1 h2
-  have hi : i < k := by have := a.property; have := ha.len; omega
-  exact ReprHint.unique (ha.elt i hi) (hb.elt i hi)
 
 /-! ## Constant-time mask idioms -/
 
@@ -279,17 +230,10 @@ theorem wrapping_sub_val_u64 (a b : U64) :
   show (a.bv - b.bv).toNat = _
   rw [BitVec.toNat_sub, UScalar.bv_toNat, UScalar.bv_toNat]
 
-/-- The optimization barriers are the identity in the extracted (proved) code. -/
-theorem barrier_u64_spec (x : U64) : field.barrier_u64 x ⦃ y => y = x ⦄ := by
-  simp [field.barrier_u64]
-
-theorem barrier_u32_spec (x : U32) : field.barrier_u32 x ⦃ y => y = x ⦄ := by
-  simp [field.barrier_u32]
-
 theorem opaque_u32_spec (x : U32) : field.opaque_u32 x ⦃ y => y = x ⦄ := by
   simp [field.opaque_u32]
 
-attribute [step] barrier_u64_spec barrier_u32_spec opaque_u32_spec
+attribute [step] opaque_u32_spec
 
 /-- `ct_lt_mask a b` is all-ones if `a < b` and zero otherwise (for `a, b < 2^63`). -/
 theorem ct_lt_mask_spec (a b : U64) (ha : a.val < 2 ^ 63) (hb : b.val < 2 ^ 63) :
@@ -343,10 +287,6 @@ theorem ReprInt.unique {a b : Array U32 256#usize} {v : RPoly} (ha : ReprInt a v
     a = b :=
   Repr.unique ha.repr hb.repr
 
-/-- Two integer polynomials stored in the same array agree modulo `q` (they need not be equal). -/
-theorem ReprInt.toZq_eq {a : Array U32 256#usize} {v w : RPoly} (hv : ReprInt a v) (hw : ReprInt a w) :
-    RPoly.toZq v = RPoly.toZq w := hv.2.symm.trans hw.2
-
 /-- Coefficientwise: the stored residue is `v[k] mod q`. -/
 theorem ReprInt.coeff {a : Array U32 256#usize} {v : RPoly} (h : ReprInt a v) (k : Nat) (hk : k < 256) :
     (((a.val[k]'(by rw [len256 a]; exact hk)).val : Nat) : Int) = v[k] % (Spec.q : Int) := by
@@ -371,26 +311,6 @@ theorem ReprInt.set {a : Array U32 256#usize} {v : RPoly} (h : ReprInt a v) (i :
   split <;> simp_all
 
 /-! ### `Zq.modPM` on canonical residues -/
-
-/-- `r mod± q` of a canonical residue `r`: `r` if `r ≤ (q-1)/2`, else `r - q`. -/
-theorem Zq_modPM_natCast (r : Nat) (hr : r < Spec.q) :
-    Zq.modPM ((r : Nat) : Zq) = if r ≤ 4190208 then (r : Int) else (r : Int) - Spec.q := by
-  haveI : NeZero Spec.q := ⟨by decide⟩
-  have hr' : r < 8380417 := hr
-  have hmod : (r : Int) % (Spec.q : Int) = r := Int.emod_eq_of_lt (by omega) (by simp only [Spec.q]; omega)
-  simp only [Zq.modPM, ZMod.val_natCast, Nat.mod_eq_of_lt hr, Spec.modPM, hmod]
-  simp only [Spec.q]
-  split <;> split <;> omega
-
-/-- The centered representative of `c : Zq` is the unique integer of absolute value `≤ (q-1)/2` congruent to it. -/
-theorem Zq_modPM_eq_of_small (c : Zq) (v : Int) (hv : v.natAbs ≤ (Spec.q - 1) / 2) (h : (v : Zq) = c) :
-    Zq.modPM c = v := by
-  haveI : NeZero Spec.q := ⟨by decide⟩
-  subst h
-  have h1 : (((v : Zq)).val : Int) = v % (Spec.q : Int) := ZMod.val_intCast v
-  simp only [Zq.modPM, h1, Spec.modPM]
-  simp only [Spec.q] at hv ⊢
-  split <;> omega
 
 /-- Satisfiability witness for `ReprInt`: the zero array stores the zero integer polynomial. -/
 theorem reprInt_zero : ReprInt (Array.repeat 256#usize 0#u32) (Vector.replicate 256 (0 : Int)) := by
@@ -606,14 +526,6 @@ theorem vec_infinity_norm_spec {N : Usize} (w : Array (Array U32 256#usize) N) {
 
 /-! ## `field.sub` as used by `pack_signed` / `unpack_signed` -/
 
-/-- `field.sub b z` computes `(b - z) mod q`, as a canonical residue. -/
-theorem sub_int_spec (b z : U32) (hb : b.val < 8380417) (hz : z.val < 8380417) :
-    field.sub b z ⦃ y => y.val < 8380417 ∧ (y.val : Int) % 8380417 = ((b.val : Int) - z.val) % 8380417 ⦄ := by
-  apply WP.spec_mono (sub_spec b z hb hz)
-  rintro y ⟨h1, h2⟩
-  refine ⟨h2, ?_⟩
-  omega
-
 /-- If `w` stores the integer `v` (as the residue `v mod q`) and `-a ≤ v ≤ b` with `a + b < q`, then
 `field.sub b w` is the canonical residue `b - v ∈ [0, q)`: the shape `pack_signed` computes. -/
 theorem sub_signed_spec (b w : U32) (v : Int) (a : Nat) (hb : b.val < 8380417) (hw : w.val < 8380417)
@@ -718,10 +630,6 @@ theorem bytes_getElem (s : Slice U8) (i : Nat) (hi : i < (bytes s).length) :
     (bytes s)[i] = UInt8.ofNat (s.val[i]'(by simpa using hi)).val := by
   simp [bytes]
 
-theorem bytesA_getElem {n : Usize} (a : Array U8 n) (i : Nat) (hi : i < (bytesA a).length) :
-    (bytesA a)[i] = UInt8.ofNat (a.val[i]'(by simpa [a.property] using hi)).val := by
-  simp [bytesA]
-
 theorem toNat_ofNat_val (x : U8) : (UInt8.ofNat x.val).toNat = x.val := by
   have : x.val < 256 := by scalar_tac
   simp [Nat.mod_eq_of_lt this]
@@ -736,9 +644,6 @@ theorem ofNat_val_injective : Function.Injective (fun x : U8 => UInt8.ofNat x.va
 
 /-- The byte view loses nothing: equal bytes mean equal slices. -/
 theorem bytes_inj {s t : Slice U8} (h : bytes s = bytes t) : s = t :=
-  Subtype.ext (List.map_injective_iff.mpr ofNat_val_injective h)
-
-theorem bytesA_inj {n : Usize} {a b : Array U8 n} (h : bytesA a = bytesA b) : a = b :=
   Subtype.ext (List.map_injective_iff.mpr ofNat_val_injective h)
 
 theorem bytes_to_slice {n : Usize} (a : Array U8 n) : bytes (Array.to_slice a) = bytesA a := by
@@ -764,39 +669,11 @@ theorem bytes_getElem?_eq (s : Slice U8) (i : Nat) :
     (bytes s)[i]? = s.val[i]?.map fun x => UInt8.ofNat x.val := by
   simp [bytes]
 
-/-! ### Sub-slices: `&s[a..b]`, `&s[..b]`, `&s[a..]` and their `_mut` forms
+/-! ### Sub-slices: `&s[..b]`, `&s[a..]` and their `_mut` forms
 
-`slice_range_spec` etc. are stated for any element type (`.val` lists); the `_bytes` forms restate them through
+The lemmas below are stated for any element type (`.val` lists); the `_bytes` forms restate them through
 `bytes`. The `_mut` forms give the back function (writing a sub-slice of the right length back):
 `take a ++ t ++ drop b`. -/
-
-theorem slice_range_spec {T : Type} (s : Slice T) (r : core.ops.range.Range Usize)
-    (h1 : r.start.val ≤ r.end.val) (h2 : r.end.val ≤ s.val.length) :
-    core.slice.index.Slice.index (core.slice.index.SliceIndexRangeUsizeSlice T) s r ⦃ t =>
-      t.val = (s.val.drop r.start.val).take (r.end.val - r.start.val) ⦄ := by
-  simp only [core.slice.index.Slice.index, core.slice.index.SliceIndexRangeUsizeSlice.index]
-  split
-  · simp [WP.spec_ok, List.slice]
-  · rename_i h
-    exfalso; apply h
-    exact ⟨by scalar_tac, by simpa [Slice.length] using h2⟩
-
-theorem slice_range_mut_spec {T : Type} (s : Slice T) (r : core.ops.range.Range Usize)
-    (h1 : r.start.val ≤ r.end.val) (h2 : r.end.val ≤ s.val.length) :
-    core.slice.index.Slice.index_mut (core.slice.index.SliceIndexRangeUsizeSlice T) s r ⦃ p =>
-      p.1.val = (s.val.drop r.start.val).take (r.end.val - r.start.val) ∧
-      ∀ t : Slice T, t.val.length = r.end.val - r.start.val →
-        (p.2 t).val = s.val.take r.start.val ++ t.val ++ s.val.drop r.end.val ⦄ := by
-  simp only [core.slice.index.Slice.index_mut, core.slice.index.SliceIndexRangeUsizeSlice.index_mut]
-  split
-  · simp only [WP.spec_ok, List.slice]
-    refine ⟨by simp, fun t ht => ?_⟩
-    simp only [List.setSlice!]
-    have e : min t.val.length (s.val.length - r.start.val) = t.val.length := by omega
-    rw [e, List.take_of_length_le (le_refl _), show r.start.val + t.val.length = r.end.val by omega]
-  · rename_i h
-    exfalso; apply h
-    exact ⟨by scalar_tac, by simpa [Slice.length] using h2⟩
 
 theorem slice_to_spec {T : Type} (s : Slice T) (r : core.ops.range.RangeTo Usize)
     (h : r.end.val ≤ s.val.length) :
@@ -805,23 +682,6 @@ theorem slice_to_spec {T : Type} (s : Slice T) (r : core.ops.range.RangeTo Usize
   simp only [core.slice.index.Slice.index, core.slice.index.SliceIndexRangeToUsizeSlice.index]
   split
   · simp [WP.spec_ok]
-  · rename_i h'
-    exfalso; apply h'
-    simpa [Slice.length] using h
-
-theorem slice_to_mut_spec {T : Type} (s : Slice T) (r : core.ops.range.RangeTo Usize)
-    (h : r.end.val ≤ s.val.length) :
-    core.slice.index.Slice.index_mut (core.slice.index.SliceIndexRangeToUsizeSlice T) s r ⦃ p =>
-      p.1.val = s.val.take r.end.val ∧
-      ∀ t : Slice T, t.val.length = r.end.val → (p.2 t).val = t.val ++ s.val.drop r.end.val ⦄ := by
-  simp only [core.slice.index.Slice.index_mut, core.slice.index.SliceIndexRangeToUsizeSlice.index_mut]
-  split
-  · simp only [WP.spec_ok]
-    refine ⟨by simp, fun t ht => ?_⟩
-    simp only [List.setSlice!]
-    have e : min t.val.length (s.val.length - 0) = t.val.length := by omega
-    rw [e, List.take_of_length_le (le_refl _), ht]
-    simp
   · rename_i h'
     exfalso; apply h'
     simpa [Slice.length] using h
@@ -856,25 +716,6 @@ theorem slice_from_mut_spec {T : Type} (s : Slice T) (r : core.ops.range.RangeFr
     simpa [Slice.length] using h
 
 /-! The same through `bytes`. -/
-
-theorem slice_range_bytes (s : Slice U8) (r : core.ops.range.Range Usize)
-    (h1 : r.start.val ≤ r.end.val) (h2 : r.end.val ≤ s.val.length) :
-    core.slice.index.Slice.index (core.slice.index.SliceIndexRangeUsizeSlice U8) s r ⦃ t =>
-      bytes t = ((bytes s).drop r.start.val).take (r.end.val - r.start.val) ⦄ := by
-  apply WP.spec_mono (slice_range_spec s r h1 h2)
-  intro t ht
-  simp [bytes, ht, List.map_take, List.map_drop]
-
-theorem slice_range_mut_bytes (s : Slice U8) (r : core.ops.range.Range Usize)
-    (h1 : r.start.val ≤ r.end.val) (h2 : r.end.val ≤ s.val.length) :
-    core.slice.index.Slice.index_mut (core.slice.index.SliceIndexRangeUsizeSlice U8) s r ⦃ p =>
-      bytes p.1 = ((bytes s).drop r.start.val).take (r.end.val - r.start.val) ∧
-      ∀ t : Slice U8, t.val.length = r.end.val - r.start.val →
-        bytes (p.2 t) = (bytes s).take r.start.val ++ bytes t ++ (bytes s).drop r.end.val ⦄ := by
-  apply WP.spec_mono (slice_range_mut_spec s r h1 h2)
-  rintro p ⟨hp, hb⟩
-  refine ⟨by simp [bytes, hp, List.map_take, List.map_drop], fun t ht => ?_⟩
-  simp [bytes, hb t ht, List.map_take, List.map_drop]
 
 theorem slice_to_bytes (s : Slice U8) (r : core.ops.range.RangeTo Usize) (h : r.end.val ≤ s.val.length) :
     core.slice.index.Slice.index (core.slice.index.SliceIndexRangeToUsizeSlice U8) s r ⦃ t =>

@@ -26,7 +26,7 @@ consumed so far (`8·o + nbits`), constant along the inner loop. -/
 def PackInv (g : Nat → Nat) (L T : Nat) (p : Slice U8 × U64 × Usize × Usize) : Prop :=
   p.1.val.length = L ∧ p.2.1.val = BV g (8 * p.2.2.2.val) p.2.2.1.val ∧
   8 * p.2.2.2.val + p.2.2.1.val = T ∧
-  ∀ k (hk : k < p.2.2.2.val) (hk' : k < p.1.val.length), (p.1.val[k]'hk').val = BV g (8*k) 8
+  ∀ k (_hk : k < p.2.2.2.val) (hk' : k < p.1.val.length), (p.1.val[k]'hk').val = BV g (8*k) 8
 
 theorem bit_pack_inner (g : Nat → Nat) (hg : ∀ t, g t ≤ 1) (L T : Nat) (hT : T ≤ 8 * L)
     (out : Slice U8) (acc : U64) (nbits o : Usize) (hinv : PackInv g L T (out, acc, nbits, o)) :
@@ -186,7 +186,7 @@ def UnpackOuterInv (g : Nat → Nat) (c : Nat)
     (p : Array U32 256#usize × U64 × Usize × Usize × Usize) : Prop :=
   p.2.1.val = BV g (c * p.2.2.2.2.val) p.2.2.1.val ∧
   c * p.2.2.2.2.val + p.2.2.1.val = 8 * p.2.2.2.1.val ∧ p.2.2.1.val < 8 ∧ p.2.2.2.2.val ≤ 256 ∧
-  ∀ j (hj : j < p.2.2.2.2.val) (hj' : j < p.1.val.length), (p.1.val[j]'hj').val = BV g (c * j) c
+  ∀ j (_hj : j < p.2.2.2.2.val) (hj' : j < p.1.val.length), (p.1.val[j]'hj').val = BV g (c * j) c
 
 theorem bit_unpack_core (g : Nat → Nat) (hg : ∀ t, g t ≤ 1) (v : Slice U8) (c : Usize) (hc : c.val ≤ 32)
     (hlen : v.val.length = 32 * c.val)
@@ -371,7 +371,7 @@ theorem pack_signed_loop_spec (w : Array U32 256#usize) (v : RPoly) (hw : ReprIn
     (hb : b.val < Spec.q) (hab : a + b.val < Spec.q)
     (hv : ∀ j : Nat, ∀ hj : j < 256, -(a : Int) ≤ v[j]'hj ∧ v[j]'hj ≤ (b.val : Int))
     (t : Array U32 256#usize) (i : Usize) (hi : i.val ≤ 256)
-    (ht : ∀ j (hj : j < i.val) (hj' : j < t.val.length),
+    (ht : ∀ j (_hj : j < i.val) (hj' : j < t.val.length),
       (t.val[j]'hj').val = ((b.val : Int) - v[j]!).toNat) :
     encode.pack_signed_loop w b t i ⦃ t' => ∀ j (hj : j < 256),
       (t'.val[j]'(by rw [len256 t']; exact hj)).val = ((b.val : Int) - v[j]!).toNat ⦄ := by
@@ -440,10 +440,10 @@ theorem pack_signed_spec (w : Array U32 256#usize) (v : RPoly) (hw : ReprInt w v
 
 theorem unpack_signed_loop_spec (b : U32) (hb : b.val < Spec.q) (z : Array U32 256#usize)
     (hz : Canonical z) (w : Array U32 256#usize) (i : Usize) (hi : i.val ≤ 256)
-    (hw : ∀ j (hj : j < i.val) (hj' : j < w.val.length) (hj'' : j < z.val.length),
+    (hw : ∀ j (_hj : j < i.val) (hj' : j < w.val.length) (hj'' : j < z.val.length),
       (w.val[j]'hj').val < Spec.q ∧
       (((w.val[j]'hj').val : Nat) : Zq) = ((b.val : Nat) : Zq) - (((z.val[j]'hj'').val : Nat) : Zq)) :
-    encode.unpack_signed_loop b z w i ⦃ w' => ∀ j (hj : j < 256) (hj' : j < w'.val.length)
+    encode.unpack_signed_loop b z w i ⦃ w' => ∀ j (_hj : j < 256) (hj' : j < w'.val.length)
       (hj'' : j < z.val.length),
       (w'.val[j]'hj').val < Spec.q ∧
       (((w'.val[j]'hj').val : Nat) : Zq) = ((b.val : Nat) : Zq) - (((z.val[j]'hj'').val : Nat) : Zq) ⦄ := by

@@ -279,7 +279,7 @@ theorem sigDecode_eq (p : Params) (σ : List UInt8) :
   unfold sigDecode sigZ
   simp only [Std.Legacy.Range.forIn_eq_forIn_range', Std.Legacy.Range.size]
   cases hH : HintBitUnpack p (slice σ (p.lam / 4 + p.ℓ * (32 * (1 + bitlen (p.γ₁ - 1)))) (p.ω + p.k)) <;>
-    simp [hH, Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm]
+    simp
 
 /-- The range of the `BitUnpack` coefficients for `a = γ₁ - 1`, `b = γ₁`. -/
 theorem BitUnpack_range (v : List UInt8) (a b i : Nat) (hi : i < 256) :
@@ -316,7 +316,7 @@ theorem sig_decode_loop0_spec (ip : Impl.params.Params) (sig : Slice U8)
       by_cases hk : i.val = k
       · subst hk
         have hlt : i.val < (bytesA a).length := by simp; omega
-        simp [hlt, hi', hi64, bytes_getElem?_eq, i1_post2, List.getElem?_eq_getElem (show i.val < sig.val.length from i1)]
+        simp [hi64, bytes_getElem?_eq, i1_post2, List.getElem?_eq_getElem (show i.val < sig.val.length from i1)]
       · simp [hk, show (k < i.val + 1) ↔ (k < i.val) from by omega]
     · rename_i hi
       have hi' : i.val = ip.c_tilde_len.val := by scalar_tac
@@ -331,11 +331,11 @@ theorem sig_decode_loop1_spec {L : Usize} (ip : Impl.params.Params) (bb : U32) (
     (hn : n.val = 32 * c.val) (k : Nat) (hKk : L.val = k) (sig : Slice U8)
     (hL : ip.c_tilde_len.val + k * n.val ≤ sig.val.length)
     (arr : Array (Array U32 256#usize) L) (i2 : Usize) (hi2 : i2.val ≤ k)
-    (hinv : ∀ j (hj : j < i2.val) (hj' : j < arr.val.length),
+    (hinv : ∀ j (_hj : j < i2.val) (hj' : j < arr.val.length),
       ReprInt (arr.val[j]'hj')
         (BitUnpack (slice (bytes sig) (ip.c_tilde_len.val + j * n.val) n.val) ea bb.val)) :
     encode.sig_decode_loop1 ip bb c sig n arr i2 ⦃ r =>
-      ∀ j (hj : j < k) (hj' : j < r.val.length),
+      ∀ j (_hj : j < k) (hj' : j < r.val.length),
         ReprInt (r.val[j]'hj')
           (BitUnpack (slice (bytes sig) (ip.c_tilde_len.val + j * n.val) n.val) ea bb.val) ⦄ := by
   unfold encode.sig_decode_loop1
@@ -449,12 +449,12 @@ theorem sig_decode_spec {K L : Usize} (ip : Impl.params.Params) (sp : Spec.Param
   rcases o with _ | h
   · simp only [WP.spec_ok]
     cases hH : HintBitUnpack sp (bytes s)
-    · simp [hH]
+    · simp
     · rw [hH] at ho; exact ho.elim
   · cases hH : HintBitUnpack sp (bytes s)
     · rw [hH] at ho; exact ho.elim
     · rw [hH] at ho
-      simp only [WP.spec_ok, hH, Option.map_some]
+      simp only [WP.spec_ok, Option.map_some]
       have hzrepr : ReprIntVec z1 (sigZ sp (bytes σ)) := by
         refine ⟨hp.L_eq, fun i hi => ?_⟩
         have hj' : i < z1.val.length := by rw [z1.property, hp.L_eq]; exact hi
@@ -466,7 +466,7 @@ theorem sig_decode_spec {K L : Usize} (ip : Impl.params.Params) (sp : Spec.Param
       · apply List.ext_getElem?
         intro k
         rw [List.getElem?_take, hc1 k, hcl]
-        by_cases hk : k < sp.lam / 4 <;> simp [slice, List.getElem?_take, hk]
+        by_cases hk : k < sp.lam / 4 <;> simp [slice, hk]
       · apply List.ext_getElem?
         intro k
         rw [List.getElem?_drop, hc1 (sp.lam / 4 + k), hcl, bytesA_repeat_zero, List.getElem?_replicate]
@@ -480,7 +480,6 @@ theorem sig_decode_spec {K L : Usize} (ip : Impl.params.Params) (sp : Spec.Param
         have hpowI : (2 : Int) ^ (1 + bitlen (sp.γ₁ - 1)) = 2 * (sp.γ₁ : Int) := by exact_mod_cast hpow
         rw [hbl, hpowI] at this
         have e : ((2 * sp.γ₁ : Nat) : Int) = 2 * (sp.γ₁ : Int) := by push_cast; ring
-        push_cast at this
         constructor <;> omega
 
 /-! ## `sig_encode` as Sign uses it -/

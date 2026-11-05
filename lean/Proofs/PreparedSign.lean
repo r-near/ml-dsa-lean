@@ -138,7 +138,7 @@ theorem signing_key_44_eq (sk : Array U8 2560#usize) :
       let ps ← prepSk 4#usize 4#usize p (Array.to_slice sk)
       ok ({ inner := ps } : api.SigningKey44)) := by
   unfold api.signing_key_44 prepSk
-  simp only [lift, sign.PreparedSk.zeroed, core.mem.replace, Std.bind_tc_ok] <;> rfl
+  simp only [lift, sign.PreparedSk.zeroed, core.mem.replace, Std.bind_tc_ok]; rfl
 
 theorem signing_key_44_prepare (sk : Array U8 2560#usize) (ssk : api.SigningKey44)
     (h : api.signing_key_44 sk = ok ssk) (ip : Impl.params.Params) (hip : params.ML_DSA_44 = ok ip) :
@@ -155,7 +155,7 @@ theorem signing_key_65_eq (sk : Array U8 4032#usize) :
       let ps ← prepSk 6#usize 5#usize p (Array.to_slice sk)
       ok ({ inner := ps } : api.SigningKey65)) := by
   unfold api.signing_key_65 prepSk
-  simp only [lift, sign.PreparedSk.zeroed, core.mem.replace, Std.bind_tc_ok] <;> rfl
+  simp only [lift, sign.PreparedSk.zeroed, core.mem.replace, Std.bind_tc_ok]; rfl
 
 theorem signing_key_65_prepare (sk : Array U8 4032#usize) (ssk : api.SigningKey65)
     (h : api.signing_key_65 sk = ok ssk) (ip : Impl.params.Params) (hip : params.ML_DSA_65 = ok ip) :
@@ -172,7 +172,7 @@ theorem signing_key_87_eq (sk : Array U8 4896#usize) :
       let ps ← prepSk 8#usize 7#usize p (Array.to_slice sk)
       ok ({ inner := ps } : api.SigningKey87)) := by
   unfold api.signing_key_87 prepSk
-  simp only [lift, sign.PreparedSk.zeroed, core.mem.replace, Std.bind_tc_ok] <;> rfl
+  simp only [lift, sign.PreparedSk.zeroed, core.mem.replace, Std.bind_tc_ok]; rfl
 
 theorem signing_key_87_prepare (sk : Array U8 4896#usize) (ssk : api.SigningKey87)
     (h : api.signing_key_87 sk = ok ssk) (ip : Impl.params.Params) (hip : params.ML_DSA_87 = ok ip) :
@@ -216,7 +216,7 @@ theorem signing_key_44_partial (sk : Array U8 2560#usize) :
     api.signing_key_44 sk ⦃ ssk => PreparedSkOf Spec.ML_DSA_44 (bytesA sk) ssk.inner ⦄div := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_44_std
   rw [signing_key_44_eq, hip]
-  simp only [lift, Std.bind_tc_ok]
+  simp only [Std.bind_tc_ok]
   refine WP.dspec_bind' (prepare_sk_partial' hp 2560#usize
     (by rw [show Spec.ML_DSA_44.skLen = 2560 by decide +kernel]; rfl) sk) ?_
   intro pv hpv
@@ -230,7 +230,7 @@ theorem signing_key_65_partial (sk : Array U8 4032#usize) :
     api.signing_key_65 sk ⦃ ssk => PreparedSkOf Spec.ML_DSA_65 (bytesA sk) ssk.inner ⦄div := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_65_std
   rw [signing_key_65_eq, hip]
-  simp only [lift, Std.bind_tc_ok]
+  simp only [Std.bind_tc_ok]
   refine WP.dspec_bind' (prepare_sk_partial' hp 4032#usize
     (by rw [show Spec.ML_DSA_65.skLen = 4032 by decide +kernel]; rfl) sk) ?_
   intro pv hpv
@@ -244,7 +244,7 @@ theorem signing_key_87_partial (sk : Array U8 4896#usize) :
     api.signing_key_87 sk ⦃ ssk => PreparedSkOf Spec.ML_DSA_87 (bytesA sk) ssk.inner ⦄div := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_87_std
   rw [signing_key_87_eq, hip]
-  simp only [lift, Std.bind_tc_ok]
+  simp only [Std.bind_tc_ok]
   refine WP.dspec_bind' (prepare_sk_partial' hp 4896#usize
     (by rw [show Spec.ML_DSA_87.skLen = 4896 by decide +kernel]; rfl) sk) ?_
   intro pv hpv

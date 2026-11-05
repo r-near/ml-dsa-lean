@@ -152,7 +152,7 @@ theorem inner_body_partial (M : List UInt8) (i : Usize) (g : Nat × Nat) (ctx : 
     have hi2 : i2.val = jcur := by
       rw [i2_post, U8.cast_Usize_val_eq, i1_post2, hjc]
     have hgt' : i.val < jcur := by have : i < i2 := hgt; scalar_tac
-    have hlen1 : s.val.length = 1 := by rw [s_post1]; simpa using j.property
+    have hlen1 : s.val.length = 1 := by rw [s_post1]; simp
     have hb1 : bytes s1 = ((Spec.SHAKE256 M (pos + 1)).drop pos).take 1 := by
       rw [ctx1_post2, hlen1]
       exact sponge_window 136 (by norm_num) M pos 1 (pos + 1) le_rfl
@@ -311,7 +311,7 @@ theorem outer_body_partial (ip : Impl.params.Params) (hτ : ip.tau.val ≤ 64) (
     have hQ : field.Q.val = 8380417 := by first | rfl | decide | simp [field.Q]
     have hq1 : (((Spec.q - 1 : Nat)) : Zq) = ((-1 : Int) : Zq) := by
       rw [Nat.cast_sub (by decide : 1 ≤ Spec.q)]
-      simp [ZMod.natCast_self]
+      simp
     have hcond : ((BytesToBits (Spec.SHAKE256 M 8))[i1.val + ip.tau.val - 256]?.getD false = true)
         ↔ bit.val = 1 := by
       rw [bit_cond, hbitv]

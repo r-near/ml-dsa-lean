@@ -979,8 +979,4 @@ theorem cs_norm_bound_params {n : Nat} (p : Params) (c : RPoly) (s : Vector RPol
     ‖NTTInvVec (ScalarVectorNTT (NTT c.toZq) (NTTVec (s.map RPoly.toZq)))‖∞ ≤ p.β :=
   cs_norm_bound p.τ p.η c s hc hτ hs hbound
 
-/-- The no-wraparound side condition `2 β < q` holds for the three standard parameter sets. -/
-theorem beta_lt_q :
-    2 * ML_DSA_44.β < q ∧ 2 * ML_DSA_65.β < q ∧ 2 * ML_DSA_87.β < q := by decide +kernel
-
 end Proofs.Corr

@@ -7,7 +7,7 @@ import Proofs.StdParams
 
 * ML-DSA-44: `ExpandA` succeeds on the all-zero seed at fuel 512. One kernel evaluation of the whole matrix would
   exceed the 4M-heartbeat cap, so each of the 16 `RejNTTPoly` calls is its own declaration (`rej_ntt_44_r_s`) and
-  `expandA_isSome` assembles them through the `expandA_eq` characterization of `SampleA`.
+  `SampleA.expandA_isSome` assembles them through the `expandA_eq` characterization of `SampleA`.
 * ML-DSA-65 (`η = 4`): `ExpandS` succeeds on the all-zero seed, bundled with `Params.Std`.
 -/
 
@@ -19,36 +19,6 @@ namespace Proofs
 open Impl
 
 /-! ## `ExpandA` -/
-
-namespace SampleA
-
-theorem foldlM_isSome {α β : Type} (f : α → β → Option α) (l : List β) (A : α)
-    (h : ∀ x ∈ l, ∀ B, (f B x).isSome = true) : (l.foldlM f A).isSome = true := by
-  induction l generalizing A with
-  | nil => simp
-  | cons x l ih =>
-    obtain ⟨B, hB⟩ := Option.isSome_iff_exists.mp (h x (List.mem_cons_self) A)
-    rw [List.foldlM_cons, hB]
-    exact ih B (fun y hy => h y (List.mem_cons_of_mem _ hy))
-
-/-- `ExpandA` succeeds as soon as each of its `k · ℓ` calls to `RejNTTPoly` does. -/
-theorem expandA_isSome (p : Spec.Params) (fuel : Nat) (ρ : List UInt8)
-    (h : ∀ r, r < p.k → ∀ s, s < p.ℓ → (Spec.RejNTTPoly fuel (pSeed ρ r s)).isSome = true) :
-    (Spec.ExpandA p fuel ρ).isSome = true := by
-  rw [expandA_eq]
-  apply foldlM_isSome
-  intro r hr A
-  have hr' : r < p.k := by simpa using hr
-  unfold outerF
-  apply foldlM_isSome
-  intro s hs B
-  have hs' : s < p.ℓ := by simpa using hs
-  obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp (h r hr' s hs')
-  unfold innerF
-  rw [ha]
-  rfl
-
-end SampleA
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in

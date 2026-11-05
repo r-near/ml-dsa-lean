@@ -56,9 +56,6 @@ structure StdParams (sp : Spec.Params) : Prop where
 namespace StdParams
 variable {sp : Spec.Params}
 
-/-- `d = 13`, in the form of `power2round_spec`, `scale_by_2d_spec`, `t1Bits_eq`, ... -/
-theorem d (h : StdParams sp) : sp.d = 13 := h.d_eq
-
 /-- In the form of the `hg` hypothesis of the rounding and Steps theorems. -/
 theorem stdGamma2 (h : StdParams sp) : StdGamma2 sp := h.gamma2
 
@@ -68,9 +65,6 @@ theorem stdSig (h : StdParams sp) : StdSig sp := ⟨h.gamma1, h.lam_le⟩
 /-- In the form of the `hγ` hypothesis of `expand_mask_range` and `expand_mask_spec`. -/
 theorem gamma₁ (h : StdParams sp) : sp.γ₁ = 2 ^ 17 ∨ sp.γ₁ = 2 ^ 19 := h.gamma1
 
-/-- In the form of the `hη` hypothesis of Coeff and SampleS. -/
-theorem eta' (h : StdParams sp) : sp.η = 2 ∨ sp.η = 4 := h.eta
-
 /-- In the form of the `hη` hypothesis of EncodeKeys (`skEncode` / `skDecode`). -/
 theorem eta_lt (h : StdParams sp) : 2 * sp.η < 2 ^ 22 := by
   rcases h.eta with e | e <;> rw [e] <;> norm_num
@@ -78,19 +72,8 @@ theorem eta_lt (h : StdParams sp) : 2 * sp.η < 2 ^ 22 := by
 /-- In the form of the `hτ` hypothesis of `sample_in_ball_spec`. -/
 theorem tau (h : StdParams sp) : sp.τ ≤ 64 := h.tau_le
 
-/-- In the form of the `hKL` hypothesis of SampleS. -/
-theorem kl (h : StdParams sp) : sp.k + sp.ℓ < 256 := h.kl_lt
-
-/-- In the form of the `hK` hypothesis of the Steps theorems. -/
-theorem k_le' (h : StdParams sp) : sp.k ≤ 2 ^ 20 := h.k_le
-
 /-- `τ ≤ 256`, the hypothesis of the pure `SampleInBall_*` lemmas. -/
 theorem tau_le_256 (h : StdParams sp) : sp.τ ≤ 256 := by have := h.tau_le; omega
-
-/-- The `c̃` length bound in the Rust side's terms: `ip.c_tilde_len ≤ 64` (`sig_decode` loops). -/
-theorem c_tilde_len_le {ip : Impl.params.Params} {K L : Usize} (h : StdParams sp)
-    (hp : Params.Valid ip K L sp) : ip.c_tilde_len.val ≤ 64 := by
-  rw [hp.c_tilde_len]; exact h.lam_le
 
 end StdParams
 

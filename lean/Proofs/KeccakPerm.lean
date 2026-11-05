@@ -16,7 +16,7 @@ theorem rotl_spec (x : U64) (n : U32) (hn : n.val < 64) :
     simp only [WP.spec_ok, h0]
     simp only [Spec.Keccak.rotl]
     apply UInt64.toBitVec_inj.mp
-    simp [UInt64.toBitVec_or, UInt64.toBitVec_shiftLeft, UInt64.toBitVec_shiftRight]
+    simp [UInt64.toBitVec_or, UInt64.toBitVec_shiftRight]
   · rename_i h
     have h0 : n.val ≠ 0 := fun e => h (UScalar.eq_of_val_eq (by simpa using e))
     step*
@@ -55,7 +55,7 @@ theorem ln_set {n : Usize} (a : Array U64 n) (i : Usize) (x : U64) (k : Nat) (hi
   · have hne : ¬ i.val = k := by omega
     rw [if_neg hne]
     unfold ln
-    rw [getElem!_neg, getElem!_neg] <;> simp [hl, hl2] <;> omega
+    rw [getElem!_neg, getElem!_neg] <;> simp [hl] <;> omega
 
 theorem toLanes_ln (a : Array U64 25#usize) (k : Nat) (hk : k < 25) : (toLanes a)[k]! = ln a k := by
   rw [ln_eq a k (by rw [len25 a]; exact hk)]
@@ -132,17 +132,7 @@ theorem chi_getElem (A : Spec.Keccak.State) (k : Nat) (hk : k < 25) :
   have e2 : k % 5 + 5 * (k / 5) = k := by omega
   simp only [Spec.Keccak.chi, Spec.Keccak.ofLanes, getElem!_ofFn25 _ k hk, Spec.Keccak.lane, chiV]
   have e3 : k / 5 % 5 = k / 5 := by omega
-  simp [e1, e2, e3]
-
-theorem iota_getElem (A : Spec.Keccak.State) (ir k : Nat) (hk : k < 25) :
-    (Spec.Keccak.iota A ir)[k]! = if k = 0 then A[0]! ^^^ Spec.Keccak.RCs[ir]! else A[k]! := by
-  rw [getElem!_pos _ _ (by simpa using hk)]
-  change (A.setIfInBounds 0 (A[0]! ^^^ Spec.Keccak.RCs[ir]!))[k] = _
-  rw [Vector.getElem_setIfInBounds hk]
-  by_cases h : k = 0
-  · subst h; simp
-  · simp [h, Ne.symm h]
-    exact (getElem!_pos A k (by simpa using hk)).symm
+  simp [e2, e3]
 
 theorem Cs_toLanes (a : Array U64 25#usize) (j : Nat) (hj : j < 5) : Cs (toLanes a) j = Cf a j := by
   unfold Cs Cf
@@ -493,9 +483,7 @@ theorem RC_idx (i : Usize) (hi : i.val < 24) (v : U64) (hv : v = keccak.RC.val[i
   subst hv
   have h' : (toU64 (keccak.RC.val[i.val]'(by rw [RC_len]; exact hi))).toNat =
       (Spec.Keccak.RCs[i.val]!).toNat := h
-  first
-    | exact UInt64.toNat_inj.mp h'
-    | exact UInt64.ext (BitVec.eq_of_toNat_eq h')
+  exact UInt64.toNat_inj.mp h'
 
 /-- **Keccak-f[1600]**: the extracted permutation, on every state, returns the lanes of FIPS 202
 Algorithm 7 applied to the input lanes; it neither fails nor diverges. -/

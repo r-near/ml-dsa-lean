@@ -15,32 +15,6 @@ set_option maxRecDepth 8192
 namespace Proofs
 namespace TopWitness
 
-theorem foldlM_isSome {α β : Type} (f : α → β → Option α) (l : List β) (A : α)
-    (h : ∀ x ∈ l, ∀ B, (f B x).isSome = true) : (l.foldlM f A).isSome = true := by
-  induction l generalizing A with
-  | nil => simp
-  | cons x l ih =>
-    obtain ⟨B, hB⟩ := Option.isSome_iff_exists.mp (h x (List.mem_cons_self) A)
-    rw [List.foldlM_cons, hB]
-    exact ih B (fun y hy => h y (List.mem_cons_of_mem _ hy))
-
-/-- `ExpandA` succeeds as soon as each of its `k · ℓ` calls to `RejNTTPoly` does. -/
-theorem expandA_isSome (p : Spec.Params) (fuel : Nat) (ρ : List UInt8)
-    (h : ∀ r, r < p.k → ∀ s, s < p.ℓ → (Spec.RejNTTPoly fuel (SampleA.pSeed ρ r s)).isSome = true) :
-    (Spec.ExpandA p fuel ρ).isSome = true := by
-  rw [SampleA.expandA_eq]
-  apply foldlM_isSome
-  intro r hr A
-  have hr' : r < p.k := by simpa using hr
-  unfold SampleA.outerF
-  apply foldlM_isSome
-  intro s hs B
-  have hs' : s < p.ℓ := by simpa using hs
-  obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp (h r hr' s hs')
-  unfold SampleA.innerF
-  rw [ha]
-  rfl
-
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
 /-- Entry `(0, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
@@ -151,7 +125,7 @@ theorem rej_a_all :
 
 /-- **`ExpandA` succeeds** on the `ρ` that `KeyGen` derives from `ξ = 0, 1, ..., 31`, ML-DSA-44, fuel 512. -/
 theorem expandA_44_isSome : (Spec.ExpandA Spec.ML_DSA_44 512 rhoS).isSome = true :=
-  expandA_isSome _ _ _ rej_a_all
+  SampleA.expandA_isSome _ _ _ rej_a_all
 
 end TopWitness
 end Proofs

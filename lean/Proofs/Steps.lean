@@ -577,7 +577,7 @@ theorem response_loop1_spec {K L : Usize} {k : Nat} (ip : Impl.params.Params) (s
       step as ⟨wc1, hwc1⟩
       step with arr_index_spec wc1 i (by rw [hwc1, Array.set_val_eq, List.length_set]; exact hl) as ⟨a3, ha3⟩
       have ha3e : a3 = a2 := by
-        rw [ha3]; subst hwc1; simp [Array.set_val_eq, List.getElem_set]
+        rw [ha3]; subst hwc1; simp [Array.set_val_eq]
       step with poly_low_bits_spec hp hg a3 (W[i.val] - CS2[i.val]) (by rw [ha3e]; exact ha2) as ⟨a4, ha4, _⟩
       step*
       have e : i1.val = i.val + 1 := i1_post
@@ -938,7 +938,7 @@ theorem hint_inner_spec {K L : Usize} {k : Nat} (ip : Impl.params.Params) (sp : 
         by_cases hbb : b = true
         · simp only [hbb, if_true] at hi6 hcs
           rw [j1_post]; omega
-        · simp only [hbb, if_false] at hi6 hcs
+        · simp only [hbb] at hi6 hcs
           rw [j1_post]; omega
     · rename_i hj
       simp only [WP.spec_ok]

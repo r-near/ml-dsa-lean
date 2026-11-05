@@ -100,7 +100,7 @@ theorem natBytes_eq (n : Nat) : ∀ N, natBytes N n = (List.range n).map (fun k 
     · simp
     · apply List.map_congr_left
       intro k _
-      simp only [Function.comp, Nat.add_comm 1 k, pow_succ, Nat.div_div_eq_div_mul]
+      simp only [Function.comp, pow_succ, Nat.div_div_eq_div_mul]
       rw [Nat.mul_comm]
 
 /-! ### Windows of `BV` -/
@@ -239,7 +239,7 @@ theorem BitUnpack_fast (v : List UInt8) (a b : Nat) : BitUnpack v a b = BitUnpac
   rw [BitUnpack_get v a b i hi, BV_byteBit_N]
   unfold BitUnpackF Rl
   rw [dif_pos (by simp)]
-  simp [hi]
+  simp
 
 
 /-! ## Pointwise operations -/
@@ -269,7 +269,7 @@ theorem ScalarVectorNTT_fast {ℓ : Nat} (C : Poly) (V : Vector Poly ℓ) :
   rw [h1, foldl_set_replicate_full ℓ Poly.zero (fun j => MultiplyNTT C V[j]!)]
   apply Vector.ext
   intro j hj
-  simp [MultiplyNTT_eq_zipWith, vget! V j hj]
+  simp [MultiplyNTT_eq_zipWith]
 
 /-! ## `ExpandMask` -/
 
@@ -342,7 +342,7 @@ theorem expandA_of_entries (p : Spec.Params) (fuel : Nat) (ρ : List UInt8) (A :
           · rw [if_neg hjm]
             rw [e]
             have : (j < m) ↔ (j < m + 1) := by omega
-            simp [hjm, this]
+            simp [this]
         · rw [if_neg hin, e]
           simp [hin])
     refine ⟨X', hX', ?_⟩
