@@ -39,8 +39,8 @@ and `avx2`; thumbv7em and wasm32 builds; MSRV 1.86; a build and tests under the 
 `cargo deny`. It installs missing toolchains and targets with rustup, and `cargo-deny` into `$HOME/.cache/ml-dsa-lean-ci/tools`
 (`CI_TOOLS` overrides that). It needs `cargo-fuzz` and a nightly toolchain for the fuzz steps and reports a SKIP if they are
 missing; `--strict` turns a SKIP into a failure. Run `bash scripts/ci.sh --help` for options such as `--only`. A cold run
-takes tens of minutes. It also runs two checks that need no Rust or Lean: `extract-hash` (the `src/` and `lean/Impl` hashes
-against `lean/Impl/extract-report.json`, section 2.2) and `axiom-gate-selftest` (`scripts/check-axioms.sh` must fail on a missing
+takes tens of minutes. It also runs two checks that need no Rust or Lean: `extract-hash` (the digests of the extraction inputs and of
+`lean/Impl` against `lean/Impl/extract-report.json`, section 2.2) and `axiom-gate-selftest` (`scripts/check-axioms.sh` must fail on a missing
 or empty list). Last recorded result: see assurance.md, section 0.
 
 The longer differentials, fuzzing and benchmarks:
@@ -103,13 +103,17 @@ git diff --stat lean/Impl            # empty if the committed Lean code is the e
 ```
 
 `scripts/setup-tools.sh` needs `rustup`, `curl`, `zstd`, `sha256sum` and an x86_64 Linux machine. It downloads cargo-hax and
-elan from tagged releases and checks recorded SHA-256 values, and on every run checks the installed cargo-hax, Aeneas and
-Charon binaries against recorded SHA-256 values, reinstalling them if they differ. `scripts/extract.py` exits nonzero on
+elan from tagged releases and checks recorded SHA-256 values. On every run it checks the installed cargo-hax binary and the
+whole Aeneas and Charon tool directories (cargo-hax runs the executables that `hax-metadata.toml` in them names, so every file
+counts, and the execute bit) against recorded digests, reinstalling if they differ, and runs each tool. `scripts/extract.py` exits nonzero on
 any gate failure (an Aeneas error or warning, a local opaque function, a referenced external axiom, an `api` function missing
-from `scripts/extract-roots.txt`) and writes into `lean/Impl` only on success. `lean/Impl/extract-report.json` records the
-SHA-256 of `src/*.rs` and of each file in `lean/Impl`; `bash scripts/ci.sh --only extract-hash` compares them with the tree
-(no tools needed), so a changed `src/` or a hand-edited `lean/Impl` without a new extraction fails it. `.github/workflows/lean.yml`
-re-runs the extraction and fails on any difference. `bash scripts/extract-and-build.sh`
+from `scripts/extract-roots.txt`) and writes into `lean/Impl` only on success. `lean/Impl/extract-report.json` records a
+digest of the extraction inputs (every file under `src/` with its name, `Cargo.toml` without `[dev-dependencies]`, the roots and
+the tool pins) and the SHA-256 of each file in `lean/Impl`; `bash scripts/ci.sh --only extract-hash` compares them with the
+tree (no tools needed) and rejects symlinks, so a changed input or a hand-edited or added file in `lean/Impl` without a new
+extraction fails it. Someone who edits `lean/Impl` and the report together passes that check; `.github/workflows/lean.yml`
+extracts into a new empty directory and compares every file with `lean/Impl` (`diff -r`), which fails on that too. To do the
+same by hand: `python3 scripts/extract.py --out /tmp/impl-check && diff -r lean/Impl /tmp/impl-check`. `bash scripts/extract-and-build.sh`
 runs extraction, `lake build` and the axiom check in one go.
 
 ### 2.3 The witness check: `scripts/witness-check.sh`

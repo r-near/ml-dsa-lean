@@ -32,13 +32,17 @@ A module counts as proved only after `lean-check.sh` passes. Exact steps to reru
 What ties the shipped Rust to the proved Lean (the proofs are about `lean/Impl`, the extraction of `src/`):
 
 - Every push and pull request (`ci.yml`, job `repo-checks`, steps `extract-hash` and `axiom-gate-selftest` of `scripts/ci.sh`):
-  `extract-hash` fails if the SHA-256 of `src/*.rs`, of a file in `lean/Impl`, or the roots in `scripts/extract-roots.txt` no longer
-  match what `lean/Impl/extract-report.json` recorded at the last extraction (`scripts/extract_hash.py`, shared with
-  `scripts/extract.py`). It checks that committed files agree with each other; it does not re-run the extraction. The self-test
-  runs `scripts/check-axioms.sh` on a missing, an empty and a declaration-free list and requires it to fail.
-- Manual and weekly, on the large runner (`lean.yml`, before `lean-check.sh`): `scripts/setup-tools.sh`, then `scripts/extract.py` in the
-  checkout, and the job fails if `lean/Impl` differs from the committed files. This is the check that cannot be satisfied by
-  editing `lean/Impl` and the report together.
+  `extract-hash` fails if the digest of the extraction inputs (every file under `src/`, `Cargo.toml` without its
+  dev-dependencies, the roots, the Charon and Aeneas pins; file names are part of the digest), the set and contents of the files in
+  `lean/Impl` (recursively), or the roots in `scripts/extract-roots.txt` no longer match what `lean/Impl/extract-report.json`
+  recorded at the last extraction (`scripts/extract_hash.py`, shared with `scripts/extract.py`), or if there is a symlink under
+  `src/` or `lean/Impl`. It checks that committed files agree with each other and does not re-run the extraction, so editing
+  `lean/Impl` and the report together passes it. The self-test runs `scripts/check-axioms.sh` on a missing, an empty and a
+  declaration-free list and requires it to fail.
+- Manual and weekly, on the large runner (`lean.yml`, before `lean-check.sh`): `scripts/setup-tools.sh`, then the fast check, then
+  `scripts/extract.py` into a new empty directory, and the job fails unless every file there is identical to the committed
+  `lean/Impl` and neither has files the other lacks (`diff -r`). This is the check that a coordinated edit of `lean/Impl` and the
+  report does not pass. It runs only when the heavy runner is configured or on manual dispatch.
 - Apple Silicon (`ci.yml`, job `macos-arm64`, `macos-15`): the default suite and the release zeroize suite. Until the
   `stack_residue_signing_key` failures on aarch64 macOS are fixed (three tests, 44/65/87), this job fails.
 
@@ -50,7 +54,7 @@ Pins and decisions:
 | Lean layout | Lake package `MlDsaLean` in `lean/`: extracted code `lean/Impl/` (Aeneas namespace `Impl`), spec `lean/Spec/`, proofs `lean/Proofs/` | names are fixed so proofs don't churn |
 | M′ | `sign_internal(p, sk, m_prefix, m, rnd, sig)` and `verify_internal(p, pk, m_prefix, m, sig)`, with M′ = `m_prefix ‖ m` absorbed in two calls | the external API builds 0 ‖ \|ctx\| ‖ ctx (≤ 257 bytes) on the stack, no alloc; the proof needs one sponge lemma (absorbing two slices = absorbing their concatenation) |
 | Charon | generic (no `--monomorphize`) | 0 external axioms; `--monomorphize` adds 9 unmodeled index axioms |
-| Extraction toolchain | Charon nightly-2026.09.02, Aeneas build-183e4f0, cargo-hax 0.4.2, elan v4.2.4, Rust nightly-2026-08-18, Lean v4.31.0 | pinned in `scripts/setup-tools.sh` and `lean/lean-toolchain`; the cargo-hax and elan downloads are tagged releases checked against recorded SHA-256 values, and the installed cargo-hax, Aeneas and Charon binaries are checked against recorded SHA-256 values on every run (the nightly and the Lean toolchain are fetched and verified by rustup and elan) |
+| Extraction toolchain | Charon nightly-2026.09.02, Aeneas build-183e4f0, cargo-hax 0.4.2, elan v4.2.4, Rust nightly-2026-08-18, Lean v4.31.0 | pinned in `scripts/setup-tools.sh` and `lean/lean-toolchain`; the cargo-hax and elan downloads are tagged releases checked against recorded SHA-256 values; on every run the installed cargo-hax binary and the whole Aeneas and Charon tool directories (including `hax-metadata.toml`, which names the executables cargo-hax runs) are checked against recorded digests, and the executables must have the execute bit and run (the nightly and the Lean toolchain are fetched and verified by rustup and elan) |
 | Extraction gate | Aeneas exit 0, no `[Error]`/`[Warning]`, no local opaque function, no referenced external axiom, every extracted def on standard axioms only | any failure is fixed in the Rust code, not worked around |
 | Out of scope | HashML-DSA (Algorithms 4/5) and external μ | no differential oracle for the first; the second is an allowed variant of Algorithms 7/8 that would need its own spec entry and theorems (deferred, not ruled out) |
 
