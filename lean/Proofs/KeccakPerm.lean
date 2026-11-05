@@ -132,17 +132,7 @@ theorem chi_getElem (A : Spec.Keccak.State) (k : Nat) (hk : k < 25) :
   have e2 : k % 5 + 5 * (k / 5) = k := by omega
   simp only [Spec.Keccak.chi, Spec.Keccak.ofLanes, getElem!_ofFn25 _ k hk, Spec.Keccak.lane, chiV]
   have e3 : k / 5 % 5 = k / 5 := by omega
-  simp [e1, e2, e3]
-
-theorem iota_getElem (A : Spec.Keccak.State) (ir k : Nat) (hk : k < 25) :
-    (Spec.Keccak.iota A ir)[k]! = if k = 0 then A[0]! ^^^ Spec.Keccak.RCs[ir]! else A[k]! := by
-  rw [getElem!_pos _ _ (by simpa using hk)]
-  change (A.setIfInBounds 0 (A[0]! ^^^ Spec.Keccak.RCs[ir]!))[k] = _
-  rw [Vector.getElem_setIfInBounds hk]
-  by_cases h : k = 0
-  · subst h; simp
-  · simp [h, Ne.symm h]
-    exact (getElem!_pos A k (by simpa using hk)).symm
+  simp [e2, e3]
 
 theorem Cs_toLanes (a : Array U64 25#usize) (j : Nat) (hj : j < 5) : Cs (toLanes a) j = Cf a j := by
   unfold Cs Cf

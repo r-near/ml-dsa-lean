@@ -435,11 +435,6 @@ key by `expand_a_into`, which runs the loops of `sampling.expand_a` over a calle
 that is exactly `prepare_vk`, which returns by value (`api.verifying_key_NN` uses it). The two bridge lemmas below are
 what let every statement about `verify_internal` go through the by-value `prepare_vk` lemmas unchanged. -/
 
-/-- `expand_a_into` over the all-zero matrix is `expand_a`: the same loops, the same order of SHAKE calls. -/
-theorem expand_a_into_zero (K L : Usize) (rho : Array U8 32#usize) :
-    verify.expand_a_into rho (Array.repeat K (Array.repeat L (Array.repeat 256#usize 0#u32))) =
-      sampling.expand_a K L rho := rfl
-
 /-- `prepare_vk_into` on the all-zero key is `prepare_vk`. -/
 theorem prepare_vk_into_zero (K L : Usize) (pk : Slice U8) :
     verify.prepare_vk_into pk

@@ -12,7 +12,7 @@ import Spec.Encode
   `ω + k`, `Impl.encode.hint_bit_pack` writes exactly `Spec.HintBitPack`.
 
 Method. The spec writes Algorithm 21 with `for` loops that `return none` early. `unpack_eq` rewrites it, with the
-generic lemmas `forIn_efoldv`/`bind_forIn_efoldv` (an early-exit loop over a list in the `Id` monad is the pure fold
+generic lemma `forIn_efoldv` (an early-exit loop over a list in the `Id` monad is the pure fold
 `efoldv`), into an explicit model: `gOut` (one row, steps 4-14), `rowLoop` (steps 7-14 on the row), `padB`
 (steps 16-20). The Rust loops are then proved against that model by loop invariants of the form "the model run
 from the current state equals the model run from the start" (`loop.spec_decr_nat`). `pack_eq` does the same for
@@ -63,28 +63,6 @@ theorem forIn_efoldv {α R B : Type} (g : α → B → Sum R B)
       rw [List.forIn_cons, h1]
       exact hs
 
-
-/-- What a consumer of an early-exit loop sees. -/
-def qv {R B : Type} (s : MProd (Option R) B) : Sum R B :=
-  match s.fst with
-  | some r => .inl r
-  | none => .inr s.snd
-
-theorem bind_forIn_efoldv {α R B γ : Type} (g : α → B → Sum R B) (l : List α)
-    (f : α → MProd (Option R) B → Id (ForInStep (MProd (Option R) B)))
-    (hf : ∀ a, a ∈ l → ∀ b, match g a b with
-        | .inl r => ∃ s, f a ⟨none, b⟩ = pure (ForInStep.done ⟨some r, s⟩)
-        | .inr b' => f a ⟨none, b⟩ = pure (ForInStep.yield ⟨none, b'⟩))
-    (K1 : Sum R B → Id γ) (K : MProd (Option R) B → Id γ) (hK : ∀ s, K s = K1 (qv s)) (b : B) :
-    (forIn l (⟨none, b⟩ : MProd (Option R) B) f >>= K) = K1 (efoldv g l b) := by
-  obtain ⟨s, hs, hv⟩ := forIn_efoldv g l f hf b
-  rw [hs, pure_bind, hK]
-  congr 1
-  unfold qv
-  revert hv
-  cases efoldv g l b <;> intro hv
-  · simp [hv]
-  · simp [hv.1, hv.2]
 
 theorem forIn_efoldv_elim {α R B γ : Type} (g : α → B → Sum R B) (l : List α)
     (f : α → MProd (Option R) B → Id (ForInStep (MProd (Option R) B)))
@@ -312,10 +290,6 @@ theorem bytes_getElem!' (y : Slice U8) (i : Nat) (hi : i < y.val.length) :
     (bytes y)[i]! = UInt8.ofNat (y.val[i]).val := by
   rw [getElem!_pos _ _ (by simpa using hi)]
   simp [bytes]
-
-theorem toNat_bytes (y : Slice U8) (i : Nat) (hi : i < y.val.length) :
-    ((bytes y)[i]!).toNat = (y.val[i]).val := by
-  rw [bytes_getElem!' y i hi]; exact toNat_ofNat_val _
 
 theorem padB_of_le (y : List UInt8) (ω idx : Nat) (h : ω ≤ idx) : padB y ω idx = true := by
   simp [padB, Nat.sub_eq_zero_of_le h]
@@ -857,10 +831,6 @@ theorem hintWeight_eq {k : Nat} (h : Vector HintPoly k) : HintWeight h = restW h
 /-- The model state read off a Rust output slice and write index. -/
 def stOf (out : Slice U8) (index : Usize) : MProd Nat (Array UInt8) :=
   ⟨index.val, (bytes out).toArray⟩
-
-theorem stOf_ext {out out' : Slice U8} {index index' : Usize} (h1 : index.val = index'.val)
-    (h2 : bytes out = bytes out') : stOf out index = stOf out' index' := by
-  simp [stOf, h1, h2]
 
 theorem toHint_get (a : Array Bool 256#usize) (j : Nat) (hj : j < a.val.length) (hj' : j < 256) :
     (toHint a)[j]! = a.val[j] := by

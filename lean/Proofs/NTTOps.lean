@@ -233,18 +233,6 @@ theorem multiply_ntt_spec (a b : Array U32 256#usize) (A B : Poly) (ha : Repr a 
   rintro r ⟨hr1, hr2⟩
   exact ⟨hr1, by rw [hr2, MultiplyNTT_eq_fold, ha.eq, hb.eq]⟩
 
-theorem add_poly_correct (a b : Array U32 256#usize) (A B : Poly) (ha : Repr a A) (hb : Repr b B) :
-    ∃ r, ntt.add_poly a b = ok r ∧ Repr r (Spec.AddNTT A B) :=
-  WP.spec_imp_exists (add_poly_spec a b A B ha hb)
-
-theorem sub_poly_correct (a b : Array U32 256#usize) (A B : Poly) (ha : Repr a A) (hb : Repr b B) :
-    ∃ r, ntt.sub_poly a b = ok r ∧ Repr r (A - B) :=
-  WP.spec_imp_exists (sub_poly_spec a b A B ha hb)
-
-theorem multiply_ntt_correct (a b : Array U32 256#usize) (A B : Poly) (ha : Repr a A) (hb : Repr b B) :
-    ∃ r, ntt.multiply_ntt a b = ok r ∧ Repr r (Spec.MultiplyNTT A B) :=
-  WP.spec_imp_exists (multiply_ntt_spec a b A B ha hb)
-
 /-! ## Vector helpers -/
 
 theorem ReprVec_repeat_zero (N : Usize) (k : Nat) (hN : N.val = k) :
@@ -391,11 +379,6 @@ theorem ntt_vec_into_spec {N : Usize} {k : Nat} (v : Array (Array U32 256#usize)
   intro r hr
   rwa [NTTVec_eq]
 
-theorem ntt_vec_correct {N : Usize} {k : Nat} (v : Array (Array U32 256#usize) N) (V : Vector Poly k)
-    (hv : ReprVec v V) :
-    ∃ r, ntt.ntt_vec v = ok r ∧ ReprVec r (Spec.NTTVec V) :=
-  WP.spec_imp_exists (ntt_vec_spec v V hv)
-
 /-! ## `scalar_vector_ntt_inverse` -/
 
 /-- One iteration of `NTT⁻¹(ScalarVectorNTT(ĉ, v̂))`, entrywise. -/
@@ -460,12 +443,6 @@ theorem scalar_vector_ntt_inverse_spec {N : Usize} {k : Nat} (c : Array U32 256#
   apply WP.spec_mono (scalar_vector_loop_spec c C hc v V hv)
   intro r hr
   rwa [ScalarVectorNTT_eq]
-
-theorem scalar_vector_ntt_inverse_correct {N : Usize} {k : Nat} (c : Array U32 256#usize) (C : Poly)
-    (hc : Repr c C) (v : Array (Array U32 256#usize) N) (V : Vector Poly k) (hv : ReprVec v V) :
-    ∃ r, ntt.scalar_vector_ntt_inverse c v = ok r ∧
-      ReprVec r (Spec.NTTInvVec (Spec.ScalarVectorNTT C V)) :=
-  WP.spec_imp_exists (scalar_vector_ntt_inverse_spec c C hc v V hv)
 
 /-! ## `matrix_vector_ntt` (Algorithm 48) -/
 
@@ -569,11 +546,5 @@ theorem matrix_vector_ntt_spec {K L : Usize} {k ℓ : Nat}
   apply WP.spec_mono (mv_outer_loop m M hM v V hv)
   intro r hr
   rwa [MatrixVectorNTT_eq]
-
-theorem matrix_vector_ntt_correct {K L : Usize} {k ℓ : Nat}
-    (m : Array (Array (Array U32 256#usize) L) K) (M : Vector (Vector Poly ℓ) k) (hM : ReprMat m M)
-    (v : Array (Array U32 256#usize) L) (V : Vector Poly ℓ) (hv : ReprVec v V) :
-    ∃ w, ntt.matrix_vector_ntt m v = ok w ∧ ReprVec w (Spec.MatrixVectorNTT M V) :=
-  WP.spec_imp_exists (matrix_vector_ntt_spec m M hM v V hv)
 
 end Proofs

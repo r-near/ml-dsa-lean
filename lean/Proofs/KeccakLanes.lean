@@ -25,9 +25,6 @@ def toLanes (a : Array U64 25#usize) : Spec.Keccak.State :=
 
 theorem len25 (a : Array U64 25#usize) : a.val.length = 25 := a.property
 
-theorem toU64_xor (x y : U64) : toU64 (x ^^^ y) = toU64 x ^^^ toU64 y := by
-  simp [toU64]
-
 theorem toLanes_get (a : Array U64 25#usize) (k : Nat) (hk : k < 25) :
     (toLanes a)[k] = toU64 (a.val[k]'(by rw [len25 a]; exact hk)) := by
   simp [toLanes]

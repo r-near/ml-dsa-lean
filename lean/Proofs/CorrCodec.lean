@@ -27,8 +27,6 @@ def BV (g : Nat → Nat) (s : Nat) : Nat → Nat
   | 0 => 0
   | n+1 => g s + 2 * BV g (s+1) n
 
-theorem BV_zero (g : Nat → Nat) (s : Nat) : BV g s 0 = 0 := rfl
-
 theorem BV_add (g : Nat → Nat) (s n m : Nat) :
     BV g s (n+m) = BV g s n + 2^n * BV g (s+n) m := by
   induction n generalizing s with
@@ -64,14 +62,6 @@ theorem BV_congr (g g' : Nat → Nat) (s s' n : Nat) (h : ∀ j < n, g (s + j) =
     intro j hj
     have := h (j+1) (by omega)
     rwa [show s + (j+1) = s + 1 + j by omega, show s' + (j+1) = s' + 1 + j by omega] at this
-
-/-- Splitting off the low byte of a window. -/
-theorem BV_byte (g : Nat → Nat) (hg : ∀ t, g t ≤ 1) (s m : Nat) :
-    BV g s (8 + m) % 256 = BV g s 8 ∧ BV g s (8 + m) / 256 = BV g (s + 8) m := by
-  have h := BV_add g s 8 m
-  have hl := BV_lt g hg s 8
-  norm_num at h hl
-  omega
 
 /-- The `j`-th binary digit of `x`. -/
 def dig (x j : Nat) : Nat := (x / 2^j) % 2
@@ -406,34 +396,7 @@ theorem lt_two_pow_bitlen (a : Nat) : a < 2 ^ bitlen a := by
   · subst_vars; simp
   · exact Nat.lt_log2_self
 
-theorem bitlen_le_of_lt {a k : Nat} (h : a < 2 ^ k) : bitlen a ≤ k := by
-  unfold bitlen
-  split
-  · omega
-  · rename_i h0
-    have := (Nat.log2_lt h0).2 h
-    omega
-
-/-- A byte is the window of the bits of the byte string. -/
-theorem BV_byteBit (v : List UInt8) (o : Nat) (h : o < v.length) :
-    BV (byteBit v) (8 * o) 8 = (v[o]).toNat := by
-  have h1 : BV (byteBit v) (8 * o) 8 = BV (dig (v[o]).toNat) 0 8 := by
-    apply BV_congr
-    intro j hj
-    have e1 : (8 * o + j) / 8 = o := by omega
-    have e2 : (8 * o + j) % 8 = j := by omega
-    simp only [byteBit, dig, e1, e2, Nat.zero_add, List.getElem?_eq_getElem h, Option.getD_some]
-  rw [h1, BV_dig]
-  have := (v[o]).toNat_lt
-  simp
-
 /-! ## The encoders and decoders of Section 7.2, as concatenations / pointwise -/
-
-theorem w1Encode_eq (p : Params) (w₁ : Vector RPoly p.k) :
-    w1Encode p w₁ = ((List.range' 0 p.k).map
-      fun i => SimpleBitPack w₁[i]! ((q - 1) / (2 * p.γ₂) - 1)).flatten := by
-  unfold w1Encode
-  simp [Std.Legacy.Range.forIn_eq_forIn_range', Std.Legacy.Range.size]
 
 theorem pkEncode_eq (p : Params) (ρ : List UInt8) (t₁ : Vector RPoly p.k) :
     pkEncode p ρ t₁ = ρ ++ ((List.range' 0 p.k).map
@@ -751,28 +714,6 @@ theorem forIn_efoldv {α R B : Type} (g : α → B → Sum R B)
       exact hs
 
 
-/-- What a consumer of an early-exit loop sees. -/
-def qv {R B : Type} (s : MProd (Option R) B) : Sum R B :=
-  match s.fst with
-  | some r => .inl r
-  | none => .inr s.snd
-
-theorem bind_forIn_efoldv {α R B γ : Type} (g : α → B → Sum R B) (l : List α)
-    (f : α → MProd (Option R) B → Id (ForInStep (MProd (Option R) B)))
-    (hf : ∀ a, a ∈ l → ∀ b, match g a b with
-        | .inl r => ∃ s, f a ⟨none, b⟩ = pure (ForInStep.done ⟨some r, s⟩)
-        | .inr b' => f a ⟨none, b⟩ = pure (ForInStep.yield ⟨none, b'⟩))
-    (K1 : Sum R B → Id γ) (K : MProd (Option R) B → Id γ) (hK : ∀ s, K s = K1 (qv s)) (b : B) :
-    (forIn l (⟨none, b⟩ : MProd (Option R) B) f >>= K) = K1 (efoldv g l b) := by
-  obtain ⟨s, hs, hv⟩ := forIn_efoldv g l f hf b
-  rw [hs, pure_bind, hK]
-  congr 1
-  unfold qv
-  revert hv
-  cases efoldv g l b <;> intro hv
-  · simp [hv]
-  · simp [hv.1, hv.2]
-
 theorem forIn_efoldv_elim {α R B γ : Type} (g : α → B → Sum R B) (l : List α)
     (f : α → MProd (Option R) B → Id (ForInStep (MProd (Option R) B)))
     (hf : ∀ a, a ∈ l → ∀ b, match g a b with
@@ -1040,30 +981,8 @@ theorem pack_eq (sp : Params) (h : Vector HintPoly sp.k) : HintBitPack sp h = pa
 
 /-! ## HintBitPack: weights -/
 
-def cntFrom (row : HintPoly) (j : Nat) : Nat := (row.toList.drop j).countP (fun b => b)
-
 def restW {k : Nat} (h : Vector HintPoly k) (i : Nat) : Nat :=
   ((h.toList.drop i).map (fun r => r.toList.countP (fun b => b))).sum
-
-theorem cntFrom_succ (row : HintPoly) (j : Nat) (hj : j < 256) :
-    cntFrom row j = (if row[j]! = true then 1 else 0) + cntFrom row (j + 1) := by
-  have hl : j < row.toList.length := by simpa using hj
-  unfold cntFrom
-  rw [List.drop_eq_getElem_cons hl, List.countP_cons, getElem!_pos _ _ (by simpa using hj)]
-  simp only [Vector.getElem_toList]
-  by_cases hb : row[j] = true <;> simp [hb] <;> omega
-
-theorem cntFrom_256 (row : HintPoly) : cntFrom row 256 = 0 := by
-  unfold cntFrom
-  rw [List.drop_of_length_le (by simp)]
-  rfl
-
-theorem restW_succ {k : Nat} (h : Vector HintPoly k) (i : Nat) (hi : i < k) :
-    restW h i = cntFrom h[i]! 0 + restW h (i + 1) := by
-  have hl : i < h.toList.length := by simpa using hi
-  unfold restW cntFrom
-  rw [List.drop_eq_getElem_cons hl, List.map_cons, List.sum_cons, getElem!_pos _ _ (by simpa using hi)]
-  simp only [Vector.getElem_toList, List.drop_zero]
 
 theorem foldl_add_sum {α : Type} (f : α → Nat) (l : List α) (a : Nat) :
     l.foldl (fun s x => s + f x) a = a + (l.map f).sum := by

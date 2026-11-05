@@ -171,15 +171,4 @@ theorem coeff_from_half_byte_spec {ip : params.Params} {K L : Usize} {sp : Spec.
       simp only [hb, ↓reduceIte, WP.spec_ok]
       simp [OptCoeff, Spec.CoeffFromHalfByte, hs, hb']
 
-theorem coeff_from_three_bytes_correct (b0 b1 b2 : U8) :
-    ∃ r, sampling.coeff_from_three_bytes b0 b1 b2 = ok r ∧
-      r.map (·.val) = (Spec.CoeffFromThreeBytes (UInt8.ofNat b0.val) (UInt8.ofNat b1.val)
-        (UInt8.ofNat b2.val)).map ZMod.val :=
-  WP.spec_imp_exists (coeff_from_three_bytes_spec b0 b1 b2)
-
-theorem coeff_from_half_byte_correct {ip : params.Params} {K L : Usize} {sp : Spec.Params}
-    (hp : Params.Valid ip K L sp) (hη : sp.η = 2 ∨ sp.η = 4) (b : U8) :
-    ∃ r, sampling.coeff_from_half_byte ip b = ok r ∧ OptCoeff r (Spec.CoeffFromHalfByte sp.η b.val) :=
-  WP.spec_imp_exists (coeff_from_half_byte_spec hp hη b)
-
 end Proofs

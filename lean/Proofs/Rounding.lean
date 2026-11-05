@@ -393,7 +393,6 @@ theorem decompose_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params
     exact ho
 
 
-theorem HighBits_eq (sp : Spec.Params) (r : Zq) : Spec.HighBits sp r = (Spec.Decompose sp r).1 := rfl
 theorem LowBits_eq (sp : Spec.Params) (r : Zq) : Spec.LowBits sp r = (Spec.Decompose sp r).2 := rfl
 
 /-- **Algorithm 37.** `high_bits r` is the exact `Spec.HighBits` (a value `< m`). -/

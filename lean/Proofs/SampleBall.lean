@@ -343,10 +343,6 @@ theorem SampleInBall_ternary (p : Spec.Params) (hτ : p.τ ≤ 256) (fuel : Nat)
 
 /-! ## Part B: the sign word `h` -/
 
-theorem testBit_byte_shift (b : Nat) (hb : b < 256) (k t : Nat) :
-    (b <<< (8 * k)).testBit t = (decide (8 * k ≤ t) && b.testBit (t - 8 * k)) := by
-  rw [Nat.testBit_shiftLeft]
-
 theorem byte_testBit_high (b : Nat) (hb : b < 256) (u : Nat) (hu : 8 ≤ u) : b.testBit u = false := by
   apply Nat.testBit_eq_false_of_lt
   calc b < 2 ^ 8 := by omega
@@ -693,9 +689,5 @@ theorem sample_in_ball_spec {K L : Usize} {ip : Impl.params.Params} {sp : Spec.P
   rw [e, i_post1, hp.tau]
   unfold sibRun at hmodel
   exact hmodel
-
-theorem ML_DSA_44_tau : Spec.ML_DSA_44.τ ≤ 64 := by decide +kernel
-theorem ML_DSA_65_tau : Spec.ML_DSA_65.τ ≤ 64 := by decide +kernel
-theorem ML_DSA_87_tau : Spec.ML_DSA_87.τ ≤ 64 := by decide +kernel
 
 end Proofs

@@ -75,8 +75,6 @@ theorem gamma1_cases (sp : Spec.Params) (h : sp.γ₁ = 2 ^ 17 ∨ sp.γ₁ = 2 
   · right; refine ⟨h, ?_, ?_⟩ <;> rw [h] <;> decide +kernel
 
 theorem ML_DSA_44_gamma1 : Spec.ML_DSA_44.γ₁ = 2 ^ 17 ∨ Spec.ML_DSA_44.γ₁ = 2 ^ 19 := Or.inl rfl
-theorem ML_DSA_65_gamma1 : Spec.ML_DSA_65.γ₁ = 2 ^ 17 ∨ Spec.ML_DSA_65.γ₁ = 2 ^ 19 := Or.inr rfl
-theorem ML_DSA_87_gamma1 : Spec.ML_DSA_87.γ₁ = 2 ^ 17 ∨ Spec.ML_DSA_87.γ₁ = 2 ^ 19 := Or.inr rfl
 
 theorem IntegerToBytes_two (x : Nat) :
     IntegerToBytes x 2 = [(x % 256).toUInt8, (x / 256 % 256).toUInt8] := by

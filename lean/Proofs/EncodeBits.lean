@@ -23,8 +23,6 @@ def BV (g : Nat → Nat) (s : Nat) : Nat → Nat
   | 0 => 0
   | n+1 => g s + 2 * BV g (s+1) n
 
-theorem BV_zero (g : Nat → Nat) (s : Nat) : BV g s 0 = 0 := rfl
-
 theorem BV_add (g : Nat → Nat) (s n m : Nat) :
     BV g s (n+m) = BV g s n + 2^n * BV g (s+n) m := by
   induction n generalizing s with
