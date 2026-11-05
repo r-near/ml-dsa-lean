@@ -1,9 +1,9 @@
 # Scope and limitations
 
-The fine print behind the README. nearcore, which the constant-time notes below use as a build profile, is only an
-integration target studied here ([nearcore-integration.md](nearcore-integration.md); no affiliation). The complete
+The README states the result in one line. This page is exactly what that line covers and what it doesn't. The complete
 version, with the exact theorem statements, the trusted base and the evidence for every claim, is
-[assurance.md](assurance.md).
+[assurance.md](assurance.md). nearcore, which the constant-time notes below use as a build profile, is only an
+integration target studied here ([nearcore-integration.md](nearcore-integration.md); no affiliation).
 
 ## What the proof says
 
@@ -37,7 +37,7 @@ input.
   `forbid(unsafe_code)`.
 - **HashML-DSA and external μ are not implemented.**
 - **Constant time is not proved.** It is checked on compiled code with BINSEC (next section).
-- **Not audited by any third party, not FIPS-validated, and not a certified module.**
+- **Not audited by any third party, not FIPS-validated, and not a certified module.** Version 0.1.0.
 
 ## Constant time
 
@@ -76,4 +76,5 @@ The full list is [assurance.md](assurance.md) section 7.
 - **Malformed secret keys:** expanded secret keys with out-of-range coefficients are accepted by `sign_NN`, as FIPS 204
   specifies. Use `sk_is_well_formed_NN` (or `pk_from_sk_NN`) on untrusted keys (E-4).
 - **`internals` feature:** the crate-private internals it exposes are meant for tests and can panic on wrong-length slices.
-- **Stack use** is measured, not proved (`../tools/stack/README.md`).
+- **Stack use** is measured, not proved: Sign needs up to about 240 KB for ML-DSA-87 (`../tools/stack/README.md`).
+- **Secret keys** are the 2560/4032/4896-byte expanded encoding, not the 32-byte seed.
