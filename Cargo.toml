@@ -6,8 +6,7 @@ edition = "2024"
 rust-version = "1.86"
 license = "MIT OR Apache-2.0"
 description = "Proof-first ML-DSA (FIPS 204): one Rust function per algorithm, plain arrays and loops, extracted to Lean"
-# TODO(release): set `repository` to the public GitHub URL before publishing, for example
-# repository = "https://github.com/<owner>/<repo>"
+repository = "https://github.com/r-near/ml-dsa-lean"
 readme = "README.md"
 keywords = ["ml-dsa", "dilithium", "post-quantum", "signature", "fips204"]
 categories = ["cryptography", "no-std", "no-std::no-alloc"]
