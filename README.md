@@ -48,7 +48,7 @@ cover the rest.
 
 Optional features:
 
-- `zeroize` wipes secret intermediates and dropped signing keys.
+- `zeroize` wipes dropped signing keys and, best effort, secret intermediates.
 - `avx2` adds a runtime-dispatched AVX2 NTT on x86_64.
 
 Requires Rust 1.86 or newer.

@@ -16,7 +16,10 @@ while [ $# -gt 0 ]; do
   esac
 done
 cd "$(dirname "$0")/../lean"
-if [ "$LIST" != headline-theorems.txt ] && [ ! -f "$LIST" ]; then echo "AXIOM GATE FAIL: list file $LIST not found" >&2; exit 1; fi
+# The list is required, the default one included, and must name at least one declaration: a missing or empty list
+# would otherwise leave only the extracted defs checked and still pass.
+if [ ! -f "$LIST" ]; then echo "AXIOM GATE FAIL: list file $LIST not found" >&2; exit 1; fi
+if ! grep -qvE '^(import |#|[[:space:]]*$)' "$LIST"; then echo "AXIOM GATE FAIL: list file $LIST names no declarations" >&2; exit 1; fi
 export PATH="$HOME/.elan/bin:$PATH"
 mkdir -p .lake
 TAG=$(basename "$LIST" .txt)
@@ -24,15 +27,16 @@ F=.lake/axioms-check-$TAG.lean
 OUT=.lake/axioms-check-$TAG.out
 {
   [ "$IMPL" = 1 ] && echo 'import Impl.Funs' || true
-  [ -f "$LIST" ] && grep -E '^import ' "$LIST" || true
+  grep -E '^import ' "$LIST" || true
   [ "$IMPL" = 1 ] && grep -oE '^(@\[[^]]*\] *)?(divergent )?def [A-Za-z0-9_.]+' Impl/Funs.lean | awk '{print "#print axioms Impl."$NF}' || true
-  [ -f "$LIST" ] && grep -vE '^(import |#|[[:space:]]*$)' "$LIST" | awk '{print "#print axioms "$1}' || true
+  grep -vE '^(import |#|[[:space:]]*$)' "$LIST" | awk '{print "#print axioms "$1}'
 } > "$F"
 echo "defs/theorems to check: $(grep -c '^#print' "$F")"
 timeout 1800 lake env lean "$F" > "$OUT" 2>&1 || true
-python3 -I - "$F" "$OUT" <<'PY'
+python3 -I - "$F" "$OUT" "$IMPL" <<'PY'
 import re, sys
 want = [l.split()[-1] for l in open(sys.argv[1]) if l.startswith('#print')]
+n_impl = sum(1 for n in want if n.startswith('Impl.'))
 out = open(sys.argv[2]).read()
 OK = {'propext', 'Classical.choice', 'Quot.sound'}
 seen, bad = {}, []
@@ -44,6 +48,8 @@ for n in want:
 errs = [l for l in out.splitlines() if 'error' in l.lower()]
 used = sorted(set().union(*seen.values())) if seen else []
 print(f'checked: {len(want)}  reported: {len(seen)}  axioms used: {used}')
+if sys.argv[3] == '1' and n_impl == 0: bad.append('no extracted defs found in Impl/Funs.lean')
+if len(want) == n_impl: bad.append('no declarations from the list were checked')
 if bad or errs or not want:
     print('AXIOM GATE FAIL'); [print('  ', b) for b in bad[:20]]; [print('  ', e) for e in errs[:10]]
     sys.exit(1)

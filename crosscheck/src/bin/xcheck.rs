@@ -3,9 +3,10 @@
 //! For each parameter set, N seeded random cases (ξ, rnd, message 0-2 KB, ctx lengths 0/1/255/256 and others,
 //! deterministic and hedged signing) go through KeyGen, Sign and Sign_internal on every implementation (byte-for-
 //! byte equality of pk, sk and σ) and through Verify and Verify_internal on the honest signature and on many mutated
-//! inputs (verdicts must be equal). Then the malformed-key behavior table (informational) is produced.
+//! inputs (verdicts must be equal). Then the malformed-key behavior table is produced: Sign outcomes there are
+//! informational, but `pk_from_sk` must agree with mldsa-native on every variant.
 //!
-//! Exit status: 0 if there were no disagreements, 1 otherwise.
+//! Exit status: 0 if there were no disagreements (including `pk_from_sk` on malformed keys), 1 otherwise.
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::Instant;
@@ -238,6 +239,8 @@ fn main() {
         total.disagreements += bad;
     }
 
+    // pk_from_sk is a checked function, not undefined behavior: a disagreement with mldsa-native fails the run.
+    let mut pk_from_sk_disagreements = 0u64;
     if !a.skip_sk {
         println!("\n== malformed secret keys (informational; FIPS 204 leaves Sign undefined here) ==");
         for &set in &a.sets {
@@ -267,13 +270,14 @@ fn main() {
                 println!("  panic message, {p}");
             }
             let bad: Vec<&str> = rows.iter().filter(|r| !r.pk_from_sk_agrees).map(|r| r.variant.as_str()).collect();
+            pk_from_sk_disagreements += bad.len() as u64;
             println!("  pk_from_sk vs mldsa-native: {} of {} variants agree{}", rows.len() - bad.len(), rows.len(),
                 if bad.is_empty() { String::new() } else { format!(" (DISAGREE: {})", bad.join(", ")) });
         }
     }
 
-    if !a.only_sk {
-        println!("\nRESULT: {} disagreements", total.disagreements);
-        std::process::exit(if total.disagreements == 0 { 0 } else { 1 });
-    }
+    // Sign outcomes on malformed keys stay informational; everything else counts.
+    let disagreements = total.disagreements + pk_from_sk_disagreements;
+    println!("\nRESULT: {} disagreements ({} pk_from_sk variants)", disagreements, pk_from_sk_disagreements);
+    std::process::exit(if disagreements == 0 { 0 } else { 1 });
 }
