@@ -20,7 +20,16 @@
 #
 # Steps: test-default, test-zeroize, test-zeroize-release, test-avx2, thumbv7em, msrv-1.86, nearcore-build,
 # nearcore-test, nearcore-test-avx2, nearcore-test-zeroize, wasm32, wasm32-zeroize, diff-awslc,
-# fuzz-<target> (one per target in fuzz/fuzz_targets), deny, lean.
+# fuzz-<target> (one per target in fuzz/fuzz_targets), deny, extract-hash, axiom-gate-selftest, lean.
+#
+# extract-hash and axiom-gate-selftest need no Rust and no Lean:
+#   extract-hash          fails if the extraction inputs (every file under src/, Cargo.toml, the roots, the tool pins), any file
+#                         under lean/Impl (recursively) or scripts/extract-roots.txt no longer match what
+#                         lean/Impl/extract-report.json recorded at the last extraction, or if there is a symlink in them
+#                         (scripts/extract_hash.py; the thorough check, re-running the extraction into an empty directory
+#                         and comparing every file, is in .github/workflows/lean.yml).
+#   axiom-gate-selftest   runs scripts/check-axioms.sh on a missing, an empty and a comment-only list and fails unless it
+#                         exits 1 with "AXIOM GATE FAIL", so the gate cannot silently pass on no declarations.
 #
 # NOTE: test-zeroize skips stack_residue_* where they fail at opt-level 0. test-zeroize runs the zeroize feature's tests in
 # the dev profile (opt-level 0) without the 8 failing stack-residue scans (keygen and pk_from_sk for 44/65/87,
@@ -56,7 +65,7 @@ done
 
 # Known step names; --only must name only these (a typo must not turn the run into a silent no-op).
 KNOWN_STEPS=(test-default test-zeroize test-zeroize-release test-avx2 thumbv7em msrv-1.86 nearcore-build nearcore-test
-             nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize diff-awslc deny lean)
+             nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize diff-awslc deny extract-hash axiom-gate-selftest lean)
 for f in fuzz/fuzz_targets/*.rs; do KNOWN_STEPS+=("fuzz-$(basename "$f" .rs)"); done
 if [ -n "$ONLY" ]; then
   IFS=',' read -r -a _only <<< "${ONLY#,}"
@@ -274,6 +283,29 @@ step_diff_awslc() {
     return 1
   }
 }
+step_extract_hash() { python3 -I scripts/extract_hash.py check; }
+step_axiom_gate_selftest() {
+  # The "no list / no declarations" cases exit before check-axioms.sh runs Lean, so this needs no Lean. The real list
+  # is never touched; the temp lists live in a scratch directory.
+  local tmp rc=0; tmp="$(mktemp -d)"
+  printf '' > "$tmp/empty.txt"
+  printf '# only comments, imports and blank lines\nimport Proofs.PartialAPI\n\n   \n' > "$tmp/no-decls.txt"
+  expect_gate_fail "$tmp/missing.txt" "list file $tmp/missing.txt not found" || rc=1
+  expect_gate_fail "$tmp/empty.txt" "list file $tmp/empty.txt names no declarations" || rc=1
+  expect_gate_fail "$tmp/no-decls.txt" "list file $tmp/no-decls.txt names no declarations" || rc=1
+  rm -rf "$tmp"
+  [ "$rc" -eq 0 ] && echo "axiom gate self-test OK: a missing, an empty and a declaration-free list all fail the gate"
+  return "$rc"
+}
+# expect_gate_fail LISTFILE MESSAGE: scripts/check-axioms.sh --list LISTFILE must exit 1 and print "AXIOM GATE FAIL: MESSAGE".
+expect_gate_fail() {
+  local out rc=0
+  out="$(scripts/check-axioms.sh --list "$1" 2>&1)" || rc=$?
+  if [ "$rc" -eq 1 ] && grep -qxF "AXIOM GATE FAIL: $2" <<<"$out"; then echo "ok: exit 1, \"AXIOM GATE FAIL: $2\""; return 0; fi
+  echo "SELF-TEST FAIL: scripts/check-axioms.sh --list $1 exited $rc; wanted exit 1 with \"AXIOM GATE FAIL: $2\"; output:"
+  printf '%s\n' "$out"
+  return 1
+}
 step_lean() { scripts/lean-check.sh; }
 
 run_step test-default step_test_default
@@ -294,6 +326,8 @@ for f in fuzz/fuzz_targets/*.rs; do
 done
 run_step diff-awslc step_diff_awslc
 run_step deny step_deny
+run_step extract-hash step_extract_hash
+run_step axiom-gate-selftest step_axiom_gate_selftest
 if [ "$LEAN" -eq 1 ] || [[ "$ONLY" == *",lean,"* ]]; then run_step lean step_lean; fi
 
 echo; echo "=== SUMMARY ==="

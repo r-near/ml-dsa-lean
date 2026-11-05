@@ -55,7 +55,7 @@
   "ml_dsa_lean::api::sign_internal_prepared_87",
   "ml_dsa_lean::field::mul"
  ],
- "src_sha256": "3e7ee0e7be279e55d3c81fd371d73a057d930637cc7dc71bec4e993ea1a84ca0",
+ "extract_inputs_sha256": "3172eb8449d621d6d963f5965175e57d756063be3245119ed63db45951d12897",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -95,6 +95,12 @@
  "aeneas_errors": 0,
  "aeneas_warnings": 0,
  "aeneas_name_clashes": 0,
+ "impl_sha256": {
+  "Types.lean": "83230be0e403cd7eae407931b0496c59caf1ba37b20dd7aa693465033234b6f9",
+  "Funs.lean": "73f8476feb42460eb89ed83820fa1ca4fbc9632f6f61e8a5f27ab1f3522f043c",
+  "FunsExternal_Template.lean": "29f2586ab7a71fdd5f3b29b17623b1ac567b3649c116d6107d0f26c5bc55b4d6",
+  "FunsExternal.lean": "29f2586ab7a71fdd5f3b29b17623b1ac567b3649c116d6107d0f26c5bc55b4d6"
+ },
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
  "lean_defs": 358

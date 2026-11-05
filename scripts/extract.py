@@ -4,13 +4,22 @@
 Usage: scripts/extract.py [--src DIR] [--roots FILE] [--work DIR] [--out DIR]
   --src    crate root to extract (Cargo.toml + src/ are copied; default: repo root)
   --roots  extraction roots file (default: scripts/extract-roots.txt)
-  --work   scratch directory (default: <repo>/.extract)
+  --work   directory for logs and intermediate files (default: <repo>/.extract); the crate itself is staged in a fresh
+           temporary directory outside the checkout, so no ancestor .cargo/config.toml applies
   --out    destination for Types.lean/Funs.lean/FunsExternal*.lean/extract-report.json (default: lean/Impl)
+
+Records extract_inputs_sha256 (digest of src/, Cargo.toml without dev-dependencies, the roots and the tool pins) and impl_sha256
+(hash of each file written to --out) in extract-report.json; the `extract-hash` step of scripts/ci.sh
+(scripts/extract_hash.py) fails if either no longer matches the tree. --out must be absent or hold only files this script writes (no
+symlinks, no other files): it is not emptied. To compare with the committed directory, extract into a new empty one.
 
 Needs the tools from scripts/setup-tools.sh (ML_DSA_TOOLS overrides their location, default ~/hax-tools). Exits non-zero on any gate failure; --out is only touched on success.
 """
-import argparse, copy, hashlib, json, os, re, shutil, subprocess, sys
+import argparse, copy, json, os, re, shutil, subprocess, sys, tempfile
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import extract_hash  # one definition of the hashes recorded in the report; scripts/ci.sh checks them
 
 repo = Path(__file__).resolve().parent.parent
 ap = argparse.ArgumentParser()
@@ -19,18 +28,22 @@ ap.add_argument('--roots', default=str(repo / 'scripts/extract-roots.txt'))
 ap.add_argument('--work', default=str(repo / '.extract'))
 ap.add_argument('--out', default=str(repo / 'lean/Impl'))
 a = ap.parse_args()
-src, work, out = Path(a.src).resolve(), Path(a.work).resolve(), Path(a.out).resolve()
+src, work = Path(a.src).resolve(), Path(a.work).resolve()
+out = Path(os.path.abspath(a.out))  # not resolved: a symlinked --out is refused below
+out_problems = extract_hash.output_dir_problems(out)
+if out_problems:
+    sys.exit(f'refusing to extract into {out}: ' + '; '.join(out_problems) + '. Use a new empty directory.')
 
 CRATE = 'ml_dsa_lean'
 NS = 'Impl'
-AENEAS_PIN, CHARON_PIN = 'build-183e4f0', 'nightly-2026.09.02'
+AENEAS_PIN, CHARON_PIN = extract_hash.AENEAS_PIN, extract_hash.CHARON_PIN
 T = Path(os.environ.get('ML_DSA_TOOLS', str(Path.home() / 'hax-tools')))
 AENEAS = T / f'cache/hax/tools/aeneas/{AENEAS_PIN}/aeneas'
 for tool in [T / 'bin/cargo-hax', AENEAS]:
     if not tool.exists():
         sys.exit(f'missing tool {tool.name}: run scripts/setup-tools.sh')
 
-roots = [l.strip() for l in Path(a.roots).read_text().splitlines() if l.strip() and not l.lstrip().startswith('#')]
+roots = extract_hash.read_roots(a.roots)
 failures = []
 def fail(msg):
     failures.append(msg); print('GATE FAIL:', msg, file=sys.stderr)
@@ -44,36 +57,27 @@ if api.exists():
 
 if work.exists():
     shutil.rmtree(work)
-crate = work / 'crate'
-(crate).mkdir(parents=True)
-shutil.copytree(src / 'src', crate / 'src')
-cargo = (src / 'Cargo.toml').read_text()
-cargo = re.sub(r'(?ms)^\[dev-dependencies\]\n.*?(?=^\[|\Z)', '', cargo)  # test-only oracle
-(crate / 'Cargo.toml').write_text(cargo)
-include = ', '.join(json.dumps(r) for r in roots)
-(crate / 'hax.toml').write_text(f'''[tools]
-aeneas = "{AENEAS_PIN}"
-charon = "{CHARON_PIN}"
-[versions]
-lean = "leanprover/lean4:v4.31.0"
-hax-lean-lib = "v0.3.30"
-[scenario.generic]
-backend = "lean"
-include = [{include}]
-no-default-features = true
-charon-args = []
-env = {{ RUSTFLAGS = "--cfg miri" }}
-''')
-sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
-src_sha = hashlib.sha256(b''.join(p.read_bytes() for p in sorted((crate / 'src').rglob('*.rs')))).hexdigest()
+work.mkdir(parents=True)
+# Stage exactly the extraction inputs (src/, Cargo.toml without dev-dependencies, hax.toml) with the code scripts/ci.sh
+# uses to check the recorded digest; a symlink under src/ is an error. The crate goes into a fresh temporary directory
+# outside the checkout so that Cargo does not read a .cargo/config.toml from an ancestor directory.
+crate = Path(tempfile.mkdtemp(prefix='ml-dsa-extract-'))
+try:
+    inputs_sha = extract_hash.stage_crate(src, roots, crate)
+except ValueError as e:
+    sys.exit(f'cannot stage the extraction inputs: {e}')
 
-env = os.environ.copy()
-for k in ['RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'CARGO_BUILD_RUSTFLAGS', 'CARGO_TARGET_DIR']:
-    env.pop(k, None)
-env.update(PATH=str(T / 'bin') + os.pathsep + env['PATH'], XDG_CACHE_HOME=str(T / 'cache'),
-           CHARON_MIRI_SYSROOTS=str(T / 'charon-sysroot-nightly-2026-08-18'))
+# A controlled environment: only these variables are passed on (no RUSTFLAGS, CARGO_* or anything env!/option_env! could
+# read), CARGO_HOME is a fresh directory (no cargo-hax shadowing the verified one, no config.toml or registry), and the
+# verified cargo-hax is run by absolute path. Not isolated: PATH (the tools it names are looked up there after the pinned
+# tool directory), HOME and RUSTUP_HOME (rustup finds the nightly toolchain through them), and the system's C/Rust installation.
+PASS_THROUGH = ['HOME', 'USER', 'LOGNAME', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TERM', 'TMPDIR', 'TZ', 'RUSTUP_HOME',
+                'SSL_CERT_FILE', 'SSL_CERT_DIR']
+env = {k: os.environ[k] for k in PASS_THROUGH if k in os.environ}
+env.update(PATH=str(T / 'bin') + os.pathsep + os.environ.get('PATH', ''), XDG_CACHE_HOME=str(T / 'cache'),
+           CHARON_MIRI_SYSROOTS=str(T / 'charon-sysroot-nightly-2026-08-18'), CARGO_HOME=str(work / 'cargo-home'))
 with (work / 'hax.log').open('w') as log:
-    r = subprocess.run(['cargo', 'hax', 'extract', 'generic', '-v'], cwd=crate, env=env,
+    r = subprocess.run([str(T / 'bin/cargo-hax'), 'hax', 'extract', 'generic', '-v'], cwd=crate, env=env,
                        stdout=log, stderr=subprocess.STDOUT, timeout=3000)
 hlog = (work / 'hax.log').read_text()
 if r.returncode != 0:
@@ -81,7 +85,7 @@ if r.returncode != 0:
     print('\n'.join(hlog.splitlines()[-30:]), file=sys.stderr)
 llbc_cands = list(crate.glob('proofs/**/*.llbc'))
 record = {'crate': CRATE, 'namespace': NS, 'variant': 'generic (no --monomorphize, no charon args)',
-          'roots': roots, 'src_sha256': src_sha,
+          'roots': roots, 'extract_inputs_sha256': inputs_sha,
           'tools': {'aeneas': AENEAS_PIN, 'charon': CHARON_PIN, 'cargo_hax': '0.4.2',
                     'rust': 'nightly-2026-08-18', 'lean': 'v4.31.0'}}
 if not llbc_cands:
@@ -163,6 +167,7 @@ else:
         referenced = [x for x in axioms if re.search(r'(?<![\w.])' + re.escape(x) + r'(?![\w])', funs_txt)]
         if referenced:
             fail(f'external axioms referenced from Funs.lean: {referenced}')
+        record['impl_sha256'] = extract_hash.generated_sha256s(lean)
         record.update(external_axioms_declared=len(axioms), external_axioms_referenced=len(referenced),
                       lean_defs=len(re.findall(r'^(?:divergent )?def ', funs_txt, re.M)))
 
@@ -183,4 +188,5 @@ for f in ['Types.lean', 'Funs.lean', 'FunsExternal_Template.lean']:
 # No external axioms are referenced (gated above), so the template is the module Funs.lean imports.
 shutil.copy2(out / 'FunsExternal_Template.lean', out / 'FunsExternal.lean')
 shutil.copy2(work / 'extract-report.json', out / 'extract-report.json')
+shutil.rmtree(crate, ignore_errors=True)
 print(f'extraction OK -> {out}')
