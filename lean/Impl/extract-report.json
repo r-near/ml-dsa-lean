@@ -53,9 +53,11 @@
   "ml_dsa_lean::api::signing_key_87",
   "ml_dsa_lean::api::sign_prepared_87",
   "ml_dsa_lean::api::sign_internal_prepared_87",
-  "ml_dsa_lean::field::mul"
+  "ml_dsa_lean::field::mul",
+  "ml_dsa_lean::encode::sk_decode",
+  "ml_dsa_lean::ntt::scalar_vector_ntt_inverse"
  ],
- "src_sha256": "3e7ee0e7be279e55d3c81fd371d73a057d930637cc7dc71bec4e993ea1a84ca0",
+ "src_sha256": "0bdeba51c1d07d8f92c2c504b3acc84afe681fb96df92437f521ad47eccba32b",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -64,7 +66,7 @@
   "lean": "v4.31.0"
  },
  "rename_changes": 0,
- "llbc_fun_decls": 213,
+ "llbc_fun_decls": 223,
  "llbc_opaque_funs": [
   "core::array::{impl}::index",
   "core::array::{impl}::index_mut",
@@ -97,5 +99,5 @@
  "aeneas_name_clashes": 0,
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
- "lean_defs": 358
+ "lean_defs": 368
 }

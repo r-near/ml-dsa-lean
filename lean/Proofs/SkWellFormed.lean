@@ -24,7 +24,7 @@ Results:
 * `skWellFormed_zero_44` / `skWellFormed_bad_44`: concrete kernel witnesses that the predicate is satisfiable and
   falsifiable (the all-zero key; a key whose first `s₁` field is `7`, i.e. coefficient `−5`).
 
-The Rust (`src/encode.rs`) decodes each of the `ℓ + k` η-blocks with `unpack_signed` (the same function
+The Rust (`src/encode.rs`) decodes each of the `ℓ + k` η-blocks with `unpack_signed_into` (the same function
 `sk_decode` uses) and checks the canonical residue `x` with `x ≤ η ∨ q ≤ x + η`; the proof shows that this is
 `−η ≤ BitUnpack ≤ η` because `BitUnpack` coefficients lie in `(η − 2^c, η]` with `2^c ≤ 16`.
 -/
@@ -227,7 +227,8 @@ theorem eta_block_bad_spec {K L : Usize} {ip : Impl.params.Params} {sp : Spec.Pa
     rw [hv.eta_bits]; rcases hη4 with h | h <;> rw [h] <;> decide +kernel
   have hQ : field.Q.val = 8380417 := by first | rfl | decide | simp [field.Q]
   unfold encode.eta_block_bad
-  refine WP.spec_bind (unpack_signed_spec v ip.eta sp.η ip.eta_bits hb hc hbits hlen) ?_
+  refine WP.spec_bind (unpack_signed_into_spec v ip.eta sp.η ip.eta_bits hb hc hbits hlen
+    (Array.repeat 256#usize 0#u32)) ?_
   intro w hw
   unfold encode.poly_eta_bad
   have hη1000 : ip.eta.val < 1000 := by rw [hv.eta]; omega

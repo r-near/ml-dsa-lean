@@ -192,16 +192,16 @@ attribute [step] layer_inv_spec
 def scaleF (b : Poly) (a : Nat) : Poly := Vector.set! b a (8347681 * b[a]!)
 
 theorem scale_loop (w0 : Array U32 256#usize) (hw0 : Canonical w0) :
-    ntt.ntt_inverse_body_loop w0 0#usize ⦃ w => Canonical w ∧
+    ntt.ntt_inverse_body_mut_loop w0 0#usize ⦃ w => Canonical w ∧
       toZq w = (List.range' 0 256).foldl scaleF (toZq w0) ⦄ := by
-  unfold ntt.ntt_inverse_body_loop
+  unfold ntt.ntt_inverse_body_mut_loop
   apply loop.spec_decr_nat
     (fun (p : Array U32 256#usize × Usize) => 256 - p.2.val)
     (fun p => Canonical p.1 ∧ p.2.val ≤ 256 ∧
        toZq p.1 = (List.range' 0 p.2.val).foldl scaleF (toZq w0))
   · rintro ⟨w, j⟩ ⟨hc, h1, h2⟩
     dsimp only at hc h1 h2
-    simp only [ntt.ntt_inverse_body_loop.body]
+    simp only [ntt.ntt_inverse_body_mut_loop.body]
     step*
     all_goals try subst_vars
     all_goals try first
@@ -231,16 +231,29 @@ theorem NTTInv_eq_layers (w : Poly) :
     show List.range' 0 8 = [0, 1, 2, 3, 4, 5, 6, 7] from rfl]
   rfl
 
-theorem ntt_inverse_spec (w : Array U32 256#usize) (hw : Canonical w) :
-    ntt.ntt_inverse w ⦃ r => Canonical r ∧ toZq r = Spec.NTTInv (toZq w) ⦄ := by
-  unfold ntt.ntt_inverse ntt.dispatch.ntt_inverse ntt.ntt_inverse_body
+/-- The shared in-place body (`ntt_inverse_body_mut`, extracted as a function of the array it transforms). -/
+theorem ntt_inverse_body_mut_spec (w : Array U32 256#usize) (hw : Canonical w) :
+    ntt.ntt_inverse_body_mut w ⦃ r => Canonical r ∧ toZq r = Spec.NTTInv (toZq w) ⦄ := by
+  unfold ntt.ntt_inverse_body_mut
   step*
-  apply WP.spec_mono (scale_loop w_hat8 w_hat8_post1)
+  apply WP.spec_mono (scale_loop w8 w8_post1)
   rintro r ⟨hr1, hr2⟩
   refine ⟨hr1, ?_⟩
   rw [hr2, NTTInv_eq_layers]
-  simp only [← w_hat1_post3, ← w_hat2_post3, ← w_hat3_post3, ← w_hat4_post3, ← w_hat5_post3,
-    ← w_hat6_post3, ← w_hat7_post3, ← w_hat8_post3]
+  simp only [← w1_post3, ← w2_post3, ← w3_post3, ← w4_post3, ← w5_post3,
+    ← w6_post3, ← w7_post3, ← w8_post3]
+
+theorem ntt_inverse_spec (w : Array U32 256#usize) (hw : Canonical w) :
+    ntt.ntt_inverse w ⦃ r => Canonical r ∧ toZq r = Spec.NTTInv (toZq w) ⦄ := by
+  unfold ntt.ntt_inverse ntt.dispatch.ntt_inverse ntt.ntt_inverse_body
+  exact ntt_inverse_body_mut_spec w hw
+
+/-- The in-place entry point `ntt_inverse_in_place` (the Rust takes `&mut [u32; 256]`; the extraction passes the array
+in and returns the updated one) satisfies the same spec as `ntt_inverse`. -/
+theorem ntt_inverse_in_place_spec (w : Array U32 256#usize) (hw : Canonical w) :
+    ntt.ntt_inverse_in_place w ⦃ r => Canonical r ∧ toZq r = Spec.NTTInv (toZq w) ⦄ := by
+  unfold ntt.ntt_inverse_in_place ntt.dispatch.ntt_inverse_in_place
+  exact ntt_inverse_body_mut_spec w hw
 
 /-- **Inverse NTT.** On canonical input the extracted `ntt_inverse` returns, without failing or
 diverging, a canonical array whose coefficients are those of FIPS 204 Algorithm 42 applied to the input. -/

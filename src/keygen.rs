@@ -1,6 +1,6 @@
 //! Algorithm 6 ML-DSA.KeyGen_internal(ξ). Step numbers refer to FIPS 204.
 
-use crate::encode::{SecretKey, pk_encode, sk_decode, sk_encode, sk_is_well_formed};
+use crate::encode::{SecretKey, pk_encode, sk_decode_into, sk_encode, sk_is_well_formed};
 use crate::keccak::Shake;
 use crate::ntt::{add_poly, matrix_vector_ntt, ntt_inverse, ntt_vec};
 use crate::params::Params;
@@ -199,7 +199,15 @@ pub fn pk_from_sk<const K: usize, const L: usize>(p: &Params, sk: &[u8], pk: &mu
     }
     // 1: (ρ, K, tr, s1, s2, t0) ← skDecode(sk)
     #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
-    let mut dec = sk_decode::<K, L>(p, sk);
+    let mut dec = SecretKey {
+        rho: [0; 32],
+        key: [0; 32],
+        tr: [0; 64],
+        s1: [[0; 256]; L],
+        s2: [[0; 256]; K],
+        t0: [[0; 256]; K],
+    };
+    sk_decode_into::<K, L>(p, sk, &mut dec);
     // 3: Â ← ExpandA(ρ)
     let a_hat = expand_a::<K, L>(&dec.rho);
     let ok = pk_check::<K, L>(&a_hat, &dec, pk);

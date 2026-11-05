@@ -341,17 +341,11 @@ theorem sign_loop_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Par
         loopRes sp { F with sampleInBall := F2 } P n k.val = some T ∧ LoopPost sp T sig r) ?_ kappa hk
   intro kappa hk
   simp only [sign.sign_prepared_internal_loop.body]
-  step as ⟨i, hi⟩
-  have hiv : i.val = sp.ℓ := by
-    rw [hi]; simp [UScalar.cast_val_eq]
-    have : L.val % 4294967296 = L.val := Nat.mod_eq_of_lt (by omega)
-    omega
-  step as ⟨i1, hi1⟩
-  step as ⟨i2, hi2⟩
+  step with more_attempts_spec (L := L) kappa (by omega) (by omega) hk as ⟨b, hbm⟩
   split
   · rename_i hc
     have hc' : kappa.val + sp.ℓ ≤ 2 ^ 16 := by
-      have : i2.val ≤ 65535 := by scalar_tac
+      have := hbm.1 (by simpa using hc)
       omega
     have hklt : kappa.val < 2 ^ 16 := by omega
     have hlt : ¬ 2 ^ 16 < kappa.val + sp.ℓ := by omega
@@ -419,8 +413,8 @@ theorem sign_loop_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Par
         rw [hsig1, hbs, hctb]
   · rename_i hc
     have hc' : 2 ^ 16 < kappa.val + sp.ℓ := by
-      have : ¬ i2.val ≤ 65535 := by scalar_tac
-      omega
+      by_contra hcon
+      exact hc (by simpa using hbm.2 (by omega))
     simp only [WP.dspec_ok]
     refine ⟨F.sampleInBall, 0 + 1, none, by omega, ?_, rfl, rfl⟩
     simp only [loopRes]
@@ -449,7 +443,7 @@ theorem prepare_sk_into_partial {ip : Impl.params.Params} {K L : Usize} {sp : Sp
   have hK : K.val = sp.k := hv.K_eq
   have hL : L.val = sp.ℓ := hv.L_eq
   unfold sign.prepare_sk_into
-  refine dspec_bind_of_spec (sk_decode_spec ip sp hv hstd.eta_lt sk hsk) ?_
+  refine dspec_bind_of_spec (sk_decode_into_spec ip sp hv hstd.eta_lt sk hsk _) ?_
   intro key ⟨hrho, hkey, htr, hs1, hs2, ht0⟩
   rw [hd] at hrho hkey htr hs1 hs2 ht0
   dsimp only at hrho hkey htr hs1 hs2 ht0

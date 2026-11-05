@@ -781,6 +781,22 @@ def LoopPost (sp : Spec.Params)
   | some (ct, z, h) => r.1 = true ∧ bytes r.2 = sigEncode sp ct (z.map Poly.modPM) h
   | none => r.1 = false ∧ r.2 = sig
 
+/-- The loop guard `more_attempts L κ` of Sign (`κ + ℓ − 1 ≤ 0xFFFF`) holds exactly when another full attempt of
+`ℓ` counter values still fits below `2^16`. -/
+theorem more_attempts_spec {L : Usize} (kappa : U32) (hL : 1 ≤ L.val) (hL' : L.val < 256)
+    (hk : kappa.val ≤ 2 ^ 16) :
+    sign.more_attempts L kappa ⦃ b => (b = true ↔ kappa.val + L.val ≤ 2 ^ 16) ⦄ := by
+  unfold sign.more_attempts
+  step as ⟨i, hi⟩
+  have hiv : i.val = L.val := by
+    rw [hi]; simp [UScalar.cast_val_eq]
+    have : L.val % 4294967296 = L.val := Nat.mod_eq_of_lt (by omega)
+    omega
+  step as ⟨i1, hi1⟩
+  step as ⟨i2, hi2⟩
+  simp only [decide_eq_true_eq]
+  scalar_tac
+
 theorem sign_loop_spec {ip K L sp} (hp : Params.Std ip K L sp) (hb : SignBuf sp) (F : Spec.Fuel) (P : Pre sp)
     (a_hat : Array (Array (Array U32 256#usize) L) K) (hA : ReprMat a_hat P.Â)
     (s1_hat : Array (Array U32 256#usize) L) (hs1 : ReprVec s1_hat P.ŝ₁)
@@ -804,17 +820,11 @@ theorem sign_loop_spec {ip K L sp} (hp : Params.Std ip K L sp) (hb : SignBuf sp)
     (fun k => k.val ≤ 2 ^ 16 ∧ ∃ n, 2 ^ 16 ≤ n + k.val ∧ loopRes sp F P n k.val = some T)
   · rintro kappa ⟨hk, n, hn, hT⟩
     simp only [sign.sign_prepared_internal_loop.body]
-    step as ⟨i, hi⟩
-    have hiv : i.val = sp.ℓ := by
-      rw [hi]; simp [UScalar.cast_val_eq]
-      have : L.val % 4294967296 = L.val := Nat.mod_eq_of_lt (by omega)
-      omega
-    step as ⟨i1, hi1⟩
-    step as ⟨i2, hi2⟩
+    step with more_attempts_spec (L := L) kappa (by omega) (by omega) hk as ⟨b, hbm⟩
     split
     · rename_i hc
       have hc' : kappa.val + sp.ℓ ≤ 2 ^ 16 := by
-        have : i2.val ≤ 65535 := by scalar_tac
+        have := hbm.1 (by simpa using hc)
         omega
       have hklt : kappa.val < 2 ^ 16 := by omega
       obtain ⟨n', rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
@@ -868,8 +878,8 @@ theorem sign_loop_spec {ip K L sp} (hp : Params.Std ip K L sp) (hb : SignBuf sp)
         rw [hsig1, hbs, hctb]
     · rename_i hc
       have hc' : 2 ^ 16 < kappa.val + sp.ℓ := by
-        have : ¬ i2.val ≤ 65535 := by scalar_tac
-        omega
+        by_contra hcon
+        exact hc (by simpa using hbm.2 (by omega))
       simp only [WP.spec_ok]
       have hTn : T = none := by
         cases n with
@@ -1084,7 +1094,7 @@ theorem prepare_sk_into_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.
   have hK : K.val = sp.k := hv.K_eq
   have hL : L.val = sp.ℓ := hv.L_eq
   unfold sign.prepare_sk_into
-  refine WP.spec_bind (sk_decode_spec ip sp hv hstd.eta_lt sk hsk) ?_
+  refine WP.spec_bind (sk_decode_into_spec ip sp hv hstd.eta_lt sk hsk _) ?_
   intro key ⟨hrho, hkey, htr, hs1, hs2, ht0⟩
   rw [hd] at hrho hkey htr hs1 hs2 ht0
   dsimp only at hrho hkey htr hs1 hs2 ht0

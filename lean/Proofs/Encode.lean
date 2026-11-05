@@ -438,16 +438,16 @@ theorem pack_signed_spec (w : Array U32 256#usize) (v : RPoly) (hw : ReprInt w v
   rw [hBP, ← hc]
   exact bytes_eq_map out' _ _ hlen hk
 
-theorem unpack_signed_loop_spec (b : U32) (hb : b.val < Spec.q) (z : Array U32 256#usize)
+theorem unpack_signed_into_loop_spec (b : U32) (hb : b.val < Spec.q) (z : Array U32 256#usize)
     (hz : Canonical z) (w : Array U32 256#usize) (i : Usize) (hi : i.val ≤ 256)
     (hw : ∀ j (_hj : j < i.val) (hj' : j < w.val.length) (hj'' : j < z.val.length),
       (w.val[j]'hj').val < Spec.q ∧
       (((w.val[j]'hj').val : Nat) : Zq) = ((b.val : Nat) : Zq) - (((z.val[j]'hj'').val : Nat) : Zq)) :
-    encode.unpack_signed_loop b z w i ⦃ w' => ∀ j (_hj : j < 256) (hj' : j < w'.val.length)
+    encode.unpack_signed_into_loop b w z i ⦃ w' => ∀ j (_hj : j < 256) (hj' : j < w'.val.length)
       (hj'' : j < z.val.length),
       (w'.val[j]'hj').val < Spec.q ∧
       (((w'.val[j]'hj').val : Nat) : Zq) = ((b.val : Nat) : Zq) - (((z.val[j]'hj'').val : Nat) : Zq) ⦄ := by
-  unfold encode.unpack_signed_loop
+  unfold encode.unpack_signed_into_loop
   apply loop.spec_decr_nat
     (fun (p : Array U32 256#usize × Usize) => 256 - p.2.val)
     (fun p => p.2.val ≤ 256 ∧ ∀ j (hj : j < p.2.val) (hj' : j < p.1.val.length)
@@ -456,7 +456,7 @@ theorem unpack_signed_loop_spec (b : U32) (hb : b.val < Spec.q) (z : Array U32 2
       (((p.1.val[j]'hj').val : Nat) : Zq) = ((b.val : Nat) : Zq) - (((z.val[j]'hj'').val : Nat) : Zq))
   · rintro ⟨w, i⟩ ⟨h1, h2⟩
     dsimp only at h1 h2
-    simp only [encode.unpack_signed_loop.body]
+    simp only [encode.unpack_signed_into_loop.body]
     split
     · rename_i hi
       have hi' : i.val < 256 := by scalar_tac
@@ -480,14 +480,15 @@ theorem unpack_signed_loop_spec (b : U32) (hb : b.val < Spec.q) (z : Array U32 2
       exact h2 j (by omega) _ _
   · exact ⟨hi, hw⟩
 
-/-- **`unpack_signed` is `BitUnpack`** (Algorithm 19), for every byte string of length `32·c` (no premise on the
-bytes): the output denotes the spec's integer polynomial `b - (unsigned value)` (modulo `q`; the integers
-need not lie in `[-a, b]` for a malformed input). `c = bitlen (a + b) ≤ 22`. -/
-theorem unpack_signed_spec (v : Slice U8) (b : U32) (a : Nat) (c : Usize) (hb : b.val < Spec.q)
-    (hc : c.val = bitlen (a + b.val)) (hc22 : c.val ≤ 22) (hlen : v.val.length = 32 * c.val) :
-    encode.unpack_signed v b c ⦃ w => ReprInt w (Spec.BitUnpack (bytes v) a b.val) ⦄ := by
+/-- **`unpack_signed_into` is `BitUnpack`** (Algorithm 19), for every byte string of length `32·c` (no premise on the
+bytes) and every destination `w0` (all 256 entries are overwritten): the output denotes the spec's integer polynomial
+`b - (unsigned value)` (modulo `q`; the integers need not lie in `[-a, b]` for a malformed input). `c = bitlen (a + b) ≤ 22`. -/
+theorem unpack_signed_into_spec (v : Slice U8) (b : U32) (a : Nat) (c : Usize) (hb : b.val < Spec.q)
+    (hc : c.val = bitlen (a + b.val)) (hc22 : c.val ≤ 22) (hlen : v.val.length = 32 * c.val)
+    (w0 : Array U32 256#usize) :
+    encode.unpack_signed_into v b c w0 ⦃ w => ReprInt w (Spec.BitUnpack (bytes v) a b.val) ⦄ := by
   have h22 : (2:Nat) ^ 22 < Spec.q := by decide +kernel
-  unfold encode.unpack_signed
+  unfold encode.unpack_signed_into
   refine WP.spec_bind (bit_unpack_core (byteBit (bytes v)) (byteBit_le _) v c (by omega) hlen
     (bytes_BV v)) ?_
   intro z hz
@@ -499,7 +500,7 @@ theorem unpack_signed_spec (v : Slice U8) (b : U32) (a : Nat) (c : Usize) (hb : 
     have := BV_lt (byteBit (bytes v)) (byteBit_le _) (c.val * i) c.val
     have : (2:Nat) ^ c.val ≤ 2 ^ 22 := Nat.pow_le_pow_right (by norm_num) hc22
     omega
-  refine WP.spec_mono (unpack_signed_loop_spec b hb z hzc _ 0#usize (by simp)
+  refine WP.spec_mono (unpack_signed_into_loop_spec b hb z hzc w0 0#usize (by simp)
     (fun j hj => absurd hj (by simp))) ?_
   intro w hw
   refine ⟨fun x hx => ?_, ?_⟩
@@ -518,5 +519,14 @@ theorem unpack_signed_spec (v : Slice U8) (b : U32) (a : Nat) (c : Usize) (hb : 
     rw [hbu, ← hc, hzk]
     push_cast
     ring
+
+/-- **`unpack_signed` is `BitUnpack`** (Algorithm 19), for every byte string of length `32·c` (no premise on the
+bytes): the output denotes the spec's integer polynomial `b - (unsigned value)` (modulo `q`; the integers
+need not lie in `[-a, b]` for a malformed input). `c = bitlen (a + b) ≤ 22`. -/
+theorem unpack_signed_spec (v : Slice U8) (b : U32) (a : Nat) (c : Usize) (hb : b.val < Spec.q)
+    (hc : c.val = bitlen (a + b.val)) (hc22 : c.val ≤ 22) (hlen : v.val.length = 32 * c.val) :
+    encode.unpack_signed v b c ⦃ w => ReprInt w (Spec.BitUnpack (bytes v) a b.val) ⦄ := by
+  unfold encode.unpack_signed
+  exact unpack_signed_into_spec v b a c hb hc hc22 hlen _
 
 end Proofs

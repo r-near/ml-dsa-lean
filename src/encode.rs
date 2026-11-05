@@ -56,21 +56,30 @@ fn pack_signed(w: &[u32; 256], b: u32, c: usize, out: &mut [u8]) {
     }
     bit_pack(&t, c, out);
 }
-fn unpack_signed(v: &[u8], b: u32, c: usize) -> [u32; 256] {
+/// Algorithm 19 BitUnpack with a = b − 1 or a = b, written into `w` (every entry is overwritten): w[i] = b − z[i]
+/// for the c-bit fields z of `v`. The secret-key decoder passes the destination polynomial itself, so a decoded
+/// secret is never returned by value (a by-value result is built in the callee's frame and copied out, which leaves
+/// a copy in the dead frame). `z` holds the raw bit fields of a secret coefficient vector; with the `zeroize`
+/// feature it is wiped before returning.
+fn unpack_signed_into(v: &[u8], b: u32, c: usize, w: &mut [u32; 256]) {
     #[cfg_attr(not(feature = "zeroize"), allow(unused_mut))]
     let mut z = bit_unpack(v, c);
-    let mut w = [0u32; 256];
     let mut i = 0;
     while i < 256 {
         w[i] = sub(b, z[i]);
         i += 1;
     }
-    // `z` holds the raw bit fields of a secret coefficient vector; `w`, the decoded polynomial, is returned.
     #[cfg(feature = "zeroize")]
     {
         use zeroize::Zeroize;
         z.zeroize();
     }
+}
+/// `unpack_signed_into` returning a fresh polynomial. For public inputs (the signature's z); the secret-key
+/// decoders use `unpack_signed_into`.
+fn unpack_signed(v: &[u8], b: u32, c: usize) -> [u32; 256] {
+    let mut w = [0u32; 256];
+    unpack_signed_into(v, b, c, &mut w);
     w
 }
 
@@ -117,16 +126,10 @@ pub struct SecretKey<const K: usize, const L: usize> {
     pub t0: [[u32; 256]; K],
 }
 
-/// Algorithm 25 skDecode(sk).
-pub fn sk_decode<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> SecretKey<K, L> {
-    let mut out = SecretKey {
-        rho: [0; 32],
-        key: [0; 32],
-        tr: [0; 64],
-        s1: [[0; 256]; L],
-        s2: [[0; 256]; K],
-        t0: [[0; 256]; K],
-    };
+/// Algorithm 25 skDecode(sk), written into `out` (every field is overwritten, so its previous contents do not
+/// matter). `prepare_sk_into` passes a local it wipes: the decoded s1, s2 and t0 are never returned by value, so no
+/// copy of them is left in the dead frame of this function (they are decoded in place, `unpack_signed_into`).
+pub fn sk_decode_into<const K: usize, const L: usize>(p: &Params, sk: &[u8], out: &mut SecretKey<K, L>) {
     let mut i = 0;
     while i < 32 {
         out.rho[i] = sk[i];
@@ -142,22 +145,37 @@ pub fn sk_decode<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> Secre
     let mut o = 128;
     let mut i = 0;
     while i < L {
-        out.s1[i] = unpack_signed(&sk[o..o + n], p.eta, p.eta_bits);
+        unpack_signed_into(&sk[o..o + n], p.eta, p.eta_bits, &mut out.s1[i]);
         o += n;
         i += 1;
     }
     let mut i = 0;
     while i < K {
-        out.s2[i] = unpack_signed(&sk[o..o + n], p.eta, p.eta_bits);
+        unpack_signed_into(&sk[o..o + n], p.eta, p.eta_bits, &mut out.s2[i]);
         o += n;
         i += 1;
     }
     let mut i = 0;
     while i < K {
-        out.t0[i] = unpack_signed(&sk[o..o + 416], 1 << 12, 13);
+        unpack_signed_into(&sk[o..o + 416], 1 << 12, 13, &mut out.t0[i]);
         o += 416;
         i += 1;
     }
+}
+
+/// Algorithm 25 skDecode(sk), returning the decoded key by value: `sk_decode_into` on a fresh `SecretKey`. For callers
+/// that do not hold the result as a secret (the tests); the library's own callers use `sk_decode_into`.
+#[cfg_attr(not(feature = "internals"), allow(dead_code))]
+pub fn sk_decode<const K: usize, const L: usize>(p: &Params, sk: &[u8]) -> SecretKey<K, L> {
+    let mut out = SecretKey {
+        rho: [0; 32],
+        key: [0; 32],
+        tr: [0; 64],
+        s1: [[0; 256]; L],
+        s2: [[0; 256]; K],
+        t0: [[0; 256]; K],
+    };
+    sk_decode_into::<K, L>(p, sk, &mut out);
     out
 }
 
@@ -181,7 +199,16 @@ fn poly_eta_bad(w: &[u32; 256], eta: u32) -> u32 {
 /// Zero iff the η-block `v` (32·bitlen(2η) bytes) decodes, as in skDecode (BitUnpack with a = b = η), to
 /// coefficients all in [−η, η]; otherwise 1.
 fn eta_block_bad(p: &Params, v: &[u8]) -> u32 {
-    poly_eta_bad(&unpack_signed(v, p.eta, p.eta_bits), p.eta)
+    let mut w = [0u32; 256];
+    unpack_signed_into(v, p.eta, p.eta_bits, &mut w);
+    let bad = poly_eta_bad(&w, p.eta);
+    // `w` holds a decoded s1 or s2 polynomial of a stored secret key.
+    #[cfg(feature = "zeroize")]
+    {
+        use zeroize::Zeroize;
+        w.zeroize();
+    }
+    bad
 }
 
 /// True iff every coefficient of s₁ and s₂ as decoded by `sk_decode` (Algorithm 25) lies in [−η, η]. The L + K
