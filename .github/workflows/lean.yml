@@ -58,6 +58,25 @@ jobs:
       - name: Set up Lean
         uses: ./.github/actions/setup-lean
 
+      # Re-runs the extraction (Charon + Aeneas on src/, into the checkout) and fails if lean/Impl then differs from the
+      # committed files, so the proofs below are about the extraction of the committed Rust. The tools are the pinned,
+      # checksum-verified ones from scripts/setup-tools.sh. Needs rustup, curl, zstd.
+      - name: Install the extraction tools
+        run: |
+          if ! command -v zstd >/dev/null; then sudo apt-get update && sudo apt-get install -y zstd; fi
+          scripts/setup-tools.sh
+
+      - name: Re-extract and compare with lean/Impl
+        run: |
+          python3 scripts/extract.py
+          if [ -n "$(git status --porcelain -- lean/Impl)" ]; then
+            git status --short -- lean/Impl
+            git diff --stat -- lean/Impl
+            echo "::error::lean/Impl is not the extraction of src/: run scripts/extract.py and commit lean/Impl"
+            exit 1
+          fi
+          echo "lean/Impl is byte-identical to a fresh extraction of src/"
+
       # Builds the default targets (Impl, Spec, Proofs), fails on any `error:` or `sorry` in the log, then runs the axiom
       # gate over lean/headline-theorems.txt. Prints "LEAN CHECK OK" only if all pass. The script has its own 3000 s
       # `lake build` timeout.
