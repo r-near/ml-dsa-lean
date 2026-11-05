@@ -193,7 +193,8 @@ nearcore_target_features_check() {
 nearcore_overflow_flag_check() {
   local log rc=0 line; log="$(mktemp)"
   touch src/lib.rs
-  nearcore_env cargo "+$NEARCORE_TC" build --release -v 2>&1 | tee "$log"
+  # --color never: with CARGO_TERM_COLOR=always (as in GitHub Actions) the "Running" line carries escape codes.
+  nearcore_env cargo "+$NEARCORE_TC" build --release -v --color never 2>&1 | tee "$log"
   if [ "${PIPESTATUS[0]}" -ne 0 ]; then rm -f "$log"; return 1; fi
   line="$(grep -E "Running .*--crate-name ml_dsa_lean" "$log" | head -n 1)"
   rm -f "$log"
