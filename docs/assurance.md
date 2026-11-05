@@ -13,18 +13,20 @@ inputs it covered. "Spec" is `lean/Spec`, our transcription of FIPS 204 (Algorit
 
 ## 0. Gates and pins
 
-The Lean gates last passed at 47bd3dc (the proof-hygiene pass; `lean-check.sh` and `witness-check.sh` each run twice,
-by the author and by a separate review pass, which also confirmed that every headline and witness statement and every
-extracted definition elaborates byte-identically to the previous gated tree). `scripts/ci.sh` and the extraction check last
-passed at 9d51b57 (after the Lake package rename to `MlDsaLean`; extraction byte-identical to the committed `lean/Impl`);
-`src/` and `lean/Impl` are unchanged since, and the later commits touch only docs, comments, `lean/Proofs`, the witness and
-Wycheproof generator scripts, one echo string in `scripts/ci.sh`, `SECURITY.md` and `.github/`:
+The gates below passed on the branch `t3/c288d712` (Sign's per-attempt wiping and in-place key decoding; `src/` and
+`lean/Impl` changed there, so these results replace the earlier ones). `lean-check.sh` and `witness-check.sh` ran on a tree
+whose `lean/` is byte-identical to the final one except `lean/Impl/extract-report.json` (a source hash that the Lean build
+does not read); `scripts/ci.sh --lean` ran on the final tree (merge of `main` at e11ff2a, commit 2427004). Every statement
+named in `lean/headline-theorems.txt` and `lean/witness-theorems.txt` (553 names) has the same text as at d482a38, and
+`lean/Spec` is unchanged; the extracted functions those statements speak about did change (`sk_decode_into`,
+`unpack_signed_into`, `scalar_vector_ntt_inverse_into`, `matrix_vector_ntt_into`, `response_into`, `hint_step_into`,
+`ntt_inverse_in_place`, `more_attempts`), and their proofs were redone:
 
 | Gate | Result |
 |---|---|
-| `scripts/lean-check.sh` | `LEAN CHECK OK`, 770 declarations (pipefail `lake build` exits 0, no `error:` or `sorry` in the log, axiom gate over every extracted def and every name in `lean/headline-theorems.txt`; axioms used: `propext`, `Classical.choice`, `Quot.sound`) |
+| `scripts/lean-check.sh` | `LEAN CHECK OK`, 780 declarations (pipefail `lake build` exits 0, no `error:` or `sorry` in the log, axiom gate over every extracted def and every name in `lean/headline-theorems.txt`; axioms used: `propext`, `Classical.choice`, `Quot.sound`) |
 | `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`, 146 names |
-| `scripts/ci.sh` | 19 of 19 steps passed at 98f8ae9 (`src/` unchanged since 9d51b57; the steps `extract-hash` and `axiom-gate-selftest` were added after it) |
+| `scripts/ci.sh --lean` | 20 of 20 steps passed (including `extract-hash`, `axiom-gate-selftest`, `lean`) |
 
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
