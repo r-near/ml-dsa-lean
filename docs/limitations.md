@@ -1,7 +1,9 @@
 # Scope and limitations
 
-The fine print behind the README. The complete version, with the exact theorem statements, the trusted base and the
-evidence for every claim, is [assurance.md](assurance.md).
+The fine print behind the README. nearcore, which the constant-time notes below use as a build profile, is only an
+integration target studied here ([nearcore-integration.md](nearcore-integration.md); no affiliation). The complete
+version, with the exact theorem statements, the trusted base and the evidence for every claim, is
+[assurance.md](assurance.md).
 
 ## What the proof says
 
@@ -69,7 +71,8 @@ Tests are evidence, not proofs.
 The full list is [assurance.md](assurance.md) section 7.
 
 - **`zeroize`:** stack-residue wiping holds for release builds only. The stack-residue scans fail at opt-level 0, and for
-  `keygen_44`/`keygen_65` at opt-level 1 (Z-1, open).
+  `keygen_44`/`keygen_65` at opt-level 1 (Z-1, open). Not wiped by design: moves of returned structs, Sign's per-attempt
+  vectors, one copy of K and t0 in KeyGen, and anything skipped by a panic or `mem::forget` (`src/api.rs` module docs).
 - **Malformed secret keys:** expanded secret keys with out-of-range coefficients are accepted by `sign_NN`, as FIPS 204
   specifies. Use `sk_is_well_formed_NN` (or `pk_from_sk_NN`) on untrusted keys (E-4).
 - **`internals` feature:** the crate-private internals it exposes are meant for tests and can panic on wrong-length slices.
