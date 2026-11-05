@@ -24,7 +24,7 @@ Wycheproof generator scripts, one echo string in `scripts/ci.sh`, `SECURITY.md` 
 |---|---|
 | `scripts/lean-check.sh` | `LEAN CHECK OK`, 770 declarations (pipefail `lake build` exits 0, no `error:` or `sorry` in the log, axiom gate over every extracted def and every name in `lean/headline-theorems.txt`; axioms used: `propext`, `Classical.choice`, `Quot.sound`) |
 | `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`, 146 names |
-| `scripts/ci.sh` | 17 of 17 steps passed |
+| `scripts/ci.sh` | 19 of 19 steps passed at f2f41c8 (`src/` unchanged since 9d51b57; the steps `extract-hash` and `axiom-gate-selftest` were added after it) |
 
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
