@@ -1,7 +1,7 @@
 # ml-dsa-lean
 
-ML-DSA (FIPS 204) post-quantum signatures in Rust, **proved correct in Lean**: for every input, the code never panics and
-computes exactly what FIPS 204 specifies.
+**Formally verified ML-DSA in Rust.** A machine-checked Lean proof shows that, for every input, this implementation of
+FIPS 204 post-quantum signatures never panics and computes exactly what the standard specifies.
 
 That covers key generation, signing and verification for ML-DSA-44, ML-DSA-65 and ML-DSA-87, all the way down to the NTT
 and the bit packing. Lean also proves that signatures made with a generated key always verify. The proofs use only Lean's standard
