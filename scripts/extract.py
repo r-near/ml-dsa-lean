@@ -7,8 +7,10 @@ Usage: scripts/extract.py [--src DIR] [--roots FILE] [--work DIR] [--out DIR]
   --work   scratch directory (default: <repo>/.extract)
   --out    destination for Types.lean/Funs.lean/FunsExternal*.lean/extract-report.json (default: lean/Impl)
 
-Records src_sha256 (hash of src/*.rs) and impl_sha256 (hash of each file written to --out) in extract-report.json; the
-`extract-hash` step of scripts/ci.sh (scripts/extract_hash.py) fails if either no longer matches the tree.
+Records extract_inputs_sha256 (digest of src/, Cargo.toml without dev-dependencies, the roots and the tool pins) and impl_sha256
+(hash of each file written to --out) in extract-report.json; the `extract-hash` step of scripts/ci.sh
+(scripts/extract_hash.py) fails if either no longer matches the tree. --out is written into, never emptied: to compare with a
+committed directory, extract into a new empty one.
 
 Needs the tools from scripts/setup-tools.sh (ML_DSA_TOOLS overrides their location, default ~/hax-tools). Exits non-zero on any gate failure; --out is only touched on success.
 """
@@ -29,7 +31,7 @@ src, work, out = Path(a.src).resolve(), Path(a.work).resolve(), Path(a.out).reso
 
 CRATE = 'ml_dsa_lean'
 NS = 'Impl'
-AENEAS_PIN, CHARON_PIN = 'build-183e4f0', 'nightly-2026.09.02'
+AENEAS_PIN, CHARON_PIN = extract_hash.AENEAS_PIN, extract_hash.CHARON_PIN
 T = Path(os.environ.get('ML_DSA_TOOLS', str(Path.home() / 'hax-tools')))
 AENEAS = T / f'cache/hax/tools/aeneas/{AENEAS_PIN}/aeneas'
 for tool in [T / 'bin/cargo-hax', AENEAS]:
@@ -51,26 +53,13 @@ if api.exists():
 if work.exists():
     shutil.rmtree(work)
 crate = work / 'crate'
-(crate).mkdir(parents=True)
-shutil.copytree(src / 'src', crate / 'src')
-cargo = (src / 'Cargo.toml').read_text()
-cargo = re.sub(r'(?ms)^\[dev-dependencies\]\n.*?(?=^\[|\Z)', '', cargo)  # test-only oracle
-(crate / 'Cargo.toml').write_text(cargo)
-include = ', '.join(json.dumps(r) for r in roots)
-(crate / 'hax.toml').write_text(f'''[tools]
-aeneas = "{AENEAS_PIN}"
-charon = "{CHARON_PIN}"
-[versions]
-lean = "leanprover/lean4:v4.31.0"
-hax-lean-lib = "v0.3.30"
-[scenario.generic]
-backend = "lean"
-include = [{include}]
-no-default-features = true
-charon-args = []
-env = {{ RUSTFLAGS = "--cfg miri" }}
-''')
-src_sha = extract_hash.src_sha256(crate)
+crate.mkdir(parents=True)
+# Stage exactly the extraction inputs (src/, Cargo.toml without dev-dependencies, hax.toml) with the code scripts/ci.sh
+# uses to check the recorded digest; a symlink under src/ is an error.
+try:
+    inputs_sha = extract_hash.stage_crate(src, roots, crate)
+except ValueError as e:
+    sys.exit(f'cannot stage the extraction inputs: {e}')
 
 env = os.environ.copy()
 for k in ['RUSTFLAGS', 'CARGO_ENCODED_RUSTFLAGS', 'CARGO_BUILD_RUSTFLAGS', 'CARGO_TARGET_DIR']:
@@ -86,7 +75,7 @@ if r.returncode != 0:
     print('\n'.join(hlog.splitlines()[-30:]), file=sys.stderr)
 llbc_cands = list(crate.glob('proofs/**/*.llbc'))
 record = {'crate': CRATE, 'namespace': NS, 'variant': 'generic (no --monomorphize, no charon args)',
-          'roots': roots, 'src_sha256': src_sha,
+          'roots': roots, 'extract_inputs_sha256': inputs_sha,
           'tools': {'aeneas': AENEAS_PIN, 'charon': CHARON_PIN, 'cargo_hax': '0.4.2',
                     'rust': 'nightly-2026-08-18', 'lean': 'v4.31.0'}}
 if not llbc_cands:
