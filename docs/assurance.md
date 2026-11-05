@@ -36,15 +36,23 @@ What ties the shipped Rust to the proved Lean (the proofs are about `lean/Impl`,
   dev-dependencies, the roots, the Charon and Aeneas pins; file names are part of the digest), the set and contents of the files in
   `lean/Impl` (recursively), or the roots in `scripts/extract-roots.txt` no longer match what `lean/Impl/extract-report.json`
   recorded at the last extraction (`scripts/extract_hash.py`, shared with `scripts/extract.py`), or if there is a symlink under
-  `src/` or `lean/Impl`. It checks that committed files agree with each other and does not re-run the extraction, so editing
+  `src/` or `lean/Impl`, a build script, an `env!`/`include!`-style macro in `src/`, a root `.cargo` directory or toolchain
+  file, or a file name with a control character (inputs the extraction does not see, or that make the manifest ambiguous). It checks that committed files agree with each other and does not re-run the extraction, so editing
   `lean/Impl` and the report together passes it. The self-test runs `scripts/check-axioms.sh` on a missing, an empty and a
   declaration-free list and requires it to fail.
 - Manual and weekly, on the large runner (`lean.yml`, before `lean-check.sh`): `scripts/setup-tools.sh`, then the fast check, then
   `scripts/extract.py` into a new empty directory, and the job fails unless every file there is identical to the committed
   `lean/Impl` and neither has files the other lacks (`diff -r`). This is the check that a coordinated edit of `lean/Impl` and the
   report does not pass. It runs only when the heavy runner is configured or on manual dispatch.
+- Extraction runs the verified cargo-hax by absolute path, on a crate staged outside the checkout, with a fixed list of
+  environment variables and a fresh `CARGO_HOME`. `PATH`, `HOME` and `RUSTUP_HOME` are still inherited (header of `scripts/extract.py`).
 - Apple Silicon (`ci.yml`, job `macos-arm64`, `macos-15`): the default suite and the release zeroize suite. Until the
   `stack_residue_signing_key` failures on aarch64 macOS are fixed (three tests, 44/65/87), this job fails.
+
+Threat model. These checks are designed to catch accidental drift between `src/` and `lean/Impl`, and tampering that is hidden
+inside generated or cached files (a hand-edited, symlinked or extra file in `lean/Impl`, a modified or shadowed tool). They cannot
+stop anyone who can change the workflows or scripts in a commit from disabling them; that is covered by code review of
+`.github/` and `scripts/`, not by CI.
 
 Pins and decisions:
 
