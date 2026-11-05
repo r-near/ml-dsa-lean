@@ -13,9 +13,12 @@ inputs it covered. "Spec" is `lean/Spec`, our transcription of FIPS 204 (Algorit
 
 ## 0. Gates and pins
 
-The latest recorded gates passed at 9d51b57 (after the Lake package rename to `MlDsaLean`; extraction was byte-identical
-to the committed `lean/Impl`). The only later commit that touches the gated tree is 3fac023, which changed one echo string in
-`scripts/ci.sh`; the commits after 9d51b57 otherwise add only `SECURITY.md` and `.github/` (CI workflows), which no gate reads:
+The Lean gates last passed at 47bd3dc (the proof-hygiene pass; `lean-check.sh` and `witness-check.sh` each run twice,
+by the author and by a separate review pass, which also confirmed that every headline and witness statement and every
+extracted definition elaborates byte-identically to the previous gated tree). `scripts/ci.sh` and the extraction check last
+passed at 9d51b57 (after the Lake package rename to `MlDsaLean`; extraction byte-identical to the committed `lean/Impl`);
+`src/` and `lean/Impl` are unchanged since, and the later commits touch only docs, comments, `lean/Proofs`, the witness and
+Wycheproof generator scripts, one echo string in `scripts/ci.sh`, `SECURITY.md` and `.github/`:
 
 | Gate | Result |
 |---|---|

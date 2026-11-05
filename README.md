@@ -91,8 +91,8 @@ Nearly all of it can be re-run; see "Check it yourself" below, which also lists 
 
 - **Proof gates.** `scripts/lean-check.sh` (770 declarations, standard axioms only), `scripts/witness-check.sh` (146 names,
   kernel-checked instances showing the premises are satisfiable for one ML-DSA-44 input), and `scripts/ci.sh` (17 Rust
-  steps) all passed at 9d51b57, with extraction byte-identical to the committed `lean/Impl`. The only later commit to the
-  gated tree, 3fac023, changed one echo string in `scripts/ci.sh` (`docs/assurance.md` section 0).
+  steps) all pass: the Lean gates at 47bd3dc, `ci.sh` and the extraction check (byte-identical to the committed
+  `lean/Impl`) at 9d51b57, with `src/` unchanged since (`docs/assurance.md` section 0).
 - **Constant time.** BINSEC checks compiled probes of every secret-touching step of KeyGen and Sign (listed in
   `checkct/README.md`), on x86_64 (several build profiles), thumbv7em, riscv32imac and AArch64 without NEON. The whole KeyGen,
   Sign and `pk_from_sk` functions have no verdict, and the glue between steps is covered by code reading only. No unexpected
