@@ -27,8 +27,8 @@
 # three attempt scans, for 44/65/87) and with the 3 that pass (signing_key for 44/65/87); the drop and SHAKE wipe tests run
 # too. test-zeroize-release and nearcore-test-zeroize run the full suite, all 24 scans, in release. Counts reproduced on
 # a Linux x86_64 machine and an aarch64 macOS machine: of the 24 stack-residue scan tests in tests/zeroize.rs, 21 find copies
-# of secrets in dead stack frames at opt-level 0; all 24 pass in release; at dev opt-level 1 all 28 tests passed in one run
-# on each machine. The wipe claims in src/api.rs are therefore about optimized builds. Reproducer:
+# of secrets in dead stack frames at opt-level 0; all 24 pass in release; at dev opt-level 1 macOS passes all 28 tests and Linux 26
+# (keygen 44/65 fail). The wipe claims in src/api.rs are therefore about optimized builds. Reproducer:
 # cargo test --features zeroize --test zeroize stack_residue
 #
 # "nearcore-*" steps reproduce nearcore's release build as read at nearcore cd5a94457: toolchain 1.95.0

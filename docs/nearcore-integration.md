@@ -168,8 +168,8 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   Our stack figures are measured for release and for opt-level 0, not for 1. The `zeroize` feature's stack-residue tests
   (`tests/zeroize.rs`: 24 scan tests, eight per parameter set) pass in release (24 of 24) and at opt-level 0 fail for 21 of
   the 24 (everything except `signing_key_*`), finding copies of secrets in dead stack frames (Z-1 in `docs/assurance.md` §7).
-  Run with `CARGO_PROFILE_DEV_OPT_LEVEL=1` (the whole crate and test at opt-level 1, which approximates case 1) all 28 tests
-  of the file passed in one run on a Linux x86_64 machine and on an aarch64 macOS machine. `scripts/ci.sh` runs the 3 scans
+  Run with `CARGO_PROFILE_DEV_OPT_LEVEL=1` (the whole crate and test at opt-level 1, which approximates case 1) 26 of the 28 tests
+  of the file passed on a Linux x86_64 machine (`keygen_44` and `keygen_65` fail) and all 28 on an aarch64 macOS machine. `scripts/ci.sh` runs the 3 scans
   that pass at opt-level 0 in `test-zeroize` and all 24 in release (`test-zeroize-release`, and `nearcore-test-zeroize` under
   nearcore's profile). So the wipe behavior documented in `src/api.rs` should be read as a property of optimized builds on
   the measured toolchain; drop and the explicit wipes (`signing_key_*` drop, `Shake::wipe`, the decoded-key wipes) are not

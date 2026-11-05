@@ -354,8 +354,9 @@ and `bench/compare.sh` ([reproduce.md](reproduce.md)).
   parameter set: `keygen`, `pk_from_sk`, `signing_key`, `sign`, `sign_prepared` and one Sign attempt each rejected early,
   rejected late and accepted) and four wipe tests (drop wipe per set, SHAKE wipe), 28 tests in all. At opt-level 0, 21 of the 24
   scans find copies of secrets in dead stack frames (K, s1, s2, ŝ1, t0, y or the values derived from it); `signing_key` passes
-  for all three sets. At dev opt-level 1 (the whole crate and test at opt-level 1) all 28 passed in one run on a Linux x86_64
-  machine and on an aarch64 macOS machine. Release passes 28 of 28 on both machines. The stack-residue claims in `src/api.rs`
+  for all three sets. At dev opt-level 1 (the whole crate and test at opt-level 1) 26 of 28 pass on a Linux x86_64 machine (`keygen_44` and
+  `keygen_65` fail, as before; results at opt-level 1 moved with code layout during this work) and 28 of 28 on an aarch64 macOS
+  machine. Release passes 28 of 28 on both machines. The stack-residue claims in `src/api.rs`
   hold for optimized builds only; drop and explicit wipes are unaffected. A copy vendored as a workspace member would build at
   opt-level 0 in a dev profile. Open: add wipes at those locals, or keep the scope. `scripts/ci.sh` runs the 3 passing scans at
   opt-level 0 and all 24 in release and under the nearcore profile. Not wiped by design, as documented in `src/api.rs`: moves

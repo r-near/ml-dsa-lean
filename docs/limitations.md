@@ -70,8 +70,8 @@ Tests are evidence, not proofs.
 
 The full list is [assurance.md](assurance.md) section 7.
 
-- **`zeroize`:** stack-residue wiping holds for optimized builds (release; also dev opt-level 1 in one run per machine).
-  The stack-residue scans fail at opt-level 0, except `signing_key_*` (Z-1, open). Sign wipes the mask y and the other
+- **`zeroize`:** stack-residue wiping holds for optimized builds (release). The stack-residue scans fail at opt-level 0, except
+  `signing_key_*`, and `keygen_44`/`keygen_65` fail at opt-level 1 on Linux (Z-1, open). Sign wipes the mask y and the other
   per-attempt secrets on every exit of an attempt (`src/api.rs` module docs). Not wiped by design: moves of returned
   structs, the signature (z, c̃, h of the accepted attempt), one copy of K and t0 in KeyGen, and anything skipped by a panic
   or `mem::forget`.

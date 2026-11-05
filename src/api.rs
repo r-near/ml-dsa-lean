@@ -59,7 +59,7 @@
 //! fail: 21 of the 24 stack-residue scan tests find copies in dead frames (everything except `signing_key_*`, which
 //! passes for all three sets). The exact counts are for one Linux x86_64 machine and one aarch64 macOS machine. At dev
 //! opt-level 1 (the whole crate and test built at opt-level 1, not the per-package override of a downstream workspace)
-//! all 28 tests of `tests/zeroize.rs` passed in one run on each of the two machines. The drop wipe and the explicit wipes are not affected: their
+//! 28 of 28 tests of `tests/zeroize.rs` passed on macOS and 26 of 28 on Linux (`keygen_44`, `keygen_65` fail). The drop wipe and the explicit wipes are not affected: their
 //! tests (`signing_key_drop_wipes`, `shake_wipe_zeroes_the_sponge`) pass at opt-level 0 and in release. What remains:
 //!
 //! - Copies the compiler makes when it moves a returned value are in the caller's frame and are the caller's concern:

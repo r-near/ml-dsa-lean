@@ -221,17 +221,17 @@ fn attempt<const K: usize, const L: usize>(
     // 16–17: c ← SampleInBall(c̃); ĉ ← NTT(c)
     #[cfg(not(feature = "zeroize"))]
     let c_hat = ntt(&sample_in_ball(p, &c_tilde[..p.c_tilde_len]));
+    // With `zeroize`, ĉ is transformed where it lies (`ntt_in_place`), in this function's own frame: a block that
+    // returned it would leave a second copy behind. The untransformed c is wiped, and a by-value NTT result is avoided
+    // for the same reason.
     #[cfg(feature = "zeroize")]
-    let mut c_hat = {
-        // ĉ is transformed where it lies (`ntt_in_place`) so that no by-value result is left in a dead frame, and the
-        // untransformed c is wiped.
-        use zeroize::Zeroize;
-        let mut c = sample_in_ball(p, &c_tilde[..p.c_tilde_len]);
-        let mut c_hat = c;
-        c.zeroize();
-        ntt_in_place(&mut c_hat);
-        c_hat
-    };
+    let mut c = sample_in_ball(p, &c_tilde[..p.c_tilde_len]);
+    #[cfg(feature = "zeroize")]
+    let mut c_hat = c;
+    #[cfg(feature = "zeroize")]
+    zeroize::Zeroize::zeroize(&mut c);
+    #[cfg(feature = "zeroize")]
+    ntt_in_place(&mut c_hat);
     // 18–21: z, w − ⟨⟨cs2⟩⟩, r0
     #[cfg(not(feature = "zeroize"))]
     let (z, w_cs2, r0) = response::<K, L>(p, &y, &c_hat, s1_hat, s2_hat, &w);
