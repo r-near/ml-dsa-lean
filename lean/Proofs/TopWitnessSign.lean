@@ -170,7 +170,7 @@ theorem respond_lit : (Sign.respond Spec.ML_DSA_44 P0 Yv Wv Cp).isSome = true :=
     decide +kernel
   rw [Sign.respond_eq, e1, hs1, hs2, ht0, cs1_lit, cs2_lit, ct0_lit, if_neg (not_or.2 ⟨hA, hB⟩),
     if_neg (not_or.2 ⟨hC, hD⟩)]
-  try rfl
+  rfl
 
 theorem attempt_eq_of (sp : Spec.Params) (F : Spec.Fuel) (P : Sign.Pre sp) (κ : Nat) (c : RPoly)
     (zh : Vector Poly sp.ℓ × Vector HintPoly sp.k)
