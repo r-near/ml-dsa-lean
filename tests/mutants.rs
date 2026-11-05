@@ -5,6 +5,9 @@
 //! * HintBitUnpack rejects a row count byte greater than omega (mutant: that check dropped).
 //! * Verify rejects a signature whose z has ||z||_inf exactly gamma1 - beta (mutant: `<` became `<=`). Every
 //!   other check of that signature passes, so only the norm comparison can reject it.
+//! * Sign's loop guard allows the attempt at the largest κ whose nonces κ, …, κ + ℓ − 1 fit in 16 bits (mutant: the guard
+//!   `kappa + ℓ - 1 <= 0xFFFF` became `<`, which skips ML-DSA-44's last attempt at κ = 65532). That attempt is reached
+//!   only after thousands of rejections, so the test pins the guard itself, `sign::more_attempts`, which the loop calls.
 //! * Verify rejects a flipped last byte of c-tilde. NOTE: this does NOT kill the `prefix_eq` off-by-one mutant
 //!   (see the comment on that test); it is kept as a plain regression test.
 use ml_dsa_lean::encode::{hint_bit_unpack, sig_decode, sk_decode};
@@ -15,7 +18,7 @@ use ml_dsa_lean::ntt::{matrix_vector_ntt, ntt, ntt_inverse, ntt_vec};
 use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params, pk_len, sig_len, sk_len};
 use ml_dsa_lean::rounding::{infinity_norm, make_hint, poly_high_bits, poly_low_bits, vec_infinity_norm};
 use ml_dsa_lean::sampling::{expand_a, expand_mask, sample_in_ball};
-use ml_dsa_lean::sign::sign_internal;
+use ml_dsa_lean::sign::{more_attempts, sign_internal};
 use ml_dsa_lean::verify::verify_internal;
 
 /// Dispatch a generic-over-(K, L) function on the parameter set.
@@ -357,4 +360,36 @@ fn verify_rejects_z_norm_exactly_gamma1_minus_beta() {
 fn z_norm_of_sig<const K: usize, const L: usize>(p: &Params, sig: &[u8]) -> u32 {
     let (_, z, _) = sig_decode::<K, L>(p, sig).expect("decodes");
     vec_infinity_norm(&z)
+}
+
+/// The κ values the signing loop visits, by running the loop on its guard alone, for L = `L`: the count is
+/// ⌊(2¹⁶ − ℓ)/ℓ⌋ + 1 (`kappaBudget` in the Lean spec), and the last one is the largest multiple of ℓ whose ExpandMask
+/// nonces κ, …, κ + ℓ − 1 are all below 2¹⁶. A guard that is one too strict (`<` for `<=`) stops one attempt early; one
+/// too lax would visit κ = 2¹⁶ − ℓ + 1 or more and ExpandMask's 16-bit nonce would wrap.
+fn guard_boundary<const L: usize>() {
+    let l = L as u32;
+    let mut kappa = 0u32;
+    let mut visited = 0u32;
+    let mut last = 0u32;
+    while more_attempts::<L>(kappa) {
+        last = kappa;
+        visited += 1;
+        kappa += l;
+    }
+    assert_eq!(visited, (65536 - l) / l + 1, "L = {L}: number of attempts the guard allows");
+    // The last allowed attempt uses nonces up to 0xFFFF at most, and the next one would not fit.
+    assert!(last + l - 1 <= 0xFFFF, "L = {L}: the last attempt at {last} overflows the 16-bit nonce");
+    assert!(last + 2 * l - 1 > 0xFFFF, "L = {L}: the guard stopped early, the attempt at {} was skipped", last + l);
+    // Exact boundary, from both sides.
+    assert!(more_attempts::<L>(65536 - l), "L = {L}: kappa = 65536 - L must be allowed");
+    assert!(!more_attempts::<L>(65536 - l + 1), "L = {L}: kappa = 65536 - L + 1 must not be allowed");
+}
+
+#[test]
+fn sign_loop_guard_allows_the_last_attempt() {
+    guard_boundary::<4>(); // ML-DSA-44: the last attempt is at κ = 65532, nonces 65532 … 65535
+    guard_boundary::<5>(); // ML-DSA-65: κ = 65530
+    guard_boundary::<7>(); // ML-DSA-87: κ = 65527
+    assert!(more_attempts::<4>(65532));
+    assert!(!more_attempts::<4>(65536));
 }
