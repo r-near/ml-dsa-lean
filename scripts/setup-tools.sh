@@ -8,10 +8,13 @@
 # Every download is from a tagged release URL and checked against a sha256 recorded below; the script stops on a
 # mismatch. Tools that are already installed are checked against the same pins and reinstalled (and checked again) if
 # they differ, so a stale or modified cache is not trusted:
-#   cargo-hax    release tarball sha256 and the sha256 of the installed binary.
-#   Aeneas, Charon, charon-driver
+#   cargo-hax    release tarball sha256, and the sha256 and execute bit of the installed binary.
+#   Aeneas, Charon
 #                installed by `cargo hax tools install`, which also checks the release tarballs against sha256 values built
-#                into cargo-hax; the sha256 of each installed binary is checked here, so the cache is verified on every run.
+#                into cargo-hax. cargo-hax runs whichever executable a tool directory's hax-metadata.toml names, so the
+#                whole directory is pinned: a digest over every file in it (path, content, execute bit; symlinks are
+#                refused) is checked on every run, and the aeneas, charon and charon-driver executables must have the
+#                execute bit and run.
 #   elan         release tarball sha256 (the same release and hash as .github/actions/setup-lean/action.yml).
 #   Rust nightly, Lean toolchain
 #                downloaded by rustup and elan, which do their own verification; this script pins the version and checks
@@ -24,27 +27,32 @@ CARGO_HAX_TAR_SHA256=64b15097c003919075c7e8cca845db0e29718c0683596b739677b159ceb
 CARGO_HAX_BIN_SHA256=00e050b4d79bce928ca2b4286113db8b4bd486090a15d8afbc9368d0883e8504
 AENEAS_TAG=build-183e4f0
 CHARON_TAG=nightly-2026.09.02
-# sha256 of the installed binaries. For reference, the release tarballs they come from:
+# Digests of the installed tool directories (`python3 scripts/extract_hash.py tree-sha256 DIR`). For reference, the release
+# tarballs they come from:
 #   cryspen/aeneas build-183e4f0 aeneas-linux-x86_64.tar.gz                9d3670021746fa911f7e6d767c521e521d03c3bf51cec0176a18f3f06faea44d
 #   AeneasVerif/charon nightly-2026.09.02 charon-linux-x86_64.tar.gz       a812bad35e0934a6d2b8daf5d5d674037a18d6cc27638b426911128b445fbc5d
-AENEAS_BIN_SHA256=a3e9ad3ac06ea50c1b66862ed8434ec431baf1b77498fa93871d073263a32044
-CHARON_BIN_SHA256=60ac6a5c4bf9151f0d6db961009268b91ea445e3a5c93bdb8dbfe5b48da36ebc
-CHARON_DRIVER_BIN_SHA256=1197ae18c6b5231ccd5bc2cfa91cb763c3bb69e83f2e4b8b310627488f0cb571
+AENEAS_TREE_SHA256=1a73e276eec19435a7cf702e827ce8f83f182b47c253847abe7609e630b74495
+CHARON_TREE_SHA256=4458becd11153873f1e131d8e60492ff60c822f5193ce4cf9c3a3c78b83a0b0e
 ELAN_VERSION=v4.2.4
 ELAN_TAR_SHA256=42b94d4244e8353142c456ec0e4ca6528fd898a6c604d4059f494e706e431f63
 NIGHTLY=nightly-2026-08-18
 LEAN_TOOLCHAIN=leanprover/lean4:v4.31.0
 
-for c in curl zstd tar sha256sum rustup; do
+for c in curl zstd tar sha256sum rustup python3; do
   command -v "$c" >/dev/null || { echo "setup-tools.sh: $c is required and was not found on PATH" >&2; exit 1; }
 done
 
+HERE="$(cd "$(dirname "$0")" && pwd)"
 T="${ML_DSA_TOOLS:-$HOME/hax-tools}"
 mkdir -p "$T/bin" "$T/cache" "$T/pin/src"
 
 sha256_of() { sha256sum "$1" | cut -d' ' -f1; }
 # has_sha256 FILE SHA256: succeeds if FILE exists and has that hash.
 has_sha256() { [ -f "$1" ] && [ "$(sha256_of "$1")" = "$2" ]; }
+# has_exec_sha256 FILE SHA256: the same, and FILE is executable.
+has_exec_sha256() { has_sha256 "$1" "$2" && [ -x "$1" ]; }
+# tree_ok DIR SHA256: succeeds if DIR holds exactly the files with the recorded digest (no symlinks).
+tree_ok() { [ "$(python3 -I "$HERE/extract_hash.py" tree-sha256 "$1" 2>/dev/null)" = "$2" ]; }
 # fetch_verified URL SHA256 OUT: download URL to OUT; delete OUT and stop if the hash differs.
 fetch_verified() {
   curl -fsSL --retry 3 -o "$3" "$1"
@@ -56,7 +64,7 @@ fetch_verified() {
 }
 
 # cargo-hax
-if ! has_sha256 "$T/bin/cargo-hax" "$CARGO_HAX_BIN_SHA256"; then
+if ! has_exec_sha256 "$T/bin/cargo-hax" "$CARGO_HAX_BIN_SHA256"; then
   [ -e "$T/bin/cargo-hax" ] && echo "cargo-hax in $T/bin does not match the pin; reinstalling it"
   tmp="$(mktemp -d "$T/dl.XXXXXX")"
   fetch_verified "$CARGO_HAX_URL" "$CARGO_HAX_TAR_SHA256" "$tmp/cargo-hax.tar.zst"
@@ -90,15 +98,14 @@ TOML
 AENEAS_DIR="$T/cache/hax/tools/aeneas/$AENEAS_TAG"
 CHARON_DIR="$T/cache/hax/tools/charon/$CHARON_TAG"
 tools_ok() {
-  has_sha256 "$AENEAS_DIR/aeneas" "$AENEAS_BIN_SHA256" &&
-  has_sha256 "$CHARON_DIR/charon" "$CHARON_BIN_SHA256" &&
-  has_sha256 "$CHARON_DIR/charon-driver" "$CHARON_DRIVER_BIN_SHA256"
+  tree_ok "$AENEAS_DIR" "$AENEAS_TREE_SHA256" && tree_ok "$CHARON_DIR" "$CHARON_TREE_SHA256" &&
+  [ -x "$AENEAS_DIR/aeneas" ] && [ -x "$CHARON_DIR/charon" ] && [ -x "$CHARON_DIR/charon-driver" ]
 }
 if ! tools_ok; then
   [ -e "$AENEAS_DIR" ] || [ -e "$CHARON_DIR" ] && echo "Aeneas or Charon in $T/cache does not match the pins; reinstalling them"
   rm -rf "$AENEAS_DIR" "$CHARON_DIR"
   (cd "$T/pin" && PATH="$T/bin:$PATH" XDG_CACHE_HOME="$T/cache" cargo hax tools install)
-  tools_ok || { echo "setup-tools.sh: installed Aeneas/Charon binaries do not match the pinned sha256 values" >&2; exit 1; }
+  tools_ok || { echo "setup-tools.sh: installed Aeneas/Charon directories do not match the pinned digests" >&2; exit 1; }
 fi
 
 # Miri sysroot for `--cfg miri` extraction (x86_64 Linux).
@@ -128,5 +135,8 @@ case "$lean_version" in
   *) echo "setup-tools.sh: expected Lean ${LEAN_TOOLCHAIN##*:v}, got: $lean_version" >&2; exit 1 ;;
 esac
 
-"$T/bin/cargo-hax" hax --version || true
+# Every tool must run; a failure here stops the script (set -e).
+"$T/bin/cargo-hax" hax --version
+"$CHARON_DIR/charon" version
+"$AENEAS_DIR/aeneas" -help >/dev/null
 echo SETUP-OK
