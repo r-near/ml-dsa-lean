@@ -8,7 +8,8 @@ Usage: scripts/extract.py [--src DIR] [--roots FILE] [--work DIR] [--out DIR]
            temporary directory outside the checkout, so no ancestor .cargo/config.toml applies
   --out    destination for Types.lean/Funs.lean/FunsExternal*.lean/extract-report.json (default: lean/Impl)
 
-Records extract_inputs_sha256 (digest of src/, Cargo.toml without dev-dependencies, the roots and the tool pins) and impl_sha256
+Records extract_inputs_sha256 (digest of src/, Cargo.toml without dev-dependencies and with the package version
+normalized to 0.0.0, the roots and the tool pins) and impl_sha256
 (hash of each file written to --out) in extract-report.json; the `extract-hash` step of scripts/ci.sh
 (scripts/extract_hash.py) fails if either no longer matches the tree. --out must be absent or hold only files this script writes (no
 symlinks, no other files): it is not emptied. To compare with the committed directory, extract into a new empty one.
@@ -58,7 +59,7 @@ if api.exists():
 if work.exists():
     shutil.rmtree(work)
 work.mkdir(parents=True)
-# Stage exactly the extraction inputs (src/, Cargo.toml without dev-dependencies, hax.toml) with the code scripts/ci.sh
+# Stage exactly the extraction inputs (src/, Cargo.toml without dev-dependencies and with the version normalized, hax.toml) with the code scripts/ci.sh
 # uses to check the recorded digest; a symlink under src/ is an error. The crate goes into a fresh temporary directory
 # outside the checkout so that Cargo does not read a .cargo/config.toml from an ancestor directory.
 crate = Path(tempfile.mkdtemp(prefix='ml-dsa-extract-'))

@@ -35,7 +35,7 @@ What ties the shipped Rust to the proved Lean (the proofs are about `lean/Impl`,
 
 - Every push and pull request (`ci.yml`, job `repo-checks`, steps `extract-hash` and `axiom-gate-selftest` of `scripts/ci.sh`):
   `extract-hash` fails if the digest of the extraction inputs (every file under `src/`, `Cargo.toml` without its
-  dev-dependencies, the roots, the Charon and Aeneas pins; file names are part of the digest), the set and contents of the files in
+  dev-dependencies and with its package `version` replaced by `0.0.0` (so a release version bump does not change the digest), the roots, the Charon and Aeneas pins; file names are part of the digest), the set and contents of the files in
   `lean/Impl` (recursively), or the roots in `scripts/extract-roots.txt` no longer match what `lean/Impl/extract-report.json`
   recorded at the last extraction (`scripts/extract_hash.py`, shared with `scripts/extract.py`), or if there is a symlink under
   `src/` or `lean/Impl`, a build script, an `env!`/`include!`-style macro in `src/`, a root `.cargo` directory or toolchain

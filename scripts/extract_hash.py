@@ -13,8 +13,15 @@ Usage: python3 -I scripts/extract_hash.py check                     compare the 
 
 extract_inputs_sha256 is the sha256 of a manifest with one line per file of the staged crate, `sha256  relative/path`,
 sorted by path. The staged crate is what Charon sees: every file under src/ (any extension, since include_str! and the
-like can read them), Cargo.toml without its [dev-dependencies] section, and the generated hax.toml (which carries the
-extraction roots and the Charon and Aeneas pins). A symlink or other special file under src/ is an error.
+like can read them), Cargo.toml without its [dev-dependencies] section and with the `[package]` version replaced by the
+placeholder `0.0.0`, and the generated hax.toml (which carries the extraction roots and the Charon and Aeneas pins). A
+symlink or other special file under src/ is an error.
+
+The version is normalized so that a release (release-plz bumps `version` in Cargo.toml) does not move the digest or
+force a re-extraction: the version string cannot change the extracted code (src/ cannot read it, since env! is refused
+below), and the staged crate Charon sees carries the same placeholder. Only the single `version = "..."` key of the
+`[package]` table is replaced; `rust-version`, dependency versions and every other line are digested as they are. A
+Cargo.toml without exactly one such line is an error.
 
 `check` fails (exit 1) if
   - the digest of the extraction inputs now differs from the one in the report,
@@ -145,9 +152,28 @@ env = {{ RUSTFLAGS = "--cfg miri" }}
 '''
 
 
+PACKAGE_TABLE = re.compile(r'(?ms)^\[package\]\n.*?(?=^\[|\Z)')
+PACKAGE_VERSION = re.compile(r'(?m)^version[ \t]*=[ \t]*"[^"\n]*"[ \t]*$')
+VERSION_PLACEHOLDER = '0.0.0'
+
+
+def normalize_version(cargo_text):
+    """CARGO_TEXT with the `version = "..."` line of the `[package]` table replaced by `version = "0.0.0"`, so a release
+    bump does not change the staged Cargo.toml. Only that one key is touched (`rust-version`, dependency versions and
+    everything else stay). Raises ValueError unless the file has exactly one [package] table with exactly one such line."""
+    tables = PACKAGE_TABLE.findall(cargo_text)
+    if len(tables) != 1:
+        raise ValueError(f'Cargo.toml has {len(tables)} [package] tables, expected 1')
+    table = tables[0]
+    if len(PACKAGE_VERSION.findall(table)) != 1:
+        raise ValueError('the [package] table of Cargo.toml needs exactly one `version = "..."` line')
+    return cargo_text.replace(table, PACKAGE_VERSION.sub(f'version = "{VERSION_PLACEHOLDER}"', table), 1)
+
+
 def stage_crate(repo, roots, dest):
     """Write the extraction inputs of the crate at REPO into the new directory DEST: src/ (regular files only),
-    Cargo.toml without [dev-dependencies] (a test-only oracle), and hax.toml. Returns the digest of what was written.
+    Cargo.toml without [dev-dependencies] (a test-only oracle) and with the package version normalized to 0.0.0, and
+    hax.toml. Returns the digest of what was written.
     Raises ValueError if src/ contains a symlink or special file or is missing."""
     repo, dest = Path(repo), Path(dest)
     src_files, problems = walk_files(repo / 'src')
@@ -170,6 +196,7 @@ def stage_crate(repo, roots, dest):
         raise ValueError('Cargo.toml is a symlink')
     cargo = cargo_text
     cargo = re.sub(r'(?ms)^\[dev-dependencies\]\n.*?(?=^\[|\Z)', '', cargo)
+    cargo = normalize_version(cargo)
     (dest / 'Cargo.toml').write_text(cargo)
     (dest / 'hax.toml').write_text(hax_toml(roots))
     return inputs_sha256(dest)

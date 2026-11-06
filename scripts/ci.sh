@@ -23,7 +23,8 @@
 # fuzz-<target> (one per target in fuzz/fuzz_targets), deny, extract-hash, axiom-gate-selftest, lean.
 #
 # extract-hash and axiom-gate-selftest need no Rust and no Lean:
-#   extract-hash          fails if the extraction inputs (every file under src/, Cargo.toml, the roots, the tool pins), any file
+#   extract-hash          fails if the extraction inputs (every file under src/, Cargo.toml with its package version normalized
+#                         to 0.0.0 so a release bump does not count, the roots, the tool pins), any file
 #                         under lean/Impl (recursively) or scripts/extract-roots.txt no longer match what
 #                         lean/Impl/extract-report.json recorded at the last extraction, or if there is a symlink in them
 #                         (scripts/extract_hash.py; the thorough check, re-running the extraction into an empty directory

@@ -116,7 +116,7 @@ whole Aeneas and Charon tool directories (cargo-hax runs the executables that `h
 counts, and the execute bit) against recorded digests, reinstalling if they differ, and runs each tool. `scripts/extract.py` exits nonzero on
 any gate failure (an Aeneas error or warning, a local opaque function, a referenced external axiom, an `api` function missing
 from `scripts/extract-roots.txt`) and writes into `lean/Impl` only on success. `lean/Impl/extract-report.json` records a
-digest of the extraction inputs (every file under `src/` with its name, `Cargo.toml` without `[dev-dependencies]`, the roots and
+digest of the extraction inputs (every file under `src/` with its name, `Cargo.toml` without `[dev-dependencies]` and with its package `version` replaced by `0.0.0`, the roots and
 the tool pins) and the SHA-256 of each file in `lean/Impl`; `bash scripts/ci.sh --only extract-hash` compares them with the
 tree (no tools needed) and rejects symlinks, so a changed input or a hand-edited or added file in `lean/Impl` without a new
 extraction fails it. Someone who edits `lean/Impl` and the report together passes that check; `.github/workflows/lean.yml`
