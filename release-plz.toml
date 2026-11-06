@@ -9,11 +9,15 @@
 release = false
 publish = false
 # Run cargo-semver-checks against the version on crates.io when proposing a version. It works on this crate (checked
-# with release-plz 0.4.2 and cargo-semver-checks 0.51.0; about 3 s). It only sees the default features, so the public
-# `api` module is covered, and the `internals`, `zeroize` and `avx2` features are not. For 0.x versions it turns an
-# API-breaking change into a minor bump instead of a patch bump, which keeps the version honest even when a commit
-# message does not say "breaking".
+# with release-plz 0.4.2 and cargo-semver-checks 0.51.0; about 3 s). release-plz does not pass --default-features, so
+# cargo-semver-checks picks the features by its own heuristic, which here enables `internals`, `zeroize` and `avx2` as
+# well: a change to an item that only `internals` exposes can turn a patch bump into a minor bump. For 0.x versions an
+# API-breaking change becomes a minor bump instead of a patch bump, even when no commit message says "breaking".
 semver_check = true
+# Publish only when a release pull request is merged, not on any push to main whose version is not yet on crates.io.
+# With the default (true), a release PR merge followed quickly by another push to main gives two release runs for the
+# same new version, and the later one can win and publish the extra commits under that version.
+release_always = false
 
 [[package]]
 name = "ml-dsa-lean"

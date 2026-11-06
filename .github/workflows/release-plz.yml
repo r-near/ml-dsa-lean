@@ -75,10 +75,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Publishes to crates.io, tags the release commit and creates the GitHub release. Does nothing when the version in
-  # Cargo.toml is already on crates.io, so it is a no-op on every push except the merge of a release pull request.
+  # Publishes to crates.io, tags the release commit and creates the GitHub release. With `release_always = false` in
+  # release-plz.toml it only publishes when the pushed commit comes from a merged release pull request (found through the
+  # GitHub API, hence `pull-requests: read`), so it is a no-op on every other push.
   # Deliberately without a `concurrency` block: GitHub cancels a pending run when a newer one arrives, and a cancelled run
-  # could be the one that was due to release. Runs queue behind each other on the registry instead.
+  # could be the one that was due to release. Parallel runs are harmless because only the run for the release pull
+  # request's merge commit publishes, and crates.io refuses a second upload of the same version.
   release:
     name: release
     if: github.repository == 'r-near/ml-dsa-lean'
