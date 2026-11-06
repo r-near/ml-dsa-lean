@@ -53,7 +53,8 @@ found and fixed. The limits:
   51 unknown, including the NTT, `hint_step`, `response`, `compute_t`, `prepare_sk` and `signing_key`). The same flags with
   the vectorizers off get a verdict for every probe, but that is a different binary. The AVX2 copy has no verdict either.
 - AArch64 builds with NEON, and therefore macOS and Apple Silicon builds, have no BINSEC coverage.
-- Some probes on other targets and the whole-Sign censuses have no verdict.
+- Some probes on other targets (riscv32imac `prepare_sk_*`, AArch64 `prepare_sk_*` and `signing_key_*`) and the whole-Sign
+  censuses have no verdict.
 
 Per-target counts: [assurance.md](assurance.md) section 4 and `../checkct/README.md`.
 

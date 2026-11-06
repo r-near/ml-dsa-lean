@@ -105,8 +105,9 @@ disclosure only.
   (`compute_t_44`, `prepare_sk_*`, `signing_key_*`, the censuses) end `unknown` with one pending path, and the
   visited-instruction count is identical at 300, 600, 3600 and 7200 s. `compute_t_44` finished `secure` on the older
   NTT code shape. It looks like one solver query that never returns. Possible report: a reproducer with the probe's
-  BINSEC script and binary, and whether a solver timeout option exists. Evidence: `checkct/README.md` "Full sweep at
-  e9a1c74". Status: open (needs a minimal reproducer).
+  BINSEC script and binary, and whether a solver timeout option exists. Unchanged in the sweeps at 15b4ce2 and 1a72d9e; at
+  1a72d9e the same kind of stall (one pending path at a store in `ntt_body_mut`) also ended riscv32imac `prepare_sk_{44,65,87}`
+  as `unknown`. Evidence: `checkct/README.md` "Full sweep at 1a72d9e". Status: open (needs a minimal reproducer).
 - **U-43 (2026-11-03): cargo-checkct drops `RUSTUP_TOOLCHAIN`.** It clears the variable before building the driver
   (`src/run.rs:263` in the version we use), so a toolchain override through the environment is silently ignored and
   the driver is built with the directory's pinned toolchain. Workaround: select the toolchain with a
@@ -114,9 +115,9 @@ disclosure only.
   Status: open (behavior report).
 - **U-44 (2026-11-03, widened 2026-11-04): BINSEC 0.11.3 can't lift x86_64 VEX instructions.** With nearcore's target
   features (`+fma` implies AVX), LLVM emits VEX forms and BINSEC stops there (`unknown`, "Cut path (uninterpreted
-  KO)", 0 pending paths). Seen: `vtestps` (rewrite experiments), and in the sweep at 15b4ce2 `vinsertps`, `vblendvps`
+  KO)", 0 pending paths). Seen: `vtestps` (rewrite experiments), and in the sweeps at 15b4ce2 and 1a72d9e `vinsertps`, `vblendvps`
   (128-bit) and `vblendps` on `ymm`, which cut 48 of 113 probes under `nearcore-exact`. Same class as U-40. Evidence:
-  `checkct/README.md` (section "Full sweep at 15b4ce2"), `checkct/results/sweep-15b4ce2/`. Status: open.
+  `checkct/README.md` (section "Full sweep at 1a72d9e"), `checkct/results/sweep-1a72d9e/` (and `sweep-15b4ce2/`). Status: open.
 - **U-45 (2026-11-03): BINSEC stalls at overflow-check guards on secret values.** With `overflow-checks = true`, 67
   probes end `unknown` at a conditional jump to the panic thunk after `a + Q - b`, a Montgomery step and similar
   (`checkct/README.md`, stop table). The guards are never taken for in-range inputs, but the analysis does not get

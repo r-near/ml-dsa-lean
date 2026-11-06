@@ -7,7 +7,8 @@ This page gives the commands. What cannot be re-run from here:
   not committed. Only the regression tests it led to (`tests/mutants.rs`, the `prefix_eq` unit test in `src/verify.rs`) are.
 - The notes of the third internal review of `lean/Spec` against the FIPS PDFs (assurance.md, section 1.8): they are not committed.
   The Lean tests, the VCVio differential and the other cross-checks it relied on can be re-run (section 2.4).
-- Earlier logs and notes. The raw results of the latest constant-time sweep (`checkct/results/sweep-15b4ce2/`) and the
+- Earlier logs and notes. The raw results of the latest constant-time sweep (`checkct/results/sweep-1a72d9e/`), of the one before it
+  (`sweep-15b4ce2/`, the baseline of the comparison in `checkct/README.md`) and the
   `nearcore-exact` stage logs that assurance.md cites are kept. The raw logs of older sweeps (for example e9a1c74, whose results
   fill the cells marked "not rerun"), the progress trackers, the benchmark baseline notes and the experiment directories
   were deleted before release, so statements that only they supported can be re-measured but not re-read.
@@ -164,22 +165,22 @@ These need Linux and Docker. The image builds BINSEC and the Rust toolchains (ab
 docker build -t ct-binsec checkct
 ```
 
-The recorded sweep (`checkct/results/sweep-15b4ce2/`) was not produced with `checkct/run.sh`: `run.sh` starts one BINSEC job per
+The recorded sweep (`checkct/results/sweep-1a72d9e/`) was not produced with `checkct/run.sh`: `run.sh` starts one BINSEC job per
 CPU, which does not fit in a 64 GB container. It used `checkct/run-select.sh` with `ONLY=.`, one container per target and
-profile (the settings are in `checkct/README.md`, "Full sweep at 15b4ce2"). For example, the x86_64 default profile:
+profile (the settings are in `checkct/README.md`, "Full sweep at 1a72d9e"). For example, the x86_64 default profile:
 
 ```sh
-ONLY=. EXCLUDE=census_sign TARGETS=x86_64-unknown-linux-gnu JOBS=8 TIMEOUT=3600 CT_MEMORY=64g \
+ONLY=. EXCLUDE=census_sign TARGETS=x86_64-unknown-linux-gnu JOBS=4 TIMEOUT=3600 CT_MEMORY=32g \
   NAME=ct-x86-default bash checkct/run-select.sh 2>&1 | tee sweep-x86-default.log
 ```
 
 For other profiles set `PROFILE=nearcore`, `dispatch`, `nearcore-dispatch`, `nearcore-exact`, `nearcore-exact-dispatch` or
-`nearcore-exact-novec` (the `nearcore-exact*` profiles are x86_64 only and used `TIMEOUT=600`); for thumbv7em and riscv32imac
-change `TARGETS`; AArch64 is `NONEON=1 ONLY=. TIMEOUT=3600 JOBS=8 bash checkct/aarch64.sh`. The two whole-Sign censuses ran
+`nearcore-exact-novec` (the `nearcore-exact*` profiles are x86_64 only and used `TIMEOUT=600`, `JOBS=8`, `CT_MEMORY=8g`); for thumbv7em and riscv32imac
+change `TARGETS`; AArch64 is `NONEON=1 ONLY=. EXCLUDE=census_sign TIMEOUT=3600 JOBS=4 CT_MEMORY=32g bash checkct/aarch64.sh`. The two whole-Sign censuses ran
 separately, one container each, because they need far more memory (`ONLY=census_sign JOBS=1 TIMEOUT=3600 CT_MEMORY=110g`, or
-`120g`; several do not finish even then). Memory guidance: about 64 GB per container with `JOBS=8` for the sweep probes (16 jobs
+`120g`; several do not finish even then). Memory guidance: about 32 GB per container with `JOBS=4` for the sweep probes (the earlier sweep used 64 GB with `JOBS=8`; 16 jobs
 in 64 GB got large probes killed); a probe killed at the cap shows only `error`, so check `journalctl -k -g 'Killed process'`;
-the sweep ran up to ten containers at once on a 60-core machine, so budget the host memory for the sum of the caps. Stopping a
+the sweep ran up to eight containers at once on one machine, so budget the host memory for the sum of the caps. Stopping a
 script does not stop its container (`docker kill NAME`). A quick check of a few probes is
 `ONLY='ct_select|field_mul' TIMEOUT=900 bash checkct/run-select.sh`; `checkct/run.sh` is the same thing for every probe but needs
 `JOBS` set to fit your memory.
