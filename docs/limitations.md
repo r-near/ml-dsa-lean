@@ -37,7 +37,7 @@ input.
   `forbid(unsafe_code)`.
 - **HashML-DSA and external μ are not implemented.**
 - **Constant time is not proved.** It is checked on compiled code with BINSEC (next section).
-- **Not audited by any third party, not FIPS-validated, and not a certified module.** Version 0.1.0.
+- **Not audited by any third party, not FIPS-validated, and not a certified module.**
 
 ## Constant time
 
