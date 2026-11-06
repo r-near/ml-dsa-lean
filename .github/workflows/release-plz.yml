@@ -1,0 +1,121 @@
+name: Release-plz
+
+# Automated releases with release-plz (https://release-plz.dev), configured in release-plz.toml. Two jobs:
+#   - release-pr  opens or updates a release pull request that bumps the version in Cargo.toml and Cargo.lock and updates
+#                 CHANGELOG.md.
+#   - release     after that pull request is merged, publishes the unpublished version to crates.io, then pushes the
+#                 v<version> git tag and creates the GitHub release.
+#
+# NO LONG-LIVED REGISTRY TOKEN
+#   Publishing uses crates.io trusted publishing (OIDC). The `release` job runs in the GitHub environment `release` and
+#   asks rust-lang/crates-io-auth-action for a short-lived crates.io token, which the action revokes when the job ends.
+#   The crates.io trusted-publisher entry for this crate names this exact workflow file (release-plz.yml) and the
+#   environment `release`; renaming either breaks publishing. There is no CARGO_REGISTRY_TOKEN secret. The `release-pr`
+#   job is outside the environment and cannot mint a crates.io token.
+#   (Upstream also supports skipping the auth action and giving the job only `id-token: write`; release-plz then does the
+#   same exchange itself. This workflow keeps the explicit action so the token step is visible and pinned.)
+#
+# THE RELEASE PULL REQUEST DOES NOT RUN CI AUTOMATICALLY
+#   Both jobs use the repository's GITHUB_TOKEN. GitHub does not start workflows for events caused by GITHUB_TOKEN, so
+#   ci.yml (and its required status check `ci-ok`) does not run on the release pull request. A maintainer has to push an
+#   empty commit to the release branch, or merge with an administrator bypass of the required check. No personal access
+#   token or GitHub App is used on purpose. The release pull request only changes the version string in Cargo.toml and
+#   Cargo.lock and CHANGELOG.md; scripts/extract_hash.py normalizes the version, so the extraction digest does not move.
+#
+# GITHUB SETTINGS THIS WORKFLOW NEEDS (not expressible in the file)
+#   - Settings > Actions > General > Workflow permissions: "Allow GitHub Actions to create and approve pull requests".
+#   - The environment `release` exists. The crates.io trusted-publisher entry matches this repository, this file name and
+#     that environment.
+#   - Tag v0.1.0 exists at the commit 0.1.0 was published from, so release-plz has a baseline for the changelog.
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTUP_MAX_RETRIES: "5"
+
+jobs:
+  # Opens or updates the release pull request.
+  release-pr:
+    name: release-pr
+    # Do not run in forks: they have no environment, no crates.io trust and nothing to release.
+    if: github.repository == 'r-near/ml-dsa-lean'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      # Push the release branch and its commits.
+      contents: write
+      # Create and update the release pull request.
+      pull-requests: write
+    # One run at a time per ref, so two pushes in quick succession cannot race on the release branch. Waiting runs are
+    # not cancelled (cancel-in-progress: false), as in the release-plz quickstart.
+    concurrency:
+      group: release-plz-pr-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history and the tags: release-plz compares the code since the last release and reads the commit
+          # messages for the changelog.
+          fetch-depth: 0
+          # release-plz authenticates its own pushes with GITHUB_TOKEN (set below), as in its quickstart, so the
+          # checkout does not need to leave a credential in .git/config.
+          persist-credentials: false
+
+      - name: Install the stable Rust toolchain
+        run: rustup toolchain install stable --profile minimal --no-self-update && rustup default stable
+
+      - name: Run release-plz release-pr
+        uses: release-plz/action@66b324fd6c72d05d2a08568492ecdd62bfb8a62b # v0.5.148
+        with:
+          command: release-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Publishes to crates.io, tags the release commit and creates the GitHub release. Does nothing when the version in
+  # Cargo.toml is already on crates.io, so it is a no-op on every push except the merge of a release pull request.
+  # Deliberately without a `concurrency` block: GitHub cancels a pending run when a newer one arrives, and a cancelled run
+  # could be the one that was due to release. Runs queue behind each other on the registry instead.
+  release:
+    name: release
+    if: github.repository == 'r-near/ml-dsa-lean'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # The environment the crates.io trusted publisher is bound to. Only this job uses it.
+    environment: release
+    permissions:
+      # Push the git tag and create the GitHub release.
+      contents: write
+      # Let release-plz find the release pull request and its commits (upstream's setting for this job).
+      pull-requests: read
+      # Request the OIDC token that crates-io-auth-action exchanges for a crates.io token.
+      id-token: write
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # release-plz releases from the latest commit of the release pull request, which needs the whole history.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install the stable Rust toolchain
+        run: rustup toolchain install stable --profile minimal --no-self-update && rustup default stable
+
+      # Exchanges the job's OIDC token for a short-lived crates.io token (trusted publishing). The action revokes the
+      # token in its post step when the job finishes.
+      - name: Authenticate to crates.io
+        id: crates-io-auth
+        uses: rust-lang/crates-io-auth-action@3268eb413133e2960fa4ae0e963ca76380c54cd9 # v1.0.6
+
+      - name: Run release-plz release
+        uses: release-plz/action@66b324fd6c72d05d2a08568492ecdd62bfb8a62b # v0.5.148
+        with:
+          command: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-io-auth.outputs.token }}

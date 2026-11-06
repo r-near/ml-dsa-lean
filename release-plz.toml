@@ -1,0 +1,25 @@
+# release-plz configuration (https://release-plz.dev/docs/config). Used by .github/workflows/release-plz.yml.
+#
+# Only the root package `ml-dsa-lean` is ever released. The root Cargo.toml has a `[workspace]` with no `members`, so the
+# workspace is just that package; bench/, fuzz/, crosscheck/ (and its fuzz/), checkct/ and tools/stack/ are separate
+# workspaces with `publish = false` that release-plz does not see. The workspace defaults below switch release and publish
+# off for anything else that might ever join the workspace, and the package entry switches them on for `ml-dsa-lean` only.
+
+[workspace]
+release = false
+publish = false
+# Run cargo-semver-checks against the version on crates.io when proposing a version. It works on this crate (checked
+# with release-plz 0.4.2 and cargo-semver-checks 0.51.0; about 3 s). It only sees the default features, so the public
+# `api` module is covered, and the `internals`, `zeroize` and `avx2` features are not. For 0.x versions it turns an
+# API-breaking change into a minor bump instead of a patch bump, which keeps the version honest even when a commit
+# message does not say "breaking".
+semver_check = true
+
+[[package]]
+name = "ml-dsa-lean"
+release = true
+publish = true
+# One package, so tags and GitHub releases are named v0.1.1, v0.2.0, ... (not ml-dsa-lean-v0.1.1).
+git_tag_name = "v{{ version }}"
+git_release_name = "v{{ version }}"
+changelog_path = "CHANGELOG.md"
