@@ -1,0 +1,9 @@
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_44  secure
+      last: 2350080 [sse:step] 0x8badf00c hook at (0x8badf00d ^ 1) 
+      stat: pending paths                    0
+      stat: branching points                 131499
+      stat: visited instructions (unrolled)  2350080
+      stat: [checkct:info] 136950 / 136950 control flow checks pass
+      stat: [checkct:info] 771273 / 771273 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass

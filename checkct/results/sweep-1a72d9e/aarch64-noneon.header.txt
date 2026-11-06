@@ -1,0 +1,6 @@
+
+warning: `driver` (bin "driver") generated 19 warnings
+    Finished `release` profile [optimized + debuginfo] target(s) in 22.00s
+sections: .rodata, .eh_frame_hdr, .eh_frame, .text
+no symbol for field_add
+selected 116 probes

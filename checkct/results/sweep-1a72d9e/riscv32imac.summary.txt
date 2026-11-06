@@ -1,0 +1,858 @@
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::extra::coeff_from_half_byte_eta2  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  69
+      stat: [checkct:info] 11 / 11 control flow checks pass
+      stat: [checkct:info] 11 / 11 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::coeff_from_half_byte_eta4  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  62
+      stat: [checkct:info] 11 / 11 control flow checks pass
+      stat: [checkct:info] 11 / 11 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_1x1  secure
+      stat: pending paths                    0
+      stat: branching points                 6951
+      stat: visited instructions (unrolled)  112364
+      stat: [checkct:info] 13147 / 13147 control flow checks pass
+      stat: [checkct:info] 20855 / 20855 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_44  secure
+      stat: pending paths                    0
+      stat: branching points                 64506
+      stat: visited instructions (unrolled)  776523
+      stat: [checkct:info] 114023 / 114023 control flow checks pass
+      stat: [checkct:info] 143298 / 143298 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_65  secure
+      stat: pending paths                    0
+      stat: branching points                 109414
+      stat: visited instructions (unrolled)  1270948
+      stat: [checkct:info] 193967 / 193967 control flow checks pass
+      stat: [checkct:info] 230534 / 230534 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_87  secure
+      stat: pending paths                    0
+      stat: branching points                 184286
+      stat: visited instructions (unrolled)  2096969
+      stat: [checkct:info] 330659 / 330659 control flow checks pass
+      stat: [checkct:info] 372115 / 372115 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::control_early_exit_44  insecure
+      0x01fbbc has control flow leak (0.045s)
+      stat: pending paths                    0
+      stat: branching points                 15020
+      stat: visited instructions (unrolled)  109829
+      stat: [checkct:info] 20167 / 20168 control flow checks pass
+      stat: [checkct:info] 38808 / 38808 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::extra::encode_sk_is_well_formed_44  secure
+      stat: pending paths                    0
+      stat: branching points                 23605
+      stat: visited instructions (unrolled)  133640
+      stat: [checkct:info] 33458 / 33458 control flow checks pass
+      stat: [checkct:info] 19344 / 19344 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::encode_sk_is_well_formed_65  secure
+      stat: pending paths                    0
+      stat: branching points                 31568
+      stat: visited instructions (unrolled)  179418
+      stat: [checkct:info] 41439 / 41439 control flow checks pass
+      stat: [checkct:info] 24646 / 24646 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::encode_sk_is_well_formed_87  secure
+      stat: pending paths                    0
+      stat: branching points                 40129
+      stat: visited instructions (unrolled)  227725
+      stat: [checkct:info] 50027 / 50027 control flow checks pass
+      stat: [checkct:info] 33344 / 33344 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::expand_mask_44  secure
+      stat: pending paths                    0
+      stat: branching points                 16941
+      stat: visited instructions (unrolled)  448406
+      stat: [checkct:info] 17172 / 17172 control flow checks pass
+      stat: [checkct:info] 158421 / 158421 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::expand_mask_65  secure
+      stat: pending paths                    0
+      stat: branching points                 22339
+      stat: visited instructions (unrolled)  568648
+      stat: [checkct:info] 22590 / 22590 control flow checks pass
+      stat: [checkct:info] 198804 / 198804 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::expand_mask_87  secure
+      stat: pending paths                    0
+      stat: branching points                 31207
+      stat: visited instructions (unrolled)  795690
+      stat: [checkct:info] 31498 / 31498 control flow checks pass
+      stat: [checkct:info] 278170 / 278170 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::keygen_seed_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 286
+      stat: visited instructions (unrolled)  19397
+      stat: [checkct:info] 374 / 374 control flow checks pass
+      stat: [checkct:info] 7895 / 7895 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_1x1  secure
+      stat: pending paths                    0
+      stat: branching points                 3107
+      stat: visited instructions (unrolled)  35921
+      stat: [checkct:info] 7233 / 7233 control flow checks pass
+      stat: [checkct:info] 6177 / 6177 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_44  secure
+      stat: pending paths                    0
+      stat: branching points                 43677
+      stat: visited instructions (unrolled)  446022
+      stat: [checkct:info] 84875 / 84875 control flow checks pass
+      stat: [checkct:info] 75146 / 75146 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_65  secure
+      stat: pending paths                    0
+      stat: branching points                 79330
+      stat: visited instructions (unrolled)  804368
+      stat: [checkct:info] 151421 / 151421 control flow checks pass
+      stat: [checkct:info] 134068 / 134068 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_87  secure
+      stat: pending paths                    0
+      stat: branching points                 143412
+      stat: visited instructions (unrolled)  1464052
+      stat: [checkct:info] 273169 / 273169 control flow checks pass
+      stat: [checkct:info] 241199 / 241199 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::ntt_vec_44  secure
+      stat: pending paths                    0
+      stat: branching points                 10020
+      stat: visited instructions (unrolled)  169752
+      stat: [checkct:info] 18289 / 18289 control flow checks pass
+      stat: [checkct:info] 34573 / 34573 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::poly_power2round  secure
+      stat: pending paths                    0
+      stat: branching points                 2070
+      stat: visited instructions (unrolled)  24047
+      stat: [checkct:info] 4143 / 4143 control flow checks pass
+      stat: [checkct:info] 6693 / 6693 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::rej_bounded_poly_eta2  insecure
+      0x045c36 has control flow leak (118.604s)
+      0x045c3c has control flow leak (316.753s)
+      stat: pending paths                    4
+      stat: branching points                 419
+      stat: visited instructions (unrolled)  19811
+      stat: [checkct:info] 568 / 570 control flow checks pass
+      stat: [checkct:info] 8020 / 8020 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 4 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::extra::rej_bounded_poly_eta4  insecure
+      0x045cea has control flow leak (0.155s)
+      0x045cee has control flow leak (24.890s)
+      stat: pending paths                    9
+      stat: branching points                 451
+      stat: visited instructions (unrolled)  20020
+      stat: [checkct:info] 601 / 603 control flow checks pass
+      stat: [checkct:info] 8097 / 8097 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 9 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::extra::scalar_vector_ntt_inverse_1  secure
+      stat: pending paths                    0
+      stat: branching points                 3347
+      stat: visited instructions (unrolled)  61937
+      stat: [checkct:info] 7471 / 7471 control flow checks pass
+      stat: [checkct:info] 10093 / 10093 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sign_rho_pp_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 291
+      stat: visited instructions (unrolled)  20010
+      stat: [checkct:info] 575 / 575 control flow checks pass
+      stat: [checkct:info] 8088 / 8088 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sk_is_well_formed_44  secure
+      stat: pending paths                    0
+      stat: branching points                 20685
+      stat: visited instructions (unrolled)  117870
+      stat: [checkct:info] 25866 / 25866 control flow checks pass
+      stat: [checkct:info] 16424 / 16424 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sk_is_well_formed_65  secure
+      stat: pending paths                    0
+      stat: branching points                 30488
+      stat: visited instructions (unrolled)  173584
+      stat: [checkct:info] 38631 / 38631 control flow checks pass
+      stat: [checkct:info] 23566 / 23566 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sk_is_well_formed_87  secure
+      stat: pending paths                    0
+      stat: branching points                 40129
+      stat: visited instructions (unrolled)  227725
+      stat: [checkct:info] 50027 / 50027 control flow checks pass
+      stat: [checkct:info] 33344 / 33344 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::vec_power2round_44  secure
+      stat: pending paths                    0
+      stat: branching points                 18383
+      stat: visited instructions (unrolled)  145178
+      stat: [checkct:info] 26713 / 26713 control flow checks pass
+      stat: [checkct:info] 45917 / 45917 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::vec_power2round_87  unknown
+      stat: pending paths                    1
+      stat: branching points                 19030
+      stat: visited instructions (unrolled)  177574
+      stat: [checkct:info] 35567 / 35567 control flow checks pass
+      stat: [checkct:info] 49177 / 49177 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.030)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::control_prepared_branch_44  insecure
+      0x0240c4 has control flow leak (0.910s)
+      stat: pending paths                    0
+      stat: branching points                 103613
+      stat: visited instructions (unrolled)  2230914
+      stat: [checkct:info] 108953 / 108954 control flow checks pass
+      stat: [checkct:info] 726111 / 726111 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::control_prepared_index_44  insecure
+      0x023d9c has memory access leak (0.917s)
+      stat: pending paths                    0
+      stat: branching points                 103873
+      stat: visited instructions (unrolled)  2232207
+      stat: [checkct:info] 109216 / 109216 control flow checks pass
+      stat: [checkct:info] 726611 / 726612 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 21188
+      stat: visited instructions (unrolled)  278229
+      stat: [checkct:info] 26707 / 26707 control flow checks pass
+      stat: [checkct:info] 76054 / 76054 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_1x1_65  secure
+      stat: pending paths                    0
+      stat: branching points                 23652
+      stat: visited instructions (unrolled)  293316
+      stat: [checkct:info] 32115 / 32115 control flow checks pass
+      stat: [checkct:info] 78694 / 78694 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 48887
+      stat: visited instructions (unrolled)  447444
+      stat: [checkct:info] 53928 / 53928 control flow checks pass
+      stat: [checkct:info] 79393 / 79393 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.030)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_65  unknown
+      stat: pending paths                    1
+      stat: branching points                 63563
+      stat: visited instructions (unrolled)  427074
+      stat: [checkct:info] 71526 / 71526 control flow checks pass
+      stat: [checkct:info] 71578 / 71578 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.030)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_87  unknown
+      stat: pending paths                    1
+      stat: branching points                 92576
+      stat: visited instructions (unrolled)  698393
+      stat: [checkct:info] 102327 / 102327 control flow checks pass
+      stat: [checkct:info] 123471 / 123471 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.029)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::signing_key_44  secure
+      stat: pending paths                    0
+      stat: branching points                 110854
+      stat: visited instructions (unrolled)  2267295
+      stat: [checkct:info] 116240 / 116240 control flow checks pass
+      stat: [checkct:info] 740493 / 740493 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::signing_key_65  secure
+      stat: pending paths                    0
+      stat: branching points                 189015
+      stat: visited instructions (unrolled)  4026939
+      stat: [checkct:info] 197661 / 197661 control flow checks pass
+      stat: [checkct:info] 1347859 / 1347859 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::signing_key_87  secure
+      stat: pending paths                    0
+      stat: branching points                 315387
+      stat: visited instructions (unrolled)  7130496
+      stat: [checkct:info] 326203 / 326203 control flow checks pass
+      stat: [checkct:info] 2447092 / 2447092 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::barrett_reduce  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  137
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_13  secure
+      stat: pending paths                    0
+      stat: branching points                 2957
+      stat: visited instructions (unrolled)  25290
+      stat: [checkct:info] 5021 / 5021 control flow checks pass
+      stat: [checkct:info] 3471 / 3471 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_18  secure
+      stat: pending paths                    0
+      stat: branching points                 3277
+      stat: visited instructions (unrolled)  26890
+      stat: [checkct:info] 5341 / 5341 control flow checks pass
+      stat: [checkct:info] 3631 / 3631 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_20  secure
+      stat: pending paths                    0
+      stat: branching points                 3405
+      stat: visited instructions (unrolled)  27530
+      stat: [checkct:info] 5469 / 5469 control flow checks pass
+      stat: [checkct:info] 3695 / 3695 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_3  secure
+      stat: pending paths                    0
+      stat: branching points                 2253
+      stat: visited instructions (unrolled)  20044
+      stat: [checkct:info] 4317 / 4317 control flow checks pass
+      stat: [checkct:info] 3151 / 3151 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_4  secure
+      stat: pending paths                    0
+      stat: branching points                 2381
+      stat: visited instructions (unrolled)  20876
+      stat: [checkct:info] 4445 / 4445 control flow checks pass
+      stat: [checkct:info] 3183 / 3183 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::ct_lt_mask  insecure
+      0x04100e has control flow leak (0.029s)
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  208
+      stat: [checkct:info] 42 / 43 control flow checks pass
+      stat: [checkct:info] 54 / 54 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::probes::ct_select  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  110
+      stat: [checkct:info] 33 / 33 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::decompose_44  secure
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  190
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 42 / 42 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::decompose_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  190
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 42 / 42 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mont_reduce  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  127
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mul  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  137
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mul_mont  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  144
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mul_shoup  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  92
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_neg  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  85
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_small_reduce  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  123
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_sub  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  124
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::high_bits_44  secure
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  189
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 41 / 41 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::high_bits_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  189
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 41 / 41 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::infinity_norm  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  94
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 20 / 20 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::keccak_f1600  secure
+      stat: pending paths                    0
+      stat: branching points                 79
+      stat: visited instructions (unrolled)  19338
+      stat: [checkct:info] 493 / 493 control flow checks pass
+      stat: [checkct:info] 7455 / 7455 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::low_bits_44  secure
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  189
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 41 / 41 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::low_bits_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  189
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 41 / 41 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::make_hint_44  secure
+      stat: pending paths                    0
+      stat: branching points                 2
+      stat: visited instructions (unrolled)  351
+      stat: [checkct:info] 31 / 31 control flow checks pass
+      stat: [checkct:info] 76 / 76 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::make_hint_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 2
+      stat: visited instructions (unrolled)  351
+      stat: [checkct:info] 31 / 31 control flow checks pass
+      stat: [checkct:info] 76 / 76 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::multiply_ntt  secure
+      stat: pending paths                    0
+      stat: branching points                 1548
+      stat: visited instructions (unrolled)  28821
+      stat: [checkct:info] 5659 / 5659 control flow checks pass
+      stat: [checkct:info] 4625 / 4625 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::ntt  secure
+      stat: pending paths                    0
+      stat: branching points                 1790
+      stat: visited instructions (unrolled)  39258
+      stat: [checkct:info] 3857 / 3857 control flow checks pass
+      stat: [checkct:info] 7433 / 7433 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::ntt_inverse  secure
+      stat: pending paths                    0
+      stat: branching points                 2054
+      stat: visited instructions (unrolled)  43632
+      stat: [checkct:info] 4121 / 4121 control flow checks pass
+      stat: [checkct:info] 8027 / 8027 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::power2round  secure
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  126
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 26 / 26 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_decode_44  secure
+      stat: pending paths                    0
+      stat: branching points                 33721
+      stat: visited instructions (unrolled)  181270
+      stat: [checkct:info] 38883 / 38883 control flow checks pass
+      stat: [checkct:info] 28151 / 28151 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_decode_65  secure
+      stat: pending paths                    0
+      stat: branching points                 49237
+      stat: visited instructions (unrolled)  267137
+      stat: [checkct:info] 57353 / 57353 control flow checks pass
+      stat: [checkct:info] 40073 / 40073 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_decode_87  secure
+      stat: pending paths                    0
+      stat: branching points                 63534
+      stat: visited instructions (unrolled)  346653
+      stat: [checkct:info] 73390 / 73390 control flow checks pass
+      stat: [checkct:info] 52728 / 52728 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_encode_44  secure
+      stat: pending paths                    0
+      stat: branching points                 38227
+      stat: visited instructions (unrolled)  305492
+      stat: [checkct:info] 63175 / 63175 control flow checks pass
+      stat: [checkct:info] 48864 / 48864 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_encode_65  secure
+      stat: pending paths                    0
+      stat: branching points                 55080
+      stat: visited instructions (unrolled)  439802
+      stat: [checkct:info] 90303 / 90303 control flow checks pass
+      stat: [checkct:info] 68374 / 68374 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_encode_87  secure
+      stat: pending paths                    0
+      stat: branching points                 71819
+      stat: visited instructions (unrolled)  579058
+      stat: [checkct:info] 119372 / 119372 control flow checks pass
+      stat: [checkct:info] 90805 / 90805 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::vec_infinity_norm  secure
+      stat: pending paths                    0
+      stat: branching points                 4904
+      stat: visited instructions (unrolled)  75385
+      stat: [checkct:info] 13129 / 13129 control flow checks pass
+      stat: [checkct:info] 23334 / 23334 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 5545
+      stat: visited instructions (unrolled)  142830
+      stat: [checkct:info] 12759 / 12759 control flow checks pass
+      stat: [checkct:info] 30307 / 30307 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_1_65  secure
+      stat: pending paths                    0
+      stat: branching points                 5545
+      stat: visited instructions (unrolled)  144878
+      stat: [checkct:info] 12759 / 12759 control flow checks pass
+      stat: [checkct:info] 30307 / 30307 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_44  secure
+      stat: pending paths                    0
+      stat: branching points                 22122
+      stat: visited instructions (unrolled)  548915
+      stat: [checkct:info] 44753 / 44753 control flow checks pass
+      stat: [checkct:info] 120999 / 120999 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_65  secure
+      stat: pending paths                    0
+      stat: branching points                 33168
+      stat: visited instructions (unrolled)  831881
+      stat: [checkct:info] 66073 / 66073 control flow checks pass
+      stat: [checkct:info] 181451 / 181451 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_87  secure
+      stat: pending paths                    0
+      stat: branching points                 44739
+      stat: visited instructions (unrolled)  1109262
+      stat: [checkct:info] 87919 / 87919 control flow checks pass
+      stat: [checkct:info] 242927 / 242927 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 11351
+      stat: visited instructions (unrolled)  194454
+      stat: [checkct:info] 22185 / 22185 control flow checks pass
+      stat: [checkct:info] 42519 / 42519 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_1x1_65  secure
+      stat: pending paths                    0
+      stat: branching points                 11351
+      stat: visited instructions (unrolled)  195478
+      stat: [checkct:info] 22185 / 22185 control flow checks pass
+      stat: [checkct:info] 42519 / 42519 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_44  secure
+      stat: pending paths                    0
+      stat: branching points                 47896
+      stat: visited instructions (unrolled)  764873
+      stat: [checkct:info] 84993 / 84993 control flow checks pass
+      stat: [checkct:info] 173327 / 173327 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_65  secure
+      stat: pending paths                    0
+      stat: branching points                 68474
+      stat: visited instructions (unrolled)  1080081
+      stat: [checkct:info] 118955 / 118955 control flow checks pass
+      stat: [checkct:info] 246031 / 246031 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_87  secure
+      stat: pending paths                    0
+      stat: branching points                 93177
+      stat: visited instructions (unrolled)  1463970
+      stat: [checkct:info] 161152 / 161152 control flow checks pass
+      stat: [checkct:info] 333899 / 333899 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_compute_t_44_2x2  secure
+      stat: pending paths                    0
+      stat: branching points                 22706
+      stat: visited instructions (unrolled)  290849
+      stat: [checkct:info] 39239 / 39239 control flow checks pass
+      stat: [checkct:info] 56031 / 56031 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_compute_t_44_col  secure
+      stat: pending paths                    0
+      stat: branching points                 28616
+      stat: visited instructions (unrolled)  356300
+      stat: [checkct:info] 47211 / 47211 control flow checks pass
+      stat: [checkct:info] 70267 / 70267 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_compute_t_44_row  secure
+      stat: pending paths                    0
+      stat: branching points                 22684
+      stat: visited instructions (unrolled)  317656
+      stat: [checkct:info] 41269 / 41269 control flow checks pass
+      stat: [checkct:info] 60291 / 60291 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_ntt_vec_into_1  secure
+      stat: pending paths                    0
+      stat: branching points                 1790
+      stat: visited instructions (unrolled)  39268
+      stat: [checkct:info] 3859 / 3859 control flow checks pass
+      stat: [checkct:info] 7443 / 7443 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_ntt_vec_into_7  secure
+      stat: pending paths                    0
+      stat: branching points                 17694
+      stat: visited instructions (unrolled)  297334
+      stat: [checkct:info] 32137 / 32137 control flow checks pass
+      stat: [checkct:info] 60677 / 60677 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_ntt_vec_into_8  secure
+      stat: pending paths                    0
+      stat: branching points                 20257
+      stat: visited instructions (unrolled)  339897
+      stat: [checkct:info] 36761 / 36761 control flow checks pass
+      stat: [checkct:info] 69377 / 69377 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_44_col  secure
+      stat: pending paths                    0
+      stat: branching points                 68552
+      stat: visited instructions (unrolled)  944988
+      stat: [checkct:info] 75759 / 75759 control flow checks pass
+      stat: [checkct:info] 277859 / 277859 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_44_row  secure
+      stat: pending paths                    0
+      stat: branching points                 51736
+      stat: visited instructions (unrolled)  784644
+      stat: [checkct:info] 58884 / 58884 control flow checks pass
+      stat: [checkct:info] 245410 / 245410 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_65_col  secure
+      stat: pending paths                    0
+      stat: branching points                 102000
+      stat: visited instructions (unrolled)  1402895
+      stat: [checkct:info] 113255 / 113255 control flow checks pass
+      stat: [checkct:info] 413130 / 413130 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_65_row  secure
+      stat: pending paths                    0
+      stat: branching points                 65817
+      stat: visited instructions (unrolled)  976800
+      stat: [checkct:info] 76455 / 76455 control flow checks pass
+      stat: [checkct:info] 306826 / 306826 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_2x1  secure
+      stat: pending paths                    0
+      stat: branching points                 38865
+      stat: visited instructions (unrolled)  515715
+      stat: [checkct:info] 49621 / 49621 control flow checks pass
+      stat: [checkct:info] 145114 / 145114 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_4x1  secure
+      stat: pending paths                    0
+      stat: branching points                 72056
+      stat: visited instructions (unrolled)  966602
+      stat: [checkct:info] 83935 / 83935 control flow checks pass
+      stat: [checkct:info] 281949 / 281949 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_6x1  secure
+      stat: pending paths                    0
+      stat: branching points                 102400
+      stat: visited instructions (unrolled)  1405740
+      stat: [checkct:info] 115383 / 115383 control flow checks pass
+      stat: [checkct:info] 414418 / 414418 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_7x1  secure
+      stat: pending paths                    0
+      stat: branching points                 104998
+      stat: visited instructions (unrolled)  1510584
+      stat: [checkct:info] 114944 / 114944 control flow checks pass
+      stat: [checkct:info] 428734 / 428734 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_col  secure
+      stat: pending paths                    0
+      stat: branching points                 118368
+      stat: visited instructions (unrolled)  1713701
+      stat: [checkct:info] 128353 / 128353 control flow checks pass
+      stat: [checkct:info] 487541 / 487541 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_row  secure
+      stat: pending paths                    0
+      stat: branching points                 73936
+      stat: visited instructions (unrolled)  1205672
+      stat: [checkct:info] 83796 / 83796 control flow checks pass
+      stat: [checkct:info] 369400 / 369400 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_1  secure
+      stat: pending paths                    0
+      stat: branching points                 3370
+      stat: visited instructions (unrolled)  30562
+      stat: [checkct:info] 5453 / 5453 control flow checks pass
+      stat: [checkct:info] 9243 / 9243 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_2  secure
+      stat: pending paths                    0
+      stat: branching points                 10109
+      stat: visited instructions (unrolled)  75433
+      stat: [checkct:info] 14287 / 14287 control flow checks pass
+      stat: [checkct:info] 23847 / 23847 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_3  secure
+      stat: pending paths                    0
+      stat: branching points                 15276
+      stat: visited instructions (unrolled)  113399
+      stat: [checkct:info] 21529 / 21529 control flow checks pass
+      stat: [checkct:info] 35881 / 35881 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_4  secure
+      stat: pending paths                    0
+      stat: branching points                 20447
+      stat: visited instructions (unrolled)  151340
+      stat: [checkct:info] 28775 / 28775 control flow checks pass
+      stat: [checkct:info] 47919 / 47919 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_5  unknown
+      stat: pending paths                    1
+      stat: branching points                 18757
+      stat: visited instructions (unrolled)  152819
+      stat: [checkct:info] 29132 / 29132 control flow checks pass
+      stat: [checkct:info] 45621 / 45621 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.786)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_6  unknown
+      stat: pending paths                    1
+      stat: branching points                 20256
+      stat: visited instructions (unrolled)  165852
+      stat: [checkct:info] 32684 / 32684 control flow checks pass
+      stat: [checkct:info] 48394 / 48394 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.029)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_7  unknown
+      stat: pending paths                    1
+      stat: branching points                 21774
+      stat: visited instructions (unrolled)  179215
+      stat: [checkct:info] 36255 / 36255 control flow checks pass
+      stat: [checkct:info] 51284 / 51284 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.258)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_hi  secure
+      stat: pending paths                    0
+      stat: branching points                 30723
+      stat: visited instructions (unrolled)  227344
+      stat: [checkct:info] 47263 / 47263 control flow checks pass
+      stat: [checkct:info] 68399 / 68399 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_lo  secure
+      stat: pending paths                    0
+      stat: branching points                 30723
+      stat: visited instructions (unrolled)  227343
+      stat: [checkct:info] 47263 / 47263 control flow checks pass
+      stat: [checkct:info] 68399 / 68399 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_q0  secure
+      stat: pending paths                    0
+      stat: branching points                 25523
+      stat: visited instructions (unrolled)  189438
+      stat: [checkct:info] 42019 / 42019 control flow checks pass
+      stat: [checkct:info] 54567 / 54567 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_q1  secure
+      stat: pending paths                    0
+      stat: branching points                 25523
+      stat: visited instructions (unrolled)  189454
+      stat: [checkct:info] 42019 / 42019 control flow checks pass
+      stat: [checkct:info] 54573 / 54573 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_q2  secure
+      stat: pending paths                    0
+      stat: branching points                 25523
+      stat: visited instructions (unrolled)  189452
+      stat: [checkct:info] 42019 / 42019 control flow checks pass
+      stat: [checkct:info] 54573 / 54573 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_q3  secure
+      stat: pending paths                    0
+      stat: branching points                 25523
+      stat: visited instructions (unrolled)  189454
+      stat: [checkct:info] 42019 / 42019 control flow checks pass
+      stat: [checkct:info] 54571 / 54571 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
