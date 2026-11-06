@@ -1,0 +1,81 @@
+Whole-Sign censuses at 1a72d9e, x86_64, JOBS=1, TIMEOUT=3600 (one container per profile and census; leak and cut addresses mapped by unknowns.py).
+Not rerun: the default, dispatch and nearcore-dispatch census_sign_prepared_44 (OOM above 120 GB at 15b4ce2), and the thumbv7em and riscv32imac censuses.
+
+=== default, census_sign_internal_44 (110 GB cap; JOBS=1, TIMEOUT=3600)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x242548  jae    242566 <driver::sampling::sample_in_ball+0x246>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2874206
+   stat: [checkct:info] 205381 / 205382 control flow checks pass
+
+=== nearcore (110 GB cap)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x20e2bb  jae    20e2dc <driver::sign::sign_prepared_internal::<4, 4>+0x118c>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2845144
+   stat: [checkct:info] 198893 / 198894 control flow checks pass
+
+driver::prepared::census_sign_prepared_44  insecure
+   leak  0x20e2bb  jae    20e2dc <driver::sign::sign_prepared_internal::<4, 4>+0x118c>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  1535058
+   stat: [checkct:info] 102685 / 102686 control flow checks pass
+
+=== dispatch, census_sign_internal_44 (110 GB cap)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x25ba78  jae    25ba96 <driver::sampling::sample_in_ball+0x246>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2867291
+   stat: [checkct:info] 205473 / 205474 control flow checks pass
+
+=== nearcore-dispatch, census_sign_internal_44 (110 GB cap)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x20dceb  jae    20dd0c <driver::sign::sign_prepared_internal::<4, 4>+0x110c>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2838100
+   stat: [checkct:info] 198857 / 198858 control flow checks pass
+
+=== nearcore-exact-novec, census_sign_internal_44 (110 GB cap)
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x20d32a  jae    20d34a <driver::sign::sign_prepared_internal::<4, 4>+0xd8a>   [src/sampling.rs:35]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2825690
+   stat: [checkct:info] 228827 / 228828 control flow checks pass
+
+=== nearcore-exact (12 GB cap)
+
+driver::extra::census_sign_internal_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  726927
+   stat: [checkct:info] 59800 / 59800 control flow checks pass
+   cut   0x221610  vinsertps $0x68,%xmm10,%xmm14,%xmm14   [src/ntt.rs:111]   in driver::ntt::ntt_layer::<8, 16>
+driver::prepared::census_sign_prepared_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  82072
+   stat: [checkct:info] 18762 / 18762 control flow checks pass
+   cut   0x221610  vinsertps $0x68,%xmm10,%xmm14,%xmm14   [src/ntt.rs:111]   in driver::ntt::ntt_layer::<8, 16>
+
+=== nearcore-exact-dispatch (12 GB cap)
+
+driver::extra::census_sign_internal_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  726934
+   stat: [checkct:info] 59801 / 59801 control flow checks pass
+   cut   0x22be00  vinsertps $0x68,%xmm10,%xmm14,%xmm14   [src/ntt.rs:111]   in driver::ntt::ntt_layer::<8, 16>
+driver::prepared::census_sign_prepared_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  82076
+   stat: [checkct:info] 18763 / 18763 control flow checks pass
+   cut   0x225890  vinsertps $0x68,%xmm10,%xmm14,%xmm14   [src/ntt.rs:111]   in driver::ntt::ntt_layer::<8, 16>
+
+=== nearcore-exact-novec, census_sign_prepared_44: no verdict (error), killed by the kernel at the 110 GB cap (binsec at 115.1 GB RSS, Nov 06 05:35:11) and again alone at the 150 GB cap (157.0 GB RSS, Nov 06 08:10:13); see oom-kills.txt
+
+sw4c-cen-novec-prepared.log:done x86_64-unknown-linux-gnu driver::prepared::census_sign_prepared_44 error
+sw4c-cen-novec-prepared.log:  driver  x86_64-unknown-linux-gnu  driver::prepared::census_sign_prepared_44  error
+sw4d-cen-novec-prepared.log:done x86_64-unknown-linux-gnu driver::prepared::census_sign_prepared_44 error
+sw4d-cen-novec-prepared.log:  driver  x86_64-unknown-linux-gnu  driver::prepared::census_sign_prepared_44  error

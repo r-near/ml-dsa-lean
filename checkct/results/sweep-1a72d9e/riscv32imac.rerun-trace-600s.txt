@@ -1,0 +1,52 @@
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_44  unknown
+      last: 447479 [sse:step] 0x0497de sw t6,-8(a6)             	# <_RNvNtCsgdDvc3NqSKb_6driver3ntt12ntt_body_mut> + 0xb94
+      stat: pending paths                    1
+      stat: branching points                 48887
+      stat: visited instructions (unrolled)  447444
+      stat: [checkct:info] 53928 / 53928 control flow checks pass
+      stat: [checkct:info] 79393 / 79393 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [sse:debug] trying to load debug symbols at riscv32imac-unknown-none-elf/release/driver.debug
+      note: 1 [sse:debug] trying to load debug symbols at riscv32imac-unknown-none-elf/release/.debug/driver.debug
+      note: 1 [sse:debug] trying to load debug symbols at /usr/lib/debug/riscv32imac-unknown-none-elf/release/driver.debug
+      note: 1 [sse:debug] Running SSE on riscv32imac-unknown-none-elf/release/driver
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (600.028)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_65  unknown
+      last: 427140 [sse:step] 0x049704 sw s1,0(a7)              	# <_RNvNtCsgdDvc3NqSKb_6driver3ntt12ntt_body_mut> + 0xaba
+      stat: pending paths                    1
+      stat: branching points                 63563
+      stat: visited instructions (unrolled)  427074
+      stat: [checkct:info] 71526 / 71526 control flow checks pass
+      stat: [checkct:info] 71578 / 71578 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [sse:debug] trying to load debug symbols at riscv32imac-unknown-none-elf/release/driver.debug
+      note: 1 [sse:debug] trying to load debug symbols at riscv32imac-unknown-none-elf/release/.debug/driver.debug
+      note: 1 [sse:debug] trying to load debug symbols at /usr/lib/debug/riscv32imac-unknown-none-elf/release/driver.debug
+      note: 1 [sse:debug] Running SSE on riscv32imac-unknown-none-elf/release/driver
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (600.028)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_87  unknown
+      last: 698459 [sse:step] 0x049704 sw s1,0(a7)              	# <_RNvNtCsgdDvc3NqSKb_6driver3ntt12ntt_body_mut> + 0xaba
+      stat: pending paths                    1
+      stat: branching points                 92576
+      stat: visited instructions (unrolled)  698393
+      stat: [checkct:info] 102327 / 102327 control flow checks pass
+      stat: [checkct:info] 123471 / 123471 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [sse:debug] trying to load debug symbols at riscv32imac-unknown-none-elf/release/driver.debug
+      note: 1 [sse:debug] trying to load debug symbols at riscv32imac-unknown-none-elf/release/.debug/driver.debug
+      note: 1 [sse:debug] trying to load debug symbols at /usr/lib/debug/riscv32imac-unknown-none-elf/release/driver.debug
+      note: 1 [sse:debug] Running SSE on riscv32imac-unknown-none-elf/release/driver
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (600.028)
+      note: 1              failed assertions                0
+      note: 1                unknown        0

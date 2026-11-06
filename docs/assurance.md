@@ -256,7 +256,7 @@ Constant time is checked on compiled probes with BINSEC (relational symbolic exe
 or division operand for all secret values; the lifter, the solver and "instructions take operand-independent time" are
 trusted (`docs/object-code-assurance.md` §3.2). Verify handles only public data; the property matters for KeyGen and Sign.
 
-Full sweep at 15b4ce2 (November 4, 2026): 113 entrypoints per run (114 on riscv32imac and in the `dispatch` build) plus two whole-Sign censuses, on x86_64 (checkct profile,
+Full sweep at 1a72d9e (November 5–6, 2026; the tree with Sign's per-attempt wiping, in-place secret-key decoding and `sign::more_attempts`): 114 entrypoints per run (113 for the `nearcore`, `nearcore-dispatch` and `nearcore-exact*` profiles) plus two whole-Sign censuses, on x86_64 (checkct profile,
 `nearcore`, `avx2` dispatch, `nearcore-dispatch`, `nearcore-exact*`), thumbv7em, riscv32imac and AArch64 without NEON. BINSEC
 checks compiled probes of every secret-touching step of KeyGen and Sign (listed in `checkct/README.md`): `sk_is_well_formed`,
 the SHAKE paths with secret input, ExpandS, NTT, t, Power2Round, skEncode/Decode, the Sign steps, `prepare_sk`/`signing_key`,
@@ -269,43 +269,56 @@ two censuses):
 
 | target / profile | secure / expected insecure / unexpected insecure / unknown / OOM |
 |---|---|
-| x86_64 default | 80 / 6 / 0 / 0 / 1 |
+| x86_64 default (note 3) | 80 / 6 / 0 / 0 / 1 |
 | x86_64 `nearcore` | 80 / 7 / 0 / 0 / 0 |
-| x86_64 `avx2` dispatch | 80 / 6 / 0 / 0 / 1 |
+| x86_64 `avx2` dispatch (note 3) | 80 / 6 / 0 / 0 / 1 |
 | x86_64 `nearcore-dispatch` (note 3) | 80 / 6 / 0 / 0 / 1 |
 | thumbv7em (note 3) | 81 / 4 / 0 / 0 / 2 |
-| riscv32imac (notes 1 and 3) | 78 / 6 / 0 / 2 / 1 |
+| riscv32imac (notes 1 and 3) | 75 / 6 / 0 / 5 / 1 |
 | AArch64 without NEON (note 2) | 73 / 3 / 0 / 11 / 0 |
 | x86_64 `nearcore-exact` (113 entrypoints + 2 censuses, not the 87-probe basis) | 61 / 3 / 0 / 51 / 0 |
-| x86_64 `nearcore-exact-novec` (same flags, vectorizers off; 113 entrypoints + 2 censuses) | 108 / 7 / 0 / 0 / 0 |
+| x86_64 `nearcore-exact-novec` (same flags, vectorizers off; 113 entrypoints + 2 censuses; the prepared census ran out of memory) | 108 / 6 / 0 / 0 / 1 |
 
-1. The riscv32imac row counts `control_prepared_branch_44` as expected insecure from its 7200 s rerun alone (`JOBS=2`); in the
-   sweep run it is `unknown`, and the sweep alone gives 78 / 5 / 0 / 3 / 1. The result depends on exploration order.
+Against the sweep at 15b4ce2 no verdict changed on x86_64 (all profiles), thumbv7em or AArch64, probe for probe, and every leak
+and cut path is at the same mnemonic, source line and function. The differences: riscv32imac (was 78 / 6 / 0 / 2 / 1) lost
+`prepare_sk_{44,65,87}` (`secure` to `unknown`) and gained `control_prepared_branch_44` (`unknown` to `insecure` within the
+sweep run, the expected result) and three `split_prepare_sk_*` pieces (`unknown` to `secure`); the `nearcore-exact-novec` prepared
+census went from a public-leak-only verdict to no verdict (out of memory at 110 GB and 150 GB). Nothing else changed.
+
+1. riscv32imac `prepare_sk_{44,65,87}`: one pending path, no leak, stuck at a store in `ntt_body_mut` (identical instruction counts
+   at 600 s and 7200 s). The same driver on the `src/` of 15b4ce2 is `secure`, so the stall comes from the Sign change; its mechanism
+   is not pinned down. `signing_key_{44,65,87}`, `prepare_sk_1x1_*` and every `split_prepare_sk_*` piece are `secure`.
 2. AArch64 has 13 `unknown` rows in all: the 11 above (on the 87-probe basis, two of them censuses) plus the two split pieces
    `split_prepare_sk_87_{7x1,col}`.
-3. Not rerun at 15b4ce2: the thumbv7em and riscv32imac censuses and the `nearcore-dispatch` prepared census. Their cells are the
-   results of the previous sweep (e9a1c74), whose `field.rs` differs from this one (`checkct/README.md`, "Not rerun, and why").
+3. Not rerun at 1a72d9e: the thumbv7em and riscv32imac censuses and the x86_64 default, `dispatch` and `nearcore-dispatch`
+   prepared censuses. Their cells are the results of the last sweep that ran them (e9a1c74, or 15b4ce2 for default and `dispatch`),
+   whose `src/` differs from this one (`checkct/README.md`, "Not rerun, and why").
 
 No unexpected leak. Details, the split-probe results and the stop-site evidence for every unknown are in `checkct/README.md`.
 Three real leaks were found and fixed (CT-1, CT-2, CT-3 in section 6). Limits:
 
 - **Whole-Sign** has no verdict: the censuses report only the public `sample_in_ball` accept branch, run out of memory
-  (thumbv7em, riscv32imac, and the x86_64 default and `dispatch` prepared census at 120 GB), or are cut at the NTT under
+  (thumbv7em, riscv32imac, the x86_64 default, `dispatch` and `nearcore-dispatch` prepared censuses at 120 GB, and the
+  `nearcore-exact-novec` prepared census at 150 GB), or are cut at the NTT under
   nearcore's exact build (the riscv32imac internal census is unresolved, with 4 pending paths at 7200 s). Sign is covered by its secret-touching pieces (`response_*`, `hint_step_*`, ExpandMask, hashing,
   `prepare_sk`, `signing_key`).
 - **Unknowns** (no leak found, no conclusion): under nearcore's exact build (`nearcore-exact`) the NTT, `compute_t`,
   `prepare_sk`/`signing_key`, `hint_step`, `response` and the two censuses have no verdict, because BINSEC 0.11.3 cannot lift the
   VEX instructions (`vinsertps`, `vblendvps`, `vblendps` on `ymm`) that `+fma` (which implies AVX) lets LLVM emit; one more probe
-  is a solver stall (T-9 in section 7). With the vectorizers off all 113 entrypoints get a verdict (108 secure, 5 expected insecure; 7 with the two censuses), which is
-  evidence about a different binary, not about nearcore's. Elsewhere: two on riscv32imac (`vec_power2round_87`, one census), the
-  three `split_vec_power2round_{5,6,7}` capacity probes there, three riscv32imac `split_prepare_sk` pieces (a solver stall at one
-  store; the full-size probes they split are secure) and eleven on AArch64 (one stuck solver query each; thirteen `unknown` rows with the two `split_prepare_sk_87_{7x1,col}`
+  is a solver stall (T-9 in section 7). With the vectorizers off all 113 entrypoints get a verdict (108 secure, 5 expected insecure; 6 expected insecure and one out of memory with the two censuses), which is
+  evidence about a different binary, not about nearcore's. Elsewhere: five on riscv32imac (`vec_power2round_87`, one census, and the three
+  `prepare_sk_*` probes, a solver stall at one store in `ntt_body_mut`; `signing_key_*` and all their split pieces are secure), the
+  three `split_vec_power2round_{5,6,7}` capacity probes there, and eleven on AArch64 (one stuck solver query each; thirteen `unknown` rows with the two `split_prepare_sk_87_{7x1,col}`
   pieces), partly covered by split probes.
 - **The `nearcore-exact` CT profile is nearcore's exact release build for the crate in isolation** (`overflow-checks = true`,
   nearcore's x86_64 target features, Rust 1.95.0, read from nearcore cd5a94457). It is not nearcore's binary: callers, allocator,
   glibc `memcpy` and the prebuilt `core` differ (`checkct/README.md`, "What this does and does not show").
 - **AVX2 and NEON code:** the AVX2 NTT copy is covered by a static scan only; AArch64 builds with NEON cannot be lifted, so macOS and Apple Silicon builds have no BINSEC coverage.
-- **Other builds:** verdicts depend on code shape and hold for the builds measured; `zeroize` builds are not probed.
+- **Other builds:** verdicts depend on code shape and hold for the builds measured. The sweep's binaries are built without the
+  `zeroize` feature. A separate run built the x86_64 default profile and `nearcore-exact-novec` with it (`ZEROIZE=1`; all probes,
+  same verdicts: 109 secure and 5 expected insecure, 108 and 5), which covers the `zeroize` code shape of the probed functions
+  (the `_into` functions with their wipes, `prepare_sk_into`, `sk_decode_into`, ExpandS, KeyGen). `sign::attempt` with
+  `wipe_attempt` is not probed whole in any build, and other targets and the censuses have no `zeroize` build.
 - Hardware timing (variable-latency instructions, speculation, power) is outside the model.
 
 ## 5. Other evidence (tests, differentials, fuzzing)
@@ -359,7 +372,7 @@ and `bench/compare.sh` ([reproduce.md](reproduce.md)).
 - **CT-3** (all targets with overflow checks): `sk_is_well_formed` branched on the sign of secret s1/s2 coefficients because the
   `&&` in the old `poly_in_eta` stayed a conditional branch (its right operand could panic). The six `sk_is_well_formed` and
   `encode_sk_is_well_formed` probes were `insecure` under `nearcore-exact` on the earlier tree
-  (`checkct/results/nearcore-exact.stage1-600s.txt`) and are `secure` at 15b4ce2. Fixed in ae6023c: per-coefficient
+  (`checkct/results/nearcore-exact.stage1-600s.txt`) and are `secure` at 15b4ce2 and at 1a72d9e. Fixed in ae6023c: per-coefficient
   mask bits from wrapping differences, one compare at the end, and `wrapping_*` arithmetic where the proofs already exclude
   overflow, so no overflow-check guard remains on a secret value. Affected only the optional key check and `pk_from_sk_*`; Sign
   never called it. Proofs changed only in bodies.
@@ -406,9 +419,12 @@ and `bench/compare.sh` ([reproduce.md](reproduce.md)).
 - **T-8: BINSEC out-of-memory kills look like tool errors.** A probe killed at the container's memory cap shows only `error`. Every
   `error` is presumed an OOM kill, with no verdict, unless the kernel log shows no kill in its run window; a census killed alone at
   120 GB is recorded as "needs more than 120 GB". Whole-Sign censuses on thumbv7em and riscv32imac, and the x86_64 default and
-  dispatch prepared census, have no verdict for this reason.
+  dispatch prepared census, have no verdict for this reason (not rerun at 1a72d9e). No entrypoint probe of the sweep at 1a72d9e
+  ended `error`.
 - **Other CT unknowns:** riscv32imac `vec_power2round_87` and one census; the three `split_vec_power2round_{5,6,7}` capacity probes;
-  three riscv32imac `split_prepare_sk` pieces (solver stall at a store in `ntt_body_mut`, cause not pinned down); eleven AArch64
+  riscv32imac `prepare_sk_{44,65,87}` (solver stall at a store in `ntt_body_mut`, cause not pinned down; they were `secure` at
+  15b4ce2, and the same driver on the 15b4ce2 source is `secure`, so the stall comes from the Sign change; `signing_key_*`,
+  `prepare_sk_1x1_*` and every `split_prepare_sk_*` piece are `secure`); eleven AArch64
   probes (and two split pieces, `split_prepare_sk_87_{7x1,col}`: thirteen rows in all) stuck in one solver query. AArch64 `prepare_sk_87`/`signing_key_87` are covered only stage by stage (skDecode, then the
   in-place NTT of 8 polynomials, both secure); the K = 8 glue has no single verdict. Split pieces are separate monomorphizations,
   so that argument is about the source, not the full-size machine code. The AVX2 copy of the dispatched NTT, AArch64 NEON builds

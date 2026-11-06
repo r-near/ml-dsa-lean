@@ -1,0 +1,871 @@
+Summary:
+  driver  aarch64-unknown-linux-gnu  driver::barrett_reduce  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  76
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::bit_pack_13  secure
+      stat: pending paths                    0
+      stat: branching points                 1709
+      stat: visited instructions (unrolled)  13995
+      stat: [checkct:info] 2741 / 2741 control flow checks pass
+      stat: [checkct:info] 1825 / 1825 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::bit_pack_18  secure
+      stat: pending paths                    0
+      stat: branching points                 2029
+      stat: visited instructions (unrolled)  15275
+      stat: [checkct:info] 3061 / 3061 control flow checks pass
+      stat: [checkct:info] 1985 / 1985 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::bit_pack_20  secure
+      stat: pending paths                    0
+      stat: branching points                 2157
+      stat: visited instructions (unrolled)  15787
+      stat: [checkct:info] 3189 / 3189 control flow checks pass
+      stat: [checkct:info] 2049 / 2049 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::bit_pack_3  secure
+      stat: pending paths                    0
+      stat: branching points                 1325
+      stat: visited instructions (unrolled)  10924
+      stat: [checkct:info] 2357 / 2357 control flow checks pass
+      stat: [checkct:info] 1505 / 1505 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::bit_pack_4  secure
+      stat: pending paths                    0
+      stat: branching points                 1389
+      stat: visited instructions (unrolled)  11436
+      stat: [checkct:info] 2421 / 2421 control flow checks pass
+      stat: [checkct:info] 1537 / 1537 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::census_sign_internal_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 126572
+      stat: visited instructions (unrolled)  1288155
+      stat: [checkct:info] 129433 / 129433 control flow checks pass
+      stat: [checkct:info] 268273 / 268273 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::census_sign_prepared_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 24478
+      stat: visited instructions (unrolled)  269965
+      stat: [checkct:info] 26982 / 26982 control flow checks pass
+      stat: [checkct:info] 54271 / 54271 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::coeff_from_half_byte_eta2  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  53
+      stat: [checkct:info] 6 / 6 control flow checks pass
+      stat: [checkct:info] 13 / 13 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::coeff_from_half_byte_eta4  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  47
+      stat: [checkct:info] 6 / 6 control flow checks pass
+      stat: [checkct:info] 13 / 13 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::compute_t_1x1  secure
+      stat: pending paths                    0
+      stat: branching points                 4442
+      stat: visited instructions (unrolled)  79577
+      stat: [checkct:info] 7534 / 7534 control flow checks pass
+      stat: [checkct:info] 15461 / 15461 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::compute_t_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 16689
+      stat: visited instructions (unrolled)  210075
+      stat: [checkct:info] 41328 / 41328 control flow checks pass
+      stat: [checkct:info] 26692 / 26692 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::compute_t_65  secure
+      stat: pending paths                    0
+      stat: branching points                 65478
+      stat: visited instructions (unrolled)  825565
+      stat: [checkct:info] 107702 / 107702 control flow checks pass
+      stat: [checkct:info] 166566 / 166566 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::compute_t_87  secure
+      stat: pending paths                    0
+      stat: branching points                 110007
+      stat: visited instructions (unrolled)  1347537
+      stat: [checkct:info] 183107 / 183107 control flow checks pass
+      stat: [checkct:info] 269446 / 269446 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::control_early_exit_44  insecure
+      0x223398 has control flow leak (0.151s)
+      0x223444 has control flow leak (11.222s)
+      0x2234e4 has control flow leak (42.763s)
+      0x223584 has control flow leak (102.217s)
+      0x223624 has control flow leak (188.945s)
+      0x2236c4 has control flow leak (302.034s)
+      0x223764 has control flow leak (446.332s)
+      0x223804 has control flow leak (624.114s)
+      stat: pending paths                    0
+      stat: branching points                 13232
+      stat: visited instructions (unrolled)  82305
+      stat: [checkct:info] 15807 / 15815 control flow checks pass
+      stat: [checkct:info] 27868 / 27868 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              completed/cut paths              2049
+  driver  aarch64-unknown-linux-gnu  driver::control_prepared_branch_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 25784
+      stat: visited instructions (unrolled)  319051
+      stat: [checkct:info] 28288 / 28288 control flow checks pass
+      stat: [checkct:info] 63487 / 63487 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::control_prepared_index_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 23822
+      stat: visited instructions (unrolled)  267254
+      stat: [checkct:info] 26321 / 26321 control flow checks pass
+      stat: [checkct:info] 52983 / 52983 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::ct_lt_mask  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  100
+      stat: [checkct:info] 21 / 21 control flow checks pass
+      stat: [checkct:info] 16 / 16 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::ct_select  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  73
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::decompose_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  98
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 19 / 19 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::decompose_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  98
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 19 / 19 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::encode_sk_is_well_formed_44  secure
+      stat: pending paths                    0
+      stat: branching points                 15433
+      stat: visited instructions (unrolled)  92559
+      stat: [checkct:info] 20353 / 20353 control flow checks pass
+      stat: [checkct:info] 17864 / 17864 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::encode_sk_is_well_formed_65  secure
+      stat: pending paths                    0
+      stat: branching points                 19626
+      stat: visited instructions (unrolled)  119170
+      stat: [checkct:info] 24552 / 24552 control flow checks pass
+      stat: [checkct:info] 22374 / 22374 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::encode_sk_is_well_formed_87  secure
+      stat: pending paths                    0
+      stat: branching points                 23574
+      stat: visited instructions (unrolled)  143974
+      stat: [checkct:info] 28508 / 28508 control flow checks pass
+      stat: [checkct:info] 27566 / 27566 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::expand_mask_44  secure
+      stat: pending paths                    0
+      stat: branching points                 10493
+      stat: visited instructions (unrolled)  129116
+      stat: [checkct:info] 10605 / 10605 control flow checks pass
+      stat: [checkct:info] 22387 / 22387 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::expand_mask_65  secure
+      stat: pending paths                    0
+      stat: branching points                 13979
+      stat: visited instructions (unrolled)  164249
+      stat: [checkct:info] 14100 / 14100 control flow checks pass
+      stat: [checkct:info] 28445 / 28445 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::expand_mask_87  secure
+      stat: pending paths                    0
+      stat: branching points                 19535
+      stat: visited instructions (unrolled)  229681
+      stat: [checkct:info] 19674 / 19674 control flow checks pass
+      stat: [checkct:info] 39701 / 39701 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::field_mont_reduce  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  74
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::field_mul  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  76
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::field_mul_mont  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  86
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::field_mul_shoup  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  58
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 12 / 12 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::field_neg  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  52
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 12 / 12 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::field_small_reduce  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  70
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::field_sub  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  69
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 12 / 12 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::high_bits_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  89
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::high_bits_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  89
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::hint_step_1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 3455
+      stat: visited instructions (unrolled)  76825
+      stat: [checkct:info] 6800 / 6800 control flow checks pass
+      stat: [checkct:info] 12031 / 12031 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::hint_step_1_65  secure
+      stat: pending paths                    0
+      stat: branching points                 3455
+      stat: visited instructions (unrolled)  76825
+      stat: [checkct:info] 6800 / 6800 control flow checks pass
+      stat: [checkct:info] 12031 / 12031 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::hint_step_44  secure
+      stat: pending paths                    0
+      stat: branching points                 13777
+      stat: visited instructions (unrolled)  291824
+      stat: [checkct:info] 24062 / 24062 control flow checks pass
+      stat: [checkct:info] 48348 / 48348 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::hint_step_65  secure
+      stat: pending paths                    0
+      stat: branching points                 20718
+      stat: visited instructions (unrolled)  435210
+      stat: [checkct:info] 35625 / 35625 control flow checks pass
+      stat: [checkct:info] 72528 / 72528 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::hint_step_87  secure
+      stat: pending paths                    0
+      stat: branching points                 27654
+      stat: visited instructions (unrolled)  578583
+      stat: [checkct:info] 47183 / 47183 control flow checks pass
+      stat: [checkct:info] 96706 / 96706 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::infinity_norm  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  53
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 12 / 12 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::keccak_f1600  secure
+      stat: pending paths                    0
+      stat: branching points                 54
+      stat: visited instructions (unrolled)  4826
+      stat: [checkct:info] 261 / 261 control flow checks pass
+      stat: [checkct:info] 772 / 772 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::keygen_seed_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 140
+      stat: visited instructions (unrolled)  4604
+      stat: [checkct:info] 180 / 180 control flow checks pass
+      stat: [checkct:info] 1016 / 1016 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::low_bits_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  92
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 17 / 17 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::low_bits_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  92
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 17 / 17 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::make_hint_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  142
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::make_hint_65_87  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  142
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::matrix_vector_ntt_1x1  secure
+      stat: pending paths                    0
+      stat: branching points                 1758
+      stat: visited instructions (unrolled)  20411
+      stat: [checkct:info] 3818 / 3818 control flow checks pass
+      stat: [checkct:info] 3221 / 3221 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::matrix_vector_ntt_44  secure
+      stat: pending paths                    0
+      stat: branching points                 25508
+      stat: visited instructions (unrolled)  264705
+      stat: [checkct:info] 46089 / 46089 control flow checks pass
+      stat: [checkct:info] 49774 / 49774 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::matrix_vector_ntt_65  secure
+      stat: pending paths                    0
+      stat: branching points                 46317
+      stat: visited instructions (unrolled)  480026
+      stat: [checkct:info] 82330 / 82330 control flow checks pass
+      stat: [checkct:info] 91304 / 91304 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::matrix_vector_ntt_87  secure
+      stat: pending paths                    0
+      stat: branching points                 83911
+      stat: visited instructions (unrolled)  878127
+      stat: [checkct:info] 148730 / 148730 control flow checks pass
+      stat: [checkct:info] 167142 / 167142 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::multiply_ntt  secure
+      stat: pending paths                    0
+      stat: branching points                 1164
+      stat: visited instructions (unrolled)  16132
+      stat: [checkct:info] 3220 / 3220 control flow checks pass
+      stat: [checkct:info] 1681 / 1681 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::ntt  secure
+      stat: pending paths                    0
+      stat: branching points                 1406
+      stat: visited instructions (unrolled)  30056
+      stat: [checkct:info] 2439 / 2439 control flow checks pass
+      stat: [checkct:info] 5513 / 5513 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::ntt_inverse  secure
+      stat: pending paths                    0
+      stat: branching points                 1470
+      stat: visited instructions (unrolled)  32608
+      stat: [checkct:info] 2503 / 2503 control flow checks pass
+      stat: [checkct:info] 6249 / 6249 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::ntt_vec_44  secure
+      stat: pending paths                    0
+      stat: branching points                 6948
+      stat: visited instructions (unrolled)  125255
+      stat: [checkct:info] 11075 / 11075 control flow checks pass
+      stat: [checkct:info] 24319 / 24319 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::poly_power2round  secure
+      stat: pending paths                    0
+      stat: branching points                 982
+      stat: visited instructions (unrolled)  11121
+      stat: [checkct:info] 2016 / 2016 control flow checks pass
+      stat: [checkct:info] 1937 / 1937 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::power2round  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  62
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 13 / 13 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::prepare_sk_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 12959
+      stat: visited instructions (unrolled)  144684
+      stat: [checkct:info] 15456 / 15456 control flow checks pass
+      stat: [checkct:info] 30197 / 30197 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::prepare_sk_1x1_65  secure
+      stat: pending paths                    0
+      stat: branching points                 14933
+      stat: visited instructions (unrolled)  155666
+      stat: [checkct:info] 18902 / 18902 control flow checks pass
+      stat: [checkct:info] 32292 / 32292 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::prepare_sk_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 31610
+      stat: visited instructions (unrolled)  359089
+      stat: [checkct:info] 34127 / 34127 control flow checks pass
+      stat: [checkct:info] 74518 / 74518 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::prepare_sk_65  unknown
+      stat: pending paths                    1
+      stat: branching points                 35757
+      stat: visited instructions (unrolled)  251004
+      stat: [checkct:info] 39730 / 39730 control flow checks pass
+      stat: [checkct:info] 50498 / 50498 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::prepare_sk_87  unknown
+      stat: pending paths                    1
+      stat: branching points                 44359
+      stat: visited instructions (unrolled)  231474
+      stat: [checkct:info] 49193 / 49193 control flow checks pass
+      stat: [checkct:info] 47523 / 47523 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::rej_bounded_poly_eta2  insecure
+      0x24b3b0 has control flow leak (5.225s)
+      0x24b3c0 has control flow leak (15.341s)
+      stat: pending paths                    4
+      stat: branching points                 233
+      stat: visited instructions (unrolled)  4961
+      stat: [checkct:info] 302 / 304 control flow checks pass
+      stat: [checkct:info] 1139 / 1139 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 4 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 4 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::rej_bounded_poly_eta4  insecure
+      0x24b4b0 has control flow leak (0.146s)
+      0x24b4bc has control flow leak (1.440s)
+      stat: pending paths                    12
+      stat: branching points                 261
+      stat: visited instructions (unrolled)  5053
+      stat: [checkct:info] 322 / 324 control flow checks pass
+      stat: [checkct:info] 1151 / 1151 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 12 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 12 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::response_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 7101
+      stat: visited instructions (unrolled)  116737
+      stat: [checkct:info] 12252 / 12252 control flow checks pass
+      stat: [checkct:info] 21510 / 21510 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::response_1x1_65  secure
+      stat: pending paths                    0
+      stat: branching points                 7101
+      stat: visited instructions (unrolled)  116737
+      stat: [checkct:info] 12252 / 12252 control flow checks pass
+      stat: [checkct:info] 21510 / 21510 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::response_44  secure
+      stat: pending paths                    0
+      stat: branching points                 29795
+      stat: visited instructions (unrolled)  457371
+      stat: [checkct:info] 47306 / 47306 control flow checks pass
+      stat: [checkct:info] 88871 / 88871 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::response_65  secure
+      stat: pending paths                    0
+      stat: branching points                 42417
+      stat: visited instructions (unrolled)  636408
+      stat: [checkct:info] 66103 / 66103 control flow checks pass
+      stat: [checkct:info] 124877 / 124877 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::response_87  secure
+      stat: pending paths                    0
+      stat: branching points                 57863
+      stat: visited instructions (unrolled)  864305
+      stat: [checkct:info] 89779 / 89779 control flow checks pass
+      stat: [checkct:info] 170059 / 170059 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::scalar_vector_ntt_inverse_1  secure
+      stat: pending paths                    0
+      stat: branching points                 2246
+      stat: visited instructions (unrolled)  43435
+      stat: [checkct:info] 4305 / 4305 control flow checks pass
+      stat: [checkct:info] 7533 / 7533 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::sign_rho_pp_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 165
+      stat: visited instructions (unrolled)  5022
+      stat: [checkct:info] 302 / 302 control flow checks pass
+      stat: [checkct:info] 1182 / 1182 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::signing_key_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 26972
+      stat: visited instructions (unrolled)  323925
+      stat: [checkct:info] 29485 / 29485 control flow checks pass
+      stat: [checkct:info] 65799 / 65799 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::signing_key_65  unknown
+      stat: pending paths                    1
+      stat: branching points                 36038
+      stat: visited instructions (unrolled)  388047
+      stat: [checkct:info] 40028 / 40028 control flow checks pass
+      stat: [checkct:info] 77156 / 77156 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::signing_key_87  unknown
+      stat: pending paths                    1
+      stat: branching points                 51506
+      stat: visited instructions (unrolled)  612765
+      stat: [checkct:info] 56390 / 56390 control flow checks pass
+      stat: [checkct:info] 124253 / 124253 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::sk_decode_44  secure
+      stat: pending paths                    0
+      stat: branching points                 19082
+      stat: visited instructions (unrolled)  106731
+      stat: [checkct:info] 21663 / 21663 control flow checks pass
+      stat: [checkct:info] 21301 / 21301 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::sk_decode_65  secure
+      stat: pending paths                    0
+      stat: branching points                 28008
+      stat: visited instructions (unrolled)  158200
+      stat: [checkct:info] 32066 / 32066 control flow checks pass
+      stat: [checkct:info] 30660 / 30660 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::sk_decode_87  secure
+      stat: pending paths                    0
+      stat: branching points                 36093
+      stat: visited instructions (unrolled)  201027
+      stat: [checkct:info] 41021 / 41021 control flow checks pass
+      stat: [checkct:info] 40081 / 40081 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::sk_encode_44  secure
+      stat: pending paths                    0
+      stat: branching points                 21696
+      stat: visited instructions (unrolled)  173585
+      stat: [checkct:info] 34162 / 34162 control flow checks pass
+      stat: [checkct:info] 23942 / 23942 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::sk_encode_65  secure
+      stat: pending paths                    0
+      stat: branching points                 31434
+      stat: visited instructions (unrolled)  252031
+      stat: [checkct:info] 49035 / 49035 control flow checks pass
+      stat: [checkct:info] 33737 / 33737 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::sk_encode_87  secure
+      stat: pending paths                    0
+      stat: branching points                 41339
+      stat: visited instructions (unrolled)  328262
+      stat: [checkct:info] 65102 / 65102 control flow checks pass
+      stat: [checkct:info] 44674 / 44674 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::sk_is_well_formed_44  secure
+      stat: pending paths                    0
+      stat: branching points                 12513
+      stat: visited instructions (unrolled)  76490
+      stat: [checkct:info] 15097 / 15097 control flow checks pass
+      stat: [checkct:info] 14652 / 14652 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::sk_is_well_formed_65  secure
+      stat: pending paths                    0
+      stat: branching points                 18546
+      stat: visited instructions (unrolled)  113222
+      stat: [checkct:info] 22608 / 22608 control flow checks pass
+      stat: [checkct:info] 21186 / 21186 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::sk_is_well_formed_87  secure
+      stat: pending paths                    0
+      stat: branching points                 23574
+      stat: visited instructions (unrolled)  143974
+      stat: [checkct:info] 28508 / 28508 control flow checks pass
+      stat: [checkct:info] 27566 / 27566 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_compute_t_44_2x2  secure
+      stat: pending paths                    0
+      stat: branching points                 13722
+      stat: visited instructions (unrolled)  195815
+      stat: [checkct:info] 21974 / 21974 control flow checks pass
+      stat: [checkct:info] 40187 / 40187 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_compute_t_44_col  secure
+      stat: pending paths                    0
+      stat: branching points                 17069
+      stat: visited instructions (unrolled)  240275
+      stat: [checkct:info] 26352 / 26352 control flow checks pass
+      stat: [checkct:info] 50845 / 50845 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_compute_t_44_row  secure
+      stat: pending paths                    0
+      stat: branching points                 14351
+      stat: visited instructions (unrolled)  219224
+      stat: [checkct:info] 23628 / 23628 control flow checks pass
+      stat: [checkct:info] 43136 / 43136 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_ntt_vec_into_1  secure
+      stat: pending paths                    0
+      stat: branching points                 1406
+      stat: visited instructions (unrolled)  30056
+      stat: [checkct:info] 2439 / 2439 control flow checks pass
+      stat: [checkct:info] 5513 / 5513 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_ntt_vec_into_7  secure
+      stat: pending paths                    0
+      stat: branching points                 12323
+      stat: visited instructions (unrolled)  219565
+      stat: [checkct:info] 19534 / 19534 control flow checks pass
+      stat: [checkct:info] 42729 / 42729 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_ntt_vec_into_8  secure
+      stat: pending paths                    0
+      stat: branching points                 14119
+      stat: visited instructions (unrolled)  251021
+      stat: [checkct:info] 22359 / 22359 control flow checks pass
+      stat: [checkct:info] 48867 / 48867 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_44_col  secure
+      stat: pending paths                    0
+      stat: branching points                 38860
+      stat: visited instructions (unrolled)  445403
+      stat: [checkct:info] 41417 / 41417 control flow checks pass
+      stat: [checkct:info] 94893 / 94893 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_44_row  secure
+      stat: pending paths                    0
+      stat: branching points                 28948
+      stat: visited instructions (unrolled)  336122
+      stat: [checkct:info] 31482 / 31482 control flow checks pass
+      stat: [checkct:info] 69964 / 69964 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_65_col  secure
+      stat: pending paths                    0
+      stat: branching points                 57795
+      stat: visited instructions (unrolled)  656465
+      stat: [checkct:info] 61856 / 61856 control flow checks pass
+      stat: [checkct:info] 139227 / 139227 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_65_row  secure
+      stat: pending paths                    0
+      stat: branching points                 36977
+      stat: visited instructions (unrolled)  414648
+      stat: [checkct:info] 40997 / 40997 control flow checks pass
+      stat: [checkct:info] 86566 / 86566 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_87_2x1  secure
+      stat: pending paths                    0
+      stat: branching points                 23699
+      stat: visited instructions (unrolled)  258265
+      stat: [checkct:info] 28552 / 28552 control flow checks pass
+      stat: [checkct:info] 53831 / 53831 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_87_4x1  secure
+      stat: pending paths                    0
+      stat: branching points                 41786
+      stat: visited instructions (unrolled)  461496
+      stat: [checkct:info] 46679 / 46679 control flow checks pass
+      stat: [checkct:info] 98112 / 98112 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_87_6x1  secure
+      stat: pending paths                    0
+      stat: branching points                 58427
+      stat: visited instructions (unrolled)  659496
+      stat: [checkct:info] 63352 / 63352 control flow checks pass
+      stat: [checkct:info] 140191 / 140191 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_87_7x1  unknown
+      stat: pending paths                    1
+      stat: branching points                 39080
+      stat: visited instructions (unrolled)  384050
+      stat: [checkct:info] 43942 / 43942 control flow checks pass
+      stat: [checkct:info] 81540 / 81540 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_87_col  unknown
+      stat: pending paths                    1
+      stat: branching points                 43726
+      stat: visited instructions (unrolled)  438589
+      stat: [checkct:info] 48593 / 48593 control flow checks pass
+      stat: [checkct:info] 93444 / 93444 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_87_row  secure
+      stat: pending paths                    0
+      stat: branching points                 48250
+      stat: visited instructions (unrolled)  545681
+      stat: [checkct:info] 53158 / 53158 control flow checks pass
+      stat: [checkct:info] 114244 / 114244 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_1  secure
+      stat: pending paths                    0
+      stat: branching points                 1509
+      stat: visited instructions (unrolled)  13253
+      stat: [checkct:info] 2546 / 2546 control flow checks pass
+      stat: [checkct:info] 2961 / 2961 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_2  secure
+      stat: pending paths                    0
+      stat: branching points                 4597
+      stat: visited instructions (unrolled)  32556
+      stat: [checkct:info] 6676 / 6676 control flow checks pass
+      stat: [checkct:info] 8739 / 8739 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_3  secure
+      stat: pending paths                    0
+      stat: branching points                 7153
+      stat: visited instructions (unrolled)  49562
+      stat: [checkct:info] 10268 / 10268 control flow checks pass
+      stat: [checkct:info] 13351 / 13351 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_4  secure
+      stat: pending paths                    0
+      stat: branching points                 9697
+      stat: visited instructions (unrolled)  66455
+      stat: [checkct:info] 13846 / 13846 control flow checks pass
+      stat: [checkct:info] 17959 / 17959 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_5  secure
+      stat: pending paths                    0
+      stat: branching points                 12242
+      stat: visited instructions (unrolled)  83424
+      stat: [checkct:info] 17425 / 17425 control flow checks pass
+      stat: [checkct:info] 22567 / 22567 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_6  secure
+      stat: pending paths                    0
+      stat: branching points                 14786
+      stat: visited instructions (unrolled)  100312
+      stat: [checkct:info] 21003 / 21003 control flow checks pass
+      stat: [checkct:info] 27175 / 27175 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_7  secure
+      stat: pending paths                    0
+      stat: branching points                 17594
+      stat: visited instructions (unrolled)  117980
+      stat: [checkct:info] 24845 / 24845 control flow checks pass
+      stat: [checkct:info] 32043 / 32043 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_8_hi  secure
+      stat: pending paths                    0
+      stat: branching points                 15627
+      stat: visited instructions (unrolled)  105308
+      stat: [checkct:info] 23880 / 23880 control flow checks pass
+      stat: [checkct:info] 26409 / 26409 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_8_lo  secure
+      stat: pending paths                    0
+      stat: branching points                 15371
+      stat: visited instructions (unrolled)  104592
+      stat: [checkct:info] 23624 / 23624 control flow checks pass
+      stat: [checkct:info] 26151 / 26151 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_8_q0  secure
+      stat: pending paths                    0
+      stat: branching points                 13119
+      stat: visited instructions (unrolled)  89814
+      stat: [checkct:info] 21356 / 21356 control flow checks pass
+      stat: [checkct:info] 21027 / 21027 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_8_q1  secure
+      stat: pending paths                    0
+      stat: branching points                 13375
+      stat: visited instructions (unrolled)  90521
+      stat: [checkct:info] 21612 / 21612 control flow checks pass
+      stat: [checkct:info] 21287 / 21287 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_8_q2  secure
+      stat: pending paths                    0
+      stat: branching points                 13375
+      stat: visited instructions (unrolled)  90524
+      stat: [checkct:info] 21612 / 21612 control flow checks pass
+      stat: [checkct:info] 21287 / 21287 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::split_vec_power2round_8_q3  secure
+      stat: pending paths                    0
+      stat: branching points                 13247
+      stat: visited instructions (unrolled)  90143
+      stat: [checkct:info] 21484 / 21484 control flow checks pass
+      stat: [checkct:info] 21161 / 21161 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::vec_infinity_norm  secure
+      stat: pending paths                    0
+      stat: branching points                 3368
+      stat: visited instructions (unrolled)  40506
+      stat: [checkct:info] 7479 / 7479 control flow checks pass
+      stat: [checkct:info] 5922 / 5922 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::vec_power2round_44  secure
+      stat: pending paths                    0
+      stat: branching points                 8917
+      stat: visited instructions (unrolled)  64070
+      stat: [checkct:info] 13063 / 13063 control flow checks pass
+      stat: [checkct:info] 17191 / 17191 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  aarch64-unknown-linux-gnu  driver::vec_power2round_87  secure
+      stat: pending paths                    0
+      stat: branching points                 18071
+      stat: visited instructions (unrolled)  128699
+      stat: [checkct:info] 26353 / 26353 control flow checks pass
+      stat: [checkct:info] 34601 / 34601 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass

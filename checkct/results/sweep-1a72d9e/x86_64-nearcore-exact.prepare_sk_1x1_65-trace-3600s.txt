@@ -1,0 +1,32 @@
+driver package override appended to checkct/.cargo/config.toml: [profile.release.package.driver] overflow-checks = true 
+toolchain for PROFILE=nearcore-exact (checkct/rust-toolchain.toml: channel = "1.95.0", RUSTC_BOOTSTRAP=1):
+  rustc 1.95.0 (59807616e 2026-04-14)
+  binary: rustc
+  commit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860
+  commit-date: 2026-04-14
+  host: x86_64-unknown-linux-gnu
+  release: 1.95.0
+  LLVM version: 22.1.2
+x86_64 rustflags: -C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -C force-unwind-tables=y; CARGO_PROFILE_RELEASE_*: CARGO_PROFILE_RELEASE_PANIC=abort CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false CARGO_PROFILE_RELEASE_OPT_LEVEL=3 CARGO_PROFILE_RELEASE_LTO=fat CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 
+driver .comment (x86_64-unknown-linux-gnu): rustc version 1.95.0 (59807616e 2026-04-14)|Linker: LLD 22.1.2 (/checkout/src/llvm-project/llvm 1cb4e3833c1919c2e6fb579a23ac0e2b22587b7e)|
+preset x86_64-unknown-linux-gnu: PROFILE=nearcore-exact: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
+selected 1 probes
+done x86_64-unknown-linux-gnu driver::prepared::prepare_sk_1x1_65 unknown
+Summary:
+  driver  x86_64-unknown-linux-gnu  driver::prepared::prepare_sk_1x1_65  unknown
+      last: 49529 [sse:step] 0x22006e movdqu %xmm6,0x3c0(%rdi) 	# <_RNvNtCsjGJNYfQFx1I_6driver3ntt12ntt_body_mut> + 0x112e
+      stat: pending paths                    1
+      stat: branching points                 9257
+      stat: visited instructions (unrolled)  49510
+      stat: [checkct:info] 13214 / 13214 control flow checks pass
+      stat: [checkct:info] 18625 / 18625 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [sse:debug] trying to load debug symbols at x86_64-unknown-linux-gnu/release/driver.debug
+      note: 1 [sse:debug] trying to load debug symbols at x86_64-unknown-linux-gnu/release/.debug/driver.debug
+      note: 1 [sse:debug] trying to load debug symbols at /usr/lib/debug/x86_64-unknown-linux-gnu/release/driver.debug
+      note: 1 [sse:debug] Running SSE on x86_64-unknown-linux-gnu/release/driver
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.031)
+      note: 1              failed assertions                0
+      note: 1                unknown        0

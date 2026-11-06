@@ -1,0 +1,22 @@
+# Kernel OOM kills on the build box during the sweep at 1a72d9e (journalctl -k -g 'Killed process', November 5 23:00 UTC
+# to the end of the sweep), host name removed. None of them hit a result that is recorded in this directory:
+#   00:05:11  three processes of the thumbv7em container, killed when its cap was lowered to 6 GB with `docker update`
+#             while it was running; that run was discarded and thumbv7em was rerun in full (a second run was lost when the
+#             box was terminated; the third is the recorded one).
+#   01:19:41, 01:24:16  the default internal and nearcore prepared census containers (110 GB caps), killed well below their
+#             own caps when the 165 GiB limit shared by all containers was reached (binsec at 51.4 and 86.3 GB RSS); both
+#             censuses were rerun later with fewer containers alongside.
+#   02:22:48, 02:24:41  nearcore prepared and nearcore-exact-novec prepared censuses at a 64 GB cap (62.2 and 67.0 GB RSS);
+#             both were rerun with a 110 GB cap.
+#   05:35:11, 08:10:13  the nearcore-exact-novec census_sign_prepared_44, alone, at the 110 GB cap (binsec at 115.1 GB RSS) and
+#             at a 150 GB cap (157.0 GB RSS). These two are the recorded result of that cell: no verdict, OOM.
+# Final results ending in `error`: only that census; none among the 114 / 113 entrypoints of any run.
+Nov 06 00:05:11 kernel: Memory cgroup out of memory: Killed process 1436299 (binsec) total-vm:3719320kB, anon-rss:3259672kB, file-rss:19712kB, shmem-rss:0kB, UID:1000 pgtables:6504kB oom_score_adj:0
+Nov 06 00:05:11 kernel: Memory cgroup out of memory: Killed process 1436327 (binsec) total-vm:3452904kB, anon-rss:3149100kB, file-rss:19244kB, shmem-rss:0kB, UID:1000 pgtables:6280kB oom_score_adj:0
+Nov 06 00:05:11 kernel: Memory cgroup out of memory: Killed process 1431649 (bash) total-vm:4080kB, anon-rss:412kB, file-rss:2800kB, shmem-rss:0kB, UID:1000 pgtables:56kB oom_score_adj:0
+Nov 06 01:19:41 kernel: Memory cgroup out of memory: Killed process 42926 (binsec) total-vm:54883044kB, anon-rss:51444600kB, file-rss:12kB, shmem-rss:0kB, UID:1000 pgtables:100928kB oom_score_adj:0
+Nov 06 01:24:16 kernel: Memory cgroup out of memory: Killed process 48317 (binsec) total-vm:93701432kB, anon-rss:86325920kB, file-rss:20kB, shmem-rss:0kB, UID:1000 pgtables:169224kB oom_score_adj:0
+Nov 06 02:22:48 kernel: Memory cgroup out of memory: Killed process 153427 (binsec) total-vm:65161528kB, anon-rss:62233568kB, file-rss:44kB, shmem-rss:0kB, UID:1000 pgtables:122096kB oom_score_adj:0
+Nov 06 02:24:41 kernel: Memory cgroup out of memory: Killed process 154034 (binsec) total-vm:67407264kB, anon-rss:66974708kB, file-rss:900kB, shmem-rss:0kB, UID:1000 pgtables:131232kB oom_score_adj:0
+Nov 06 05:35:11 kernel: Memory cgroup out of memory: Killed process 418817 (binsec) total-vm:117289460kB, anon-rss:115114784kB, file-rss:20228kB, shmem-rss:0kB, UID:1000 pgtables:225432kB oom_score_adj:0
+Nov 06 08:10:13 kernel: Memory cgroup out of memory: Killed process 742581 (binsec) total-vm:186728072kB, anon-rss:156973048kB, file-rss:20600kB, shmem-rss:0kB, UID:1000 pgtables:307372kB oom_score_adj:0
