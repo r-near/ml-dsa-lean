@@ -23,6 +23,11 @@
 #            profile no dispatch is compiled and nothing is pre-set (the log says so).
 #   TRACE    1 runs BINSEC with -sse-debug-level 3 -sse-loglevel debug and keeps only the last executed instruction and the
 #            executed-instruction count of each probe (a "last:" line in the Summary): where a path was cut or stuck
+#   ZEROIZE  1 builds the driver with the crate's `zeroize` feature, whatever the profile (not with a dispatch profile): the
+#            `cfg(feature = "zeroize")` code of src/ (the wipes of Sign's attempt, the in-place decoders' `.zeroize()`
+#            calls, `Drop` of the prepared key) is then compiled. No default driver contains it. The container adds the
+#            optional `zeroize` dependency (the version of Cargo.lock) to its working copy of checkct/driver/Cargo.toml and
+#            makes the feature a default one; the repository's file is unchanged. Needs network access for the crate download.
 #   EXPERIMENTS  1 compiles driver/src/experiments.rs (the throwaway rewrite probes `exp_*`) via its cargo feature
 #   NAME     container name (default ct-select)
 #   CT_MEMORY / CT_CPUS  docker --memory / --cpus caps for the container (default 64g / 24). BINSEC runs can grow to
@@ -97,7 +102,7 @@ if [ "$PROFILE" = avx2 ] || [ "$PROFILE" = nearcore-avx2 ]; then
 fi
 EXACT=""
 case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch|nearcore-exact-novec) EXACT=1 ;; esac
-docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPERIMENTS" -e TRACE="$TRACE" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
+docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPERIMENTS" -e ZEROIZE="$ZEROIZE" -e TRACE="$TRACE" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
   -v "$PWD":/src:ro ct-binsec bash -c '
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
   rm -rf /home/opam/w/checkct/target && cd /home/opam/w && eval $(opam env) &&
@@ -114,6 +119,16 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
   if [ -n "$DISPATCH" ]; then
     sed -i "s/^avx2 = \[\]\$/avx2 = []\ndefault = [\"avx2\"]/" checkct/driver/Cargo.toml &&
     grep -q "^default = \[\"avx2\"\]\$" checkct/driver/Cargo.toml || { echo "PRESET FAILED: could not enable the avx2 feature in checkct/driver/Cargo.toml"; exit 1; }
+  fi
+  # ZEROIZE=1: the `zeroize` feature of the crate, as an optional dependency added to the working copy of the driver manifest
+  # (the repository manifest does not declare it). The version is the one of the crate lock file.
+  if [ -n "$ZEROIZE" ]; then
+    [ -n "$DISPATCH" ] && { echo "ZEROIZE=1 is not combined with a dispatch profile"; exit 1; }
+    zv=$(grep -A1 "^name = \"zeroize\"\$" /src/Cargo.lock | sed -n "s/^version = \"\\(.*\\)\"\$/\\1/p" | head -1)
+    [ -n "$zv" ] || { echo "ZEROIZE: no zeroize version in Cargo.lock"; exit 1; }
+    sed -i "s/^\\[dependencies\\]\$/[dependencies]\nzeroize = { version = \"=$zv\", default-features = false, optional = true }/; s/^avx2 = \\[\\]\$/avx2 = []\nzeroize = [\"dep:zeroize\"]\ndefault = [\"zeroize\"]/" checkct/driver/Cargo.toml &&
+    grep -q "^default = \\[\"zeroize\"\\]\$" checkct/driver/Cargo.toml && grep -q "^zeroize = { version" checkct/driver/Cargo.toml || { echo "ZEROIZE: could not add the zeroize feature to checkct/driver/Cargo.toml"; exit 1; }
+    echo "zeroize feature enabled (zeroize =$zv); driver manifest: $(grep -E "^(zeroize|default)" checkct/driver/Cargo.toml | tr "\n" " ")"
   fi
   # EXPERIMENTS=1: also compile driver/src/experiments.rs (throwaway rewrite probes, off in every other run so the
   # sweep drivers stay byte-identical to a build without it).
