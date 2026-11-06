@@ -47,10 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      # Push the release branch and its commits.
-      contents: write
-      # Create and update the release pull request.
-      pull-requests: write
+      contents: write # push the release branch and its commits
+      pull-requests: write # create and update the release pull request
     # One run at a time per ref, so two pushes in quick succession cannot race on the release branch. Waiting runs are
     # not cancelled (cancel-in-progress: false), as in the release-plz quickstart.
     concurrency:
@@ -89,12 +87,9 @@ jobs:
     # The environment the crates.io trusted publisher is bound to. Only this job uses it.
     environment: release
     permissions:
-      # Push the git tag and create the GitHub release.
-      contents: write
-      # Let release-plz find the release pull request and its commits (upstream's setting for this job).
-      pull-requests: read
-      # Request the OIDC token that crates-io-auth-action exchanges for a crates.io token.
-      id-token: write
+      contents: write # push the git tag and create the GitHub release
+      pull-requests: read # let release-plz find the release pull request and its commits (upstream's setting)
+      id-token: write # request the OIDC token that crates-io-auth-action exchanges for a crates.io token
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
