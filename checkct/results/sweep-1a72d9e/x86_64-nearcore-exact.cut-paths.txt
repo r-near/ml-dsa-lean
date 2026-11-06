@@ -1,0 +1,211 @@
+== sw2-x86-nearcore-exact.log
+done x86_64-unknown-linux-gnu driver::extra::coeff_from_half_byte_eta4 secure
+done x86_64-unknown-linux-gnu driver::extra::coeff_from_half_byte_eta2 secure
+done x86_64-unknown-linux-gnu driver::extra::encode_sk_is_well_formed_44 secure
+done x86_64-unknown-linux-gnu driver::extra::compute_t_1x1 unknown
+done x86_64-unknown-linux-gnu driver::extra::encode_sk_is_well_formed_65 secure
+done x86_64-unknown-linux-gnu driver::extra::encode_sk_is_well_formed_87 secure
+done x86_64-unknown-linux-gnu driver::extra::compute_t_44 unknown
+done x86_64-unknown-linux-gnu driver::extra::keygen_seed_hash secure
+done x86_64-unknown-linux-gnu driver::extra::matrix_vector_ntt_1x1 unknown
+done x86_64-unknown-linux-gnu driver::extra::expand_mask_44 secure
+done x86_64-unknown-linux-gnu driver::extra::compute_t_65 unknown
+done x86_64-unknown-linux-gnu driver::extra::expand_mask_65 secure
+done x86_64-unknown-linux-gnu driver::extra::matrix_vector_ntt_44 unknown
+done x86_64-unknown-linux-gnu driver::extra::poly_power2round secure
+done x86_64-unknown-linux-gnu driver::extra::compute_t_87 unknown
+done x86_64-unknown-linux-gnu driver::extra::matrix_vector_ntt_65 unknown
+done x86_64-unknown-linux-gnu driver::extra::expand_mask_87 secure
+done x86_64-unknown-linux-gnu driver::extra::scalar_vector_ntt_inverse_1 unknown
+done x86_64-unknown-linux-gnu driver::extra::ntt_vec_44 unknown
+done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
+done x86_64-unknown-linux-gnu driver::extra::sk_is_well_formed_44 secure
+done x86_64-unknown-linux-gnu driver::extra::matrix_vector_ntt_87 unknown
+done x86_64-unknown-linux-gnu driver::extra::sk_is_well_formed_65 secure
+done x86_64-unknown-linux-gnu driver::extra::vec_power2round_44 secure
+done x86_64-unknown-linux-gnu driver::extra::vec_power2round_87 secure
+done x86_64-unknown-linux-gnu driver::extra::sk_is_well_formed_87 secure
+done x86_64-unknown-linux-gnu driver::prepared::prepare_sk_1x1_44 unknown
+done x86_64-unknown-linux-gnu driver::prepared::control_prepared_branch_44 unknown
+done x86_64-unknown-linux-gnu driver::prepared::control_prepared_index_44 unknown
+done x86_64-unknown-linux-gnu driver::prepared::prepare_sk_44 unknown
+done x86_64-unknown-linux-gnu driver::prepared::signing_key_44 unknown
+done x86_64-unknown-linux-gnu driver::prepared::prepare_sk_65 unknown
+done x86_64-unknown-linux-gnu driver::probes::barrett_reduce secure
+done x86_64-unknown-linux-gnu driver::prepared::prepare_sk_87 unknown
+done x86_64-unknown-linux-gnu driver::probes::bit_pack_13 secure
+done x86_64-unknown-linux-gnu driver::probes::bit_pack_18 secure
+done x86_64-unknown-linux-gnu driver::prepared::signing_key_65 unknown
+done x86_64-unknown-linux-gnu driver::probes::bit_pack_20 secure
+done x86_64-unknown-linux-gnu driver::probes::bit_pack_3 secure
+done x86_64-unknown-linux-gnu driver::probes::ct_select secure
+done x86_64-unknown-linux-gnu driver::probes::ct_lt_mask secure
+done x86_64-unknown-linux-gnu driver::probes::bit_pack_4 secure
+done x86_64-unknown-linux-gnu driver::probes::decompose_44 secure
+done x86_64-unknown-linux-gnu driver::probes::decompose_65_87 secure
+done x86_64-unknown-linux-gnu driver::probes::field_add secure
+done x86_64-unknown-linux-gnu driver::probes::field_mont_reduce secure
+done x86_64-unknown-linux-gnu driver::probes::field_mul_mont secure
+done x86_64-unknown-linux-gnu driver::probes::field_mul_shoup secure
+done x86_64-unknown-linux-gnu driver::probes::field_neg secure
+done x86_64-unknown-linux-gnu driver::probes::field_small_reduce secure
+done x86_64-unknown-linux-gnu driver::probes::field_sub secure
+done x86_64-unknown-linux-gnu driver::probes::high_bits_44 secure
+done x86_64-unknown-linux-gnu driver::probes::infinity_norm secure
+done x86_64-unknown-linux-gnu driver::probes::high_bits_65_87 secure
+done x86_64-unknown-linux-gnu driver::probes::low_bits_44 secure
+done x86_64-unknown-linux-gnu driver::probes::low_bits_65_87 secure
+done x86_64-unknown-linux-gnu driver::probes::keccak_f1600 secure
+done x86_64-unknown-linux-gnu driver::prepared::signing_key_87 unknown
+done x86_64-unknown-linux-gnu driver::probes::make_hint_65_87 secure
+done x86_64-unknown-linux-gnu driver::probes::make_hint_44 secure
+done x86_64-unknown-linux-gnu driver::probes::power2round secure
+done x86_64-unknown-linux-gnu driver::probes::multiply_ntt unknown
+done x86_64-unknown-linux-gnu driver::probes::ntt_inverse unknown
+done x86_64-unknown-linux-gnu driver::probes::ntt unknown
+done x86_64-unknown-linux-gnu driver::probes::sk_decode_44 secure
+done x86_64-unknown-linux-gnu driver::probes::sk_decode_65 secure
+done x86_64-unknown-linux-gnu driver::probes::sk_decode_87 secure
+done x86_64-unknown-linux-gnu driver::probes::vec_infinity_norm secure
+done x86_64-unknown-linux-gnu driver::probes::sk_encode_44 secure
+done x86_64-unknown-linux-gnu driver::signing::hint_step_1_44 unknown
+done x86_64-unknown-linux-gnu driver::signing::hint_step_1_65 unknown
+done x86_64-unknown-linux-gnu driver::probes::sk_encode_65 secure
+done x86_64-unknown-linux-gnu driver::signing::hint_step_44 unknown
+done x86_64-unknown-linux-gnu driver::probes::sk_encode_87 secure
+done x86_64-unknown-linux-gnu driver::signing::hint_step_65 unknown
+done x86_64-unknown-linux-gnu driver::signing::response_1x1_44 unknown
+done x86_64-unknown-linux-gnu driver::signing::response_1x1_65 unknown
+done x86_64-unknown-linux-gnu driver::signing::hint_step_87 unknown
+done x86_64-unknown-linux-gnu driver::signing::response_44 unknown
+done x86_64-unknown-linux-gnu driver::signing::response_65 unknown
+done x86_64-unknown-linux-gnu driver::signing::response_87 unknown
+done x86_64-unknown-linux-gnu driver::split::split_compute_t_44_2x2 unknown
+done x86_64-unknown-linux-gnu driver::split::split_compute_t_44_col unknown
+done x86_64-unknown-linux-gnu driver::split::split_compute_t_44_row unknown
+done x86_64-unknown-linux-gnu driver::split::split_ntt_vec_into_1 unknown
+done x86_64-unknown-linux-gnu driver::split::split_ntt_vec_into_7 unknown
+done x86_64-unknown-linux-gnu driver::split::split_ntt_vec_into_8 unknown
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_44_row unknown
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_44_col unknown
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_65_row unknown
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_65_col unknown
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_87_2x1 unknown
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_87_4x1 unknown
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_87_6x1 unknown
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_87_7x1 unknown
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_1 secure
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_87_col unknown
+done x86_64-unknown-linux-gnu driver::split::split_prepare_sk_87_row unknown
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_2 secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_3 secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_5 secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_7 secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_6 secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_8_hi secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_8_lo secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_8_q0 secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_8_q1 secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_8_q2 secure
+done x86_64-unknown-linux-gnu driver::split::split_vec_power2round_8_q3 secure
+done x86_64-unknown-linux-gnu driver::extra::control_early_exit_44 insecure
+done x86_64-unknown-linux-gnu driver::prepared::prepare_sk_1x1_65 unknown
+done x86_64-unknown-linux-gnu driver::extra::rej_bounded_poly_eta4 insecure
+done x86_64-unknown-linux-gnu driver::extra::rej_bounded_poly_eta2 insecure
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.426)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.699)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.908)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (1.221)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x22b593
+      note: 1 [checkct:result] Program status is : unknown (0.080)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x2063c0
+      note: 1 [checkct:result] Program status is : unknown (0.303)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x206c90
+      note: 1 [checkct:result] Program status is : unknown (0.455)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x22aa10
+      note: 1 [checkct:result] Program status is : unknown (0.746)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.461)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x22e1de
+      note: 1 [checkct:result] Program status is : unknown (0.078)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.723)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.727)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.548)
+      note: 1 [checkct:result] Program status is : unknown (600.031)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.723)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.889)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.927)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.712)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.863)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.899)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x24080d
+      note: 1 [checkct:result] Program status is : unknown (0.078)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.403)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x222619
+      note: 1 [checkct:result] Program status is : unknown (0.116)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x21db8a
+      note: 1 [checkct:result] Program status is : unknown (0.100)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x21db8a
+      note: 1 [checkct:result] Program status is : unknown (0.098)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x207771
+      note: 1 [checkct:result] Program status is : unknown (0.183)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x207e31
+      note: 1 [checkct:result] Program status is : unknown (0.244)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x208831
+      note: 1 [checkct:result] Program status is : unknown (0.300)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x21d0ab
+      note: 1 [checkct:result] Program status is : unknown (0.127)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x21d0ab
+      note: 1 [checkct:result] Program status is : unknown (0.126)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x207771
+      note: 1 [checkct:result] Program status is : unknown (0.275)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x245e0f
+      note: 1 [checkct:result] Program status is : unknown (0.383)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x246f2f
+      note: 1 [checkct:result] Program status is : unknown (0.483)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.531)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.570)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.572)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.413)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.524)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.559)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.706)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.578)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.881)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.616)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.622)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.742)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.898)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.877)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.798)
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:result] Program status is : unknown (0.670)
