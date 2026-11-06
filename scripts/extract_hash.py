@@ -21,7 +21,9 @@ The version is normalized so that a release (release-plz bumps `version` in Carg
 force a re-extraction: the version string cannot change the extracted code (src/ cannot read it, since env! is refused
 below), and the staged crate Charon sees carries the same placeholder. Only the single `version = "..."` key of the
 `[package]` table is replaced; `rust-version`, dependency versions and every other line are digested as they are. A
-Cargo.toml without exactly one such line is an error.
+Cargo.toml without exactly one such line is an error, and so is one where, parsed as TOML, the normalized file differs
+from the original in anything but package.version (the same parse check guards the [dev-dependencies] removal). `check`
+first runs a self-test of both against manifests they must reject.
 
 `check` fails (exit 1) if
   - the digest of the extraction inputs now differs from the one in the report,
@@ -51,6 +53,7 @@ import re
 import shutil
 import sys
 import tempfile
+import tomllib
 from pathlib import Path
 
 # Output file name in lean/Impl -> name of the file Aeneas generates (extract.py copies the template to FunsExternal.lean,
@@ -167,7 +170,71 @@ def normalize_version(cargo_text):
     table = tables[0]
     if len(PACKAGE_VERSION.findall(table)) != 1:
         raise ValueError('the [package] table of Cargo.toml needs exactly one `version = "..."` line')
-    return cargo_text.replace(table, PACKAGE_VERSION.sub(f'version = "{VERSION_PLACEHOLDER}"', table), 1)
+    result = cargo_text.replace(table, PACKAGE_VERSION.sub(f'version = "{VERSION_PLACEHOLDER}"', table), 1)
+    # The regexes above are line-based; TOML is not (indented headers, single-quoted or multiline strings, ...). Parse
+    # both sides and require that the only change is package.version becoming the placeholder, so a layout the regexes
+    # misread can never hide another value (say, a dependency requirement) from the digest.
+    before, after = parse_toml(cargo_text), parse_toml(result)
+    package = before.get('package')
+    if not isinstance(package, dict) or not isinstance(package.get('version'), str):
+        raise ValueError('Cargo.toml has no string package.version')
+    expected = {**before, 'package': {**package, 'version': VERSION_PLACEHOLDER}}
+    if after != expected:
+        raise ValueError('normalizing the package version of Cargo.toml changed something else; '
+                         'use one plain `version = "..."` line in [package]')
+    return result
+
+
+def parse_toml(text):
+    try:
+        return tomllib.loads(text)
+    except tomllib.TOMLDecodeError as e:
+        raise ValueError(f'Cargo.toml is not valid TOML: {e}') from None
+
+
+def strip_dev_dependencies(cargo_text):
+    """CARGO_TEXT without its [dev-dependencies] table. Raises ValueError unless, parsed, that is the only change."""
+    result = re.sub(r'(?ms)^\[dev-dependencies\]\n.*?(?=^\[|\Z)', '', cargo_text)
+    expected = {k: v for k, v in parse_toml(cargo_text).items() if k != 'dev-dependencies'}
+    if parse_toml(result) != expected:
+        raise ValueError('removing [dev-dependencies] from Cargo.toml changed something else; '
+                         'keep it one plain [dev-dependencies] table')
+    return result
+
+
+# Manifests the Cargo.toml normalization must reject (each would let it hide or rewrite a value other than the package
+# version) and one it must accept unchanged except for the version. `check` runs these first, so a regression in
+# normalize_version or strip_dev_dependencies fails CI.
+_REJECT = {
+    'indented dependency header after a single-quoted package version':
+        "[package]\nname = \"s\"\nversion = '0.1.0'\n [dependencies.z]\nversion = \"1\"\n",
+    'version under an indented [package.metadata] table':
+        '[package]\nname = "s"\nversion = "0.1.0"\n  [package.metadata.x]\nversion = "9"\n',
+    'version = line inside a multiline string':
+        '[package]\nname = "s"\ndescription = """\nversion = "1"\n"""\nversion = "0.1.0"\n',
+    'indented dependency header inside [dev-dependencies]':
+        '[package]\nname = "s"\nversion = "0.1.0"\n[dev-dependencies]\na = "1"\n [dependencies.z]\nversion = "1"\n',
+}
+_ACCEPT = ('[package]\nname = "s"\nversion = "0.1.0"\nrust-version = "1.86"\n\n[dependencies]\nz = { version = "1" }\n'
+           '\n[dev-dependencies]\na = "1"\n',
+           '[package]\nname = "s"\nversion = "0.0.0"\nrust-version = "1.86"\n\n[dependencies]\nz = { version = "1" }\n\n')
+
+
+def normalizer_selftest():
+    """Errors (a list of strings) if the Cargo.toml normalization accepts a manifest it must reject or mangles one."""
+    errors = []
+    for name, text in _REJECT.items():
+        try:
+            normalize_version(strip_dev_dependencies(text))
+            errors.append(f'Cargo.toml normalization self-test: accepted {name}')
+        except ValueError:
+            pass
+    try:
+        if normalize_version(strip_dev_dependencies(_ACCEPT[0])) != _ACCEPT[1]:
+            errors.append('Cargo.toml normalization self-test: wrong output for a plain manifest')
+    except ValueError as e:
+        errors.append(f'Cargo.toml normalization self-test: rejected a plain manifest: {e}')
+    return errors
 
 
 def stage_crate(repo, roots, dest):
@@ -195,7 +262,7 @@ def stage_crate(repo, roots, dest):
     if (repo / 'Cargo.toml').is_symlink():
         raise ValueError('Cargo.toml is a symlink')
     cargo = cargo_text
-    cargo = re.sub(r'(?ms)^\[dev-dependencies\]\n.*?(?=^\[|\Z)', '', cargo)
+    cargo = strip_dev_dependencies(cargo)
     cargo = normalize_version(cargo)
     (dest / 'Cargo.toml').write_text(cargo)
     (dest / 'hax.toml').write_text(hax_toml(roots))
@@ -240,6 +307,9 @@ def check(repo):
     for d in ('lean', 'lean/Impl', 'src'):
         if (repo / d).is_symlink():
             return [f'{d} is a symlink']
+    selftest = normalizer_selftest()
+    if selftest:
+        return selftest
     if not report_path.is_file():
         return [f'{report_path} not found']
     errors = []
