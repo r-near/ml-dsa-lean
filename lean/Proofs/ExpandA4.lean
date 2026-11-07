@@ -1,7 +1,12 @@
 import Proofs.Sample4
 
 /-!
-# The 4-way ExpandA (scratch)
+# The 4-way ExpandA
+
+`sampling.expand_a_x4 K L Sh4` is `sampling.expand_a K L` (`expand_a_x4_eq`): both are partially correct for the spec's
+`ExpandA` (`expand_a_x4_partial`, `expand_a_partial`), the 4-way one terminates whenever the spec's `ExpandA` has a
+result (`expand_a_x4_term`), and the matrix is unique (`ReprMat.unique`), so the two `RustM` values agree, divergence
+included (`rustM_eq_of_partial`).
 -/
 
 open Aeneas Aeneas.Std RustM
