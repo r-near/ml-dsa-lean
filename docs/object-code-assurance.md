@@ -285,11 +285,12 @@ there." Not claimed: constant time of the whole `sign_internal` as linked into a
 flags, of macOS or AArch64-with-NEON builds, or of hardware (variable-latency instructions, speculation, power). Trusted:
 BINSEC's instruction lifting, solver and plugin; "all instructions take operand-independent time".
 
-### 3.5 AVX2 dispatch of the NTT bodies
+### 3.5 AVX2 dispatch (the NTT bodies and the 4-way verify)
 
 `src/ntt.rs` ("Dispatch") compiles the NTT, inverse NTT and pointwise-product bodies twice on x86_64 and picks one at run
 time, **only with the opt-in `avx2` cargo feature**. The default build has a single portable compilation, no `unsafe`
-(`forbid(unsafe_code)`). This section records what the feature does to the claims above.
+(`forbid(unsafe_code)`). The same feature also dispatches `verify` and the prepared-key constructor to a 4-way body
+(`src/fast_verify.rs`); the last paragraph of this section is about that. This section records what the feature does to the claims above.
 
 **Measured.** The sweep covers the default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit) and, on x86_64,
 the `dispatch` and `nearcore-dispatch` builds (crate feature `avx2`, dispatch cache pre-set to "no AVX2" in every script; the
@@ -308,7 +309,7 @@ bodies `ntt_body`, `ntt_inverse_body` and `multiply_ntt_body`. Extraction runs w
 public entry points are the bodies themselves: the proved model contains no dispatch, no atomic and no `unsafe`. In a normal
 build the dispatch picks one of two compilations of that same body: the crate's baseline target features, or a
 `#[target_feature(enable = "avx2")]` wrapper in which LLVM vectorizes the 32 x 32 -> 64 bit butterflies. The shim (CPUID leaf 1 XSAVE/OSXSAVE/AVX,
-leaf 7 AVX2, XCR0 bits 1 and 2, a relaxed `AtomicU8` cache) is outside the proof. It reads only the CPU model. A wrong answer cannot change a result (both copies compute the same
+leaf 7 AVX2, XCR0 bits 1 and 2, a relaxed `AtomicU8` cache; `src/cpu.rs`, shared with the verify dispatch, and in `src/ntt.rs` when the sweep recorded here ran) is outside the proof. It reads only the CPU model. A wrong answer cannot change a result (both copies compute the same
 function); it can only cause SIGILL (AVX2 reported but unusable) or a slower run. `tests/dispatch.rs` compares the two
 compilations on random and edge polynomials. What stays assumed is that LLVM compiles both copies faithfully. That assumption is made for the
 portable copy too, but the AVX2 copy is a separate vectorizer run over the whole arithmetic core with less evidence behind it:
@@ -331,6 +332,14 @@ no BINSEC verdict, and functional evidence from `tests/dispatch.rs` and the KAT 
   (VPMULUDQ and the other instructions used are fixed-latency on current Intel and AMD cores, which is an assumption about
   hardware, as in section 2.3).
 
+
+**The 4-way verify (`src/fast_verify.rs`).** Verify handles only public data, so the 4-way body, the AVX2 lane operations
+(`keccak4::avx2`) and the verify-only `poly_use_hint_pub` and `bit_unpack_pub` have no BINSEC probes and need none; BINSEC
+0.11.3 could not lift the VEX code anyway. The functional evidence for them, and for the dispatch, is in assurance.md section 1.9
+and the tests it lists. Nothing here was rerun after the dispatch gained the verify arm: the sweep predates it, and the
+driver does not build on this tree (it includes the `src/` files by `#[path]` and lacks the `keccak4`, `fast_verify` and `cpu`
+modules). The pre-set described above anchors on the symbol `driver::ntt::dispatch::AVX2` (`checkct/run-select.sh`), which
+no longer exists in the crate source: the cache static is `AVX2` in `src/cpu.rs`.
 
 A reminder from the first version of the dispatch: it marked the field functions `#[inline(always)]` on every target, which made
 the riscv32imac `response_*` and `hint_step_*` probes `unknown` (one pending path after an hour) where the Shoup/Montgomery tree

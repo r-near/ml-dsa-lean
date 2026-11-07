@@ -27,7 +27,19 @@ cargo test                      # default features: unit tests, KATs, ACVP, Wych
 cargo test --features zeroize   # at opt-level 0 the stack-residue scans fail (Z-1 in assurance.md); use --release
 cargo test --release --features zeroize
 cargo test --features avx2
+ML_DSA_REQUIRE_AVX2=1 cargo test --features avx2,internals   # on an AVX2 machine; see below
+bash scripts/check-avx2-inlining.sh                           # x86_64 Linux; see below
 ```
+
+The `avx2` feature's tests (`tests/keccak4_avx2.rs`, `tests/fast_verify.rs`, `tests/fast_verify_x4.rs`,
+`tests/fast_verify_dispatch.rs`, `tests/dispatch.rs`) compare the AVX2 code with the portable code and need a CPU with AVX2 to say
+anything: without one they pass after printing a note that the AVX2 path was not compared. `ML_DSA_REQUIRE_AVX2=1` turns that
+note into a failure (`scripts/ci.sh` sets it for its `avx2` steps). They are `cfg`'d out on other architectures, so a pass on
+an aarch64 Mac proves nothing about them; run them on x86_64. `scripts/check-avx2-inlining.sh` builds the library in release with
+`--features avx2` under nearcore's target features, emits assembly, and fails unless the 4-way verify body contains 256-bit vector
+code and no `_mm256_*` or `_mm_*` intrinsic wrapper is called out of line (it would still be correct, but several times slower).
+The Lean theorems behind the 4-way verify (`lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`) are checked by
+`scripts/lean-check.sh` (section 2.1).
 
 MSRV is Rust 1.86 (`cargo +1.86.0 build`). The crate itself is `no_std`, has no dependencies without the `zeroize` feature, and
 needs no C compiler. `cargo test` does need one, because the dev-dependency `aws-lc-rs` builds `aws-lc-sys` (C) for the
@@ -53,6 +65,11 @@ The longer differentials, fuzzing and benchmarks:
   pinned to one CPU (the first argument is the directory `build.sh` wrote to); `bash bench/compare.sh LABEL [CPU]` builds and
   runs the default / `avx2` / `x86-64-v3` comparison behind the table in assurance.md section 5 (output under
   `$ML_DSA_SCRATCH/ntt-bench-LABEL`, which defaults to `${XDG_CACHE_HOME:-~/.cache}/ml-dsa-lean/scratch`). See the header of each script.
+  `bash bench/fast-verify.sh LABEL [CPU]` is the verify benchmark behind the verify table in assurance.md section 5 and
+  `bench/results/2026-11-07-p3.md`: it builds the scalar, `avx2` and `x86-64-v3` variants under nearcore's profile and target
+  features (`SETS=44,65,87` for all sets; `TOOLCHAIN=1.95.0` for nearcore's compiler; `ROUNDS`, `HT_OFFSET` and
+  `ML_DSA_SCRATCH` as described in its header) and runs them next to aws-lc-rs and mldsa-native AVX2, pinned to an idle core.
+  `bench/ab.sh` is the interleaved A/B runner behind the per-change savings in that results file.
 - `tools/stack/README.md`: measuring worst-case stack use.
 
 ## 2. The Lean proofs
@@ -82,9 +99,11 @@ bash scripts/lean-check.sh
 This builds the Lake package `MlDsaLean` in `lean/` (`lake build`: the spec, the extracted code and every proof module), fails
 on a nonzero Lake exit, on any `error:` or `declaration uses 'sorry'` in the full log, and then runs
 `scripts/check-axioms.sh`. The axiom check prints the axioms of every extracted definition and of every name in
-`lean/headline-theorems.txt` and fails if any is not one of `propext`, `Classical.choice`, `Quot.sound`. A `sorry` would
+`lean/headline-theorems.txt` and fails if any is not one of `propext`, `Classical.choice`, `Quot.sound`. `lean-check.sh` then runs
+the same gate over `lean/keccak4-theorems.txt` and `lean/fast-verify-theorems.txt` (the 4-way Keccak, sampler, ExpandA and verify
+theorems, assurance.md section 1.9; `scripts/check-axioms.sh --list FILE --no-impl` runs one list). A `sorry` would
 show up as `sorryAx` and `native_decide` as an extra axiom, so both fail the check. The axiom gate prints the declaration count
-on its `defs/theorems to check:` and `checked:` lines (770 at the recorded run); success ends with `LEAN CHECK OK` and does not
+on its `defs/theorems to check:` and `checked:` lines (the count depends on the tree; assurance.md section 0 has the recorded one); success ends with `LEAN CHECK OK` and does not
 repeat it. Pass module names to build less, for example
 `bash scripts/lean-check.sh Proofs.PartialAPI`. Dependencies (Mathlib and Aeneas) are fetched with `lake exe cache get`
 where possible and compiled otherwise, so the first run is much slower than later ones. `LEAN_PACKAGES_SEED` can point at a
@@ -159,7 +178,9 @@ larger one.
 
 ## 3. Constant-time checks (BINSEC)
 
-These need Linux and Docker. The image builds BINSEC and the Rust toolchains (about 10 minutes):
+These need Linux and Docker. The recorded sweep predates the fast verify; the harness (`checkct/driver`, which includes the `src/`
+files by `#[path]`) does not build on a tree that has it until it gains the `keccak4`, `fast_verify` and `cpu` modules (assurance.md
+section 4). The image builds BINSEC and the Rust toolchains (about 10 minutes):
 
 ```sh
 docker build -t ct-binsec checkct
