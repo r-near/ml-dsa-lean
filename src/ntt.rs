@@ -271,43 +271,10 @@ mod dispatch {
         multiply_ntt_body(a, b)
     }
 
-    // The CPU check, `has_avx2` (imported above), lives in `src/cpu.rs` and is shared with the verify dispatch
-    // (`src/fast_verify.rs`); this module no longer has its own copy. What it does, so that the SAFETY comments below can
-    // be read in place:
-    //   * it reports AVX2 only if CPUID leaf 0 reaches leaf 7, leaf 1 ECX has XSAVE, OSXSAVE and AVX (bits 26 to 28),
-    //     XGETBV(0) says that the OS saves XMM and YMM state (XCR0 bits 1 and 2), and leaf 7 EBX bit 5 (AVX2) is set;
-    //   * the first call runs CPUID, which traps to the hypervisor on virtual machines (about a microsecond), so the
-    //     answer is cached in a relaxed atomic; racing threads compute the same value;
-    //   * the answer is public data (the CPU model), never a function of secret input;
-    //   * it is not for SGX enclaves, where CPUID faults: the `avx2` feature does not support them;
-    //   * a build with `-C target-feature=+avx2` never reaches this module (it takes the first `mod dispatch` above).
-    //
-    // What a wrong answer can do. "AVX2 reported but unusable" raises SIGILL; "AVX2 usable but not reported" runs the
-    // portable body, which is slower. Neither can change a result, because the two copies of each body below compute
-    // the same function: they are the same source, compiled twice.
-    //
-    // Evidence, none of it a proof:
-    //   * `tests/dispatch.rs` compares the two compilations of every body on 2000 random and edge polynomials;
-    //   * `tests/fast_verify.rs` compares `cpu::has_avx2` with the standard library's detection;
-    //   * the KAT, ACVP and Wycheproof suites run through the dispatched entry points under `--features avx2`.
-    //
-    // The detector used to be written out here; moving it to `cpu.rs` removed 38 lines from this file. This comment
-    // takes their place on purpose: the extracted Lean carries `Source: 'src/ntt.rs', lines ...` comments for every
-    // function, and keeping the line numbers of everything below unchanged keeps `lean/Impl` byte for byte identical.
-    //
-    // The scalar `ntt`, `ntt_inverse` and `multiply_ntt` below are the whole interface of this dispatch module. Each
-    // has a plain body (`ntt_body` and the others, proved in Lean) and an AVX2 compilation of the same body. Which
-    // one runs depends on the CPU and on nothing else. The in-place variants are the same bodies again, so a secret
-    // polynomial can be transformed without a second buffer holding a copy of the result. The functions below keep
-    // the order of the portable module above, so the two read the same way.
-    //
-    // Every call into an `*_avx2` function below has the same two-line shape: a `has_avx2()` test and an `unsafe` call
-    // whose SAFETY comment refers back to that test. The `#[target_feature(enable = "avx2")]` functions are safe to
-    // define on Rust 1.86 and later (the crate's MSRV); only the call from code without the feature needs `unsafe`.
-    // The unsafe contract is therefore exactly "the CPU and the OS support AVX2", and `has_avx2` is the one place that
-    // establishes it. If a later change adds a second caller of an `*_avx2` function, it must go through `has_avx2` too.
-    // The same rule holds for `src/fast_verify.rs`, which calls its own `#[target_feature]` wrappers only behind
-    // `has_avx2()`.
+    // `has_avx2` (src/cpu.rs, shared with src/fast_verify.rs) is the one place that establishes the contract of every
+    // `unsafe` call below: the CPU and the OS support AVX2. The `*_avx2` functions are the same bodies as the portable
+    // ones, compiled with AVX2 enabled, so a wrong answer from `has_avx2` can cost speed or raise SIGILL but cannot
+    // change a result. Any new caller of an `*_avx2` function must go through `has_avx2` too.
 
     pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
         if has_avx2() {
