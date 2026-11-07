@@ -65,16 +65,16 @@ impl Backend for ShimB {
         rej_ntt_poly_x4::<Shim4>(rho, s, r)
     }
     fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
-        expand_a_x4::<Shim4, K, L>(rho)
+        expand_a_x4::<K, L, Shim4>(rho)
     }
     fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-        expand_a_into_x4::<Shim4, K, L>(rho, a)
+        expand_a_into_x4::<K, L, Shim4>(rho, a)
     }
     fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
-        prepare_vk_x4::<Shim4, K, L>(pk)
+        prepare_vk_x4::<K, L, Shim4>(pk)
     }
     fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
-        verify_internal_x4::<Shim4, K, L>(p, pk, pre, m, sig)
+        verify_internal_x4::<K, L, Shim4>(p, pk, pre, m, sig)
     }
 }
 
@@ -89,19 +89,19 @@ mod avx2_backend {
     }
     #[target_feature(enable = "avx2")]
     fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
-        expand_a_x4::<Avx2, K, L>(rho)
+        expand_a_x4::<K, L, Avx2>(rho)
     }
     #[target_feature(enable = "avx2")]
     fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-        expand_a_into_x4::<Avx2, K, L>(rho, a)
+        expand_a_into_x4::<K, L, Avx2>(rho, a)
     }
     #[target_feature(enable = "avx2")]
     fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
-        prepare_vk_x4::<Avx2, K, L>(pk)
+        prepare_vk_x4::<K, L, Avx2>(pk)
     }
     #[target_feature(enable = "avx2")]
     fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
-        verify_internal_x4::<Avx2, K, L>(p, pk, pre, m, sig)
+        verify_internal_x4::<K, L, Avx2>(p, pk, pre, m, sig)
     }
 
     pub struct Avx2B;

@@ -187,7 +187,7 @@ fn entry_x4(first: usize, l: usize, n: usize) -> usize {
 /// sampler: the entries are taken in the flattened order `e = r * L + s`, in groups of four; a last group with fewer
 /// than four real entries repeats the last entry.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-pub fn expand_a_into_x4<X: Lanes4, const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
+pub fn expand_a_into_x4<const K: usize, const L: usize, X: Lanes4>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
     let n = K * L;
     let mut first = 0;
     while first < n {
@@ -210,9 +210,9 @@ pub fn expand_a_into_x4<X: Lanes4, const K: usize, const L: usize>(rho: &[u8; 32
 
 /// Algorithm 32 ExpandA(ρ) with the 4-way sampler, returned by value (`expand_a_into_x4` on a zero matrix).
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-pub fn expand_a_x4<X: Lanes4, const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
+pub fn expand_a_x4<const K: usize, const L: usize, X: Lanes4>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
     let mut a = [[[0u32; 256]; L]; K];
-    expand_a_into_x4::<X, K, L>(rho, &mut a);
+    expand_a_into_x4::<K, L, X>(rho, &mut a);
     a
 }
 

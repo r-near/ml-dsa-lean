@@ -148,11 +148,11 @@ pub(crate) fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedV
 /// second compilation) lets the whole chain down to `keccak_f1600_x4` compile with AVX2 inside that wrapper.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]
-pub fn prepare_vk_into_x4<X: Lanes4, const K: usize, const L: usize>(pk: &[u8], out: &mut PreparedVk<K, L>) {
+pub fn prepare_vk_into_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8], out: &mut PreparedVk<K, L>) {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
     // 6: Â ← ExpandA(ρ), four entries per Keccak call
-    expand_a_into_x4::<X, K, L>(&rho, &mut out.a_hat);
+    expand_a_into_x4::<K, L, X>(&rho, &mut out.a_hat);
     // 7: tr ← H(pk, 64)
     out.tr = hash_pk(pk);
     // 10 (key half): NTT(t1 · 2^d)
@@ -163,11 +163,11 @@ pub fn prepare_vk_into_x4<X: Lanes4, const K: usize, const L: usize>(pk: &[u8], 
 /// equal to `prepare_vk` for the `Shim4` instantiation (`Proofs/FastVerify.lean`).
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]
-pub fn prepare_vk_x4<X: Lanes4, const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
+pub fn prepare_vk_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8]) -> PreparedVk<K, L> {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
     // 6: Â ← ExpandA(ρ), four entries per Keccak call
-    let a_hat = expand_a_x4::<X, K, L>(&rho);
+    let a_hat = expand_a_x4::<K, L, X>(&rho);
     // 7: tr ← H(pk, 64)
     let tr = hash_pk(pk);
     // 10 (key half): NTT(t1 · 2^d)
@@ -284,7 +284,7 @@ pub fn verify_internal<const K: usize, const L: usize>(
     verify_decoded::<K, L>(p, &vk, m_prefix, m, &c_tilde, &z, &h)
 }
 
-/// `verify_internal` with the 4-way ExpandA: the same code with `prepare_vk_into_x4::<X, K, L>` in place of
+/// `verify_internal` with the 4-way ExpandA: the same code with `prepare_vk_into_x4::<K, L, X>` in place of
 /// `prepare_vk_into::<K, L>`. For `X = Shim4` it is proved equal to `verify_internal` on every input, divergence
 /// included (`Proofs/FastVerify.lean`); the AVX2 build runs it with `X = keccak4::avx2::Avx2`, which is tested (not proved)
 /// to compute the same lane operations as `Shim4`.
@@ -292,7 +292,7 @@ pub fn verify_internal<const K: usize, const L: usize>(
 /// Precondition: as for `verify_internal`.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]
-pub fn verify_internal_x4<X: Lanes4, const K: usize, const L: usize>(
+pub fn verify_internal_x4<const K: usize, const L: usize, X: Lanes4>(
     p: &Params,
     pk: &[u8],
     m_prefix: &[u8],
@@ -311,7 +311,7 @@ pub fn verify_internal_x4<X: Lanes4, const K: usize, const L: usize>(
     };
     // 1, 6, 7, 10 (key half), built in place: `vk` is the only copy of Â
     let mut vk = PreparedVk::<K, L>::zeroed();
-    prepare_vk_into_x4::<X, K, L>(pk, &mut vk);
+    prepare_vk_into_x4::<K, L, X>(pk, &mut vk);
     // 8–13
     verify_decoded::<K, L>(p, &vk, m_prefix, m, &c_tilde, &z, &h)
 }
