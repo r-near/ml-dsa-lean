@@ -1,26 +1,29 @@
-//! The 4-way ExpandA and the 4-way verify body (`sampling::rej_ntt_poly_x4`, `expand_a_into_x4`, `expand_a_x4`,
-//! `verify::prepare_vk_x4`, `verify::verify_internal_x4`) against the scalar functions they must equal.
+//! Differential tests of the dispatched verify (feature `avx2`, src/fast_verify.rs) against the scalar path.
 //!
-//! * `Shim4` (portable, the instantiation proved equal to the scalar code in `lean/Proofs/Sample4.lean` and
-//!   `lean/Proofs/FastVerify.lean`): always run.
-//! * `Avx2` (feature `avx2`, x86_64, CPU with AVX2): the same checks with the intrinsic instantiation, run from a
-//!   `#[target_feature(enable = "avx2")]` wrapper like the shipped fast path.
+//! The reference is `verify::verify_internal`, the proved scalar function. Three things are compared with it on every
+//! input, for ML-DSA-44/65/87:
+//!   * `fast_verify::verify_internal`, the run-time dispatcher `api::verify_*` calls (AVX2 body on a CPU with AVX2);
+//!   * the AVX2 body itself (`verify_internal_avx2_or_none`), whatever the dispatcher decides;
+//!   * the public API: `verify_NN`, `verify_internal_NN`, and the prepared-key paths `verifying_key_NN` +
+//!     `verify_prepared_NN` / `verify_internal_prepared_NN`.
+//! Inputs: the NIST ACVP sigVer vectors, the Wycheproof verify vectors, and deterministic pseudo-random keys and messages
+//! with valid, corrupted (signature, message, context, key), wrong-length and random inputs.
 //!
-//! Coverage per parameter set (K·L = 16, 30, 56 entries; ML-DSA-65's 30 is a multiple of 4 plus 2, so its last group
-//! has two real and two repeated entries; ML-DSA-44 and -87 have no padded lanes):
-//! * `rej_ntt_poly_x4` on four distinct random (s, r) pairs and on repeated pairs, each lane against `rej_ntt_poly`;
-//! * `expand_a_x4` / `expand_a_into_x4` (on a garbage matrix) against `expand_a` for random and edge-case ρ;
-//! * `verify_internal_x4` and `verify_prepared_internal` over `prepare_vk_x4` against `verify_internal` on valid
-//!   signatures, bit-flipped signatures, wrong messages, wrong public keys, random signatures and wrong lengths.
-use ml_dsa_lean::keccak4::{Lanes4, Shim4};
-use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
-use ml_dsa_lean::sampling::{expand_a, expand_a_into_x4, expand_a_x4, rej_ntt_poly, rej_ntt_poly_x4};
-use ml_dsa_lean::verify::{PreparedVk, prepare_vk_x4, verify_internal, verify_internal_x4, verify_prepared_internal};
+//! These tests need a CPU with AVX2 to say anything about the AVX2 path. Without it they still run (everything is the
+//! scalar path) and say so; set `ML_DSA_REQUIRE_AVX2=1` (scripts/ci.sh does for its avx2 steps) to make that a failure.
+//! `tests/fast_verify_dispatch.rs` checks that the public API really reaches the AVX2 wrapper.
+#![cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
+#![allow(clippy::type_complexity)]
+use flate2::read::GzDecoder;
+use ml_dsa_lean::api;
+use ml_dsa_lean::fast_verify;
+use ml_dsa_lean::params::{self, ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
+use ml_dsa_lean::verify;
+use serde::Deserialize;
+use std::io::Read;
 
-const SCALE: usize = if cfg!(debug_assertions) { 4 } else { 1 };
-
-struct Rng(u64);
-impl Rng {
+struct XorShift(u64);
+impl XorShift {
     fn next(&mut self) -> u64 {
         let mut x = self.0;
         x ^= x << 13;
@@ -35,275 +38,379 @@ impl Rng {
     fn bytes(&mut self, n: usize) -> Vec<u8> {
         (0..n).map(|_| self.next() as u8).collect()
     }
-    fn arr32(&mut self) -> [u8; 32] {
-        let mut a = [0u8; 32];
-        for b in a.iter_mut() {
-            *b = self.next() as u8;
-        }
-        a
-    }
 }
 
-/// The instantiation under test, as run code: `Shim4` directly, `Avx2` through a `target_feature` wrapper.
-trait Backend {
-    const NAME: &'static str;
-    fn available() -> bool;
-    fn rej4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4];
-    fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K];
-    fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]);
-    fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L>;
-    fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool;
+/// One parameter set behind slices.
+struct Set {
+    name: &'static str,
+    p: Params,
+    keygen: fn(&[u8; 32]) -> (Vec<u8>, Vec<u8>),
+    sign: fn(&[u8], &[u8], &[u8], &[u8; 32]) -> Option<Vec<u8>>,
+    sign_internal: fn(&[u8], &[u8], &[u8; 32]) -> Option<Vec<u8>>,
+    /// api::verify_NN; the slices must have the exact lengths.
+    verify: fn(&[u8], &[u8], &[u8], &[u8]) -> bool,
+    verify_internal: fn(&[u8], &[u8], &[u8]) -> bool,
+    /// api::verifying_key_NN then verify_prepared_NN / verify_internal_prepared_NN.
+    prepared: fn(&[u8], &[u8], &[u8], &[u8]) -> bool,
+    prepared_internal: fn(&[u8], &[u8], &[u8]) -> bool,
+    /// verify::verify_internal (scalar), fast_verify::verify_internal (dispatched), the AVX2 body.
+    scalar: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> bool,
+    dispatched: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> bool,
+    direct: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> Option<bool>,
+    /// Does the AVX2 prepare_vk equal the scalar one (None without AVX2)?
+    prepare_matches: fn(&[u8]) -> Option<bool>,
 }
 
-struct ShimB;
-impl Backend for ShimB {
-    const NAME: &'static str = "Shim4";
-    fn available() -> bool {
-        true
-    }
-    fn rej4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
-        rej_ntt_poly_x4::<Shim4>(rho, s, r)
-    }
-    fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
-        expand_a_x4::<K, L, Shim4>(rho)
-    }
-    fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-        expand_a_into_x4::<K, L, Shim4>(rho, a)
-    }
-    fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
-        prepare_vk_x4::<K, L, Shim4>(pk)
-    }
-    fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
-        verify_internal_x4::<K, L, Shim4>(p, pk, pre, m, sig)
-    }
-}
-
-#[cfg(all(feature = "avx2", target_arch = "x86_64", not(miri)))]
-mod avx2_backend {
-    use super::*;
-    use ml_dsa_lean::keccak4::avx2::Avx2;
-
-    #[target_feature(enable = "avx2")]
-    fn rej4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
-        rej_ntt_poly_x4::<Avx2>(rho, s, r)
-    }
-    #[target_feature(enable = "avx2")]
-    fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
-        expand_a_x4::<K, L, Avx2>(rho)
-    }
-    #[target_feature(enable = "avx2")]
-    fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-        expand_a_into_x4::<K, L, Avx2>(rho, a)
-    }
-    #[target_feature(enable = "avx2")]
-    fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
-        prepare_vk_x4::<K, L, Avx2>(pk)
-    }
-    #[target_feature(enable = "avx2")]
-    fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
-        verify_internal_x4::<K, L, Avx2>(p, pk, pre, m, sig)
-    }
-
-    pub struct Avx2B;
-    impl Backend for Avx2B {
-        const NAME: &'static str = "Avx2";
-        fn available() -> bool {
-            std::arch::is_x86_feature_detected!("avx2")
-        }
-        // SAFETY (all methods): `available()` is checked by every test before it runs.
-        fn rej4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
-            unsafe { rej4(rho, s, r) }
-        }
-        fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
-            unsafe { expand::<K, L>(rho) }
-        }
-        fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-            unsafe { expand_into::<K, L>(rho, a) }
-        }
-        fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
-            unsafe { prepare::<K, L>(pk) }
-        }
-        fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
-            unsafe { verify::<K, L>(p, pk, pre, m, sig) }
-        }
-    }
-}
-
-/// `rej_ntt_poly_x4` lane by lane against `rej_ntt_poly`.
-fn check_rej4<B: Backend>() {
-    if !B::available() {
-        eprintln!("{}: not available on this CPU, skipped", B::NAME);
-        return;
-    }
-    let mut rng = Rng(0x7265_6a34_7834_0001);
-    let mut cases = 0;
-    for it in 0..(60 / SCALE) {
-        let rho = if it == 0 { [0u8; 32] } else if it == 1 { [0xffu8; 32] } else { rng.arr32() };
-        // Four distinct pairs, then the same pair in all lanes, then pairs with a repeated last entry.
-        let mut sets: Vec<([u8; 4], [u8; 4])> = Vec::new();
-        sets.push((
-            [rng.next() as u8, rng.next() as u8, rng.next() as u8, rng.next() as u8],
-            [rng.next() as u8, rng.next() as u8, rng.next() as u8, rng.next() as u8],
-        ));
-        let (s0, r0) = (rng.next() as u8, rng.next() as u8);
-        sets.push(([s0; 4], [r0; 4]));
-        sets.push(([0, 1, 2, 2], [0, 0, 0, 0]));
-        sets.push(([255, 0, 255, 0], [255, 255, 0, 0]));
-        for (s, r) in sets {
-            let out = B::rej4(&rho, s, r);
-            for i in 0..4 {
-                let mut seed = [0u8; 34];
-                seed[..32].copy_from_slice(&rho);
-                seed[32] = s[i];
-                seed[33] = r[i];
-                assert_eq!(out[i], rej_ntt_poly(&seed), "{}: rho {rho:?} lane {i} s {} r {}", B::NAME, s[i], r[i]);
-            }
-            cases += 1;
-        }
-    }
-    eprintln!("{}: rej_ntt_poly_x4: {cases} groups of four, 0 mismatches", B::NAME);
-}
-
-/// `expand_a_x4` and `expand_a_into_x4` (on a garbage matrix: every entry must be overwritten) against `expand_a`.
-fn check_expand<B: Backend, const K: usize, const L: usize>() {
-    if !B::available() {
-        return;
-    }
-    let mut rng = Rng(0x6578_7034_0000_0000 ^ (K * 16 + L) as u64);
-    let mut n = 0;
-    for it in 0..(40 / SCALE) {
-        let rho = if it == 0 { [0u8; 32] } else if it == 1 { [0xa5u8; 32] } else { rng.arr32() };
-        let want = expand_a::<K, L>(&rho);
-        assert!(B::expand::<K, L>(&rho) == want, "{}: expand_a_x4 K={K} L={L} rho {rho:?}", B::NAME);
-        let mut a = [[[0xdead_beefu32; 256]; L]; K];
-        B::expand_into::<K, L>(&rho, &mut a);
-        assert!(a == want, "{}: expand_a_into_x4 K={K} L={L} rho {rho:?}", B::NAME);
-        n += 1;
-    }
-    eprintln!("{}: expand_a K={K} L={L}: {n} seeds, 0 mismatches", B::NAME);
-}
-
-/// Valid and invalid verifications: the 4-way body, and the prepared key built by the 4-way constructor, must give the
-/// scalar verdict on every input.
-fn check_verify<B: Backend, const K: usize, const L: usize>(
-    p: &Params,
-    keygen: impl Fn(&[u8; 32]) -> (Vec<u8>, Vec<u8>),
-    sign: impl Fn(&[u8], &[u8], &[u8; 32]) -> Option<Vec<u8>>,
-) {
-    if !B::available() {
-        return;
-    }
-    let mut rng = Rng(0x7665_7269_6679_0000 ^ (K * 16 + L) as u64);
-    let (mut valid, mut invalid, mut calls) = (0, 0, 0);
-    let mut check = |pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8], expect_valid: Option<bool>| {
-        let want = verify_internal::<K, L>(p, pk, pre, m, sig);
-        let got = B::verify::<K, L>(p, pk, pre, m, sig);
-        assert_eq!(got, want, "{}: verify_internal_x4 K={K} L={L}", B::NAME);
-        if pk.len() == ml_dsa_lean::params::pk_len(p) && sig.len() == ml_dsa_lean::params::sig_len(p) {
-            let vk_x4 = B::prepare::<K, L>(pk);
-            let a = verify_prepared_internal::<K, L>(p, &vk_x4, pre, m, sig);
-            assert_eq!(a, want, "{}: prepare_vk_x4 then verify_prepared_internal vs one-shot K={K} L={L}", B::NAME);
-        }
-        if let Some(e) = expect_valid {
-            assert_eq!(want, e);
-        }
-        calls += 1;
-        if want {
-            valid += 1;
-        } else {
-            invalid += 1;
+macro_rules! set_of {
+    ($name:literal, $p:expr, $k:literal, $l:literal, $kg:ident, $s:ident, $si:ident, $v:ident, $vi:ident, $vk:ident, $vp:ident, $vip:ident) => {
+        Set {
+            name: $name,
+            p: $p,
+            keygen: |xi| {
+                let (pk, sk) = api::$kg(xi);
+                (pk.to_vec(), sk.to_vec())
+            },
+            sign: |sk, m, ctx, rnd| api::$s(sk.try_into().unwrap(), m, ctx, rnd).map(|s| s.to_vec()),
+            sign_internal: |sk, mp, rnd| api::$si(sk.try_into().unwrap(), mp, rnd).map(|s| s.to_vec()),
+            verify: |pk, m, ctx, sig| api::$v(pk.try_into().unwrap(), m, ctx, sig.try_into().unwrap()),
+            verify_internal: |pk, mp, sig| api::$vi(pk.try_into().unwrap(), mp, sig.try_into().unwrap()),
+            prepared: |pk, m, ctx, sig| {
+                let vk = Box::new(api::$vk(pk.try_into().unwrap()));
+                api::$vp(&vk, m, ctx, sig.try_into().unwrap())
+            },
+            prepared_internal: |pk, mp, sig| {
+                let vk = Box::new(api::$vk(pk.try_into().unwrap()));
+                api::$vip(&vk, mp, sig.try_into().unwrap())
+            },
+            scalar: |p, pk, prefix, m, sig| verify::verify_internal::<$k, $l>(p, pk, prefix, m, sig),
+            dispatched: |p, pk, prefix, m, sig| fast_verify::verify_internal::<$k, $l>(p, pk, prefix, m, sig),
+            direct: |p, pk, prefix, m, sig| fast_verify::verify_internal_avx2_or_none::<$k, $l>(p, pk, prefix, m, sig),
+            prepare_matches: |pk| fast_verify::prepare_vk_avx2_matches_scalar::<$k, $l>(pk),
         }
     };
-    for _ in 0..(4 / SCALE.min(4)).max(1) {
-        let (pk, sk) = keygen(&rng.arr32());
-        for _ in 0..(6 / SCALE.min(3)).max(2) {
-            let mlen = rng.below(200);
-            let m = rng.bytes(mlen);
-            let rnd = rng.arr32();
-            let sig = sign(&sk, &m, &rnd).expect("sign");
-            // The signature is over M' = m_prefix || m with an empty prefix here (sign_internal).
-            check(&pk, &[], &m, &sig, Some(true));
-            // Mutations: bit flips in c~, z and the hint region.
-            for _ in 0..(8 / SCALE.min(4)).max(2) {
-                let mut s = sig.clone();
-                let at = match rng.below(3) {
-                    0 => rng.below(p_ctilde_len(p)),
-                    1 => p_ctilde_len(p) + rng.below(sig.len() - p_ctilde_len(p)),
-                    _ => sig.len() - 1 - rng.below(K + 10),
-                };
-                s[at] ^= 1 << rng.below(8);
-                check(&pk, &[], &m, &s, None);
-            }
-            // Wrong message, wrong prefix, wrong key.
-            let mut m2 = m.clone();
-            m2.push(1);
-            check(&pk, &[], &m2, &sig, Some(false));
-            check(&pk, &[1, 0], &m, &sig, Some(false));
-            let (pk2, _) = keygen(&rng.arr32());
-            check(&pk2, &[], &m, &sig, Some(false));
-            // Random signature, wrong lengths.
-            let rs = rng.bytes(sig.len());
-            check(&pk, &[], &m, &rs, None);
-            check(&pk, &[], &m, &sig[..sig.len() - 1], Some(false));
-            check(&pk[..pk.len() - 1], &[], &m, &sig, Some(false));
+}
+
+fn sets() -> [Set; 3] {
+    [
+        set_of!("ML-DSA-44", ML_DSA_44, 4, 4, keygen_44, sign_44, sign_internal_44, verify_44, verify_internal_44, verifying_key_44, verify_prepared_44, verify_internal_prepared_44),
+        set_of!("ML-DSA-65", ML_DSA_65, 6, 5, keygen_65, sign_65, sign_internal_65, verify_65, verify_internal_65, verifying_key_65, verify_prepared_65, verify_internal_prepared_65),
+        set_of!("ML-DSA-87", ML_DSA_87, 8, 7, keygen_87, sign_87, sign_internal_87, verify_87, verify_internal_87, verifying_key_87, verify_prepared_87, verify_internal_prepared_87),
+    ]
+}
+
+fn have_avx2() -> bool {
+    std::arch::is_x86_feature_detected!("avx2")
+}
+
+#[test]
+fn avx2_is_present_when_required() {
+    if std::env::var("ML_DSA_REQUIRE_AVX2").as_deref() == Ok("1") {
+        assert!(have_avx2(), "ML_DSA_REQUIRE_AVX2=1 but this CPU has no AVX2: the AVX2 path would not be tested");
+    }
+    if !have_avx2() {
+        eprintln!("NOTE: no AVX2 on this CPU; the dispatched API is the scalar path and the AVX2 body is not compared");
+    }
+}
+
+#[test]
+fn cpu_detection_agrees_with_the_standard_library() {
+    use ml_dsa_lean::cpu;
+    assert_eq!(cpu::detect_avx2_uncached(), have_avx2());
+    // The cached answer, twice (the second call is the cached path).
+    assert_eq!(cpu::has_avx2_cached(), have_avx2());
+    assert_eq!(cpu::has_avx2_cached(), have_avx2());
+}
+
+/// Counts the checks that really compared the AVX2 body, so the summary line is evidence and not a claim.
+#[derive(Default)]
+struct Stats {
+    cases: usize,
+    avx2_compared: usize,
+    accepted: usize,
+}
+
+/// All verdicts for one (pk, M' = prefix ‖ m, sig); panics with context on any disagreement. Returns the verdict.
+fn check_slices(s: &Set, st: &mut Stats, what: &str, pk: &[u8], prefix: &[u8], m: &[u8], sig: &[u8]) -> bool {
+    let want = (s.scalar)(&s.p, pk, prefix, m, sig);
+    let got = (s.dispatched)(&s.p, pk, prefix, m, sig);
+    assert_eq!(got, want, "{} {what}: dispatched slice verify vs scalar", s.name);
+    if let Some(d) = (s.direct)(&s.p, pk, prefix, m, sig) {
+        assert_eq!(d, want, "{} {what}: AVX2 body vs scalar", s.name);
+        st.avx2_compared += 1;
+    }
+    // The fixed-size public API, when the lengths allow it.
+    let lens_ok = pk.len() == params::pk_len(&s.p) && sig.len() == params::sig_len(&s.p);
+    if lens_ok {
+        let mut mp = prefix.to_vec();
+        mp.extend_from_slice(m);
+        assert_eq!((s.verify_internal)(pk, &mp, sig), want, "{} {what}: verify_internal_NN", s.name);
+        assert_eq!((s.prepared_internal)(pk, &mp, sig), want, "{} {what}: verify_internal_prepared_NN", s.name);
+        // verify_NN / verify_prepared_NN take the context separately: prefix = 0 ‖ |ctx| ‖ ctx.
+        if prefix.len() >= 2 && prefix[0] == 0 && prefix[1] as usize == prefix.len() - 2 {
+            let ctx = &prefix[2..];
+            assert_eq!((s.verify)(pk, m, ctx, sig), want, "{} {what}: verify_NN", s.name);
+            assert_eq!((s.prepared)(pk, m, ctx, sig), want, "{} {what}: verify_prepared_NN", s.name);
         }
     }
-    // A random public key (not produced by keygen) with random signatures.
-    let pk = rng.bytes(ml_dsa_lean::params::pk_len(p));
-    for _ in 0..3 {
-        let sig = rng.bytes(ml_dsa_lean::params::sig_len(p));
-        check(&pk, &[], b"msg", &sig, None);
+    st.cases += 1;
+    st.accepted += want as usize;
+    want
+}
+
+fn ext_prefix(ctx: &[u8]) -> Vec<u8> {
+    let mut v = vec![0u8, ctx.len() as u8];
+    v.extend_from_slice(ctx);
+    v
+}
+
+fn flip(v: &mut [u8], r: &mut XorShift) {
+    let i = r.below(v.len());
+    v[i] ^= 1 << r.below(8);
+}
+
+fn run_random(s: &Set, seed: u64, keys: usize) -> Stats {
+    let mut r = XorShift(seed);
+    let mut st = Stats::default();
+    let (c_len, sig_len, pk_len) = (s.p.c_tilde_len, params::sig_len(&s.p), params::pk_len(&s.p));
+    for key in 0..keys {
+        let xi: [u8; 32] = r.bytes(32).try_into().unwrap();
+        let (pk, sk) = (s.keygen)(&xi);
+        assert!((s.prepare_matches)(&pk).unwrap_or(true), "{}: prepare_vk AVX2 vs scalar", s.name);
+        // 1-2 messages per key, one of them with a non-empty context.
+        for msg_no in 0..2 {
+            let m_len = if msg_no == 0 { r.below(40) } else { 200 + r.below(300) };
+            let m = r.bytes(m_len);
+            let ctx_len = if msg_no == 0 { 0 } else { 1 + r.below(255) };
+            let ctx = r.bytes(ctx_len);
+            let rnd: [u8; 32] = if r.below(2) == 0 { [0; 32] } else { r.bytes(32).try_into().unwrap() };
+            let sig = (s.sign)(&sk, &m, &ctx, &rnd).expect("sign");
+            assert_eq!(sig.len(), sig_len);
+            let prefix = ext_prefix(&ctx);
+            let what = |x: &str| format!("key {key} msg {msg_no} {x}");
+
+            // Valid.
+            assert!(check_slices(s, &mut st, &what("valid"), &pk, &prefix, &m, &sig), "{}: valid signature rejected", s.name);
+            // Also through the internal interface (M' supplied by the caller, no prefix).
+            let rnd0 = [7u8; 32];
+            let isig = (s.sign_internal)(&sk, &m, &rnd0).expect("sign_internal");
+            assert!(check_slices(s, &mut st, &what("valid internal"), &pk, &[], &m, &isig));
+
+            // Corrupted signature: random bits in c̃, in z, in the hint area, and the fixed ends.
+            for region in 0..4 {
+                for _ in 0..6 {
+                    let mut bad = sig.clone();
+                    let (lo, hi) = match region {
+                        0 => (0, c_len),
+                        1 => (c_len, sig_len - s.p.k - s.p.omega),
+                        2 => (sig_len - s.p.k - s.p.omega, sig_len),
+                        _ => (0, sig_len),
+                    };
+                    let i = lo + r.below(hi - lo);
+                    bad[i] ^= 1 << r.below(8);
+                    check_slices(s, &mut st, &what(&format!("sig byte {i}")), &pk, &prefix, &m, &bad);
+                }
+            }
+            for i in [0, c_len - 1, c_len, sig_len - 1, sig_len - s.p.k, sig_len - s.p.k - 1] {
+                let mut bad = sig.clone();
+                bad[i] ^= 0x80;
+                assert!(!check_slices(s, &mut st, &what(&format!("sig fixed byte {i}")), &pk, &prefix, &m, &bad));
+            }
+            // Corrupted message / context.
+            let mut bm = m.clone();
+            if bm.is_empty() {
+                bm.push(0);
+            } else {
+                flip(&mut bm, &mut r);
+            }
+            assert!(!check_slices(s, &mut st, &what("message"), &pk, &prefix, &bm, &sig));
+            let mut longer = m.clone();
+            longer.push(0);
+            assert!(!check_slices(s, &mut st, &what("message+1"), &pk, &prefix, &longer, &sig));
+            let mut bp = prefix.clone();
+            bp[0] = 1;
+            assert!(!check_slices(s, &mut st, &what("prefix domain byte"), &pk, &bp, &m, &sig));
+            let other_len = r.below(10);
+            let other = ext_prefix(&r.bytes(other_len));
+            if other != prefix {
+                assert!(!check_slices(s, &mut st, &what("other context"), &pk, &other, &m, &sig));
+            }
+            // Corrupted key: in ρ, in t1.
+            for lo_hi in [(0, 32), (32, pk_len), (0, pk_len)] {
+                let mut bad = pk.clone();
+                let i = lo_hi.0 + r.below(lo_hi.1 - lo_hi.0);
+                bad[i] ^= 1 << r.below(8);
+                assert!(!check_slices(s, &mut st, &what(&format!("pk byte {i}")), &bad, &prefix, &m, &sig));
+            }
+            // Wrong lengths (slice API only).
+            let mut longer_sig = sig.clone();
+            longer_sig.push(0);
+            assert!(!check_slices(s, &mut st, &what("sig+1"), &pk, &prefix, &m, &longer_sig));
+            assert!(!check_slices(s, &mut st, &what("sig-1"), &pk, &prefix, &m, &sig[..sig_len - 1]));
+            assert!(!check_slices(s, &mut st, &what("sig empty"), &pk, &prefix, &m, &[]));
+            assert!(!check_slices(s, &mut st, &what("pk-1"), &pk[..pk_len - 1], &prefix, &m, &sig));
+            let mut longer_pk = pk.clone();
+            longer_pk.push(0);
+            assert!(!check_slices(s, &mut st, &what("pk+1"), &longer_pk, &prefix, &m, &sig));
+            assert!(!check_slices(s, &mut st, &what("pk empty"), &[], &prefix, &m, &sig));
+            // A valid signature with another key.
+            let (pk2, _) = (s.keygen)(&r.bytes(32).try_into().unwrap());
+            assert!(!check_slices(s, &mut st, &what("other key"), &pk2, &prefix, &m, &sig));
+        }
+        // Fully random and structured signatures against this key (almost always rejected in sig_decode or by the hash).
+        let rs = r.bytes(sig_len);
+        check_slices(s, &mut st, "random sig", &pk, &[], b"msg", &rs);
+        check_slices(s, &mut st, "zero sig", &pk, &[], b"msg", &vec![0u8; sig_len]);
+        check_slices(s, &mut st, "ones sig", &pk, &[], b"msg", &vec![0xffu8; sig_len]);
     }
-    eprintln!("{}: verify K={K} L={L}: {calls} calls ({valid} valid, {invalid} invalid), 0 mismatches", B::NAME);
-}
-
-fn p_ctilde_len(p: &Params) -> usize {
-    p.c_tilde_len
-}
-
-fn run_all<B: Backend>() {
-    check_rej4::<B>();
-    check_expand::<B, 4, 4>();
-    check_expand::<B, 6, 5>();
-    check_expand::<B, 8, 7>();
-    use ml_dsa_lean::api::*;
-    check_verify::<B, 4, 4>(
-        &ML_DSA_44,
-        |xi| {
-            let (pk, sk) = keygen_44(xi);
-            (pk.to_vec(), sk.to_vec())
-        },
-        |sk, m, rnd| sign_internal_44(sk.try_into().unwrap(), m, rnd).map(|s| s.to_vec()),
-    );
-    check_verify::<B, 6, 5>(
-        &ML_DSA_65,
-        |xi| {
-            let (pk, sk) = keygen_65(xi);
-            (pk.to_vec(), sk.to_vec())
-        },
-        |sk, m, rnd| sign_internal_65(sk.try_into().unwrap(), m, rnd).map(|s| s.to_vec()),
-    );
-    check_verify::<B, 8, 7>(
-        &ML_DSA_87,
-        |xi| {
-            let (pk, sk) = keygen_87(xi);
-            (pk.to_vec(), sk.to_vec())
-        },
-        |sk, m, rnd| sign_internal_87(sk.try_into().unwrap(), m, rnd).map(|s| s.to_vec()),
-    );
+    st
 }
 
 #[test]
-fn shim_x4_matches_scalar() {
-    run_all::<ShimB>();
+fn random_keys_and_messages_agree_with_scalar() {
+    for (i, s) in sets().iter().enumerate() {
+        let st = run_random(s, 0x4641_5354_5645_0000 + i as u64, if cfg!(debug_assertions) { 2 } else { 6 });
+        eprintln!(
+            "{}: {} random cases ({} accepted); AVX2 body compared on {}; 0 disagreements",
+            s.name, st.cases, st.accepted, st.avx2_compared
+        );
+        assert!(st.accepted > 0 && st.accepted < st.cases);
+        if have_avx2() {
+            assert_eq!(st.avx2_compared, st.cases, "{}: every case must have compared the AVX2 body", s.name);
+        }
+    }
 }
 
-#[cfg(all(feature = "avx2", target_arch = "x86_64", not(miri)))]
+// ---------------------------------------------------------------------------------------------------------------
+// ACVP sigVer and Wycheproof verify vectors through all paths
+// ---------------------------------------------------------------------------------------------------------------
+
+fn unhex(s: &str) -> Vec<u8> {
+    assert!(s.len() % 2 == 0, "odd hex length");
+    let v = |c: u8| match c {
+        b'0'..=b'9' => c - b'0',
+        b'a'..=b'f' => c - b'a' + 10,
+        b'A'..=b'F' => c - b'A' + 10,
+        _ => panic!("bad hex digit"),
+    };
+    s.as_bytes().chunks(2).map(|c| v(c[0]) << 4 | v(c[1])).collect()
+}
+
+fn read_gz(path: &str) -> String {
+    let path = format!("{}/tests/data/{path}", env!("CARGO_MANIFEST_DIR"));
+    let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("{path}: {e}"));
+    let mut json = String::new();
+    GzDecoder::new(&bytes[..]).read_to_string(&mut json).unwrap();
+    json
+}
+
+fn set_by_name(name: &str) -> Set {
+    sets().into_iter().find(|s| s.name == name).unwrap_or_else(|| panic!("unknown set {name}"))
+}
+
+#[derive(Deserialize)]
+struct AcvpFile {
+    #[serde(rename = "testGroups")]
+    groups: Vec<AcvpGroup>,
+}
+#[derive(Deserialize)]
+struct AcvpGroup {
+    #[serde(rename = "parameterSet")]
+    parameter_set: String,
+    #[serde(rename = "signatureInterface")]
+    interface: String,
+    #[serde(rename = "preHash", default)]
+    pre_hash: Option<String>,
+    #[serde(rename = "externalMu", default)]
+    external_mu: bool,
+    tests: Vec<AcvpCase>,
+}
+#[derive(Deserialize)]
+struct AcvpCase {
+    pk: String,
+    #[serde(default)]
+    message: Option<String>,
+    #[serde(default)]
+    context: Option<String>,
+    signature: String,
+    #[serde(rename = "testPassed")]
+    test_passed: bool,
+}
+
 #[test]
-fn avx2_x4_matches_scalar() {
-    run_all::<avx2_backend::Avx2B>();
+fn acvp_sigver_through_every_path() {
+    let file: AcvpFile = serde_json::from_str(&read_gz("acvp/sigVer.json.gz")).unwrap();
+    let mut st = Stats::default();
+    let mut skipped = 0;
+    for g in &file.groups {
+        if g.pre_hash.as_deref() == Some("preHash") || g.external_mu {
+            skipped += g.tests.len();
+            continue;
+        }
+        let s = set_by_name(&g.parameter_set);
+        for c in &g.tests {
+            let (pk, sig) = (unhex(&c.pk), unhex(&c.signature));
+            let msg = unhex(c.message.as_deref().unwrap());
+            let prefix = if g.interface == "internal" { Vec::new() } else { ext_prefix(&unhex(c.context.as_deref().unwrap())) };
+            let got = check_slices(&s, &mut st, &format!("ACVP {}", g.parameter_set), &pk, &prefix, &msg, &sig);
+            assert_eq!(got, c.test_passed, "ACVP {} expected testPassed={}", g.parameter_set, c.test_passed);
+        }
+    }
+    eprintln!("ACVP sigVer: {} cases through scalar, dispatched, AVX2 body, verify_*, prepared ({} skipped: preHash / external mu); AVX2 body compared on {}", st.cases, skipped, st.avx2_compared);
+    // The other 30 of the 60 vectors are preHash / external mu (not implemented); the 12 valid signatures are spread over both halves.
+    assert!(st.cases == 30 && st.accepted > 0);
 }
 
-/// Documentation of the trait bound the tests rely on.
-#[allow(dead_code)]
-fn _lanes4_is_the_bound<X: Lanes4>() {}
+#[derive(Deserialize)]
+struct WFile {
+    #[serde(rename = "testGroups")]
+    groups: Vec<WGroup>,
+}
+#[derive(Deserialize)]
+struct WGroup {
+    #[serde(rename = "publicKey")]
+    public_key: String,
+    tests: Vec<WCase>,
+}
+#[derive(Deserialize)]
+struct WCase {
+    #[serde(default)]
+    msg: Option<String>,
+    #[serde(default)]
+    ctx: Option<String>,
+    sig: String,
+    result: String,
+}
+
+#[test]
+fn wycheproof_verify_through_every_path() {
+    let mut st = Stats::default();
+    let mut per_set = Vec::new();
+    for (num, name) in [("44", "ML-DSA-44"), ("65", "ML-DSA-65"), ("87", "ML-DSA-87")] {
+        let s = set_by_name(name);
+        let before = st.cases;
+        let file: WFile = serde_json::from_str(&read_gz(&format!("wycheproof/mldsa_{num}_verify_test.json.gz"))).unwrap();
+        for g in &file.groups {
+            let pk = unhex(&g.public_key);
+            for c in &g.tests {
+                let msg = unhex(c.msg.as_deref().unwrap_or(""));
+                let ctx = unhex(c.ctx.as_deref().unwrap_or(""));
+                let sig = unhex(&c.sig);
+                let want = match c.result.as_str() {
+                    "valid" => true,
+                    "invalid" => false,
+                    other => panic!("unexpected result {other}"),
+                };
+                // Contexts longer than 255 bytes cannot form M' (the external interface rejects them): not a verify input.
+                if ctx.len() > 255 {
+                    assert!(!want);
+                    continue;
+                }
+                let got = check_slices(&s, &mut st, &format!("Wycheproof {name}"), &pk, &ext_prefix(&ctx), &msg, &sig);
+                assert_eq!(got, want, "Wycheproof {name}: expected {}", c.result);
+            }
+        }
+        per_set.push(format!("{name}: {}", st.cases - before));
+    }
+    eprintln!("Wycheproof verify: {} cases ({}) through every path; AVX2 body compared on {}", st.cases, per_set.join(", "), st.avx2_compared);
+    assert!(st.cases > 300);
+}

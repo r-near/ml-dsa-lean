@@ -18,7 +18,7 @@
 # last lines are a summary table plus "CI SUMMARY: ...". Exit status is 0 only if no step failed (and, with
 # --strict, none was skipped).
 #
-# Steps: test-default, test-zeroize, test-zeroize-release, test-avx2, thumbv7em, msrv-1.86, nearcore-build,
+# Steps: test-default, test-zeroize, test-zeroize-release, test-avx2, avx2-inlining, thumbv7em, msrv-1.86, nearcore-build,
 # nearcore-test, nearcore-test-avx2, nearcore-test-zeroize, wasm32, wasm32-zeroize, diff-awslc,
 # fuzz-<target> (one per target in fuzz/fuzz_targets), deny, extract-hash, axiom-gate-selftest, lean.
 #
@@ -66,7 +66,7 @@ while [ $# -gt 0 ]; do
 done
 
 # Known step names; --only must name only these (a typo must not turn the run into a silent no-op).
-KNOWN_STEPS=(test-default test-zeroize test-zeroize-release test-avx2 thumbv7em msrv-1.86 nearcore-build nearcore-test
+KNOWN_STEPS=(test-default test-zeroize test-zeroize-release test-avx2 avx2-inlining thumbv7em msrv-1.86 nearcore-build nearcore-test
              nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize diff-awslc deny extract-hash axiom-gate-selftest lean)
 for f in fuzz/fuzz_targets/*.rs; do KNOWN_STEPS+=("fuzz-$(basename "$f" .rs)"); done
 if [ -n "$ONLY" ]; then
@@ -139,7 +139,12 @@ step_test_zeroize() {
     cargo test --features zeroize --test zeroize -- stack_residue_signing_key
 }
 step_test_zeroize_release() { cargo test --release --features zeroize; }
-step_test_avx2() { cargo test --features avx2; }
+# The avx2 steps run the AVX2 tests (tests/keccak4_avx2.rs, tests/fast_verify.rs, tests/fast_verify_dispatch.rs, and the
+# ACVP, Wycheproof and KAT suites through the dispatched API). ML_DSA_REQUIRE_AVX2=1 turns "this machine has no AVX2, so
+# the AVX2 path was not compared" from a printed note into a failure; GitHub-hosted x86_64 runners have AVX2.
+step_test_avx2() { ML_DSA_REQUIRE_AVX2=1 cargo test --features avx2; }
+# The AVX2 4-way verify body is compiled with AVX2 (no intrinsic is called out of line); see the script header.
+step_avx2_inlining() { bash scripts/check-avx2-inlining.sh; }
 step_thumbv7em() {
   cargo_retry_target "$(rustup show active-toolchain | awk '{print $1}')" thumbv7em-none-eabihf \
     cargo build --release --target thumbv7em-none-eabihf
@@ -230,7 +235,7 @@ step_nearcore_test() {
 step_nearcore_test_avx2() {
   need_toolchain "$NEARCORE_TC" || return $?
   nearcore_profile_check test --features avx2 || { echo "profile check failed"; return 1; }
-  nearcore_env cargo "+$NEARCORE_TC" test --release --features avx2
+  ML_DSA_REQUIRE_AVX2=1 nearcore_env cargo "+$NEARCORE_TC" test --release --features avx2
 }
 step_nearcore_test_zeroize() {
   # The zeroize feature (tests/zeroize.rs, including all 24 stack-residue scans) under nearcore's release profile.
@@ -314,6 +319,7 @@ run_step test-default step_test_default
 run_step test-zeroize step_test_zeroize
 run_step test-zeroize-release step_test_zeroize_release
 run_step test-avx2 step_test_avx2
+run_step avx2-inlining step_avx2_inlining
 run_step thumbv7em step_thumbv7em
 run_step msrv-1.86 step_msrv
 run_step nearcore-build step_nearcore_build

@@ -5,8 +5,9 @@
 //! free functions only: no iterator adapters, closures, operator-trait impls, `hybrid-array` or
 //! `module-lattice`. Parameter sets are a `Params` value plus `K`/`L` const generics.
 #![no_std]
-// The only `unsafe` is the optional AVX2 dispatch shim (feature `avx2`, `mod dispatch` in src/ntt.rs, which carries
-// the one `allow`). Without the feature the crate forbids it outright.
+// The only `unsafe` is the optional AVX2 code (feature `avx2`): the NTT dispatch (`mod dispatch` in src/ntt.rs), the CPU
+// check (src/cpu.rs), the verify dispatch (src/fast_verify.rs) and the AVX2 lane operations (`keccak4::avx2`); each
+// carries its own `allow`. Without the feature the crate forbids it outright.
 #![cfg_attr(not(feature = "avx2"), forbid(unsafe_code))]
 #![cfg_attr(feature = "avx2", deny(unsafe_code))]
 #![allow(clippy::many_single_char_names, clippy::needless_range_loop)]
@@ -20,6 +21,22 @@ pub mod api;
 pub mod encode;
 #[cfg(not(feature = "internals"))]
 mod encode;
+// The `avx2` feature's CPU check: only where the dispatch exists (see `fast_verify.rs`).
+#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", feature = "internals"))]
+#[allow(unsafe_code)]
+pub mod cpu;
+#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(feature = "internals")))]
+#[allow(unsafe_code)]
+mod cpu;
+// `fast_verify` always exists: `api.rs` imports `verify_internal` and `prepare_vk` from it. Without the dispatch it only
+// re-exports the scalar functions.
+#[cfg(feature = "internals")]
+pub mod fast_verify;
+#[cfg(not(feature = "internals"))]
+mod fast_verify;
+// TEMPORARY (stream W2): stand-in for the proved 4-way verify body; deleted at integration. See the file header.
+#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
+mod fast_verify_stub;
 #[cfg(feature = "internals")]
 pub mod field;
 #[cfg(not(feature = "internals"))]

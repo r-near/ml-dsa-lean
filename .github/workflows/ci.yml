@@ -49,6 +49,7 @@ jobs:
           - test-zeroize
           - test-zeroize-release
           - test-avx2
+          - avx2-inlining
           - thumbv7em
           - msrv-1.86
           - nearcore-build

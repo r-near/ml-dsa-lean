@@ -26,10 +26,12 @@ zeroize = { version = "1", default-features = false, optional = true }
 [features]
 default = []
 zeroize = ["dep:zeroize"]
-# Optional, x86_64 only (not SGX): runtime AVX2 dispatch of the NTT bodies (src/ntt.rs, "Dispatch"). The proved
-# source body is compiled twice, once for the build's target features and once with AVX2, and a cached CPUID check
-# picks one. The dispatch shim is outside the Lean proof, it is the crate's only `unsafe`, and BINSEC cannot lift the
-# AVX2 copy (docs/object-code-assurance.md section 3.5). Alternative without `unsafe`: build with
+# Optional, x86_64 only (not SGX): runtime AVX2 dispatch. (1) The NTT bodies (src/ntt.rs, "Dispatch"): the proved source
+# body is compiled twice, once for the build's target features and once with AVX2, and a cached CPUID check picks one.
+# (2) Verify and the prepared-key constructor (src/fast_verify.rs): on a CPU with AVX2 they run the 4-way body, whose
+# Keccak kernel uses AVX2 lane operations tested equal to the proved plain-Rust model; otherwise the scalar code. The
+# dispatch shims and the AVX2 lane operations are outside the Lean proof, they are the crate's only `unsafe`, and BINSEC
+# cannot lift the AVX2 copies (docs/object-code-assurance.md section 3.5). Alternative without `unsafe`: build with
 # `-C target-cpu=x86-64-v3` (4-9% faster again, but the binary then requires AVX2, and BINSEC cannot lift its vector
 # code either).
 avx2 = []
