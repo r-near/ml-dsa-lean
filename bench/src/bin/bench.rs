@@ -7,7 +7,8 @@
 //! signing differences are implementation speed. The first pass over each cell checks that outputs agree.
 //!
 //! Options: --rounds N (default 15) --lat N (per-call latency passes, default 3) --sets 44,65,87 --only SUBSTR
-//!          --label TEXT
+//!          --round-secs S (target length of one round, default 0.12; raise it to average aws-lc-rs's randomized signing
+//!          over more attempts) --label TEXT
 
 use ml_dsa_bench::cells::*;
 use ml_dsa_bench::*;
@@ -19,6 +20,7 @@ fn main() {
     let rounds: usize = opt("--rounds").map(|s| s.parse().unwrap()).unwrap_or(15);
     let lat: usize = opt("--lat").map(|s| s.parse().unwrap()).unwrap_or(3);
     let sets: Vec<u32> = opt("--sets").map(|s| s.split(',').map(|x| x.parse().unwrap()).collect()).unwrap_or(vec![44, 65, 87]);
+    let round_secs: f64 = opt("--round-secs").map(|s| s.parse().unwrap()).unwrap_or(0.12);
     let only = opt("--only");
     let label = opt("--label").unwrap_or_default();
 
@@ -42,7 +44,7 @@ fn main() {
                     continue;
                 }
             }
-            let (st, out) = measure(c.n, rounds, lat, 0.3, 0.12, &mut *c.f);
+            let (st, out) = measure(c.n, rounds, lat, 0.3, round_secs, &mut *c.f);
             if skips_agreement_check(&c.imp, c.group) {
                 // aws-lc-rs: see skips_agreement_check (cells.rs checks its keys and signatures against ours once)
             } else {
