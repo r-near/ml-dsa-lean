@@ -1,0 +1,203 @@
+# bench label: default-fresh2-ours-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[none]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.00 1.25 1.98 1/827 254503
+# steal jiffies: 0 of 32608199
+# measured core clock: 3.40 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	default-fresh2-ours-cpu1	44	keygen	ours	90722.5	90747.1	90623.8	90904.5	88472.0	89595.0	94405.0	98752.0	15	21	64
+ROW	default-fresh2-ours-cpu1	44	sign-det	ours	493460.2	493476.8	492814.6	494345.0	182707.0	362965.0	966896.0	1822210.9	15	1	256
+ROW	default-fresh2-ours-cpu1	44	sign-det	ours+prepared-sk	423903.4	423898.7	423577.0	424327.0	114930.0	293860.0	895676.0	1747410.3	15	2	256
+ROW	default-fresh2-ours-cpu1	44	sign-hedged	ours	468415.0	468517.5	467900.1	469833.9	182258.0	362325.0	794508.3	1807939.4	15	2	256
+ROW	default-fresh2-ours-cpu1	44	sign-hedged	ours+prepared-sk	398930.7	398968.8	398501.1	399450.8	114860.0	291635.0	724552.0	1731872.0	15	2	256
+ROW	default-fresh2-ours-cpu1	44	verify	ours	103324.8	103335.3	103143.0	103598.0	101400.0	101910.0	109405.0	112568.2	15	5	256
+ROW	default-fresh2-ours-cpu1	44	verify	ours+prepared-vk	51596.6	51619.9	51502.4	51764.4	50447.0	50665.0	54012.0	63166.4	15	10	256
+ROW	default-fresh2-ours-cpu1	65	keygen	ours	170015.5	170129.7	169605.9	171226.6	166750.0	167705.0	175936.0	209071.5	15	12	64
+ROW	default-fresh2-ours-cpu1	65	sign-det	ours	792669.6	792695.9	792078.5	793491.9	280904.0	643160.0	1498255.0	2862464.9	15	1	256
+ROW	default-fresh2-ours-cpu1	65	sign-det	ours+prepared-sk	674870.4	674954.9	673567.9	676389.0	164080.0	526135.0	1370031.0	2740567.2	15	1	256
+ROW	default-fresh2-ours-cpu1	65	sign-hedged	ours	767911.8	767951.4	766891.9	769761.7	283842.0	533455.0	1515063.0	2852792.6	15	1	256
+ROW	default-fresh2-ours-cpu1	65	sign-hedged	ours+prepared-sk	649917.8	650036.9	649397.8	650800.9	164257.0	414305.5	1393430.0	2737615.3	15	1	256
+ROW	default-fresh2-ours-cpu1	65	verify	ours	164948.2	164975.1	164769.7	165259.5	162277.0	162720.0	170969.0	178808.1	15	3	256
+ROW	default-fresh2-ours-cpu1	65	verify	ours+prepared-vk	72682.1	72704.0	72624.1	72798.3	71517.0	71660.0	75446.0	81506.1	15	7	256
+ROW	default-fresh2-ours-cpu1	87	keygen	ours	252349.1	252596.5	251790.7	254399.3	247884.0	250920.0	258096.0	263868.1	15	8	64
+ROW	default-fresh2-ours-cpu1	87	sign-det	ours	980891.1	980893.4	980389.5	981444.8	425340.0	785515.0	1677140.0	3626541.3	15	1	256
+ROW	default-fresh2-ours-cpu1	87	sign-det	ours+prepared-sk	784285.1	784493.0	783837.9	785834.1	232261.0	589690.0	1473384.0	3405620.3	15	1	256
+ROW	default-fresh2-ours-cpu1	87	sign-hedged	ours	873666.7	873581.3	872773.0	874507.2	423740.0	612635.0	1521598.0	3084330.3	15	1	256
+ROW	default-fresh2-ours-cpu1	87	sign-hedged	ours+prepared-sk	678716.2	678603.8	677358.2	679596.6	232558.0	419275.0	1307188.7	2866693.3	15	1	256
+ROW	default-fresh2-ours-cpu1	87	verify	ours	273996.0	273881.1	273413.2	274213.2	269797.0	272800.0	279781.0	284281.6	15	2	256
+ROW	default-fresh2-ours-cpu1	87	verify	ours+prepared-vk	109164.5	109169.0	109089.4	109264.0	107460.0	107670.0	115303.0	118261.8	15	5	256
+# steal jiffies during run: 0 of 422774
+# loadavg at end: 1.00 1.19 1.91 1/828 256236
+# measured core clock at end: 3.40 GHz
+# bench label: default-fresh2-rustcrypto-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[none]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.00 1.19 1.90 2/828 256314
+# steal jiffies: 0 of 33066276
+# measured core clock: 3.40 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	default-fresh2-rustcrypto-cpu1	44	keygen	rustcrypto	234673.4	234686.3	234485.6	234930.2	231105.0	232420.0	240400.0	251136.7	15	8	64
+ROW	default-fresh2-rustcrypto-cpu1	44	sign-det	rustcrypto	690553.8	690520.8	689994.2	690988.7	253288.0	504750.0	1360024.0	2571911.7	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	44	sign-det	rustcrypto+cached-sk	605777.0	605773.7	604866.9	606518.8	167067.0	419755.0	1277743.0	2483206.7	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	44	sign-hedged	rustcrypto	655362.9	655495.1	655133.9	655903.6	252923.3	501770.0	1113300.0	2563860.9	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	44	sign-hedged	rustcrypto+cached-sk	570175.0	570157.2	569285.0	570815.5	166674.0	417925.0	1025783.0	2483642.1	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	44	verify	rustcrypto	133050.4	133079.1	132976.6	133215.6	130890.0	131280.0	139113.0	143163.3	15	4	256
+ROW	default-fresh2-rustcrypto-cpu1	44	verify	rustcrypto+cached-vk	73833.5	73853.2	73777.8	73989.3	72700.0	72900.0	76663.0	86179.2	15	7	256
+ROW	default-fresh2-rustcrypto-cpu1	65	keygen	rustcrypto	373863.9	373880.1	373521.6	374569.7	368221.0	372270.0	380263.1	389351.0	15	6	64
+ROW	default-fresh2-rustcrypto-cpu1	65	sign-det	rustcrypto	1116681.0	1116795.3	1115945.2	1118360.7	376079.0	904325.0	2133155.0	4103769.4	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	65	sign-det	rustcrypto+cached-sk	976251.2	976339.7	975188.9	977443.0	238097.0	764495.0	1990955.0	3955105.3	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	65	sign-hedged	rustcrypto	1080990.7	1081044.3	1080211.4	1082185.5	377388.0	737730.0	2158084.0	4106660.0	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	65	sign-hedged	rustcrypto+cached-sk	939107.0	939224.5	938315.1	940122.9	239692.0	598220.0	2010163.0	3956971.1	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	65	verify	rustcrypto	205660.2	205678.9	205452.0	205954.8	202436.3	203450.0	211590.0	216461.4	15	3	256
+ROW	default-fresh2-rustcrypto-cpu1	65	verify	rustcrypto+cached-vk	103722.9	103735.8	103651.0	103897.8	102080.0	102340.0	109913.0	113546.6	15	5	256
+ROW	default-fresh2-rustcrypto-cpu1	87	keygen	rustcrypto	545994.5	546133.2	545656.5	546928.4	538498.0	547435.0	554920.0	560729.4	15	4	64
+ROW	default-fresh2-rustcrypto-cpu1	87	sign-det	rustcrypto	1316887.0	1316789.6	1315373.3	1317529.4	551405.0	1045080.0	2275074.0	4953615.4	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	87	sign-det	rustcrypto+cached-sk	1095254.3	1095234.6	1093999.4	1096246.8	330364.0	822960.0	2051829.0	4725945.5	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	87	sign-hedged	rustcrypto	1167854.6	1167813.5	1167268.4	1168397.7	548210.0	803100.0	2064750.0	4210453.9	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	87	sign-hedged	rustcrypto+cached-sk	945866.1	945838.4	945157.3	946545.7	327160.0	583235.0	1812809.0	3987442.5	15	1	256
+ROW	default-fresh2-rustcrypto-cpu1	87	verify	rustcrypto	323354.3	323380.1	322923.5	323771.2	318394.0	321730.0	329933.0	338334.4	15	2	256
+ROW	default-fresh2-rustcrypto-cpu1	87	verify	rustcrypto+cached-vk	150145.5	150162.5	150033.2	150374.1	147810.0	148220.0	156640.0	161643.3	15	4	256
+# steal jiffies during run: 0 of 502446
+# loadavg at end: 1.00 1.14 1.82 1/816 257693
+# measured core clock at end: 3.41 GHz
+# bench label: default-fresh2-libcrux-portable-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[none]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.00 1.14 1.82 1/816 257739
+# steal jiffies: 0 of 33604006
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	default-fresh2-libcrux-portable-cpu1	44	keygen	libcrux-portable	70264.5	70297.7	70109.7	70488.9	69141.0	69480.0	72976.0	83381.6	15	27	64
+ROW	default-fresh2-libcrux-portable-cpu1	44	sign-det	libcrux-portable	321923.6	321971.6	321739.8	322238.0	121734.3	239925.0	625930.0	1173945.8	15	2	256
+ROW	default-fresh2-libcrux-portable-cpu1	44	sign-hedged	libcrux-portable	305810.2	305783.0	305274.3	306036.0	121587.0	239220.0	514090.0	1171560.4	15	2	256
+ROW	default-fresh2-libcrux-portable-cpu1	44	verify	libcrux-portable	76329.2	76346.2	76302.3	76451.7	75060.0	75230.0	79125.0	85068.8	15	7	256
+ROW	default-fresh2-libcrux-portable-cpu1	65	keygen	libcrux-portable	137806.5	137841.0	137735.0	138090.9	135321.0	135985.0	144579.0	147316.2	15	14	64
+ROW	default-fresh2-libcrux-portable-cpu1	65	sign-det	libcrux-portable	511934.9	511815.0	511262.6	512454.5	189997.0	416675.0	956074.0	1806334.8	15	1	256
+ROW	default-fresh2-libcrux-portable-cpu1	65	sign-hedged	libcrux-portable	496168.0	496177.9	495539.5	496924.1	192394.0	348645.0	960710.0	1804739.6	15	1	256
+ROW	default-fresh2-libcrux-portable-cpu1	65	verify	libcrux-portable	128599.5	128593.7	128487.5	128679.2	126480.0	126800.5	134826.0	137999.1	15	4	256
+ROW	default-fresh2-libcrux-portable-cpu1	87	keygen	libcrux-portable	200645.9	200680.1	200496.9	201007.7	197375.0	198900.0	206661.0	213202.5	15	10	64
+ROW	default-fresh2-libcrux-portable-cpu1	87	sign-det	libcrux-portable	637385.9	637310.6	636450.7	638161.1	290745.0	515090.0	1068679.0	2275061.5	15	1	256
+ROW	default-fresh2-libcrux-portable-cpu1	87	sign-hedged	libcrux-portable	570531.7	570466.0	569729.5	571005.1	289670.0	411625.0	960940.0	1942218.5	15	1	256
+ROW	default-fresh2-libcrux-portable-cpu1	87	verify	libcrux-portable	206601.3	206618.5	206394.7	206864.3	203247.0	204490.0	213424.0	220072.8	15	3	256
+# steal jiffies during run: 0 of 200478
+# loadavg at end: 1.16 1.15 1.80 1/816 258315
+# measured core clock at end: 3.41 GHz
+# bench label: default-fresh2-libcrux-avx2-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[none]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.15 1.15 1.79 1/816 258358
+# steal jiffies: 0 of 33839767
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	default-fresh2-libcrux-avx2-cpu1	44	keygen	libcrux-avx2	35487.8	35488.3	35447.2	35533.0	34479.0	35080.0	35957.0	43548.9	15	54	64
+ROW	default-fresh2-libcrux-avx2-cpu1	44	sign-det	libcrux-avx2	106432.0	106447.0	106331.9	106587.6	48420.0	83445.0	194000.0	352605.7	15	5	256
+ROW	default-fresh2-libcrux-avx2-cpu1	44	sign-hedged	libcrux-avx2	101784.6	101804.6	101714.6	101912.2	48320.0	80745.0	162204.0	352663.6	15	5	256
+ROW	default-fresh2-libcrux-avx2-cpu1	44	verify	libcrux-avx2	39647.8	39650.1	39601.0	39689.6	38940.0	39060.0	39906.0	49833.0	15	12	256
+ROW	default-fresh2-libcrux-avx2-cpu1	65	keygen	libcrux-avx2	64899.0	64905.1	64835.9	64975.6	63780.0	63975.0	67310.0	73550.5	15	29	64
+ROW	default-fresh2-libcrux-avx2-cpu1	65	sign-det	libcrux-avx2	164147.7	164138.3	163954.0	164324.0	77820.0	138030.0	280224.0	501880.2	15	3	256
+ROW	default-fresh2-libcrux-avx2-cpu1	65	sign-hedged	libcrux-avx2	160020.2	160026.7	159927.6	160189.9	78121.0	119410.0	280685.0	513431.9	15	3	256
+ROW	default-fresh2-libcrux-avx2-cpu1	65	verify	libcrux-avx2	67302.3	67296.7	67197.0	67382.6	66100.0	66340.0	69800.0	81072.3	15	7	256
+ROW	default-fresh2-libcrux-avx2-cpu1	87	keygen	libcrux-avx2	106933.5	106935.2	106837.6	107048.1	104503.0	105585.0	112720.0	115431.0	15	18	64
+ROW	default-fresh2-libcrux-avx2-cpu1	87	sign-det	libcrux-avx2	221869.0	221860.3	221691.5	222061.1	127107.0	186840.0	342269.0	657518.3	15	3	256
+ROW	default-fresh2-libcrux-avx2-cpu1	87	sign-hedged	libcrux-avx2	203787.8	203805.7	203530.8	204014.6	126910.0	165905.0	316362.0	568852.1	15	3	256
+ROW	default-fresh2-libcrux-avx2-cpu1	87	verify	libcrux-avx2	109393.0	109399.6	109315.1	109584.6	107470.0	108060.0	115703.0	118491.3	15	5	256
+# steal jiffies during run: 0 of 176301
+# loadavg at end: 1.09 1.13 1.77 1/815 258870
+# measured core clock at end: 3.41 GHz
+# bench label: default-fresh2-mldsa-native-portable-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[none]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.08 1.13 1.76 1/815 258921
+# steal jiffies: 0 of 34051353
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	default-fresh2-mldsa-native-portable-cpu1	44	keygen	mldsa-native-portable	65333.4	65323.4	65243.4	65440.2	64284.0	64540.0	68147.0	75028.6	15	29	64
+ROW	default-fresh2-mldsa-native-portable-cpu1	44	sign-det	mldsa-native-portable	305420.0	305342.2	304837.6	305676.5	127098.0	242140.0	593095.3	1066102.9	15	2	256
+ROW	default-fresh2-mldsa-native-portable-cpu1	44	sign-hedged	mldsa-native-portable	289480.8	289482.7	289314.6	289686.9	126950.0	237370.0	482781.0	1013929.1	15	2	256
+ROW	default-fresh2-mldsa-native-portable-cpu1	44	verify	mldsa-native-portable	75490.8	75484.7	75448.5	75511.3	74160.0	74420.0	78252.0	84587.8	15	7	256
+ROW	default-fresh2-mldsa-native-portable-cpu1	65	keygen	mldsa-native-portable	122190.9	122204.2	122100.7	122368.5	120071.0	120720.0	128597.0	132332.3	15	16	64
+ROW	default-fresh2-mldsa-native-portable-cpu1	65	sign-det	mldsa-native-portable	458118.0	458120.9	457691.9	458462.7	187777.0	357835.0	841165.0	1598294.4	15	2	256
+ROW	default-fresh2-mldsa-native-portable-cpu1	65	sign-hedged	mldsa-native-portable	446702.3	446691.0	446209.7	447207.4	188137.0	329990.0	858919.3	1494435.0	15	2	256
+ROW	default-fresh2-mldsa-native-portable-cpu1	65	verify	mldsa-native-portable	117420.6	117454.2	117299.1	117654.4	115567.0	115845.0	123520.0	127172.5	15	4	256
+ROW	default-fresh2-mldsa-native-portable-cpu1	87	keygen	mldsa-native-portable	176719.5	176738.2	176258.8	177115.9	173586.0	174370.0	182603.0	185478.5	15	11	64
+ROW	default-fresh2-mldsa-native-portable-cpu1	87	sign-det	mldsa-native-portable	574469.1	574556.0	573966.4	575539.0	286830.0	486260.0	950764.0	2005999.2	15	1	256
+ROW	default-fresh2-mldsa-native-portable-cpu1	87	sign-hedged	mldsa-native-portable	517324.5	517429.2	516973.2	517910.8	285124.0	410620.0	873678.0	1600666.1	15	1	256
+ROW	default-fresh2-mldsa-native-portable-cpu1	87	verify	mldsa-native-portable	188348.9	188311.1	188161.7	188453.7	185327.0	186260.0	194120.0	197772.5	15	3	256
+# steal jiffies during run: 0 of 210476
+# loadavg at end: 1.04 1.12 1.73 1/816 259537
+# measured core clock at end: 3.41 GHz
+# bench label: default-fresh2-mldsa-native-avx2-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[none]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.04 1.11 1.73 1/816 259588
+# steal jiffies: 0 of 34297109
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	default-fresh2-mldsa-native-avx2-cpu1	44	keygen	mldsa-native-avx2	20098.3	20099.3	20074.8	20139.4	19547.0	19910.0	19960.0	27472.5	15	93	64
+ROW	default-fresh2-mldsa-native-avx2-cpu1	44	sign-det	mldsa-native-avx2	67244.8	67243.1	67138.1	67306.0	29180.0	52735.0	127842.7	228688.0	15	7	256
+ROW	default-fresh2-mldsa-native-avx2-cpu1	44	sign-hedged	mldsa-native-avx2	63930.7	63959.6	63895.2	64098.3	29140.0	52110.0	104273.0	218971.9	15	8	256
+ROW	default-fresh2-mldsa-native-avx2-cpu1	44	verify	mldsa-native-avx2	21779.5	21775.5	21745.5	21795.2	21440.0	21510.0	21670.0	30183.2	15	22	256
+ROW	default-fresh2-mldsa-native-avx2-cpu1	65	keygen	mldsa-native-avx2	36111.4	36107.5	36064.3	36164.9	35460.0	35570.0	36158.0	44096.5	15	53	64
+ROW	default-fresh2-mldsa-native-avx2-cpu1	65	sign-det	mldsa-native-avx2	100562.3	100585.0	100464.9	100742.1	44190.0	81345.0	176465.0	332997.8	15	5	256
+ROW	default-fresh2-mldsa-native-avx2-cpu1	65	sign-hedged	mldsa-native-avx2	98092.4	98080.9	97996.9	98219.6	44200.0	73600.0	180419.0	324370.2	15	5	256
+ROW	default-fresh2-mldsa-native-avx2-cpu1	65	verify	mldsa-native-avx2	35977.6	35971.4	35931.0	36012.7	35410.0	35480.0	35746.0	47248.7	15	14	256
+ROW	default-fresh2-mldsa-native-avx2-cpu1	87	keygen	mldsa-native-avx2	54945.2	54941.4	54839.7	55076.7	53822.0	54170.0	56822.0	62913.6	15	34	64
+ROW	default-fresh2-mldsa-native-avx2-cpu1	87	sign-det	mldsa-native-avx2	121638.5	121625.3	121543.0	121734.3	66557.0	103235.0	193450.0	384017.5	15	4	256
+ROW	default-fresh2-mldsa-native-avx2-cpu1	87	sign-hedged	mldsa-native-avx2	110851.9	110867.4	110775.0	111002.7	66510.0	92115.0	180558.0	323851.9	15	5	256
+ROW	default-fresh2-mldsa-native-avx2-cpu1	87	verify	mldsa-native-avx2	55014.6	55012.5	54938.6	55071.8	54110.0	54230.0	57220.0	63390.0	15	9	256
+# steal jiffies during run: 0 of 165329
+# loadavg at end: 1.02 1.10 1.70 1/816 260068
+# measured core clock at end: 3.41 GHz
+# bench label: default-fresh2-aws-lc-rs-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[none]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.02 1.10 1.70 1/816 260119
+# steal jiffies: 0 of 34497718
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	default-fresh2-aws-lc-rs-cpu1	44	keygen	aws-lc-rs	25075.4	25084.3	25051.3	25138.3	24402.0	24900.0	25128.0	33670.1	15	75	64
+ROW	default-fresh2-aws-lc-rs-cpu1	44	keygen	aws-lc-rs+sk-export	25594.3	25598.2	25575.9	25625.9	25311.0	25420.0	26153.0	34107.6	15	74	64
+ROW	default-fresh2-aws-lc-rs-cpu1	44	sign-hedged	aws-lc-rs	111255.1	111162.2	106875.0	114307.9	56667.0	91985.0	199700.0	361963.9	15	5	256
+ROW	default-fresh2-aws-lc-rs-cpu1	44	sign-hedged	aws-lc-rs+cached-sk	91099.4	91576.5	88675.5	95360.1	37200.0	73495.0	162242.0	290095.3	15	5	256
+ROW	default-fresh2-aws-lc-rs-cpu1	44	verify	aws-lc-rs	23553.0	23556.9	23502.0	23628.6	23020.0	23190.0	23530.0	32233.3	15	21	256
+ROW	default-fresh2-aws-lc-rs-cpu1	65	keygen	aws-lc-rs	43073.9	43057.7	42970.0	43186.3	42300.0	42400.0	43944.0	51690.9	15	44	64
+ROW	default-fresh2-aws-lc-rs-cpu1	65	keygen	aws-lc-rs+sk-export	43875.6	43870.9	43819.4	43946.1	43020.0	43130.0	44851.0	58427.2	15	43	64
+ROW	default-fresh2-aws-lc-rs-cpu1	65	sign-hedged	aws-lc-rs	166279.3	166260.7	161594.8	171034.9	86797.0	145800.0	291710.0	448668.4	15	3	256
+ROW	default-fresh2-aws-lc-rs-cpu1	65	sign-hedged	aws-lc-rs+cached-sk	131216.3	130850.6	126924.4	134206.7	53038.0	107420.0	249206.0	438829.7	15	4	256
+ROW	default-fresh2-aws-lc-rs-cpu1	65	verify	aws-lc-rs	37567.4	37609.5	37510.2	37925.6	36860.0	36950.0	37803.0	48216.5	15	13	256
+ROW	default-fresh2-aws-lc-rs-cpu1	87	keygen	aws-lc-rs	65699.6	65702.9	65642.6	65786.2	63821.0	64910.0	68374.0	77752.4	15	29	64
+ROW	default-fresh2-aws-lc-rs-cpu1	87	keygen	aws-lc-rs+sk-export	66542.2	66538.6	66380.0	66656.3	64530.0	65670.0	69452.0	74563.6	15	29	64
+ROW	default-fresh2-aws-lc-rs-cpu1	87	sign-hedged	aws-lc-rs	217020.1	217119.2	213541.2	222687.8	136420.0	189215.0	351081.0	552910.9	15	3	256
+ROW	default-fresh2-aws-lc-rs-cpu1	87	sign-hedged	aws-lc-rs+cached-sk	163770.9	163677.5	159656.1	167157.1	82507.0	136825.0	273438.0	446949.1	15	4	256
+ROW	default-fresh2-aws-lc-rs-cpu1	87	verify	aws-lc-rs	58175.2	58183.3	58098.2	58265.6	57120.0	57300.0	61152.0	67460.8	15	9	256
+# steal jiffies during run: 0 of 215508
+# loadavg at end: 1.01 1.09 1.67 1/815 260727
+# measured core clock at end: 3.40 GHz

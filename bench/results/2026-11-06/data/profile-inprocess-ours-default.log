@@ -1,0 +1,12 @@
+PROF	65	ours	keygen	20006 samples	117504 calls	170.3 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/ours.65.keygen.folded
+PROF	65	mldsa-native-avx2	keygen	20000 samples	554240 calls	36.1 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/mldsa-native-avx2.65.keygen.folded
+PROF	65	ours	sign-det	20054 samples	34048 calls	589.0 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/ours.65.sign-det.folded
+PROF	65	mldsa-native-avx2	sign-det	20001 samples	194304 calls	102.9 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/mldsa-native-avx2.65.sign-det.folded
+PROF	65	ours	verify	20027 samples	139008 calls	144.1 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/ours.65.verify.folded
+PROF	65	mldsa-native-avx2	verify	20002 samples	546304 calls	36.6 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/mldsa-native-avx2.65.verify.folded
+PROF	87	ours	keygen	20007 samples	77952 calls	256.7 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/ours.87.keygen.folded
+PROF	87	mldsa-native-avx2	keygen	20002 samples	360000 calls	55.6 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/mldsa-native-avx2.87.keygen.folded
+PROF	87	ours	sign-det	20107 samples	26624 calls	755.3 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/ours.87.sign-det.folded
+PROF	87	mldsa-native-avx2	sign-det	20020 samples	162816 calls	123.0 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/mldsa-native-avx2.87.sign-det.folded
+PROF	87	ours	verify	20031 samples	82432 calls	243.0 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/ours.87.verify.folded
+PROF	87	mldsa-native-avx2	verify	20000 samples	359424 calls	55.7 us/call	$HOME/rx/scratch/bench-20261106/prof-warm/mldsa-native-avx2.87.verify.folded

@@ -1,0 +1,35 @@
+# bench label: avx2-fresh1-ours-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[none]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.15 1.63 2.33 2/894 249998
+# steal jiffies: 0 of 30984221
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	avx2-fresh1-ours-cpu1	44	keygen	ours	66867.2	66864.7	66730.6	66983.6	65170.0	66095.0	69322.0	76048.1	15	29	64
+ROW	avx2-fresh1-ours-cpu1	44	sign-det	ours	247216.3	247265.2	247113.2	247492.2	106667.0	191845.0	462843.0	850143.0	15	2	256
+ROW	avx2-fresh1-ours-cpu1	44	sign-det	ours+prepared-sk	198717.1	198683.2	198508.2	198799.3	58457.0	141420.0	419340.0	800387.0	15	3	256
+ROW	avx2-fresh1-ours-cpu1	44	sign-hedged	ours	235584.3	235653.7	235471.4	235972.3	106434.0	189535.0	383426.0	835621.5	15	2	256
+ROW	avx2-fresh1-ours-cpu1	44	sign-hedged	ours+prepared-sk	187164.5	187185.2	187042.0	187450.8	58430.0	139180.0	333324.0	787073.5	15	3	256
+ROW	avx2-fresh1-ours-cpu1	44	verify	ours	70289.6	70299.3	70215.0	70429.6	69050.7	69340.0	72766.0	79182.8	15	7	256
+ROW	avx2-fresh1-ours-cpu1	44	verify	ours+prepared-vk	23963.3	23967.3	23942.3	24016.3	23530.0	23680.0	24120.0	33529.4	15	20	256
+ROW	avx2-fresh1-ours-cpu1	65	keygen	ours	129371.9	129383.3	129251.3	129655.4	127001.0	127785.0	135633.0	138486.9	15	15	64
+ROW	avx2-fresh1-ours-cpu1	65	sign-det	ours	392591.5	392574.3	392194.8	392944.1	167034.0	323085.0	687794.0	1297361.8	15	2	256
+ROW	avx2-fresh1-ours-cpu1	65	sign-det	ours+prepared-sk	302788.6	302840.2	302454.8	303641.2	79967.0	235265.0	591705.0	1204312.8	15	2	256
+ROW	avx2-fresh1-ours-cpu1	65	sign-hedged	ours	381539.2	381615.6	381311.8	382068.2	167664.0	280680.0	710764.0	1297806.1	15	2	256
+ROW	avx2-fresh1-ours-cpu1	65	sign-hedged	ours+prepared-sk	292263.9	292251.3	291885.6	292745.2	80020.0	189845.0	617677.0	1201280.3	15	2	256
+ROW	avx2-fresh1-ours-cpu1	65	verify	ours	113678.8	113669.6	113447.3	113809.3	111910.0	112160.0	119940.0	122879.9	15	5	256
+ROW	avx2-fresh1-ours-cpu1	65	verify	ours+prepared-vk	30476.4	30480.8	30450.9	30530.4	29970.0	30050.0	30370.0	39399.7	15	16	256
+ROW	avx2-fresh1-ours-cpu1	87	keygen	ours	192841.6	192841.6	192679.9	193149.3	189413.0	191054.5	199650.0	203671.3	15	10	64
+ROW	avx2-fresh1-ours-cpu1	87	sign-det	ours	501836.8	501824.8	501074.4	502385.9	264978.0	420445.0	798319.0	1610633.3	15	1	256
+ROW	avx2-fresh1-ours-cpu1	87	sign-det	ours+prepared-sk	347285.3	347310.4	347111.3	347840.4	110807.0	265075.0	645808.0	1470255.9	15	2	256
+ROW	avx2-fresh1-ours-cpu1	87	sign-hedged	ours	456402.1	456439.2	456061.5	456973.5	264524.0	350495.0	733493.0	1385462.4	15	2	256
+ROW	avx2-fresh1-ours-cpu1	87	sign-hedged	ours+prepared-sk	301140.2	301160.4	300741.7	301504.5	110570.0	195635.0	577158.0	1231253.6	15	2	256
+ROW	avx2-fresh1-ours-cpu1	87	verify	ours	194479.2	194477.5	194315.2	194571.8	191400.0	192400.0	200283.0	205657.3	15	3	256
+ROW	avx2-fresh1-ours-cpu1	87	verify	ours+prepared-vk	43674.9	43677.1	43622.8	43734.7	42967.0	43090.0	44035.0	53626.2	15	11	256
+# steal jiffies during run: 0 of 349318
+# loadavg at end: 1.05 1.51 2.24 1/893 250966
+# measured core clock at end: 3.41 GHz

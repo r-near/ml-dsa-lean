@@ -1,0 +1,25 @@
+ 01:21:48 up  1:20,  1 user,  load average: 1.94, 2.32, 2.77
+== default rep 1: ours 01:21:48 load 1.94 2.32 2.77
+== default rep 1: rustcrypto 01:23:05 load 2.31 2.36 2.75
+== default rep 1: libcrux-portable 01:24:34 load 1.47 2.10 2.62
+== default rep 1: libcrux-avx2 01:25:13 load 1.24 1.96 2.55
+== default rep 1: mldsa-native-portable 01:25:49 load 1.13 1.85 2.49
+== default rep 1: mldsa-native-avx2 01:26:30 load 1.23 1.78 2.43
+== default rep 1: aws-lc-rs 01:27:03 load 1.14 1.70 2.39
+== avx2 rep 1: ours 01:27:45 load 1.15 1.63 2.33
+== v3 rep 1: ours 01:28:49 load 1.05 1.51 2.24
+== v3 rep 1: rustcrypto 01:29:51 load 1.02 1.41 2.16
+== v3 rep 1: libcrux-portable 01:31:03 load 1.00 1.32 2.07
+== v3 rep 1: libcrux-avx2 01:31:42 load 1.00 1.28 2.02
+== default rep 2: ours 01:32:15 load 1.00 1.25 1.98
+== default rep 2: rustcrypto 01:33:32 load 1.00 1.19 1.90
+== default rep 2: libcrux-portable 01:35:01 load 1.00 1.14 1.82
+== default rep 2: libcrux-avx2 01:35:41 load 1.15 1.15 1.79
+== default rep 2: mldsa-native-portable 01:36:16 load 1.08 1.13 1.76
+== default rep 2: mldsa-native-avx2 01:36:57 load 1.04 1.11 1.73
+== default rep 2: aws-lc-rs 01:37:30 load 1.02 1.10 1.70
+== avx2 rep 2: ours 01:38:12 load 1.01 1.08 1.67
+== v3 rep 2: ours 01:39:16 load 1.00 1.07 1.62
+== v3 rep 2: rustcrypto 01:40:19 load 1.07 1.07 1.58
+== v3 rep 2: libcrux-portable 01:41:31 load 1.02 1.05 1.53
+== v3 rep 2: libcrux-avx2 01:42:10 load 1.01 1.04 1.51

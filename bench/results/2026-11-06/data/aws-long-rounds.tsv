@@ -1,0 +1,29 @@
+# bench label: awslong-default-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[none]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 0.52 0.82 0.90 1/799 23159
+# steal jiffies: 0 of 7665290
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=0
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	awslong-default-cpu1	44	keygen	aws-lc-rs	25365.3	25363.7	25341.0	25379.7	NaN	NaN	NaN	NaN	15	925	64
+ROW	awslong-default-cpu1	44	keygen	aws-lc-rs+sk-export	25934.7	25934.6	25918.1	25956.6	NaN	NaN	NaN	NaN	15	908	64
+ROW	awslong-default-cpu1	44	sign-hedged	aws-lc-rs	111398.7	111488.3	110583.1	112921.8	NaN	NaN	NaN	NaN	15	54	256
+ROW	awslong-default-cpu1	44	sign-hedged	aws-lc-rs+cached-sk	91777.7	91661.5	90716.6	92154.1	NaN	NaN	NaN	NaN	15	62	256
+ROW	awslong-default-cpu1	44	verify	aws-lc-rs	24111.1	24103.0	24049.6	24148.5	NaN	NaN	NaN	NaN	15	244	256
+ROW	awslong-default-cpu1	65	keygen	aws-lc-rs	43469.8	43496.2	43408.4	43649.3	NaN	NaN	NaN	NaN	15	537	64
+ROW	awslong-default-cpu1	65	keygen	aws-lc-rs+sk-export	44139.9	44139.1	44104.1	44180.1	NaN	NaN	NaN	NaN	15	532	64
+ROW	awslong-default-cpu1	65	sign-hedged	aws-lc-rs	166177.1	166361.6	164441.2	168168.8	NaN	NaN	NaN	NaN	15	36	256
+ROW	awslong-default-cpu1	65	sign-hedged	aws-lc-rs+cached-sk	132177.9	132491.4	131354.1	134278.8	NaN	NaN	NaN	NaN	15	43	256
+ROW	awslong-default-cpu1	65	verify	aws-lc-rs	37960.9	37959.7	37951.7	37969.5	NaN	NaN	NaN	NaN	15	155	256
+ROW	awslong-default-cpu1	87	keygen	aws-lc-rs	66460.9	66471.5	66404.2	66574.3	NaN	NaN	NaN	NaN	15	354	64
+ROW	awslong-default-cpu1	87	keygen	aws-lc-rs+sk-export	67381.1	67398.7	67341.2	67474.3	NaN	NaN	NaN	NaN	15	349	64
+ROW	awslong-default-cpu1	87	sign-hedged	aws-lc-rs	223698.7	223355.6	221405.5	225267.1	NaN	NaN	NaN	NaN	15	26	256
+ROW	awslong-default-cpu1	87	sign-hedged	aws-lc-rs+cached-sk	165585.0	165653.9	164553.3	167126.9	NaN	NaN	NaN	NaN	15	37	256
+ROW	awslong-default-cpu1	87	verify	aws-lc-rs	60055.2	60064.1	60000.7	60161.5	NaN	NaN	NaN	NaN	15	98	256
+# steal jiffies during run: 0 of 2065119
+# loadavg at end: 1.03 0.98 0.95 2/800 25956
+# measured core clock at end: 3.41 GHz

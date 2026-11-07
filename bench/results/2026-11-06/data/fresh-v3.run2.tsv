@@ -1,0 +1,122 @@
+# bench label: v3-fresh2-ours-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[-C target-cpu=x86-64-v3]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.00 1.07 1.62 2/816 261790
+# steal jiffies: 0 of 35134322
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	v3-fresh2-ours-cpu1	44	keygen	ours	60916.2	60924.7	60864.6	61091.3	59321.0	60175.0	63443.0	69800.0	15	31	64
+ROW	v3-fresh2-ours-cpu1	44	sign-det	ours	218898.3	218907.4	218632.6	219227.8	94600.0	166545.0	409776.0	751194.2	15	3	256
+ROW	v3-fresh2-ours-cpu1	44	sign-det	ours+prepared-sk	173639.0	173677.5	173566.4	173840.1	50030.0	124640.0	362577.0	698025.9	15	3	256
+ROW	v3-fresh2-ours-cpu1	44	sign-hedged	ours	207832.4	207879.9	207591.7	208144.6	94424.0	165020.0	339805.0	734946.6	15	3	256
+ROW	v3-fresh2-ours-cpu1	44	sign-hedged	ours+prepared-sk	164199.4	164197.1	163906.5	164489.1	50140.0	121815.0	297560.0	697278.5	15	3	256
+ROW	v3-fresh2-ours-cpu1	44	verify	ours	61936.4	61931.3	61867.3	62035.5	60670.0	61040.0	64103.0	71167.4	15	8	256
+ROW	v3-fresh2-ours-cpu1	44	verify	ours+prepared-vk	20688.2	20596.7	20381.9	20714.5	20147.0	20480.0	20620.0	28836.2	15	23	256
+ROW	v3-fresh2-ours-cpu1	65	keygen	ours	119063.4	119067.4	118851.2	119262.4	116771.0	117600.0	125083.0	130002.8	15	16	64
+ROW	v3-fresh2-ours-cpu1	65	sign-det	ours	341364.1	341353.6	341074.2	341712.0	146187.0	282300.0	606500.0	1121082.4	15	2	256
+ROW	v3-fresh2-ours-cpu1	65	sign-det	ours+prepared-sk	264521.4	264521.0	264290.8	264793.4	69170.0	206135.0	529883.0	1054120.6	15	2	256
+ROW	v3-fresh2-ours-cpu1	65	sign-hedged	ours	332466.9	332514.1	331571.2	333443.3	146706.0	243145.0	615983.0	1125547.9	15	2	256
+ROW	v3-fresh2-ours-cpu1	65	sign-hedged	ours+prepared-sk	258093.4	258106.6	257891.8	258736.2	69857.0	167575.0	545538.0	1065587.7	15	2	256
+ROW	v3-fresh2-ours-cpu1	65	verify	ours	101793.0	101807.1	101704.3	101993.1	100100.0	100290.0	107563.0	112269.7	15	5	256
+ROW	v3-fresh2-ours-cpu1	65	verify	ours+prepared-vk	26065.9	26063.8	26038.5	26099.8	25590.0	25680.0	26333.0	34541.5	15	18	256
+ROW	v3-fresh2-ours-cpu1	87	keygen	ours	174582.0	174610.8	174203.5	174941.4	171201.0	172575.0	180599.0	197286.8	15	11	64
+ROW	v3-fresh2-ours-cpu1	87	sign-det	ours	443371.8	443382.3	442962.5	443752.8	235445.0	369065.0	704789.0	1417091.5	15	2	256
+ROW	v3-fresh2-ours-cpu1	87	sign-det	ours+prepared-sk	298872.9	298873.5	298532.7	299170.1	94590.0	226709.5	555604.0	1264705.8	15	2	256
+ROW	v3-fresh2-ours-cpu1	87	sign-hedged	ours	398353.1	398297.5	397882.3	398606.6	233822.0	307770.0	633835.7	1195125.9	15	2	256
+ROW	v3-fresh2-ours-cpu1	87	sign-hedged	ours+prepared-sk	259194.9	259211.5	258878.0	259485.6	94480.0	167195.0	497303.0	1063981.5	15	2	256
+ROW	v3-fresh2-ours-cpu1	87	verify	ours	172354.8	172370.9	172163.6	172572.2	169747.0	170320.0	178400.0	183764.6	15	3	256
+ROW	v3-fresh2-ours-cpu1	87	verify	ours+prepared-vk	37946.5	37952.7	37897.5	38030.0	37320.0	37430.0	38303.0	46922.9	15	13	256
+# steal jiffies during run: 0 of 339188
+# loadavg at end: 1.07 1.07 1.58 1/816 262726
+# measured core clock at end: 3.41 GHz
+# bench label: v3-fresh2-rustcrypto-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[-C target-cpu=x86-64-v3]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.07 1.07 1.58 1/818 262781
+# steal jiffies: 0 of 35508785
+# measured core clock: 3.40 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	v3-fresh2-rustcrypto-cpu1	44	keygen	rustcrypto	148366.2	148360.2	148223.1	148570.8	145801.0	146340.0	154233.0	157447.8	15	13	64
+ROW	v3-fresh2-rustcrypto-cpu1	44	sign-det	rustcrypto	429732.3	429744.5	429313.7	430143.6	163475.0	320495.0	837237.0	1564201.5	15	2	256
+ROW	v3-fresh2-rustcrypto-cpu1	44	sign-det	rustcrypto+cached-sk	373814.4	373959.5	373731.3	374474.9	107450.0	262510.0	779845.0	1512901.0	15	2	256
+ROW	v3-fresh2-rustcrypto-cpu1	44	sign-hedged	rustcrypto	408901.1	408953.8	408794.4	409332.1	164004.0	318365.0	688356.0	1558547.8	15	2	256
+ROW	v3-fresh2-rustcrypto-cpu1	44	sign-hedged	rustcrypto+cached-sk	351824.1	351853.3	351517.8	352128.0	107057.0	261545.0	631838.3	1501632.6	15	2	256
+ROW	v3-fresh2-rustcrypto-cpu1	44	verify	rustcrypto	92554.3	92546.7	92478.7	92588.2	90650.0	90960.0	96409.0	101376.5	15	6	256
+ROW	v3-fresh2-rustcrypto-cpu1	44	verify	rustcrypto+cached-vk	46726.1	46730.7	46651.0	46779.6	45870.0	46040.0	47966.0	54899.9	15	11	256
+ROW	v3-fresh2-rustcrypto-cpu1	65	keygen	rustcrypto	239653.7	239731.1	239520.9	240160.4	235821.0	238105.0	245836.0	254864.3	15	8	64
+ROW	v3-fresh2-rustcrypto-cpu1	65	sign-det	rustcrypto	673438.5	673458.4	672164.6	674555.4	241170.0	546465.0	1259070.0	2414978.6	15	1	256
+ROW	v3-fresh2-rustcrypto-cpu1	65	sign-det	rustcrypto+cached-sk	578705.5	578842.7	578412.2	579361.3	147077.0	451015.0	1164949.0	2321215.9	15	1	256
+ROW	v3-fresh2-rustcrypto-cpu1	65	sign-hedged	rustcrypto	652850.0	652931.5	652075.4	654115.9	242666.0	455500.0	1283084.0	2417738.2	15	1	256
+ROW	v3-fresh2-rustcrypto-cpu1	65	sign-hedged	rustcrypto+cached-sk	559823.0	559882.5	559367.1	560444.9	148288.0	361739.5	1193049.0	2341555.4	15	1	256
+ROW	v3-fresh2-rustcrypto-cpu1	65	verify	rustcrypto	142731.2	142733.5	142652.2	142900.6	140190.0	140990.0	148980.0	155902.4	15	4	256
+ROW	v3-fresh2-rustcrypto-cpu1	65	verify	rustcrypto+cached-vk	62972.1	62954.7	62829.5	62991.9	61830.0	62030.0	65546.0	71208.7	15	8	256
+ROW	v3-fresh2-rustcrypto-cpu1	87	keygen	rustcrypto	348447.9	348731.0	347912.0	350897.8	342160.1	346955.0	354733.0	358630.4	15	6	64
+ROW	v3-fresh2-rustcrypto-cpu1	87	sign-det	rustcrypto	821018.4	821105.0	819545.7	823104.1	367943.0	659970.0	1380246.0	2945771.3	15	1	256
+ROW	v3-fresh2-rustcrypto-cpu1	87	sign-det	rustcrypto+cached-sk	656033.9	656222.9	655555.9	657897.0	206127.0	497795.0	1216940.0	2784109.4	15	1	256
+ROW	v3-fresh2-rustcrypto-cpu1	87	sign-hedged	rustcrypto	733489.9	733820.7	732159.2	736287.8	367468.0	523800.0	1249279.0	2520445.6	15	1	256
+ROW	v3-fresh2-rustcrypto-cpu1	87	sign-hedged	rustcrypto+cached-sk	569001.6	569216.9	568508.5	570496.5	205964.0	359270.0	1082625.0	2347793.0	15	1	256
+ROW	v3-fresh2-rustcrypto-cpu1	87	verify	rustcrypto	228001.2	228079.4	227582.0	228577.7	223850.0	225930.0	235240.0	317307.4	15	3	256
+ROW	v3-fresh2-rustcrypto-cpu1	87	verify	rustcrypto+cached-vk	89603.5	89646.0	89475.1	90459.7	87940.0	88230.0	92836.0	99806.0	15	6	256
+# steal jiffies during run: 0 of 397652
+# loadavg at end: 1.02 1.05 1.54 1/830 263925
+# measured core clock at end: 3.41 GHz
+# bench label: v3-fresh2-libcrux-portable-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[-C target-cpu=x86-64-v3]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.02 1.05 1.53 1/830 263988
+# steal jiffies: 0 of 35941725
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	v3-fresh2-libcrux-portable-cpu1	44	keygen	libcrux-portable	53754.5	53776.3	53639.1	54015.4	52840.0	53100.0	55507.0	61809.8	15	35	64
+ROW	v3-fresh2-libcrux-portable-cpu1	44	sign-det	libcrux-portable	190339.5	190379.7	189737.0	190826.5	80380.0	144735.0	362446.0	661056.0	15	3	256
+ROW	v3-fresh2-libcrux-portable-cpu1	44	sign-hedged	libcrux-portable	181696.5	181963.8	181533.3	182804.6	80347.0	145345.0	298695.0	657613.4	15	3	256
+ROW	v3-fresh2-libcrux-portable-cpu1	44	verify	libcrux-portable	56150.7	56177.9	56079.3	56398.2	55170.0	55310.0	58479.0	67032.0	15	9	256
+ROW	v3-fresh2-libcrux-portable-cpu1	65	keygen	libcrux-portable	111215.8	111241.5	111073.2	111544.1	109220.0	109770.0	118005.0	120281.6	15	17	64
+ROW	v3-fresh2-libcrux-portable-cpu1	65	sign-det	libcrux-portable	321053.1	321211.8	320609.1	322115.2	133091.0	264700.0	576948.3	1072401.0	15	2	256
+ROW	v3-fresh2-libcrux-portable-cpu1	65	sign-hedged	libcrux-portable	312252.9	312322.7	311711.6	313642.2	133127.0	228790.0	581740.0	1079582.9	15	2	256
+ROW	v3-fresh2-libcrux-portable-cpu1	65	verify	libcrux-portable	95680.7	95723.5	95555.8	96041.2	94050.0	94260.0	101364.0	104966.6	15	5	256
+ROW	v3-fresh2-libcrux-portable-cpu1	87	keygen	libcrux-portable	157716.1	157747.4	157505.9	158104.5	154210.0	155575.0	163886.0	168289.1	15	12	64
+ROW	v3-fresh2-libcrux-portable-cpu1	87	sign-det	libcrux-portable	380908.2	380960.1	380374.3	382833.8	199834.0	317070.0	608260.0	1229632.5	15	2	256
+ROW	v3-fresh2-libcrux-portable-cpu1	87	sign-hedged	libcrux-portable	346430.5	346505.7	346038.8	347580.4	199571.0	269130.0	556572.0	1054602.4	15	2	256
+ROW	v3-fresh2-libcrux-portable-cpu1	87	verify	libcrux-portable	156347.9	156246.6	155823.8	156626.6	153470.0	154025.0	162342.0	169337.6	15	4	256
+# steal jiffies during run: 0 of 196459
+# loadavg at end: 1.01 1.04 1.51 1/830 264852
+# measured core clock at end: 3.41 GHz
+# bench label: v3-fresh2-libcrux-avx2-cpu1
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[-C target-cpu=x86-64-v3]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 1
+# running on cpu: 1
+# loadavg: 1.01 1.04 1.51 2/830 264930
+# steal jiffies: 0 of 36173469
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ROW	v3-fresh2-libcrux-avx2-cpu1	44	keygen	libcrux-avx2	21733.1	21735.4	21722.4	21754.1	21342.0	21490.0	22008.0	29509.9	15	87	64
+ROW	v3-fresh2-libcrux-avx2-cpu1	44	sign-det	libcrux-avx2	79835.2	79835.3	79738.4	79997.4	32520.0	59805.0	149223.7	279101.3	15	6	256
+ROW	v3-fresh2-libcrux-avx2-cpu1	44	sign-hedged	libcrux-avx2	76121.5	76131.6	76047.4	76234.1	32510.0	61215.0	130760.0	281304.3	15	7	256
+ROW	v3-fresh2-libcrux-avx2-cpu1	44	verify	libcrux-avx2	24479.5	24480.8	24452.2	24514.6	24070.0	24130.0	24260.0	32189.4	15	20	256
+ROW	v3-fresh2-libcrux-avx2-cpu1	65	keygen	libcrux-avx2	37742.5	37738.4	37711.8	37763.0	37120.0	37220.0	37929.0	46309.6	15	50	64
+ROW	v3-fresh2-libcrux-avx2-cpu1	65	sign-det	libcrux-avx2	122285.9	122306.0	122184.9	122424.7	49587.0	100650.0	220342.0	408961.8	15	4	256
+ROW	v3-fresh2-libcrux-avx2-cpu1	65	sign-hedged	libcrux-avx2	118855.5	118838.6	118645.7	118985.7	49640.0	84425.0	224388.0	417881.2	15	4	256
+ROW	v3-fresh2-libcrux-avx2-cpu1	65	verify	libcrux-avx2	39144.0	39153.8	39123.6	39209.6	38480.0	38590.0	39479.0	48186.2	15	12	256
+ROW	v3-fresh2-libcrux-avx2-cpu1	87	keygen	libcrux-avx2	59299.1	59310.0	59260.1	59384.6	58092.0	58565.0	61656.0	67723.6	15	32	64
+ROW	v3-fresh2-libcrux-avx2-cpu1	87	sign-det	libcrux-avx2	158981.5	158985.3	158777.9	159240.5	77937.0	128940.0	262725.0	534628.5	15	3	256
+ROW	v3-fresh2-libcrux-avx2-cpu1	87	sign-hedged	libcrux-avx2	143435.8	143441.2	143179.5	143608.1	77840.0	111130.0	239280.0	457745.4	15	4	256
+ROW	v3-fresh2-libcrux-avx2-cpu1	87	verify	libcrux-avx2	62302.2	62315.8	62266.1	62398.3	61270.0	61455.0	64739.0	71098.8	15	8	256
+# steal jiffies during run: 0 of 165298
+# loadavg at end: 1.00 1.04 1.49 1/818 265411
+# measured core clock at end: 3.41 GHz
