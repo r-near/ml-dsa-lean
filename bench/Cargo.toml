@@ -15,6 +15,12 @@ name = "micro"
 path = "src/bin/micro.rs"
 required-features = ["internals"]
 
+# ExpandA micro-benchmark for the 4-way sampler (AVX2 lane operations).
+[[bin]]
+name = "expanda"
+path = "src/bin/expanda.rs"
+required-features = ["internals", "avx2"]
+
 # Sampling profiler (SIGPROF) over the public APIs.
 [[bin]]
 name = "prof"
