@@ -605,4 +605,96 @@ theorem rej_ntt_poly_x4_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) 
   · exact ⟨c2, e2.trans (hfinP 2 (by omega)).2⟩
   · exact ⟨c3, e3.trans (hfinP 3 (by omega)).2⟩
 
+
+/-! ## Partial correctness of the 4-lane sampler -/
+
+theorem LaneInv_fuel (rho : Array U8 32#usize) (s r : Array U8 4#usize) (i b N N' : Nat) (hb : 56 * b ≤ N)
+    (hN : N ≤ N') (a : Array U32 256#usize) (j : Usize) (h : LaneInv (Tn rho s r N i) (56 * b) a j) :
+    LaneInv (Tn rho s r N' i) (56 * b) a j := by
+  obtain ⟨hc, ha, hj⟩ := h
+  have := stA_shake_mono (Mi rho s r i) (56 * b) N N' hb hN
+  refine ⟨hc, ?_, ?_⟩
+  · unfold Tn; rw [this]; exact ha
+  · unfold Tn; rw [this]; exact hj
+
+theorem GInv_fuel (rho : Array U8 32#usize) (s r : Array U8 4#usize) (b N N' : Nat) (hb : 56 * b ≤ N)
+    (hN : N ≤ N') (x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
+      Usize × Usize × Usize × Usize × Bool) (h : GInv rho s r N b x) : GInv rho s r N' b x := by
+  obtain ⟨⟨hst, hl0, hl1, hl2, hl3⟩, hm⟩ := h
+  exact ⟨⟨hst, LaneInv_fuel rho s r 0 b N N' hb hN _ _ hl0, LaneInv_fuel rho s r 1 b N N' hb hN _ _ hl1,
+    LaneInv_fuel rho s r 2 b N N' hb hN _ _ hl2, LaneInv_fuel rho s r 3 b N N' hb hN _ _ hl3⟩, hm⟩
+
+theorem GInv_fuel' (rho : Array U8 32#usize) (s r : Array U8 4#usize) (b N N' : Nat) (hb : 56 * b ≤ N)
+    (hN : N ≤ N')
+    (x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
+      Usize × Usize × Usize × Usize × Bool) (h : GInv rho s r N' b x) : GInv rho s r N b x := by
+  obtain ⟨⟨hst, hl0, hl1, hl2, hl3⟩, hm⟩ := h
+  have back : ∀ i a j, LaneInv (Tn rho s r N' i) (56 * b) a j → LaneInv (Tn rho s r N i) (56 * b) a j := by
+    intro i a j hh
+    obtain ⟨hc, ha, hj⟩ := hh
+    have := stA_shake_mono (Mi rho s r i) (56 * b) N N' hb hN
+    refine ⟨hc, ?_, ?_⟩
+    · unfold Tn at ha; rw [this] at ha; exact ha
+    · unfold Tn at hj; rw [this] at hj; exact hj
+  exact ⟨⟨hst, back 0 _ _ hl0, back 1 _ _ hl1, back 2 _ _ hl2, back 3 _ _ hl3⟩, hm⟩
+
+theorem rej_x4_loop_partial (rho : Array U8 32#usize) (s r : Array U8 4#usize)
+    (x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
+      Usize × Usize × Usize × Usize × Bool) (hx : ∃ b, GInv rho s r (56 * b) b x) :
+    runLoop x ⦃ q => ∃ (F : Nat) (P : Nat → Poly),
+      (∀ i, i < 4 → Spec.RejNTTPoly F (Mi rho s r i) = some (P i)) ∧
+      Repr q.1 (P 0) ∧ Repr q.2.1 (P 1) ∧ Repr q.2.2.1 (P 2) ∧ Repr q.2.2.2 (P 3) ⦄div := by
+  unfold runLoop sampling.rej_ntt_poly_x4_loop
+  refine loop.dspec_inv _ (fun x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
+      Array U32 256#usize × Usize × Usize × Usize × Usize × Bool => ∃ b, GInv rho s r (56 * b) b x) ?_ ?_ x hx
+  · rintro ⟨st, p0, p1, p2, p3, j0, j1, j2, j3, more⟩ ⟨b, hI⟩
+    have hI' := GInv_fuel rho s r b (56 * b) (56 * (b + 1)) le_rfl (by omega) _ hI
+    have hbody := rej_x4_body_spec rho s r (56 * (b + 1)) b st p0 p1 p2 p3 j0 j1 j2 j3 more (fun _ => le_rfl) hI'
+    refine WP.dspec_mono' (WP.spec_dspec _ _ _ hbody) ?_
+    rintro (x' | y) h
+    · exact ⟨b + 1, h.2⟩
+    · obtain ⟨hmf, rfl⟩ := h
+      obtain ⟨⟨_, hl0, hl1, hl2, hl3⟩, hmore⟩ := hI
+      have hn : ¬ (j0.val < 256 ∨ j1.val < 256 ∨ j2.val < 256 ∨ j3.val < 256) := fun hh => by
+        have := hmore.mpr hh; simp [hmf] at this
+      simp only [not_or, not_lt] at hn
+      have e0 : j0.val = (stA (Tn rho s r (56 * b) 0) (56 * b)).2 := hl0.2.2
+      have e1 : j1.val = (stA (Tn rho s r (56 * b) 1) (56 * b)).2 := hl1.2.2
+      have e2 : j2.val = (stA (Tn rho s r (56 * b) 2) (56 * b)).2 := hl2.2.2
+      have e3 : j3.val = (stA (Tn rho s r (56 * b) 3) (56 * b)).2 := hl3.2.2
+      have hfin : ∀ i, i < 4 → Spec.RejNTTPoly (56 * b) (Mi rho s r i) =
+          some (stA (Tn rho s r (56 * b) i) (56 * b)).1 := by
+        intro i hi
+        apply rej_some_of_fin
+        show 256 ≤ (stA (Tn rho s r (56 * b) i) (56 * b)).2
+        interval_cases i <;> omega
+      refine ⟨56 * b, fun i => (stA (Tn rho s r (56 * b) i) (56 * b)).1, hfin, ?_, ?_, ?_, ?_⟩
+      · exact ⟨hl0.1, hl0.2.1⟩
+      · exact ⟨hl1.1, hl1.2.1⟩
+      · exact ⟨hl2.1, hl2.2.1⟩
+      · exact ⟨hl3.1, hl3.2.1⟩
+
+theorem rej_ntt_poly_x4_partial (rho : Array U8 32#usize) (s r : Array U8 4#usize) :
+    sampling.rej_ntt_poly_x4 Sh4 rho s r ⦃ q => ∃ (F : Nat) (P : Nat → Poly),
+      (∀ i, i < 4 → Spec.RejNTTPoly F (Mi rho s r i) = some (P i)) ∧
+      ∀ (i : Nat) (hi : i < q.val.length), i < 4 → Repr (q.val[i]) (P i) ⦄div := by
+  unfold sampling.rej_ntt_poly_x4
+  step*
+  have hloop := rej_x4_loop_partial rho s r
+    (st, Array.repeat 256#usize 0#u32, Array.repeat 256#usize 0#u32, Array.repeat 256#usize 0#u32,
+      Array.repeat 256#usize 0#u32, 0#usize, 0#usize, 0#usize, 0#usize, true)
+    ⟨0, init_GInv rho s r (56 * 0) st st_post⟩
+  unfold runLoop at hloop
+  dsimp only at hloop
+  step with hloop
+  obtain ⟨a0, a1, a2, a3⟩ := p21
+  refine (WP.dspec_ok _).2 ?_
+  refine ⟨p01, p11, p31, ?_⟩
+  intro i hi hi4
+  interval_cases i
+  · exact p01_post2
+  · exact p01_post3
+  · exact p01_post4
+  · exact p01_post5
+
 end Proofs
