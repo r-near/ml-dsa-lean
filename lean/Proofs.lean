@@ -6,6 +6,7 @@ import Proofs.NTTInverse
 import Proofs.NTTOps
 import Proofs.NTTPub
 import Proofs.MatrixVector
+import Proofs.VerifyArith
 import Proofs.Coeff
 import Proofs.Rounding
 import Proofs.Keccak
