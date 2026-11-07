@@ -162,7 +162,7 @@ fn unpack_signed(v: &[u8], b: u32, c: usize) -> [u32; 256] {
 /// every value is below `2^c` (UseHint's output is below m = 16 or 44): the same bytes, written a fixed number of values
 /// at a time with constant shifts, so that no bit accumulator runs through the loop and the compiler can vectorize it.
 /// Any other `c` takes the generic `bit_pack`. `out` must hold `32·c` bytes. Equal to `bit_pack` whenever all values
-/// are below `2^c` (`Proofs/Encode.lean`, `bit_pack_pub_spec`). Not for secret data.
+/// are below `2^c` (`Proofs/VerifyArith.lean`, `bit_pack_pub_spec`). Not for secret data.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn bit_pack_pub(w: &[u32; 256], c: usize, out: &mut [u8]) {
     if c == 4 {
