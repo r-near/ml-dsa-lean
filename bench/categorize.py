@@ -32,8 +32,8 @@ OURS = COMMON + [
     (K, r"keccak_f1600"),
     (SP, r"keccak::Shake|Shake>::"),
     (SA, r"rej_ntt_poly|rej_bounded_poly|coeff_from|sample_in_ball|expand_a|expand_s\b|expand_mask"),
-    (PW, r"multiply_ntt|matrix_vector_ntt|add_poly|sub_poly|scalar_vector_ntt_inverse"),
-    (NT, r"ntt_layer|ntt_inverse_layer|ntt::ntt|ntt_inverse|ntt_vec"),
+    (PW, r"multiply_ntt|matrix_vector_ntt|add_poly|sub_poly|scalar_vector_ntt_inverse|mac_row_pub"),
+    (NT, r"ntt_layer|ntt_inverse_layer|ntt::ntt|ntt_inverse|ntt_vec|ntt_lazy_layer|shoup_lazy|reduce_lazy|ntt_pub"),
     (RO, r"rounding::"),
     (EN, r"encode::"),
 ]
