@@ -35,8 +35,8 @@ box on 2026-11-07 (the README example test too; the commits after c4d522a change
 | Gate | Result on c4d522a |
 |---|---|
 | `scripts/lean-check.sh` | `LEAN CHECK OK`: `Build completed successfully (3332 jobs)`; axiom gate over the extracted definitions and the names in `lean/headline-theorems.txt` (412), 877 checked, then over the 9 names of `lean/keccak4-theorems.txt` and the 51 of `lean/fast-verify-theorems.txt`; each `AXIOM GATE OK`, axioms used: `propext`, `Classical.choice`, `Quot.sound` |
-| `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`: `Build completed successfully (3322 jobs)`, 146 names checked, axioms `propext`, `Classical.choice`, `Quot.sound` |
-| `scripts/ci.sh --lean` | `CI SUMMARY: 21 passed, 0 failed, 0 skipped` (every step, including `test-avx2`, `avx2-inlining`, `thumbv7em`, `msrv-1.86`, `diff-awslc`, the three fuzz targets, `extract-hash`, `axiom-gate-selftest` and `lean`) |
+| `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`: `Build completed successfully (3324 jobs)`, 146 names checked, axioms `propext`, `Classical.choice`, `Quot.sound` |
+| `scripts/ci.sh --lean` | `CI SUMMARY: 21 passed, 0 failed, 0 skipped` (run on 13f49e6, which differs from c4d522a only by the checkct driver and documentation; every step, including `test-avx2`, `avx2-inlining`, `thumbv7em`, `msrv-1.86`, `diff-awslc`, the three fuzz targets, `extract-hash`, `axiom-gate-selftest` and `lean`) |
 | `scripts/check-avx2-inlining.sh` | `OK: no out-of-line intrinsic wrappers; verify-only arithmetic fully inlined; 39256 lines of ymm code` |
 | `ML_DSA_REQUIRE_AVX2=1 cargo test --release --features avx2,internals` | every test binary passes: 127 tests in 27 result lines (26 test binaries and the doc-tests), 0 failed |
 | `cargo +1.86.0 build --features avx2` | builds (the declared MSRV) |
