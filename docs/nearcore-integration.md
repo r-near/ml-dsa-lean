@@ -121,7 +121,8 @@ table (release in parentheses; the ratio is not uniform, from 1.3 times for `sig
 | `verify_prepared_*` | 53,264 (34,216) | 66,064 (45,480) | 83,984 (58,792) |
 | `sign_prepared_*` | 134,768 (73,384) | 180,064 (100,920) | 236,464 (133,976) |
 
-The key constructors also place the returned key object in the caller's frame (20.5 / 36.9 / 65.6 KB for
+These figures predate the fast verify; the stack use of the `avx2` feature's 4-way verify body was not measured. The key
+constructors also place the returned key object in the caller's frame (20.5 / 36.9 / 65.6 KB for
 `verifying_key_*`, 28.8 / 48.2 / 81.0 KB for `signing_key_*`). The largest dev-profile figure is `signing_key_87`,
 about 475 KB below the caller's frame plus the 81 KB result slot.
 
