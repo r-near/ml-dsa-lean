@@ -7,6 +7,7 @@ import Proofs.NTTOps
 import Proofs.Coeff
 import Proofs.Rounding
 import Proofs.Keccak
+import Proofs.Keccak4
 import Proofs.Hint
 import Proofs.EncodeKeys
 import Proofs.SigCodec

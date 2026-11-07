@@ -1,0 +1,13 @@
+# Spike B (docs/fast-verify-spike-b.md): the 4-way Keccak theorems. Checked by
+#   scripts/check-axioms.sh --list keccak4-theorems.txt --no-impl
+# (the extracted keccak4 defs are covered by the default run over lean/Impl/Funs.lean).
+import Proofs.Keccak4
+Proofs.shim_xor_spec
+Proofs.shim_andnot_spec
+Proofs.shim_splat_spec
+Proofs.shim_rotl_spec
+Proofs.round_lane
+Proofs.round_spec
+Proofs.keccak_f1600_x4_shim_spec
+Proofs.keccak_f1600_x4_portable_spec
+Proofs.keccak_f1600_x4_portable_eq_scalar
