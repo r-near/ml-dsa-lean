@@ -67,7 +67,7 @@ fn portable_matches_four_scalar_permutations() {
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 mod avx2 {
     use super::*;
-    use ml_dsa_lean::keccak4::avx2::{Avx2, keccak_f1600_x4_avx2};
+    use ml_dsa_lean::keccak4::avx2_checked as avx2c;
     use ml_dsa_lean::keccak4::{Lanes4, Shim4};
 
     fn have_avx2() -> bool {
@@ -83,8 +83,7 @@ mod avx2 {
         let all = states(20_000, 0x4156_5832_4b43_4b34);
         for s in &all {
             let mut a = *s;
-            // SAFETY: AVX2 was detected above.
-            unsafe { keccak_f1600_x4_avx2(&mut a) };
+            assert!(avx2c::keccak_f1600_x4(&mut a));
             let mut p = *s;
             keccak_f1600_x4_portable(&mut p);
             assert_eq!(a, p, "avx2 vs shim");
@@ -93,21 +92,17 @@ mod avx2 {
         eprintln!("avx2 x4 vs shim vs scalar: {} states, 0 mismatches", all.len());
     }
 
-    #[target_feature(enable = "avx2")]
     fn xor_avx(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-        Avx2::xor(a, b)
+        avx2c::xor(a, b).expect("AVX2 checked by the caller")
     }
-    #[target_feature(enable = "avx2")]
     fn andnot_avx(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-        Avx2::andnot(a, b)
+        avx2c::andnot(a, b).expect("AVX2 checked by the caller")
     }
-    #[target_feature(enable = "avx2")]
     fn splat_avx(x: u64) -> [u64; 4] {
-        Avx2::splat(x)
+        avx2c::splat(x).expect("AVX2 checked by the caller")
     }
-    #[target_feature(enable = "avx2")]
     fn rotl_avx<const L: u32, const R: u32>(a: [u64; 4]) -> [u64; 4] {
-        Avx2::rotl::<L, R>(a)
+        avx2c::rotl::<L, R>(a).expect("AVX2 checked by the caller")
     }
 
     fn vals(r: &mut XorShift) -> Vec<[u64; 4]> {
@@ -120,8 +115,7 @@ mod avx2 {
 
     fn check_rot<const L: u32, const R: u32>(vs: &[[u64; 4]]) {
         for &a in vs {
-            // SAFETY: AVX2 was detected by the caller.
-            assert_eq!(unsafe { rotl_avx::<L, R>(a) }, Shim4::rotl::<L, R>(a), "rotl {L}");
+            assert_eq!(rotl_avx::<L, R>(a), Shim4::rotl::<L, R>(a), "rotl {L}");
         }
     }
 
@@ -134,9 +128,9 @@ mod avx2 {
         let vs = vals(&mut r);
         let ws = vals(&mut r);
         for (&a, &b) in vs.iter().zip(ws.iter()) {
-            assert_eq!(unsafe { xor_avx(a, b) }, Shim4::xor(a, b));
-            assert_eq!(unsafe { andnot_avx(a, b) }, Shim4::andnot(a, b));
-            assert_eq!(unsafe { splat_avx(a[0]) }, Shim4::splat(a[0]));
+            assert_eq!(xor_avx(a, b), Shim4::xor(a, b));
+            assert_eq!(andnot_avx(a, b), Shim4::andnot(a, b));
+            assert_eq!(splat_avx(a[0]), Shim4::splat(a[0]));
         }
         // Every rotation amount the kernel uses (ρ offsets, and 1 for θ), as the (L, 64 - L) the kernel passes.
         check_rot::<1, 63>(&vs);
@@ -203,7 +197,9 @@ mod avx2 {
             }
         });
         let shim = time(&mut |s| keccak_f1600_x4_portable(s));
-        let avx = time(&mut |s| unsafe { keccak_f1600_x4_avx2(s) });
+        let avx = time(&mut |s| {
+            avx2c::keccak_f1600_x4(s);
+        });
         eprintln!("ns per call (4 permutations): 4 x scalar {four_scalar:.0}, shim x4 {shim:.0}, avx2 x4 {avx:.0}; avx2 speedup over 4 x scalar {:.2}x", four_scalar / avx);
     }
 }

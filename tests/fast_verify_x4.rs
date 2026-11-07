@@ -81,50 +81,34 @@ impl Backend for ShimB {
 #[cfg(all(feature = "avx2", target_arch = "x86_64", not(miri)))]
 mod avx2_backend {
     use super::*;
-    use ml_dsa_lean::keccak4::avx2::Avx2;
+    use ml_dsa_lean::fast_verify::{
+        expand_a_into_x4_avx2_or_false, expand_a_x4_avx2_or_none, prepare_vk_x4_avx2_or_none, rej_ntt_poly_x4_avx2_or_none,
+        verify_internal_avx2_or_none,
+    };
 
-    #[target_feature(enable = "avx2")]
-    fn rej4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
-        rej_ntt_poly_x4::<Avx2>(rho, s, r)
-    }
-    #[target_feature(enable = "avx2")]
-    fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
-        expand_a_x4::<K, L, Avx2>(rho)
-    }
-    #[target_feature(enable = "avx2")]
-    fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-        expand_a_into_x4::<K, L, Avx2>(rho, a)
-    }
-    #[target_feature(enable = "avx2")]
-    fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
-        prepare_vk_x4::<K, L, Avx2>(pk)
-    }
-    #[target_feature(enable = "avx2")]
-    fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
-        verify_internal_x4::<K, L, Avx2>(p, pk, pre, m, sig)
-    }
-
+    // The AVX2 instantiation is crate-private (its safe trait methods execute AVX2 instructions); these crate entry
+    // points run it inside a `#[target_feature(enable = "avx2")]` function after a `has_avx2` check. Every test checks
+    // `available()` first, so `None` here is a bug.
     pub struct Avx2B;
     impl Backend for Avx2B {
         const NAME: &'static str = "Avx2";
         fn available() -> bool {
             std::arch::is_x86_feature_detected!("avx2")
         }
-        // SAFETY (all methods): `available()` is checked by every test before it runs.
         fn rej4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
-            unsafe { rej4(rho, s, r) }
+            rej_ntt_poly_x4_avx2_or_none(rho, s, r).expect("AVX2 checked by the caller")
         }
         fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
-            unsafe { expand::<K, L>(rho) }
+            expand_a_x4_avx2_or_none::<K, L>(rho).expect("AVX2 checked by the caller")
         }
         fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-            unsafe { expand_into::<K, L>(rho, a) }
+            assert!(expand_a_into_x4_avx2_or_false::<K, L>(rho, a), "AVX2 checked by the caller");
         }
         fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
-            unsafe { prepare::<K, L>(pk) }
+            prepare_vk_x4_avx2_or_none::<K, L>(pk).expect("AVX2 checked by the caller")
         }
         fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
-            unsafe { verify::<K, L>(p, pk, pre, m, sig) }
+            verify_internal_avx2_or_none::<K, L>(p, pk, pre, m, sig).expect("AVX2 checked by the caller")
         }
     }
 }

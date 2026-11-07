@@ -1,4 +1,4 @@
-//! The AVX2 lane operations (`keccak4::avx2::Avx2`) against the plain-Rust model the Lean proof is about (`Shim4`), and
+//! The AVX2 lane operations (`Avx2`, reached through `keccak4::avx2_checked`) against the plain-Rust model the Lean proof is about (`Shim4`), and
 //! the AVX2 permutation against `Shim4` and the scalar permutation.
 //!
 //! This is the evidence for the link that is tested, not proved: the proof covers the kernel over `Shim4`; the shipped
@@ -12,7 +12,7 @@
 #![cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 #![allow(clippy::needless_range_loop)]
 use ml_dsa_lean::keccak::keccak_f1600;
-use ml_dsa_lean::keccak4::avx2::{Avx2, keccak_f1600_x4_avx2};
+use ml_dsa_lean::keccak4::avx2_checked as avx2;
 use ml_dsa_lean::keccak4::{Lanes4, Shim4, keccak_f1600_x4_portable};
 use std::collections::BTreeSet;
 
@@ -36,23 +36,20 @@ fn have_avx2() -> bool {
     yes
 }
 
-// The Avx2 operations are only sound inside code compiled with AVX2, so every call goes through a
-// `#[target_feature(enable = "avx2")]` function, as in the shipped wrapper.
-#[target_feature(enable = "avx2")]
+// `Avx2` is crate-private (its safe methods execute AVX2 instructions); `avx2_checked` runs each operation inside a
+// `#[target_feature(enable = "avx2")]` function behind a `has_avx2` check and returns `None` without AVX2. Every test
+// first calls `have_avx2()`, so by the time these run the CPU has AVX2 and `None` is a bug.
 fn xor_avx(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-    Avx2::xor(a, b)
+    avx2::xor(a, b).expect("AVX2 checked by the caller")
 }
-#[target_feature(enable = "avx2")]
 fn andnot_avx(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-    Avx2::andnot(a, b)
+    avx2::andnot(a, b).expect("AVX2 checked by the caller")
 }
-#[target_feature(enable = "avx2")]
 fn splat_avx(x: u64) -> [u64; 4] {
-    Avx2::splat(x)
+    avx2::splat(x).expect("AVX2 checked by the caller")
 }
-#[target_feature(enable = "avx2")]
 fn rotl_avx<const L: u32, const R: u32>(a: [u64; 4]) -> [u64; 4] {
-    Avx2::rotl::<L, R>(a)
+    avx2::rotl::<L, R>(a).expect("AVX2 checked by the caller")
 }
 
 /// Inputs for the lane-wise operations: edge values in every lane, one-hot words, every 0/all-ones pattern across the four
@@ -128,8 +125,7 @@ fn expected_rotations() -> BTreeSet<u32> {
 fn check_rot<const L: u32, const R: u32>(vs: &[[u64; 4]]) {
     assert_eq!(L + R, 64);
     for &a in vs {
-        // SAFETY: the caller checked AVX2.
-        assert_eq!(unsafe { rotl_avx::<L, R>(a) }, Shim4::rotl::<L, R>(a), "rotl {L} on {a:x?}");
+        assert_eq!(rotl_avx::<L, R>(a), Shim4::rotl::<L, R>(a), "rotl {L} on {a:x?}");
     }
 }
 
@@ -225,23 +221,18 @@ fn each_avx2_op_matches_shim4_lane_by_lane() {
     for (i, &a) in vs.iter().enumerate() {
         // Pair every operand with its partner at the same index and with a rotated partner, so edge x edge is covered.
         for &b in [ws[i], ws[(i * 7 + 3) % ws.len()], a].iter() {
-            // SAFETY: AVX2 was detected above.
-            unsafe {
-                assert_eq!(xor_avx(a, b), Shim4::xor(a, b), "xor {a:x?} {b:x?}");
-                assert_eq!(andnot_avx(a, b), Shim4::andnot(a, b), "andnot {a:x?} {b:x?}");
-            }
+            assert_eq!(xor_avx(a, b), Shim4::xor(a, b), "xor {a:x?} {b:x?}");
+            assert_eq!(andnot_avx(a, b), Shim4::andnot(a, b), "andnot {a:x?} {b:x?}");
             n += 1;
         }
         for lane in 0..4 {
-            // SAFETY: as above.
-            assert_eq!(unsafe { splat_avx(a[lane]) }, Shim4::splat(a[lane]));
+            assert_eq!(splat_avx(a[lane]), Shim4::splat(a[lane]));
         }
     }
     // Lane independence: changing one lane of one operand changes only that lane of the result.
     for &a in vs.iter().take(2000) {
         let b = [a[1], a[2], a[3], a[0]];
-        // SAFETY: as above.
-        let (x, y) = unsafe { (xor_avx(a, b), andnot_avx(a, b)) };
+        let (x, y) = (xor_avx(a, b), andnot_avx(a, b));
         for lane in 0..4 {
             assert_eq!(x[lane], a[lane] ^ b[lane]);
             assert_eq!(y[lane], !a[lane] & b[lane]);
@@ -324,8 +315,7 @@ fn avx2_permutation_equals_shim4_and_four_scalar_permutations() {
     assert!(all.len() > 150_000);
     for s in &all {
         let mut a = *s;
-        // SAFETY: AVX2 was detected above.
-        unsafe { keccak_f1600_x4_avx2(&mut a) };
+        assert!(avx2::keccak_f1600_x4(&mut a));
         let mut p = *s;
         keccak_f1600_x4_portable(&mut p);
         assert_eq!(a, p, "avx2 vs shim, input {s:x?}");
@@ -335,8 +325,7 @@ fn avx2_permutation_equals_shim4_and_four_scalar_permutations() {
     let mut a = all[all.len() / 2];
     let mut p = a;
     for _ in 0..2_000 {
-        // SAFETY: as above.
-        unsafe { keccak_f1600_x4_avx2(&mut a) };
+        assert!(avx2::keccak_f1600_x4(&mut a));
         keccak_f1600_x4_portable(&mut p);
         assert_eq!(a, p);
     }

@@ -3,6 +3,11 @@
 //!
 //! * `Shim4`: plain Rust over `[u64; 4]`. This is the instantiation Charon/Aeneas see and the one portable builds run.
 //! * `avx2::Avx2` (feature `avx2`, x86_64, not Miri): the same operations as AVX2 intrinsics. Outside the Lean proof.
+//!   Crate-private on purpose: its `Lanes4` methods are safe to call and execute AVX2 instructions, so a public
+//!   `Avx2` would let safe code reach them on a CPU without AVX2 (SIGILL, i.e. undefined behavior). Outside code can
+//!   only reach it through `fast_verify`'s dispatch (which checks `cpu::has_avx2`) and, with `internals`, through
+//!   `avx2_checked` and the `*_avx2_or_none` wrappers in `fast_verify`, which check it too and return `None` without
+//!   AVX2.
 //!
 //! State layout: `s[k]` is lane `k = x + 5y` of all four states, `s[k][i]` is lane `k` of state `i`.
 //! Every operation works on whole `[u64; 4]` values (lane `i` of the result depends on lane `i` of the arguments
@@ -163,7 +168,7 @@ pub fn keccak_f1600_x4_portable(s: &mut [[u64; 4]; 25]) {
 /// The AVX2 instantiation. Outside the Lean proof; see the module docs.
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 #[allow(unsafe_code)]
-pub mod avx2 {
+pub(crate) mod avx2 {
     use super::{Lanes4, keccak_f1600_x4};
     use core::arch::x86_64::{
         __m256i, _mm_cvtsi32_si128, _mm256_andnot_si256, _mm256_loadu_si256, _mm256_or_si256, _mm256_set1_epi64x,
@@ -171,7 +176,8 @@ pub mod avx2 {
     };
 
     /// The AVX2 operations. Only sound to call from code compiled with AVX2 enabled and run on a CPU that has it,
-    /// which is why the type is only reachable through `keccak_f1600_x4_avx2` (and the tests).
+    /// which is why the type is crate-private: every use is inside a `#[target_feature(enable = "avx2")]` function
+    /// reached only after `cpu::has_avx2()` (`fast_verify/dispatch.rs`, `avx2_checked`).
     pub struct Avx2;
 
     // SAFETY (all of `ld`, `st` and the trait methods): every use is inlined into a function compiled with
@@ -222,7 +228,74 @@ pub mod avx2 {
     /// `unsafe`).
     #[target_feature(enable = "avx2")]
     #[cfg_attr(not(feature = "internals"), allow(dead_code))] // the verify dispatch inlines the kernel itself; tests and benches call this
-    pub fn keccak_f1600_x4_avx2(s: &mut [[u64; 4]; 25]) {
+    pub(crate) fn keccak_f1600_x4_avx2(s: &mut [[u64; 4]; 25]) {
         keccak_f1600_x4::<Avx2>(s)
+    }
+}
+
+/// Safe entry points to the AVX2 lane operations, for the tests and benches (feature `internals`). Each one runs
+/// `cpu::has_avx2()` and returns `None` (or `false`) without running any AVX2 instruction when this CPU or OS lacks
+/// AVX2, so none of them can raise SIGILL; with AVX2 the result is exactly what `Avx2` computes.
+///
+/// `Avx2` itself is not nameable outside the crate, because its safe `Lanes4` methods execute AVX2 instructions. This
+/// must stay true with every feature combination:
+///
+/// ```compile_fail,E0603
+/// use ml_dsa_lean::keccak4::avx2::Avx2; // `avx2` is a private module
+/// ```
+///
+/// ```compile_fail
+/// // Neither can it be reached through a re-export or a public alias.
+/// use ml_dsa_lean::keccak4::Avx2;
+/// ```
+#[cfg(all(feature = "avx2", feature = "internals", not(miri), target_arch = "x86_64"))]
+#[allow(unsafe_code)]
+pub mod avx2_checked {
+    use super::Lanes4;
+    use super::avx2::{Avx2, keccak_f1600_x4_avx2};
+    use crate::cpu::has_avx2;
+
+    #[target_feature(enable = "avx2")]
+    fn xor_avx2(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
+        Avx2::xor(a, b)
+    }
+    #[target_feature(enable = "avx2")]
+    fn andnot_avx2(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
+        Avx2::andnot(a, b)
+    }
+    #[target_feature(enable = "avx2")]
+    fn splat_avx2(x: u64) -> [u64; 4] {
+        Avx2::splat(x)
+    }
+    #[target_feature(enable = "avx2")]
+    fn rotl_avx2<const L: u32, const R: u32>(a: [u64; 4]) -> [u64; 4] {
+        Avx2::rotl::<L, R>(a)
+    }
+
+    /// `Avx2::xor`, or `None` without AVX2.
+    pub fn xor(a: [u64; 4], b: [u64; 4]) -> Option<[u64; 4]> {
+        // SAFETY (all `unsafe` blocks below): `has_avx2` just reported CPU and OS support for AVX2.
+        if has_avx2() { Some(unsafe { xor_avx2(a, b) }) } else { None }
+    }
+    /// `Avx2::andnot`, or `None` without AVX2.
+    pub fn andnot(a: [u64; 4], b: [u64; 4]) -> Option<[u64; 4]> {
+        if has_avx2() { Some(unsafe { andnot_avx2(a, b) }) } else { None }
+    }
+    /// `Avx2::splat`, or `None` without AVX2.
+    pub fn splat(x: u64) -> Option<[u64; 4]> {
+        if has_avx2() { Some(unsafe { splat_avx2(x) }) } else { None }
+    }
+    /// `Avx2::rotl::<L, R>`, or `None` without AVX2. As for the trait method, `R` must be `64 - L` and `0 < L < 64`.
+    pub fn rotl<const L: u32, const R: u32>(a: [u64; 4]) -> Option<[u64; 4]> {
+        if has_avx2() { Some(unsafe { rotl_avx2::<L, R>(a) }) } else { None }
+    }
+    /// `keccak_f1600_x4::<Avx2>` on `s`; returns `false` (and leaves `s` alone) without AVX2.
+    pub fn keccak_f1600_x4(s: &mut [[u64; 4]; 25]) -> bool {
+        if has_avx2() {
+            unsafe { keccak_f1600_x4_avx2(s) };
+            true
+        } else {
+            false
+        }
     }
 }
