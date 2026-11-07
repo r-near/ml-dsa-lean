@@ -383,3 +383,159 @@ pub fn expand_s<const K: usize, const L: usize>(
     }
     out
 }
+
+#[cfg(test)]
+mod boundary_tests {
+    //! Deterministic boundary tests of the branchless 4-way rejection parse, on rate bytes chosen to sit on the edges of
+    //! Algorithm 14 and Algorithm 30: candidates q − 1, q, q + 1, values with bit 23 set (which CoeffFromThreeBytes masks
+    //! off), and the cutoff at 256 accepted coefficients. SHAKE output cannot be steered, so these call the parse on chosen
+    //! bytes, and compare every case with the scalar `coeff_from_three_bytes`. They pin down, for example, the mutants
+    //! `z < Q` → `z <= Q`, `b2 & 127` → `b2 & 255`, `j < 256` → `j <= 256` in `rej_ntt_lane_x4`, and an off-by-one in
+    //! `first_256`. The parse does not involve the Keccak lane operations (`Shim4` or AVX2); their agreement is tested
+    //! on whole permutations in `tests/keccak4_avx2.rs` and on whole samplers in `tests/fast_verify.rs`.
+    extern crate std;
+    use super::*;
+    use std::vec::Vec;
+
+    const QU: u32 = Q;
+
+    /// 56 candidates (24-bit little-endian triples) as a 168-byte block.
+    fn block(cands: &[u32; 56]) -> [u8; 168] {
+        let mut b = [0u8; 168];
+        for (t, &v) in cands.iter().enumerate() {
+            b[3 * t] = v as u8;
+            b[3 * t + 1] = (v >> 8) as u8;
+            b[3 * t + 2] = (v >> 16) as u8;
+        }
+        b
+    }
+
+    /// The accepted values of a block per Algorithm 14, in order.
+    fn accepted(buf: &[u8; 168]) -> Vec<u32> {
+        (0..56).filter_map(|t| coeff_from_three_bytes(buf[3 * t], buf[3 * t + 1], buf[3 * t + 2])).collect()
+    }
+
+    /// Candidate lists around the boundaries, rotated so that each edge value is tried at every position mod 56.
+    fn edge_blocks() -> Vec<[u8; 168]> {
+        let edges: [u32; 20] = [
+            QU - 2, QU - 1, QU, QU + 1, QU + 2, 0x7F_FFFF, 0x80_0000, 0x80_0001, 0x80_0000 | (QU - 1), 0x80_0000 | QU,
+            0x80_0000 | (QU + 1), 0xFF_FFFF, 0xFF_FFFE, 0x7F_FFFE, 0, 1, 0xFF_E000 | 1, 0x80_0000 | 0x7F_E000, 1 << 22, (1 << 22) - 1,
+        ];
+        let mut out = Vec::new();
+        for rot in 0..56 {
+            let mut c = [0u32; 56];
+            for (t, x) in c.iter_mut().enumerate() {
+                *x = edges[(t + rot) % edges.len()];
+            }
+            out.push(block(&c));
+        }
+        // All accepted at the top of the range, all rejected just above it, and alternating q - 1 / q.
+        out.push(block(&[QU - 1; 56]));
+        out.push(block(&[QU; 56]));
+        out.push(block(&[0x80_0000 | QU; 56]));
+        out.push(block(&[0x80_0000 | (QU - 1); 56]));
+        let mut alt = [0u32; 56];
+        for (t, x) in alt.iter_mut().enumerate() {
+            *x = if t % 2 == 0 { QU - 1 } else { QU };
+        }
+        out.push(block(&alt));
+        out
+    }
+
+    #[test]
+    fn three_bytes_value_masks_bit_23() {
+        assert_eq!(three_bytes_value(0, 0, 0x80), 0);
+        assert_eq!(three_bytes_value(0xFF, 0xFF, 0xFF), 0x7F_FFFF);
+        assert_eq!(three_bytes_value(0, 0, 0x7F), 0x7F_0000);
+        // q − 1 = 0x7FE000, q = 0x7FE001.
+        assert_eq!(three_bytes_value(0x00, 0xE0, 0x7F), QU - 1);
+        assert_eq!(three_bytes_value(0x01, 0xE0, 0x7F), QU);
+        assert_eq!(three_bytes_value(0x01, 0xE0, 0xFF), QU);
+    }
+
+    #[test]
+    fn block_parse_matches_scalar_on_boundary_candidates() {
+        for buf in edge_blocks() {
+            let acc = accepted(&buf);
+            for j0 in [0usize, 1, 100, 199, 200, 254, 255] {
+                let mut a = [0xDEAD_BEEFu32; 312];
+                let j1 = rej_ntt_block_x4(&buf, &mut a, j0);
+                assert_eq!(j1, j0 + acc.len(), "count, j0={j0}");
+                // Every accepted word is stored at its position (the slack words keep them past 256 too).
+                assert_eq!(&a[j0..j1], &acc[..], "words, j0={j0}");
+            }
+        }
+    }
+
+    #[test]
+    fn rate_bytes_round_trip_through_the_state_layout() {
+        for (i, buf) in edge_blocks().into_iter().take(4).enumerate() {
+            let mut st = [[0u64; 4]; 25];
+            for k in 0..21 {
+                let mut w = 0u64;
+                for b in 0..8 {
+                    w |= (buf[8 * k + b] as u64) << (8 * b);
+                }
+                st[k][i] = w;
+                // Other lanes hold unrelated data that must not leak into state i's bytes.
+                st[k][(i + 1) % 4] = !w;
+            }
+            assert_eq!(rate_bytes_x4(&st, i), buf);
+        }
+    }
+
+    /// The cutoff at 256: a lane that already has 256 coefficients is not parsed; one with 255 is, and its 256th word is the
+    /// first accepted candidate of the block.
+    #[test]
+    fn lane_step_stops_exactly_at_256() {
+        let first = [QU - 1; 56];
+        let buf = block(&first);
+        let mut st = [[0u64; 4]; 25];
+        for lane in 0..4 {
+            for k in 0..21 {
+                let mut w = 0u64;
+                for b in 0..8 {
+                    w |= (buf[8 * k + b] as u64) << (8 * b);
+                }
+                st[k][lane] = w;
+            }
+        }
+        for lane in 0..4 {
+            // 256 already: untouched, same j.
+            let mut a = [7u32; 312];
+            assert_eq!(rej_ntt_lane_x4(&st, lane, &mut a, 256), 256);
+            assert_eq!(a, [7u32; 312], "a lane with 256 coefficients must not be parsed");
+            // 255: parsed, 56 more accepted.
+            let mut a = [7u32; 312];
+            assert_eq!(rej_ntt_lane_x4(&st, lane, &mut a, 255), 255 + 56);
+            assert_eq!(a[255], QU - 1);
+            assert_eq!(first_256(&a)[255], QU - 1);
+            // 255 with every candidate rejected: j stays, and the 256th word is not set to a rejected value by the caller's
+            // view (it is unspecified past j, so only j is checked).
+            let mut st2 = st;
+            let rej = block(&[QU; 56]);
+            for k in 0..21 {
+                let mut w = 0u64;
+                for b in 0..8 {
+                    w |= (rej[8 * k + b] as u64) << (8 * b);
+                }
+                st2[k][lane] = w;
+            }
+            let mut a = [7u32; 312];
+            assert_eq!(rej_ntt_lane_x4(&st2, lane, &mut a, 255), 255);
+        }
+    }
+
+    /// `first_256` returns words 0..255 in order, including word 255.
+    #[test]
+    fn first_256_keeps_word_255_and_drops_256() {
+        let mut a = [0u32; 312];
+        for (k, x) in a.iter_mut().enumerate() {
+            *x = k as u32 + 1;
+        }
+        let r = first_256(&a);
+        assert_eq!(r[0], 1);
+        assert_eq!(r[255], 256);
+        assert!(r.iter().all(|&x| x <= 256));
+    }
+}
