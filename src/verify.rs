@@ -4,7 +4,7 @@ use crate::encode::{pk_decode, sig_decode, w1_encode};
 use crate::keccak::Shake;
 use crate::ntt::{matrix_vector_ntt, multiply_ntt, ntt, ntt_inverse, ntt_vec, sub_poly};
 use crate::params::{pk_len, sig_len, Params};
-use crate::rounding::{poly_use_hint, vec_infinity_norm};
+use crate::rounding::{poly_use_hint_pub, vec_infinity_norm};
 use crate::keccak4::Lanes4;
 use crate::sampling::{expand_a, expand_a_into_x4, expand_a_x4, rej_ntt_poly, sample_in_ball};
 
@@ -190,6 +190,7 @@ fn hash_mu(tr: &[u8; 64], m_prefix: &[u8], m: &[u8]) -> [u8; 64] {
 /// Steps 10–13 of Algorithm 8 once c = SampleInBall(c̃) is known: w′_Approx, UseHint, c̃′ and the comparison.
 ///
 /// Precondition: `p` matches `K` and `L`; `c_tilde[..p.c_tilde_len]` is the signature's c̃.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn verify_core<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,
@@ -209,7 +210,7 @@ fn verify_core<const K: usize, const L: usize>(
         let ct1_hat = multiply_ntt(&c_hat, &vk.t1_2d_hat[i]);
         w_approx[i] = ntt_inverse(&sub_poly(&az_hat[i], &ct1_hat));
         // 11: w′1 ← UseHint(h, w′_Approx)
-        w1[i] = poly_use_hint(p, &h[i], &w_approx[i]);
+        w1[i] = poly_use_hint_pub(p, &h[i], &w_approx[i]);
         i += 1;
     }
     // 12: c̃′ ← H(μ ‖ w1Encode(w′1), λ/4)
@@ -232,6 +233,7 @@ fn verify_core<const K: usize, const L: usize>(
 ///
 /// Precondition: `p` is the parameter set matching `K` and `L`, and `c_tilde[..p.c_tilde_len]` is the
 /// signature's c̃ (as returned by `sig_decode`).
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn verify_decoded<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,

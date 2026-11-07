@@ -246,6 +246,28 @@ fn decompose_and_use_hint_exhaustive() {
 }
 
 #[test]
+fn poly_use_hint_pub_matches_poly_use_hint_exhaustive() {
+    // The verify-path UseHint against the constant-time one on every r < q, both h values, all three parameter sets
+    // (256 coefficients per call, hints alternating so that each r sees both).
+    for p in [&ML_DSA_44, &ML_DSA_65, &ML_DSA_87] {
+        let mut base = 0u32;
+        while base < Q {
+            for flip in [false, true] {
+                let mut r = [0u32; 256];
+                let mut h = [false; 256];
+                for j in 0..256 {
+                    // Coefficients past q - 1 repeat q - 1: they are not canonical otherwise.
+                    r[j] = (base + j as u32).min(Q - 1);
+                    h[j] = (j % 2 == 0) != flip;
+                }
+                assert_eq!(poly_use_hint_pub(p, &h, &r), poly_use_hint(p, &h, &r), "base={base} flip={flip} g2={}", p.gamma2);
+            }
+            base += 256;
+        }
+    }
+}
+
+#[test]
 fn coeff_from_half_byte_naive() {
     for p in [&ML_DSA_44, &ML_DSA_65, &ML_DSA_87] {
         let eta = p.eta as i64;
