@@ -59,7 +59,7 @@
   "ml_dsa_lean::keccak4::keccak_f1600_x4_portable",
   "ml_dsa_lean::keccak4::keccak_f1600_x4"
  ],
- "extract_inputs_sha256": "07848b367f9b184531498d830f4b727441f6814016648b2a829a3ad36e032d21",
+ "extract_inputs_sha256": "dda40a6097ded0ca26a23c5f8f0d09637f1e7d521c7c4908d5fad50bc483c581",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
