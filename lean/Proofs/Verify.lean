@@ -11,6 +11,7 @@ import Proofs.NTTInverse
 import Proofs.NTT
 import Proofs.Rounding
 import Proofs.Steps
+import Proofs.VerifyArith
 import Proofs.ExpandMask
 import Proofs.Keccak
 
@@ -240,70 +241,63 @@ theorem bitlen_m_le (sp : Spec.Params) (hg : StdGamma2 sp) :
 def W1Row (sp : Spec.Params) {k : Nat} (U : Vector RPoly k) (r : Nat) (x : Array U32 256#usize) : Prop :=
   ReprInt x U[r]! ∧ ∀ (c : Nat) (hc : c < 256), 0 ≤ (U[r]!)[c]'hc ∧ (U[r]!)[c]'hc < sp.m
 
-/-- Steps 10-11, row by row: `w′_Approx[r] = NTT⁻¹(Â z[r] − ĉ ∘ t̂₁[r])` and `w₁[r] = UseHint(h[r], w′_Approx[r])`. -/
-theorem verify_loop_spec {K L : Usize} {k : Nat} {ip : Impl.params.Params} {sp : Spec.Params}
-    (hp : Params.Valid ip K L sp) (hg : StdGamma2 sp)
+/-- Steps 10-11, row by row: `w′_Approx[r] = NTT⁻¹(Â ẑ[r] − ĉ ∘ t̂₁[r])` (the fused `mac_row_pub`, then `ntt_inverse_pub`)
+and `w₁[r] = UseHint(h[r], w′_Approx[r])`. -/
+theorem verify_loop_spec {K L : Usize} {k ℓ : Nat} {ip : Impl.params.Params} {sp : Spec.Params}
+    (hp : Params.Valid ip K L sp) (hg : StdGamma2 sp) (hL255 : L.val ≤ 255)
     (h : Array (Array Bool 256#usize) K) (H : Vector HintPoly k) (hh : ReprHintVec h H)
-    (az_hat : Array (Array U32 256#usize) K) (AZ : Vector Spec.Poly k) (haz : ReprVec az_hat AZ)
+    (vk : verify.PreparedVk K L) (A : Vector (Vector Spec.Poly ℓ) k) (hA : ReprMat vk.a_hat A)
+    (T : Vector Spec.Poly k) (ht : ReprVec vk.t1_2d_hat T)
+    (z_hat : Array (Array U32 256#usize) L) (Z : Vector Spec.Poly ℓ) (hz : ReprVec z_hat Z)
     (c_hat : Array U32 256#usize) (C : Spec.Poly) (hc : Repr c_hat C)
-    (t1_2d_hat : Array (Array U32 256#usize) K) (T : Vector Spec.Poly k) (ht : ReprVec t1_2d_hat T)
-    (w_approx w1 : Array (Array U32 256#usize) K) (i : Usize) (hi : i.val ≤ K.val)
-    (h1 : Rows w_approx (fun r x => Repr x (NTTInvVec (AZ - ScalarVectorNTT C T))[r]!) i.val)
-    (h2 : Rows w1 (W1Row sp (UseHintVec sp H (NTTInvVec (AZ - ScalarVectorNTT C T)))) i.val) :
-    verify.verify_core_loop ip t1_2d_hat h az_hat c_hat w_approx w1 i ⦃ o =>
-      Rows o (W1Row sp (UseHintVec sp H (NTTInvVec (AZ - ScalarVectorNTT C T)))) K.val ⦄ := by
+    (w1 : Array (Array U32 256#usize) K) (i : Usize) (hi : i.val ≤ K.val)
+    (h2 : Rows w1 (W1Row sp (UseHintVec sp H (NTTInvVec (MatrixVectorNTT A Z - ScalarVectorNTT C T)))) i.val) :
+    verify.verify_core_loop ip vk h z_hat c_hat w1 i ⦃ o =>
+      Rows o (W1Row sp (UseHintVec sp H (NTTInvVec (MatrixVectorNTT A Z - ScalarVectorNTT C T)))) K.val ⦄ := by
   have hN : K.val = k := hh.len
   unfold verify.verify_core_loop
   apply loop.spec_decr_nat
-    (fun (p : Array (Array U32 256#usize) K × Array (Array U32 256#usize) K × Usize) => K.val - p.2.2.val)
-    (fun p => p.2.2.val ≤ K.val ∧
-      Rows p.1 (fun r x => Repr x (NTTInvVec (AZ - ScalarVectorNTT C T))[r]!) p.2.2.val ∧
-      Rows p.2.1 (W1Row sp (UseHintVec sp H (NTTInvVec (AZ - ScalarVectorNTT C T)))) p.2.2.val)
-  · rintro ⟨wa, w1', i⟩ ⟨hi1, hw1, hw2⟩
-    dsimp only at hi1 hw1 hw2
+    (fun (p : Array (Array U32 256#usize) K × Usize) => K.val - p.2.val)
+    (fun p => p.2.val ≤ K.val ∧
+      Rows p.1 (W1Row sp (UseHintVec sp H (NTTInvVec (MatrixVectorNTT A Z - ScalarVectorNTT C T)))) p.2.val)
+  · rintro ⟨w1', i⟩ ⟨hi1, hw2⟩
+    dsimp only at hi1 hw2
     simp only [verify.verify_core_loop.body]
     split
     · rename_i hi
       have hi' : i.val < K.val := hi
       have hik : i.val < k := by omega
-      have hl : i.val < wa.val.length := by rw [wa.property]; exact hi'
       have hl2 : i.val < w1'.val.length := by rw [w1'.property]; exact hi'
-      step with ht.index_spec i hik as ⟨a, ha⟩
-      step with multiply_ntt_spec c_hat a C _ hc ha as ⟨ct1, hct1⟩
-      step with haz.index_spec i hik as ⟨a1, ha1⟩
-      step with sub_poly_spec a1 ct1 _ _ ha1 hct1 as ⟨a2, ha2⟩
-      step with ntt_inverse_spec a2 ha2.canon as ⟨a3, ha3, ha3'⟩
-      step as ⟨wa1, hwa1⟩
+      step with hA.index_spec i hik as ⟨a, ha⟩
+      step with ht.index_spec i hik as ⟨a1, ha1⟩
+      step with mac_row_pub_spec_mv a A i.val hik ha z_hat Z hz c_hat a1 C T[i.val] hc ha1 hL255 as ⟨w_hat, hwh⟩
+      step with ntt_inverse_pub_spec w_hat hwh.canon as ⟨a3, ha3, ha3'⟩
       step with hh.index_spec' i hik as ⟨a4, ha4⟩
-      step as ⟨hlt5, a5, ha5⟩
-      have e5 : a5 = a3 := by rw [ha5]; simp [hwa1, Array.set_val_eq]
-      subst e5
-      have hW : (NTTInvVec (AZ - ScalarVectorNTT C T))[i.val]! =
-          NTTInv (AZ[i.val] - MultiplyNTT C T[i.val]) := by
+      have hW : (NTTInvVec (MatrixVectorNTT A Z - ScalarVectorNTT C T))[i.val]! =
+          NTTInv ((MatrixVectorNTT A Z)[i.val]! - MultiplyNTT C T[i.val]) := by
         rw [nttInvVec_getElem! _ _ hik, vsub_getElem! _ _ _ hik, scalarVectorNTT_getElem! _ _ _ hik,
-          vget! AZ _ hik, vget! T _ hik]
-      have hrW : Repr a5 (NTTInvVec (AZ - ScalarVectorNTT C T))[i.val]! := by
-        rw [hW]; exact ⟨ha3, by rw [ha3', ha2.eq]⟩
-      have hrW' : Repr a5 ((NTTInvVec (AZ - ScalarVectorNTT C T))[i.val]'hik) := by
+          vget! T _ hik]
+      have hrW : Repr a3 (NTTInvVec (MatrixVectorNTT A Z - ScalarVectorNTT C T))[i.val]! := by
+        rw [hW]; exact ⟨ha3, by rw [ha3', hwh.eq]⟩
+      have hrW' : Repr a3 ((NTTInvVec (MatrixVectorNTT A Z - ScalarVectorNTT C T))[i.val]'hik) := by
         rw [← vget! _ _ hik]; exact hrW
-      step with poly_use_hint_pub_spec hp hg a4 H[i.val] ha4 a5 _ hrW' as ⟨a6, ha6, ha6'⟩
+      step with poly_use_hint_pub_spec hp hg a4 H[i.val] ha4 a3 _ hrW' as ⟨a6, ha6, ha6'⟩
       step*
-      have hrow : W1Row sp (UseHintVec sp H (NTTInvVec (AZ - ScalarVectorNTT C T))) i.val a6 := by
+      have hrow : W1Row sp (UseHintVec sp H (NTTInvVec (MatrixVectorNTT A Z - ScalarVectorNTT C T))) i.val a6 := by
         refine ⟨?_, fun c hc => ?_⟩
         · rw [useHintVec_getElem! _ _ _ _ hik]; exact ha6
         · have := ha6' c hc
           simp only [useHintVec_getElem! _ _ _ _ hik, Vector.getElem_zipWith]
           omega
       have e16 : i1.val = i.val + 1 := i1_post
-      refine ⟨by omega, ?_, ?_, by omega⟩
-      · rw [e16, hwa1]; exact hw1.set i rfl hl a5 hrW
-      · rw [e16, a8_post]; exact hw2.set i rfl hl2 a6 hrow
+      refine ⟨by omega, ?_, by omega⟩
+      rw [e16, a4_post]; exact hw2.set i rfl hl2 a6 hrow
     · rename_i hi
       have hi' : i.val = K.val := by scalar_tac
       simp only [WP.spec_ok]
       rw [hi'] at hw2
       exact hw2
-  · exact ⟨hi, h1, h2⟩
+  · exact ⟨hi, h2⟩
 
 /-- The length guard's comparison `s.len() != n`. -/
 theorem len_bne_iff (s : Slice U8) (i : Usize) : (Slice.len s != i) = true ↔ s.val.length ≠ i.val := by
@@ -423,7 +417,7 @@ theorem prepare_vk_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Param
   intro tr htr
   refine WP.spec_bind (scale_vec_by_2d_pk_decode sp hd (bytes pk) t1 ht1) ?_
   intro a1 ha1
-  refine WP.spec_bind (ntt_vec_spec a1 _ ha1) ?_
+  refine WP.spec_bind (ntt_vec_pub_spec a1 _ ha1) ?_
   intro t1_2d_hat ht2d
   simp only [WP.spec_ok]
   exact ⟨hahat, ht2d, htr⟩
@@ -513,23 +507,21 @@ theorem verify_core_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Para
   have h64 : sp.lam / 4 ≤ 64 := hstd.lam_le
   have hK8 : K.val ≤ 8 := by omega
   have hw1b : ip.w1_bits.val ≤ 6 := by rw [hv.w1_bits]; exact bitlen_m_le sp hg
-  have hβ : ip.beta.val ≤ ip.gamma1.val := by
+  have hβ : ip.beta.val < ip.gamma1.val ∧ ip.gamma1.val ≤ 524288 := by
     rw [hv.beta, hv.gamma1]
     have : sp.β ≤ 256 := by
       have := hstd.tau_le
       rcases hstd.eta with e | e <;> simp only [Spec.Params.β, e] <;> omega
     rcases hstd.gamma1 with e | e <;> rw [e] <;> omega
+  have hL255 : L.val ≤ 255 := by have := hstd.kl_lt; omega
   unfold verify.verify_core
-  refine WP.spec_bind (ntt_vec_spec z _ hz.repr) ?_
-  intro az0 haz0
-  refine WP.spec_bind (matrix_vector_ntt_spec vk.a_hat A hA az0 _ haz0) ?_
-  intro az_hat haz
-  refine WP.spec_bind (ntt_spec cp hcp.canon) ?_
+  refine WP.spec_bind (ntt_vec_pub_spec z _ hz.repr) ?_
+  intro z_hat hzh
+  refine WP.spec_bind (ntt_pub_spec cp hcp.canon) ?_
   rintro c_hat ⟨hch1, hch2⟩
   have hchat : Repr c_hat (NTT c.toZq) := ⟨hch1, by rw [hch2, hcp.2]⟩
-  refine WP.spec_bind (verify_loop_spec hv hg h h' hhh az_hat _ haz c_hat _ hchat vk.t1_2d_hat _ ht
-    (Array.repeat K (Array.repeat 256#usize 0#u32)) (Array.repeat K (Array.repeat 256#usize 0#u32)) 0#usize
-    (by simp) (Rows.zero _ _) (Rows.zero _ _)) ?_
+  refine WP.spec_bind (verify_loop_spec hv hg hL255 h h' hhh vk A hA _ ht z_hat _ hzh c_hat _ hchat
+    (Array.repeat K (Array.repeat 256#usize 0#u32)) 0#usize (by simp) (Rows.zero _ _)) ?_
   intro w11 hw11
   rw [hK] at hw11
   have hw11' : Rows w11 (W1Row sp (UseHintVec sp h' (wApprox sp A z' (pkDecode sp pkb).2 c))) sp.k :=
@@ -556,7 +548,7 @@ theorem verify_core_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Para
     calc 32 * sp.k * bitlen ((Spec.q - 1) / (2 * sp.γ₂) - 1) ≤ 32 * 8 * 6 :=
           Nat.mul_le_mul (Nat.mul_le_mul_left _ hk8) hbitsle
       _ ≤ 1536 := by norm_num
-  refine WP.spec_bind (w1_encode_spec_long ip sp hv w11 _ hw11r hrng s hL1) ?_
+  refine WP.spec_bind (w1_encode_pub_spec_long ip sp hv w11 _ hw11r hrng s hL1) ?_
   intro s1 hs1
   obtain ⟨hs1a, hs1len⟩ := hs1
   step*
@@ -615,32 +607,28 @@ theorem verify_core_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Para
     have := hzr i hi j hj
     rw [infNorm_int]
     rcases hstd.gamma1 with e | e <;> rw [e] at this <;> norm_num at this <;> omega
-  step with vec_infinity_norm_spec z z' hz hnorm as ⟨i2, hi2⟩
-  step as ⟨i3, hi3⟩
+  obtain ⟨hβ1, hβ2⟩ := hβ
+  have hi2' : i2.val = sp.γ₁ - sp.β := by rw [i2_post1, hv.gamma1, hv.beta]
+  have hpos : 0 < i2.val := by omega
+  have hbq : i2.val < 8380417 := by omega
+  step with vec_norm_lt_pub_spec z z' hz hnorm i2 hpos hbq as ⟨nok, hnok⟩
   step with prefix_eq_spec c_tilde (index_mut_back s5) ip.c_tilde_len (by omega) as ⟨hok, hhok⟩
-  have hi3' : i3.val = sp.γ₁ - sp.β := by rw [hi3, hv.gamma1, hv.beta]
   have hhok' : hok = decide (c' = cTildePrime sp pkb M'
       (UseHintVec sp h' (wApprox sp A z' (pkDecode sp pkb).2 c))) := by
     rw [hhok, hcl, hc1, hctp, hs5b]
-  by_cases hlt : i2 < i3
-  · have hlt' : ‖z'‖∞ < sp.γ₁ - sp.β := by
-      have : i2.val < i3.val := by scalar_tac
-      rw [hi2, hi3'] at this
-      exact this
-    rw [if_pos hlt]
-    simp only [WP.spec_ok]
+  by_cases hlt : ‖z'‖∞ < sp.γ₁ - sp.β
+  · have hn : nok = true := by rw [hnok, hi2']; simp [hlt]
+    rw [hn]
+    simp only [if_true]
+    refine (WP.spec_ok _).2 ?_
     rw [hhok']
-    simp [hlt']
+    simp [hlt]
     rw [Bool.eq_iff_iff]
     simp
-  · have hlt' : ¬ ‖z'‖∞ < sp.γ₁ - sp.β := by
-      intro h
-      apply hlt
-      have : i2.val < i3.val := by rw [hi2, hi3']; exact h
-      scalar_tac
-    rw [if_neg hlt]
-    simp only [WP.spec_ok]
-    simp [hlt']
+  · have hn : nok = false := by rw [hnok, hi2']; simp [hlt]
+    rw [hn]
+    refine (WP.spec_ok _).2 ?_
+    simp [hlt]
 
 /-- Steps 8-13 for a decoded signature `(c̃, z, h)`: μ, SampleInBall (at fuel `F2`), then `verify_core`. -/
 theorem verify_decoded_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}

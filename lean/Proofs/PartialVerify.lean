@@ -76,7 +76,7 @@ theorem prepare_vk_partial {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Pa
   intro tr htr
   refine dspec_bind_of_spec (scale_vec_by_2d_pk_decode sp hd (bytes pk) t1 ht1) ?_
   intro a1 ha1
-  refine dspec_bind_of_spec (ntt_vec_spec a1 _ ha1) ?_
+  refine dspec_bind_of_spec (ntt_vec_pub_spec a1 _ ha1) ?_
   intro t1_2d_hat ht2d
   simp only [WP.dspec_ok]
   exact ⟨A, F1, hA, hahat, ht2d, htr⟩

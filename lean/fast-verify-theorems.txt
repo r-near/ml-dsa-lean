@@ -43,3 +43,24 @@ Proofs.verify_internal_x4_87_exact
 Proofs.verify_internal_x4_44_div_iff
 Proofs.verify_internal_x4_65_div_iff
 Proofs.verify_internal_x4_87_div_iff
+# The verify-only arithmetic (docs/assurance.md 1.9, "Verify-only arithmetic"): each function that replaced a shared,
+# constant-time one on verify's path is proved equal to the specification (and so to the shared function) on the
+# inputs verify gives it.
+# Lazy-reduction NTT and NTT^-1 (Shoup multiplication, bounds 2q per forward layer, doubling per inverse layer).
+Proofs.shoup_lazy_nat
+Proofs.lazy_layer_spec
+Proofs.reduce_lazy_spec
+Proofs.ntt_pub_spec
+Proofs.ntt_vec_pub_spec
+Proofs.lazy_inv_layer_spec
+Proofs.ntt_inverse_pub_spec
+# The fused multiply-accumulate row: sum_l A[i][l] * z_hat[l] - c_hat * t_hat[i] in 64 bits, two Montgomery steps.
+Proofs.mac_row_pub_spec
+Proofs.mac_row_pub_spec_mv
+# The norm check without masks, and the fixed-width w1Encode.
+Proofs.vec_norm_lt_pub_spec
+Proofs.pack4_loop
+Proofs.pack6_loop
+Proofs.bit_pack_pub_core
+Proofs.bit_pack_pub_spec_repr
+Proofs.w1_encode_pub_spec_long
