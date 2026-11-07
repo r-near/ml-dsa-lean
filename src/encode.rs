@@ -158,12 +158,57 @@ fn unpack_signed(v: &[u8], b: u32, c: usize) -> [u32; 256] {
     w
 }
 
+/// `bit_pack` for the public input of verify's w1Encode, where `c` is 4 (ML-DSA-65 and -87) or 6 (ML-DSA-44) and
+/// every value is below `2^c` (UseHint's output is below m = 16 or 44): the same bytes, written a fixed number of values
+/// at a time with constant shifts, so that no bit accumulator runs through the loop and the compiler can vectorize it.
+/// Any other `c` takes the generic `bit_pack`. `out` must hold `32·c` bytes. Equal to `bit_pack` whenever all values
+/// are below `2^c` (`Proofs/Encode.lean`, `bit_pack_pub_spec`). Not for secret data.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn bit_pack_pub(w: &[u32; 256], c: usize, out: &mut [u8]) {
+    if c == 4 {
+        // two values per byte
+        let out = &mut out[..128];
+        let mut g = 0;
+        while g < 128 {
+            out[g] = (w[2 * g] | (w[2 * g + 1] << 4)) as u8;
+            g += 1;
+        }
+    } else if c == 6 {
+        // four values per three bytes
+        let out = &mut out[..192];
+        let mut g = 0;
+        while g < 64 {
+            let w0 = w[4 * g];
+            let w1 = w[4 * g + 1];
+            let w2 = w[4 * g + 2];
+            let w3 = w[4 * g + 3];
+            out[3 * g] = (w0 | (w1 << 6)) as u8;
+            out[3 * g + 1] = ((w1 >> 2) | (w2 << 4)) as u8;
+            out[3 * g + 2] = ((w2 >> 4) | (w3 << 2)) as u8;
+            g += 1;
+        }
+    } else {
+        bit_pack(w, c, out)
+    }
+}
+
 /// Algorithm 28 w1Encode(w1).
 pub fn w1_encode<const K: usize>(p: &Params, w1: &[[u32; 256]; K], out: &mut [u8]) {
     let n = 32 * p.w1_bits;
     let mut i = 0;
     while i < K {
         bit_pack(&w1[i], p.w1_bits, &mut out[i * n..(i + 1) * n]);
+        i += 1;
+    }
+}
+
+/// `w1_encode` with `bit_pack_pub`, for verify: w1 is public and every entry is below `2^w1_bits`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn w1_encode_pub<const K: usize>(p: &Params, w1: &[[u32; 256]; K], out: &mut [u8]) {
+    let n = 32 * p.w1_bits;
+    let mut i = 0;
+    while i < K {
+        bit_pack_pub(&w1[i], p.w1_bits, &mut out[i * n..(i + 1) * n]);
         i += 1;
     }
 }

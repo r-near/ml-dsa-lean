@@ -1,6 +1,6 @@
 //! Algorithm 8 ML-DSA.Verify_internal(pk, M′, σ). Step numbers refer to FIPS 204.
 
-use crate::encode::{pk_decode, sig_decode, w1_encode};
+use crate::encode::{pk_decode, sig_decode, w1_encode_pub};
 use crate::keccak::Shake;
 use crate::verify_arith::{mac_row_pub, ntt_inverse_pub, ntt_pub, ntt_vec_pub};
 use crate::params::{pk_len, sig_len, Params};
@@ -214,7 +214,7 @@ fn verify_core<const K: usize, const L: usize>(
     }
     // 12: c̃′ ← H(μ ‖ w1Encode(w′1), λ/4)
     let mut w1_enc = [0u8; 8 * 192];
-    w1_encode(p, &w1, &mut w1_enc);
+    w1_encode_pub(p, &w1, &mut w1_enc);
     let mut c_tilde_prime = [0u8; 64];
     let mut hash = Shake::shake256();
     hash.absorb(mu);
