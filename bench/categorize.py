@@ -3,6 +3,9 @@
 
 Usage: categorize.py FOLDED_FILE...        (one list per file)
        categorize.py --table FOLDED_FILE...  (one row per file, one column per category)
+       categorize.py --table-abs PROFLOG FOLDED_FILE...  (as --table, in microseconds per call: share x the us/call that `prof`
+                                           printed in PROFLOG; names must be IMPL.SET.OP.folded, with ours-default/ours-avx2 as IMPL for the
+                                           two builds of this crate, which PROFLOG lists as "ours" in two sections)
        categorize.py --top N FOLDED_FILE   (also the N most frequent leaf and inclusive function names)
 
 A sample is attributed to the first (innermost) frame whose name matches a category rule; frames that match no
@@ -109,8 +112,38 @@ def table(paths):
         print(f"| {name} | " + " | ".join(f"{x:.0f}%" for x in row) + " |")
 
 
+def table_abs(log, paths):
+    """Like table(), in microseconds per call. `prof` prints one PROF line per workload; the same implementation name
+    ("ours") appears in the default and the avx2 section, so the first "ours" line of a workload is ours-default."""
+    per_call = {}
+    seen = collections.Counter()
+    for line in open(log):
+        f = line.rstrip("\n").split("\t")
+        if f[0] != "PROF":
+            continue
+        _, st, imp, op, _, _, us_call, _ = f[:8]
+        if imp == "ours":
+            imp = ["ours-default", "ours-avx2"][seen[(st, op)]]
+            seen[(st, op)] += 1
+        per_call[(imp, st, op)] = float(us_call.split()[0])
+    cols = ["Keccak + sponge + parsing", "of which Keccak-f", "NTT and NTT^-1", "pointwise, add, sub",
+            "rounding, hints, norms", "encoding", "copies, other", "total"]
+    print("| profile (us per call) | " + " | ".join(cols) + " |")
+    print("|---|" + "---|" * len(cols))
+    for p in paths:
+        sh, _ = shares(p)
+        name = p.split("/")[-1].replace(".folded", "")
+        imp, st, op = name.split(".", 2)
+        t = per_call[(imp, st, op)]
+        row = [sh[CATS[0]] + sh[CATS[1]], sh[CATS[0]], sh[CATS[2]], sh[CATS[3]], sh[CATS[4]], sh[CATS[5]], sh[CATS[6]] + sh[CATS[7]]]
+        print(f"| {name} | " + " | ".join(f"{x * t / 100:.1f}" for x in row) + f" | {t:.1f} |")
+
+
 def main():
     args = sys.argv[1:]
+    if args and args[0] == "--table-abs":
+        table_abs(args[1], args[2:])
+        return
     if args and args[0] == "--table":
         table(args[1:])
         return

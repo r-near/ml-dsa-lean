@@ -123,7 +123,11 @@ def report(args):
             ("mldsa-native v2.0.0 portable C", d, "mldsa-native-portable", "portable"),
             ("ours, `avx2` feature", a, "ours", "avx2"), ("ours, `-C target-cpu=x86-64-v3`", v, "ours", "avx2"),
             ("libcrux-ml-dsa 0.0.11 AVX2", d, "libcrux-avx2", "avx2"), ("mldsa-native v2.0.0 AVX2 C", d, "mldsa-native-avx2", "avx2"),
-            ("aws-lc-rs 1.18.2 (runtime dispatch)", d, "aws-lc-rs", "avx2")]
+            ("aws-lc-rs 1.18.2 (runtime dispatch)", d, "aws-lc-rs", "avx2"),
+            # compiled with the same `-C target-cpu=x86-64-v3` as the `ours` row above (the C libraries are not affected by RUSTFLAGS)
+            ("libcrux-ml-dsa AVX2, `-C target-cpu=x86-64-v3`", v, "libcrux-avx2", "v3"),
+            ("RustCrypto ml-dsa, `-C target-cpu=x86-64-v3`", v, "rustcrypto", "v3"),
+            ("libcrux-ml-dsa portable, `-C target-cpu=x86-64-v3`", v, "libcrux-portable", "v3")]
     for st in (44, 65, 87):
         print(f"\n#### ML-DSA-{st} (microseconds, median of 15 rounds, mean of two runs)\n")
         print("| implementation | " + " | ".join(c[0] for c in COLS) + " |")
@@ -139,9 +143,12 @@ def report(args):
                 cells.append("n/a" if x is None else us(x))
             print(f"| {label} | " + " | ".join(cells) + " |")
         print()
-        for ours_label, cls, others in (("ours, default features", "portable", [r[0] for r in rows if r[3] == "portable"][1:]),
-                                       ("ours, `avx2` feature", "avx2", [r[0] for r in rows if r[3] == "avx2"][2:]),
-                                       ("ours, `-C target-cpu=x86-64-v3`", "avx2", [r[0] for r in rows if r[3] == "avx2"][2:])):
+        port = [r[0] for r in rows if r[3] == "portable"][1:]
+        avx = [r[0] for r in rows if r[3] == "avx2"][2:]
+        v3 = [r[0] for r in rows if r[3] == "v3"]
+        for ours_label, cls, others in (("ours, default features", "portable (default build)", port),
+                                       ("ours, `avx2` feature", "AVX2 (default build)", avx),
+                                       ("ours, `-C target-cpu=x86-64-v3`", "AVX2 (Rust ones built with x86-64-v3 too)", avx + v3[:1])):
             out = []
             for col in COLS:
                 mine = vals[(ours_label, col[0])]
