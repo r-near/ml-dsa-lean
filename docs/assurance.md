@@ -360,14 +360,25 @@ trusted (`docs/object-code-assurance.md` §3.2). Verify handles only public data
 fast verify: the 4-way body, `poly_use_hint_pub` and `bit_unpack_pub` are reached only from verify's path (`src/keygen.rs` and
 `src/sign.rs` do not call them, and the secret-key decoders use `bit_unpack`/`unpack_signed_into`), so they have no probes and need none.
 
-The sweep below predates the fast verify and was not rerun on this tree. Since 1a72d9e, `src/sign.rs`, `src/keygen.rs` and
+The full sweep below predates the fast verify and was not rerun on this tree. Since 1a72d9e, `src/sign.rs`, `src/keygen.rs` and
 `src/field.rs` are unchanged; the changes under `src/` are the 4-way and dispatch code, the verify-only rewrites, and the move of
 the AVX2 check and its cache from `src/ntt.rs` into `src/cpu.rs`, which is shared with the NTT dispatch. So the `dispatch` and
-`nearcore-dispatch` rows describe a build whose AVX2 check differs from the current one in where it lives. Also, the harness does
-not build on this tree: `checkct/driver` includes the `src/` files by `#[path]` and has no `keccak4`, `fast_verify` or `cpu`
-module, so `cargo check` there fails with three unresolved imports (`crate::keccak4` in `sampling.rs` and `verify.rs`,
-`crate::fast_verify` in `api.rs`). The driver and the pre-set anchor in `checkct/run-select.sh` need updating before the sweep
-can be rerun on a tree with the fast verify.
+`nearcore-dispatch` rows describe a build whose AVX2 check differs from the current one in where it lives.
+
+The harness builds on this tree. `checkct/driver` gained the `keccak4` module, the `cpu` module (with the `avx2` feature on
+x86_64, the cfg of `lib.rs`) and a `fast_verify` module (`src/fast_verify.rs` itself cannot be included by `#[path]`, because its `mod dispatch;` would be looked up next to it; the driver repeats its two cfg-gated items and includes `src/fast_verify/dispatch.rs`). The pre-set anchor in `checkct/run-select.sh` is now the
+symbol `driver::cpu::AVX2`. Checked on the `src/`, driver and scripts of commit 2379900 (the commits after it change documentation, benchmark logs and result files only): the driver builds for riscv32imac, thumbv7em and x86_64 in
+every `run-select.sh` profile (`default`, `nearcore`, `nearcore-novec`, `dispatch`, `nearcore-dispatch`, `avx2`,
+`nearcore-avx2`, `nearcore-exact`, `nearcore-exact-dispatch`, `nearcore-exact-novec`, and `ZEROIZE=1` and `EXPERIMENTS=1`
+builds), and the dispatch profiles still find exactly one cache symbol to pre-set; `aarch64.sh` (with and without `NONEON=1`) and
+`split-run.sh` build their drivers. A BINSEC smoke run of eight probes (the Sign pieces `signing_key_44`, `hint_step_1_44`, `response_1x1_44` and `make_hint_44`, the hashes
+`keygen_seed_hash` and `sign_rho_pp_hash`, and the controls `control_early_exit_44` and `control_prepared_branch_44`) gave the same
+verdict as the sweep in all 40 cells: 24 in the default profile (riscv32imac, thumbv7em, x86_64), 8 in `dispatch` and 8 in
+`nearcore-exact-dispatch` (x86_64; the cache pre-set found its symbol and applied). In the default profile and
+`nearcore-exact-dispatch` the instruction counts and check counts are identical to the sweep's; in `dispatch` the four Sign probes
+differ slightly in count (for example `signing_key_44`: 998423 instructions against 1000499), which is code layout after the
+cache moved. The controls and the `nearcore-exact-dispatch` `unknown` cells give the same verdicts as in the sweep. The full sweep was not
+rerun: Sign and KeyGen code is unchanged. Rows: `checkct/results/smoke-fast-verify/`.
 
 Full sweep at 1a72d9e (November 5–6, 2026; the tree with Sign's per-attempt wiping, in-place secret-key decoding and `sign::more_attempts`): 114 entrypoints per run (113 for the `nearcore`, `nearcore-dispatch` and `nearcore-exact*` profiles) plus two whole-Sign censuses, on x86_64 (checkct profile,
 `nearcore`, `avx2` dispatch, `nearcore-dispatch`, `nearcore-exact*`), thumbv7em, riscv32imac and AArch64 without NEON. BINSEC

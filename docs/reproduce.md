@@ -178,9 +178,9 @@ larger one.
 
 ## 3. Constant-time checks (BINSEC)
 
-These need Linux and Docker. The recorded sweep predates the fast verify; the harness (`checkct/driver`, which includes the `src/`
-files by `#[path]`) does not build on a tree that has it until it gains the `keccak4`, `fast_verify` and `cpu` modules (assurance.md
-section 4). The image builds BINSEC and the Rust toolchains (about 10 minutes):
+These need Linux and Docker. The recorded sweep predates the fast verify and was not rerun on this tree (Sign and KeyGen code is unchanged since it). The
+harness (`checkct/driver`, which includes the `src/` files by `#[path]`) builds on a tree that has the fast verify, and a small
+BINSEC run reproduced the sweep's verdicts for the probes it covered (assurance.md section 4). The image builds BINSEC and the Rust toolchains (about 10 minutes):
 
 ```sh
 docker build -t ct-binsec checkct

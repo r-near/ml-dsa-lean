@@ -61,8 +61,9 @@ found and fixed. The limits:
 
 - Verify, including the AVX2 fast verify, handles only public data (public key, message, signature), so it has no probes and
   needs none. Sign and KeyGen do not call the 4-way body or the verify-only `poly_use_hint_pub` and `bit_unpack_pub`. The
-  sweep predates the fast verify and was not rerun on this tree; the harness (`../checkct/driver`) does not build on it until it
-  gains the new modules (assurance.md section 4).
+  full sweep predates the fast verify and was not rerun on this tree (Sign and KeyGen code is unchanged since it). The harness
+  (`../checkct/driver`) builds on this tree for every target and profile, and a small BINSEC run reproduced the sweep's verdicts
+  for the probes it covered (assurance.md section 4).
 - The whole KeyGen, Sign and `pk_from_sk` functions have no verdict, and the glue between steps is covered by code reading
   only. ExpandS is covered only through its per-nibble helper; its sampler loop branches on its public accept/reject
   outcome.
