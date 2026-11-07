@@ -29,6 +29,11 @@ pub mod keccak;
 #[cfg(not(feature = "internals"))]
 mod keccak;
 #[cfg(feature = "internals")]
+pub mod keccak4;
+#[cfg(not(feature = "internals"))]
+#[allow(dead_code)]
+mod keccak4;
+#[cfg(feature = "internals")]
 pub mod keygen;
 #[cfg(not(feature = "internals"))]
 mod keygen;

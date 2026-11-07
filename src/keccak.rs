@@ -1,7 +1,7 @@
 //! Keccak-f[1600] and the SHAKE128/SHAKE256 sponge (FIPS 202), in-crate and in plain loops.
 //! FIPS 204 §3.7: H = SHAKE256, G = SHAKE128, used through Init/Absorb/Squeeze.
 
-const RC: [u64; 24] = [
+pub(crate) const RC: [u64; 24] = [
     0x0000000000000001,
     0x0000000000008082,
     0x800000000000808A,

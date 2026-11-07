@@ -6266,6 +6266,336 @@ def field.mul (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   let i2 ← i * i1
   field.barrett_reduce i2
 
+/-- [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}::splat]:
+    Source: 'src/keccak4.rs', lines 47:4-49:5
+    Visibility: public -/
+def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.splat
+  (x : Std.U64) : RustM (Array Std.U64 4#usize) := do
+  ok (Array.make 4#usize [ x, x, x, x ])
+
+/-- [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}::rotl]:
+    Source: 'src/keccak4.rs', lines 38:4-45:5
+    Visibility: public -/
+def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.rotl
+  (L : Std.U32) (R : Std.U32) (a : Array Std.U64 4#usize) :
+  RustM (Array Std.U64 4#usize)
+  := do
+  let i ← Array.index_usize a 0#usize
+  let i1 ← i <<< L
+  let i2 ← i >>> R
+  let i3 ← lift (i1 ||| i2)
+  let i4 ← Array.index_usize a 1#usize
+  let i5 ← i4 <<< L
+  let i6 ← i4 >>> R
+  let i7 ← lift (i5 ||| i6)
+  let i8 ← Array.index_usize a 2#usize
+  let i9 ← i8 <<< L
+  let i10 ← i8 >>> R
+  let i11 ← lift (i9 ||| i10)
+  let i12 ← Array.index_usize a 3#usize
+  let i13 ← i12 <<< L
+  let i14 ← i12 >>> R
+  let i15 ← lift (i13 ||| i14)
+  ok (Array.make 4#usize [ i3, i7, i11, i15 ])
+
+/-- [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}::andnot]:
+    Source: 'src/keccak4.rs', lines 34:4-36:5
+    Visibility: public -/
+def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.andnot
+  (a : Array Std.U64 4#usize) (b : Array Std.U64 4#usize) :
+  RustM (Array Std.U64 4#usize)
+  := do
+  let i ← Array.index_usize a 0#usize
+  let i1 ← lift (~~~ i)
+  let i2 ← Array.index_usize b 0#usize
+  let i3 ← lift (i1 &&& i2)
+  let i4 ← Array.index_usize a 1#usize
+  let i5 ← lift (~~~ i4)
+  let i6 ← Array.index_usize b 1#usize
+  let i7 ← lift (i5 &&& i6)
+  let i8 ← Array.index_usize a 2#usize
+  let i9 ← lift (~~~ i8)
+  let i10 ← Array.index_usize b 2#usize
+  let i11 ← lift (i9 &&& i10)
+  let i12 ← Array.index_usize a 3#usize
+  let i13 ← lift (~~~ i12)
+  let i14 ← Array.index_usize b 3#usize
+  let i15 ← lift (i13 &&& i14)
+  ok (Array.make 4#usize [ i3, i7, i11, i15 ])
+
+/-- [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}::xor]:
+    Source: 'src/keccak4.rs', lines 30:4-32:5
+    Visibility: public -/
+def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.xor
+  (a : Array Std.U64 4#usize) (b : Array Std.U64 4#usize) :
+  RustM (Array Std.U64 4#usize)
+  := do
+  let i ← Array.index_usize a 0#usize
+  let i1 ← Array.index_usize b 0#usize
+  let i2 ← lift (i ^^^ i1)
+  let i3 ← Array.index_usize a 1#usize
+  let i4 ← Array.index_usize b 1#usize
+  let i5 ← lift (i3 ^^^ i4)
+  let i6 ← Array.index_usize a 2#usize
+  let i7 ← Array.index_usize b 2#usize
+  let i8 ← lift (i6 ^^^ i7)
+  let i9 ← Array.index_usize a 3#usize
+  let i10 ← Array.index_usize b 3#usize
+  let i11 ← lift (i9 ^^^ i10)
+  ok (Array.make 4#usize [ i2, i5, i8, i11 ])
+
+/-- Trait implementation: [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}]
+    Source: 'src/keccak4.rs', lines 28:0-50:1 -/
+@[reducible]
+def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4 : keccak4.Lanes4 keccak4.Shim4
+  := {
+  xor := keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.xor
+  andnot := keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.andnot
+  rotl := fun (L : Std.U32) (R : Std.U32) =>
+    keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.rotl L R
+  splat := keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.splat
+}
+
+/-- [ml_dsa_lean::keccak4::round]:
+    Source: 'src/keccak4.rs', lines 56:0-142:1 -/
+def keccak4.round
+  {L : Type} (Lanes4Inst : keccak4.Lanes4 L)
+  (s : Array (Array Std.U64 4#usize) 25#usize) (rc : Std.U64) :
+  RustM (Array (Array Std.U64 4#usize) 25#usize)
+  := do
+  let a0 ← Array.index_usize s 0#usize
+  let a1 ← Array.index_usize s 1#usize
+  let a2 ← Array.index_usize s 2#usize
+  let a3 ← Array.index_usize s 3#usize
+  let a4 ← Array.index_usize s 4#usize
+  let a5 ← Array.index_usize s 5#usize
+  let a6 ← Array.index_usize s 6#usize
+  let a7 ← Array.index_usize s 7#usize
+  let a8 ← Array.index_usize s 8#usize
+  let a9 ← Array.index_usize s 9#usize
+  let a10 ← Array.index_usize s 10#usize
+  let a11 ← Array.index_usize s 11#usize
+  let a12 ← Array.index_usize s 12#usize
+  let a13 ← Array.index_usize s 13#usize
+  let a14 ← Array.index_usize s 14#usize
+  let a15 ← Array.index_usize s 15#usize
+  let a16 ← Array.index_usize s 16#usize
+  let a17 ← Array.index_usize s 17#usize
+  let a18 ← Array.index_usize s 18#usize
+  let a19 ← Array.index_usize s 19#usize
+  let a20 ← Array.index_usize s 20#usize
+  let a21 ← Array.index_usize s 21#usize
+  let a22 ← Array.index_usize s 22#usize
+  let a23 ← Array.index_usize s 23#usize
+  let a24 ← Array.index_usize s 24#usize
+  let a ← Lanes4Inst.xor a0 a5
+  let a25 ← Lanes4Inst.xor a a10
+  let a26 ← Lanes4Inst.xor a25 a15
+  let c0 ← Lanes4Inst.xor a26 a20
+  let a27 ← Lanes4Inst.xor a1 a6
+  let a28 ← Lanes4Inst.xor a27 a11
+  let a29 ← Lanes4Inst.xor a28 a16
+  let c1 ← Lanes4Inst.xor a29 a21
+  let a30 ← Lanes4Inst.xor a2 a7
+  let a31 ← Lanes4Inst.xor a30 a12
+  let a32 ← Lanes4Inst.xor a31 a17
+  let c2 ← Lanes4Inst.xor a32 a22
+  let a33 ← Lanes4Inst.xor a3 a8
+  let a34 ← Lanes4Inst.xor a33 a13
+  let a35 ← Lanes4Inst.xor a34 a18
+  let c3 ← Lanes4Inst.xor a35 a23
+  let a36 ← Lanes4Inst.xor a4 a9
+  let a37 ← Lanes4Inst.xor a36 a14
+  let a38 ← Lanes4Inst.xor a37 a19
+  let c4 ← Lanes4Inst.xor a38 a24
+  let a39 ← Lanes4Inst.rotl 1#u32 63#u32 c1
+  let d0 ← Lanes4Inst.xor c4 a39
+  let a40 ← Lanes4Inst.rotl 1#u32 63#u32 c2
+  let d1 ← Lanes4Inst.xor c0 a40
+  let a41 ← Lanes4Inst.rotl 1#u32 63#u32 c3
+  let d2 ← Lanes4Inst.xor c1 a41
+  let a42 ← Lanes4Inst.rotl 1#u32 63#u32 c4
+  let d3 ← Lanes4Inst.xor c2 a42
+  let a43 ← Lanes4Inst.rotl 1#u32 63#u32 c0
+  let d4 ← Lanes4Inst.xor c3 a43
+  let b0 ← Lanes4Inst.xor a0 d0
+  let a44 ← Lanes4Inst.xor a5 d0
+  let b16 ← Lanes4Inst.rotl 36#u32 28#u32 a44
+  let a45 ← Lanes4Inst.xor a10 d0
+  let b7 ← Lanes4Inst.rotl 3#u32 61#u32 a45
+  let a46 ← Lanes4Inst.xor a15 d0
+  let b23 ← Lanes4Inst.rotl 41#u32 23#u32 a46
+  let a47 ← Lanes4Inst.xor a20 d0
+  let b14 ← Lanes4Inst.rotl 18#u32 46#u32 a47
+  let a48 ← Lanes4Inst.xor a1 d1
+  let b10 ← Lanes4Inst.rotl 1#u32 63#u32 a48
+  let a49 ← Lanes4Inst.xor a6 d1
+  let b1 ← Lanes4Inst.rotl 44#u32 20#u32 a49
+  let a50 ← Lanes4Inst.xor a11 d1
+  let b17 ← Lanes4Inst.rotl 10#u32 54#u32 a50
+  let a51 ← Lanes4Inst.xor a16 d1
+  let b8 ← Lanes4Inst.rotl 45#u32 19#u32 a51
+  let a52 ← Lanes4Inst.xor a21 d1
+  let b24 ← Lanes4Inst.rotl 2#u32 62#u32 a52
+  let a53 ← Lanes4Inst.xor a2 d2
+  let b20 ← Lanes4Inst.rotl 62#u32 2#u32 a53
+  let a54 ← Lanes4Inst.xor a7 d2
+  let b11 ← Lanes4Inst.rotl 6#u32 58#u32 a54
+  let a55 ← Lanes4Inst.xor a12 d2
+  let b2 ← Lanes4Inst.rotl 43#u32 21#u32 a55
+  let a56 ← Lanes4Inst.xor a17 d2
+  let b18 ← Lanes4Inst.rotl 15#u32 49#u32 a56
+  let a57 ← Lanes4Inst.xor a22 d2
+  let b9 ← Lanes4Inst.rotl 61#u32 3#u32 a57
+  let a58 ← Lanes4Inst.xor a3 d3
+  let b5 ← Lanes4Inst.rotl 28#u32 36#u32 a58
+  let a59 ← Lanes4Inst.xor a8 d3
+  let b21 ← Lanes4Inst.rotl 55#u32 9#u32 a59
+  let a60 ← Lanes4Inst.xor a13 d3
+  let b12 ← Lanes4Inst.rotl 25#u32 39#u32 a60
+  let a61 ← Lanes4Inst.xor a18 d3
+  let b3 ← Lanes4Inst.rotl 21#u32 43#u32 a61
+  let a62 ← Lanes4Inst.xor a23 d3
+  let b19 ← Lanes4Inst.rotl 56#u32 8#u32 a62
+  let a63 ← Lanes4Inst.xor a4 d4
+  let b15 ← Lanes4Inst.rotl 27#u32 37#u32 a63
+  let a64 ← Lanes4Inst.xor a9 d4
+  let b6 ← Lanes4Inst.rotl 20#u32 44#u32 a64
+  let a65 ← Lanes4Inst.xor a14 d4
+  let b22 ← Lanes4Inst.rotl 39#u32 25#u32 a65
+  let a66 ← Lanes4Inst.xor a19 d4
+  let b13 ← Lanes4Inst.rotl 8#u32 56#u32 a66
+  let a67 ← Lanes4Inst.xor a24 d4
+  let b4 ← Lanes4Inst.rotl 14#u32 50#u32 a67
+  let a68 ← Lanes4Inst.andnot b1 b2
+  let a69 ← Lanes4Inst.xor b0 a68
+  let a70 ← Lanes4Inst.splat rc
+  let a71 ← Lanes4Inst.xor a69 a70
+  let s1 ← Array.update s 0#usize a71
+  let a72 ← Lanes4Inst.andnot b6 b7
+  let a73 ← Lanes4Inst.xor b5 a72
+  let s2 ← Array.update s1 5#usize a73
+  let a74 ← Lanes4Inst.andnot b11 b12
+  let a75 ← Lanes4Inst.xor b10 a74
+  let s3 ← Array.update s2 10#usize a75
+  let a76 ← Lanes4Inst.andnot b16 b17
+  let a77 ← Lanes4Inst.xor b15 a76
+  let s4 ← Array.update s3 15#usize a77
+  let a78 ← Lanes4Inst.andnot b21 b22
+  let a79 ← Lanes4Inst.xor b20 a78
+  let s5 ← Array.update s4 20#usize a79
+  let a80 ← Lanes4Inst.andnot b2 b3
+  let a81 ← Lanes4Inst.xor b1 a80
+  let s6 ← Array.update s5 1#usize a81
+  let a82 ← Lanes4Inst.andnot b7 b8
+  let a83 ← Lanes4Inst.xor b6 a82
+  let s7 ← Array.update s6 6#usize a83
+  let a84 ← Lanes4Inst.andnot b12 b13
+  let a85 ← Lanes4Inst.xor b11 a84
+  let s8 ← Array.update s7 11#usize a85
+  let a86 ← Lanes4Inst.andnot b17 b18
+  let a87 ← Lanes4Inst.xor b16 a86
+  let s9 ← Array.update s8 16#usize a87
+  let a88 ← Lanes4Inst.andnot b22 b23
+  let a89 ← Lanes4Inst.xor b21 a88
+  let s10 ← Array.update s9 21#usize a89
+  let a90 ← Lanes4Inst.andnot b3 b4
+  let a91 ← Lanes4Inst.xor b2 a90
+  let s11 ← Array.update s10 2#usize a91
+  let a92 ← Lanes4Inst.andnot b8 b9
+  let a93 ← Lanes4Inst.xor b7 a92
+  let s12 ← Array.update s11 7#usize a93
+  let a94 ← Lanes4Inst.andnot b13 b14
+  let a95 ← Lanes4Inst.xor b12 a94
+  let s13 ← Array.update s12 12#usize a95
+  let a96 ← Lanes4Inst.andnot b18 b19
+  let a97 ← Lanes4Inst.xor b17 a96
+  let s14 ← Array.update s13 17#usize a97
+  let a98 ← Lanes4Inst.andnot b23 b24
+  let a99 ← Lanes4Inst.xor b22 a98
+  let s15 ← Array.update s14 22#usize a99
+  let a100 ← Lanes4Inst.andnot b4 b0
+  let a101 ← Lanes4Inst.xor b3 a100
+  let s16 ← Array.update s15 3#usize a101
+  let a102 ← Lanes4Inst.andnot b9 b5
+  let a103 ← Lanes4Inst.xor b8 a102
+  let s17 ← Array.update s16 8#usize a103
+  let a104 ← Lanes4Inst.andnot b14 b10
+  let a105 ← Lanes4Inst.xor b13 a104
+  let s18 ← Array.update s17 13#usize a105
+  let a106 ← Lanes4Inst.andnot b19 b15
+  let a107 ← Lanes4Inst.xor b18 a106
+  let s19 ← Array.update s18 18#usize a107
+  let a108 ← Lanes4Inst.andnot b24 b20
+  let a109 ← Lanes4Inst.xor b23 a108
+  let s20 ← Array.update s19 23#usize a109
+  let a110 ← Lanes4Inst.andnot b0 b1
+  let a111 ← Lanes4Inst.xor b4 a110
+  let s21 ← Array.update s20 4#usize a111
+  let a112 ← Lanes4Inst.andnot b5 b6
+  let a113 ← Lanes4Inst.xor b9 a112
+  let s22 ← Array.update s21 9#usize a113
+  let a114 ← Lanes4Inst.andnot b10 b11
+  let a115 ← Lanes4Inst.xor b14 a114
+  let s23 ← Array.update s22 14#usize a115
+  let a116 ← Lanes4Inst.andnot b15 b16
+  let a117 ← Lanes4Inst.xor b19 a116
+  let s24 ← Array.update s23 19#usize a117
+  let a118 ← Lanes4Inst.andnot b20 b21
+  let a119 ← Lanes4Inst.xor b24 a118
+  Array.update s24 24#usize a119
+
+/-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop body 0:
+    Source: 'src/keccak4.rs', lines 148:4-151:5
+    Visibility: public -/
+@[rust_loop_body]
+def keccak4.keccak_f1600_x4_loop.body
+  {L : Type} (Lanes4Inst : keccak4.Lanes4 L)
+  (s : Array (Array Std.U64 4#usize) 25#usize) (r : Std.Usize) :
+  RustM (ControlFlow ((Array (Array Std.U64 4#usize) 25#usize) × Std.Usize)
+    (Array (Array Std.U64 4#usize) 25#usize))
+  := do
+  if r < 24#usize
+  then
+    let i ← Array.index_usize keccak.RC r
+    let s1 ← keccak4.round Lanes4Inst s i
+    let r1 ← r + 1#usize
+    ok (cont (s1, r1))
+  else ok (done s)
+
+/-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop 0:
+    Source: 'src/keccak4.rs', lines 148:4-151:5
+    Visibility: public -/
+@[rust_loop]
+def keccak4.keccak_f1600_x4_loop
+  {L : Type} (Lanes4Inst : keccak4.Lanes4 L)
+  (s : Array (Array Std.U64 4#usize) 25#usize) (r : Std.Usize) :
+  RustM (Array (Array Std.U64 4#usize) 25#usize)
+  := do
+  loop
+    (fun (s1, r1) => keccak4.keccak_f1600_x4_loop.body Lanes4Inst s1 r1)
+    (s, r)
+
+/-- [ml_dsa_lean::keccak4::keccak_f1600_x4]:
+    Source: 'src/keccak4.rs', lines 146:0-152:1
+    Visibility: public -/
+@[reducible]
+def keccak4.keccak_f1600_x4
+  {L : Type} (Lanes4Inst : keccak4.Lanes4 L)
+  (s : Array (Array Std.U64 4#usize) 25#usize) :
+  RustM (Array (Array Std.U64 4#usize) 25#usize)
+  := do
+  keccak4.keccak_f1600_x4_loop Lanes4Inst s 0#usize
+
+/-- [ml_dsa_lean::keccak4::keccak_f1600_x4_portable]:
+    Source: 'src/keccak4.rs', lines 155:0-157:1
+    Visibility: public -/
+def keccak4.keccak_f1600_x4_portable
+  (s : Array (Array Std.U64 4#usize) 25#usize) :
+  RustM (Array (Array Std.U64 4#usize) 25#usize)
+  := do
+  keccak4.keccak_f1600_x4 keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4 s
+
 /-- [ml_dsa_lean::ntt::scalar_vector_ntt_inverse]:
     Source: 'src/ntt.rs', lines 465:0-469:1
     Visibility: public -/

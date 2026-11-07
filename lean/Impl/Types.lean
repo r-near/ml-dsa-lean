@@ -111,4 +111,22 @@ structure api.VerifyingKey87 where
 structure api.SigningKey87 where
   inner : sign.PreparedSk 8#usize 7#usize
 
+/-- Trait declaration: [ml_dsa_lean::keccak4::Lanes4]
+    Source: 'src/keccak4.rs', lines 14:0-23:1
+    Visibility: public -/
+structure keccak4.Lanes4 (Self : Type) where
+  xor : Array Std.U64 4#usize → Array Std.U64 4#usize → RustM (Array
+    Std.U64 4#usize)
+  andnot : Array Std.U64 4#usize → Array Std.U64 4#usize → RustM (Array
+    Std.U64 4#usize)
+  rotl : forall (L : Std.U32) (R : Std.U32), Array Std.U64 4#usize → RustM
+    (Array Std.U64 4#usize)
+  splat : Std.U64 → RustM (Array Std.U64 4#usize)
+
+/-- [ml_dsa_lean::keccak4::Shim4]
+    Source: 'src/keccak4.rs', lines 26:0-26:17
+    Visibility: public -/
+@[reducible]
+def keccak4.Shim4 := Unit
+
 end Impl
