@@ -6,9 +6,9 @@
 //! byte-identical keys and signatures, so the rejection loop runs the same number of attempts everywhere and
 //! signing differences are implementation speed. The first pass over each cell checks that outputs agree.
 //!
-//! Options: --rounds N (default 15) --lat N (per-call latency passes, default 3) --sets 44,65,87 --only SUBSTR
+//! Options: --rounds N (default 15) --lat N (per-call latency passes, default 3) --sets 44,65,87 --only SUBSTR[,SUBSTR...]
 //!          --round-secs S (target length of one round, default 0.12; raise it to average aws-lc-rs's randomized signing
-//!          over more attempts) --label TEXT
+//!          over more attempts) --label TEXT --prime-avx2 (diagnostic: run one AVX2 instruction before measuring)
 
 use ml_dsa_bench::cells::*;
 use ml_dsa_bench::*;
@@ -23,6 +23,10 @@ fn main() {
     let round_secs: f64 = opt("--round-secs").map(|s| s.parse().unwrap()).unwrap_or(0.12);
     let only = opt("--only");
     let label = opt("--label").unwrap_or_default();
+    #[cfg(target_arch = "x86_64")]
+    if args.iter().any(|a| a == "--prime-avx2") && avx2() {
+        unsafe { prime_avx2() };
+    }
 
     println!("# bench label: {label}");
     println!("# build: opt-level={} debug_assertions={} target_cpu_native_flag={}", env!("BENCH_OPT"), cfg!(debug_assertions), env!("BENCH_RUSTFLAGS"));
@@ -40,7 +44,7 @@ fn main() {
         for c in cells.iter_mut() {
             let name = format!("{} {}", c.imp, c.group);
             if let Some(o) = &only {
-                if !name.contains(o.as_str()) {
+                if !o.split(',').any(|p| name.contains(p)) {
                     continue;
                 }
             }
@@ -69,4 +73,14 @@ fn main() {
     println!("# steal jiffies during run: {} of {}", steal1 - steal0, tot1 - tot0);
     println!("# loadavg at end: {}", std::fs::read_to_string("/proc/loadavg").unwrap_or_default().trim());
     println!("# measured core clock at end: {:.2} GHz", freq_ghz());
+}
+
+/// Diagnostic (`--prime-avx2`): executes one 256-bit integer instruction and `vzeroupper`, nothing else.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+fn prime_avx2() {
+    use std::arch::x86_64::*;
+    let a = _mm256_set1_epi32(std::hint::black_box(1));
+    std::hint::black_box(_mm256_add_epi32(a, a));
+    _mm256_zeroupper();
 }
