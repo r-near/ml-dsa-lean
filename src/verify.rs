@@ -2,7 +2,8 @@
 
 use crate::encode::{pk_decode, sig_decode, w1_encode};
 use crate::keccak::Shake;
-use crate::ntt::{matrix_vector_ntt, multiply_ntt, ntt, ntt_inverse, ntt_vec, sub_poly};
+use crate::ntt::{ntt, ntt_inverse, ntt_vec};
+use crate::verify_arith::mac_row_pub;
 use crate::params::{pk_len, sig_len, Params};
 use crate::rounding::{poly_use_hint_pub, vec_norm_lt_pub};
 use crate::keccak4::Lanes4;
@@ -201,16 +202,15 @@ fn verify_core<const K: usize, const L: usize>(
     h: &[[bool; 256]; K],
 ) -> bool {
     // 10: w′_Approx ← NTT⁻¹(Â ∘ NTT(z) − NTT(c) ∘ NTT(t1 · 2^d))
-    let az_hat = matrix_vector_ntt::<K, L>(&vk.a_hat, &ntt_vec(z));
+    let z_hat = ntt_vec(z);
     let c_hat = ntt(c);
-    let mut w_approx = [[0u32; 256]; K];
     let mut w1 = [[0u32; 256]; K];
     let mut i = 0;
     while i < K {
-        let ct1_hat = multiply_ntt(&c_hat, &vk.t1_2d_hat[i]);
-        w_approx[i] = ntt_inverse(&sub_poly(&az_hat[i], &ct1_hat));
+        let w_hat = mac_row_pub::<L>(&vk.a_hat[i], &z_hat, &c_hat, &vk.t1_2d_hat[i]);
+        let w_approx = ntt_inverse(&w_hat);
         // 11: w′1 ← UseHint(h, w′_Approx)
-        w1[i] = poly_use_hint_pub(p, &h[i], &w_approx[i]);
+        w1[i] = poly_use_hint_pub(p, &h[i], &w_approx);
         i += 1;
     }
     // 12: c̃′ ← H(μ ‖ w1Encode(w′1), λ/4)

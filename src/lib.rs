@@ -74,5 +74,9 @@ pub mod sign;
 mod sign;
 #[cfg(feature = "internals")]
 pub mod verify;
+#[cfg(feature = "internals")]
+pub mod verify_arith;
+#[cfg(not(feature = "internals"))]
+mod verify_arith;
 #[cfg(not(feature = "internals"))]
 mod verify;
