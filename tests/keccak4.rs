@@ -1,6 +1,7 @@
 //! The 4-way Keccak-f[1600] kernel (src/keccak4.rs): the portable (shim) instantiation and, with the `avx2` feature on
 //! an AVX2 machine, the intrinsic instantiation agree with four runs of the scalar `keccak::keccak_f1600`, and every
 //! shim operation agrees with its intrinsic for every rotation amount the kernel uses.
+#![allow(clippy::needless_range_loop)]
 use ml_dsa_lean::keccak::keccak_f1600;
 use ml_dsa_lean::keccak4::keccak_f1600_x4_portable;
 

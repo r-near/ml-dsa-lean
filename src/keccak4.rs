@@ -210,7 +210,12 @@ pub mod avx2 {
         }
     }
 
-    /// Keccak-f[1600] on four states with AVX2. Safe to define, `unsafe` to call without checking for AVX2.
+    /// Keccak-f[1600] on four states with AVX2.
+    ///
+    /// # Safety
+    ///
+    /// The CPU must support AVX2 (a safe `#[target_feature]` function on Rust 1.86; callers outside AVX2 code need
+    /// `unsafe`).
     #[target_feature(enable = "avx2")]
     pub fn keccak_f1600_x4_avx2(s: &mut [[u64; 4]; 25]) {
         keccak_f1600_x4::<Avx2>(s)
