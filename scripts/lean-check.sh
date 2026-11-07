@@ -19,4 +19,6 @@ if grep -nE "(^|[^a-z])error:|declaration uses 'sorry'" .lake/check-build.log; t
 fi
 cd ..
 scripts/check-axioms.sh
+scripts/check-axioms.sh --list keccak4-theorems.txt --no-impl
+scripts/check-axioms.sh --list fast-verify-theorems.txt --no-impl
 echo "LEAN CHECK OK: $*"

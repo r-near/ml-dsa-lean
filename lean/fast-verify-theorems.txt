@@ -1,0 +1,36 @@
+# Fast verify (docs/fast-verify*.md): the 4-way SHAKE128 sampler, the 4-way ExpandA and the 4-way verify body, all
+# instantiated at the portable `Sh4` shim. Checked by
+#   scripts/check-axioms.sh --list fast-verify-theorems.txt --no-impl
+# (wired into scripts/lean-check.sh next to keccak4-theorems.txt; headline-theorems.txt is unchanged).
+import Proofs.FastVerify
+# The 4-lane sponge/sampler is the scalar one: stream relation, state init, one block, the loop, the group sampler.
+Proofs.absorb_pad34
+Proofs.shake_stream
+Proofs.init_state_x4_spec
+Proofs.rej_ntt_block_x4_spec
+Proofs.keccak_step_lanes
+Proofs.rej_x4_body_spec
+Proofs.rej_x4_loop_spec
+Proofs.rej_ntt_poly_x4_spec
+Proofs.rej_ntt_poly_x4_partial
+# The 4-way ExpandA is the scalar ExpandA.
+Proofs.expandA_ent
+Proofs.expand_a_x4_partial
+Proofs.expand_a_x4_term
+Proofs.ReprMat.unique
+Proofs.rustM_eq_of_partial
+Proofs.expand_a_x4_eq
+Proofs.expand_a_x4_eq_std
+# The 4-way verify body is the scalar one, as RustM values (divergence included), for every set.
+Proofs.prepare_vk_x4_eq
+Proofs.verify_internal_x4_eq
+Proofs.verifyInternalX4API_eq
+Proofs.verify_internal_x4_44_eq
+Proofs.verify_internal_x4_65_eq
+Proofs.verify_internal_x4_87_eq
+Proofs.verify_internal_x4_44_exact
+Proofs.verify_internal_x4_65_exact
+Proofs.verify_internal_x4_87_exact
+Proofs.verify_internal_x4_44_div_iff
+Proofs.verify_internal_x4_65_div_iff
+Proofs.verify_internal_x4_87_div_iff
