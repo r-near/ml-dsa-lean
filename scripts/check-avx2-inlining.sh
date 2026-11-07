@@ -9,6 +9,7 @@
 # `--features avx2`, emits assembly, and fails if the assembly defines any function whose name contains `_mm256_` or
 # `_mm_` (the intrinsic wrappers of core::arch), which exist only when an intrinsic was not inlined. It also requires
 # that the file does contain 256-bit vector code (ymm registers), so that an empty or wrongly built input cannot pass.
+# It also fails if any verify-only arithmetic function (see the last check below) is defined out of line.
 #
 # The nearcore flags (-Ctarget-feature=+sse2,...,+movbe,+pclmulqdq, no AVX2) are what make this matter, so the check
 # builds with them unless NEARCORE_RUSTFLAGS is set to something else.
@@ -32,4 +33,14 @@ if [ -n "$out_of_line" ]; then
   echo "$out_of_line"
   exit 1
 fi
-echo "OK: no out-of-line intrinsic wrappers; $ymm lines of ymm code"
+# The verify-only arithmetic (src/verify_arith.rs, rounding::vec_norm_lt_pub, encode::bit_pack_pub / w1_encode_pub) is plain
+# integer code that only gets AVX2 code generation by being inlined into the `#[target_feature]` wrapper. A function of
+# any of these names defined in the assembly was not inlined, so the dispatched verify would run it with the baseline
+# target features (correct, but slower): fail on it.
+not_inlined="$(grep -E '^[^ .#][^:]*(verify_arith|vec_norm_lt_pub|bit_pack_pub|w1_encode_pub|poly_use_hint_pub|bit_unpack_pub)[^:]*:' "$ASM" | head -n 20)"
+if [ -n "$not_inlined" ]; then
+  echo "FAIL: verify-only arithmetic is defined out of line (it is not #[inline(always)] into the AVX2 wrapper):"
+  echo "$not_inlined"
+  exit 1
+fi
+echo "OK: no out-of-line intrinsic wrappers; verify-only arithmetic fully inlined; $ymm lines of ymm code"
