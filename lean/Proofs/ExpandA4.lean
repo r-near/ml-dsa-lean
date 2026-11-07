@@ -532,4 +532,95 @@ theorem x4_loop_term {K L : Usize} (rho : Array U8 32#usize) (n : Usize) (hn : n
     · trivial
   · trivial
 
+
+theorem expand_a_into_x4_term {K L : Usize} (rho : Array U8 32#usize) (hL : 0 < L.val) (hLs : L.val < 256)
+    (hK : K.val < 256) (hKL : K.val * L.val ≤ 2048) (F : Nat)
+    (hF : ∀ e, e < K.val * L.val →
+      ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P)
+    (a : Array (Array (Array U32 256#usize) L) K) :
+    sampling.expand_a_into_x4 Sh4 rho a ⦃ _ => True ⦄ := by
+  unfold sampling.expand_a_into_x4
+  step*
+  have hn' : n.val = K.val * L.val := n_post
+  exact x4_loop_term rho n (by omega) hL hLs hK hn' F (by rw [hn']; exact hF) a 0#usize
+
+theorem expand_a_x4_term {K L : Usize} (rho : Array U8 32#usize) (hL : 0 < L.val) (hLs : L.val < 256)
+    (hK : K.val < 256) (hKL : K.val * L.val ≤ 2048) (F : Nat)
+    (hF : ∀ e, e < K.val * L.val →
+      ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P) :
+    sampling.expand_a_x4 K L Sh4 rho ⦃ _ => True ⦄ := by
+  unfold sampling.expand_a_x4
+  step*
+  exact expand_a_into_x4_term rho hL hLs hK hKL F hF _
+
+theorem ReprMat.unique {K L : Usize} {k ℓ : Nat} {a b : Array (Array (Array U32 256#usize) L) K}
+    {m : Vector (Vector Poly ℓ) k} (ha : ReprMat a m) (hb : ReprMat b m) : a = b := by
+  apply Subtype.ext
+  apply List.ext_getElem (by rw [a.property, b.property])
+  intro i h1 h2
+  have hk : i < k := by have := ha.len; have := a.property; omega
+  have ra := ha.elt i hk
+  have rb := hb.elt i hk
+  apply Subtype.ext
+  apply List.ext_getElem (by rw [(a.val[i]).property, (b.val[i]).property])
+  intro j g1 g2
+  have hj : j < ℓ := by have := ra.len; have := (a.val[i]).property; omega
+  exact congrArg (fun x : Array U32 256#usize => x) (Repr.unique (ra.elt j hj) (rb.elt j hj))
+
+
+/-- Two `RustM` computations that are both partially correct for a property `P`-gated outcome, terminate when `P`
+holds, and agree on every pair of `ok` values, are equal. -/
+theorem rustM_eq_of_partial {α : Type} (x y : RustM α) (P : Prop) (Qx Qy : α → Prop)
+    (hx : x ⦃ Qx ⦄div) (hy : y ⦃ Qy ⦄div) (hQx : ∀ a, Qx a → P) (hQy : ∀ a, Qy a → P)
+    (hxt : P → ∃ a, x = ok a) (hyt : P → ∃ a, y = ok a) (heq : ∀ a b, x = ok a → y = ok b → a = b) : x = y := by
+  by_cases hP : P
+  · obtain ⟨a, ha⟩ := hxt hP
+    obtain ⟨b, hb⟩ := hyt hP
+    rw [ha, hb, heq a b ha hb]
+  · cases hxc : x with
+    | ok a => rw [hxc] at hx; exact absurd (hQx a hx) hP
+    | fail e => rw [hxc] at hx; exact hx.elim
+    | div =>
+      cases hyc : y with
+      | ok b => rw [hyc] at hy; exact absurd (hQy b hy) hP
+      | fail e => rw [hyc] at hy; exact hy.elim
+      | div => rfl
+
+theorem expand_a_x4_eq (sp : Spec.Params) (K L : Usize) (hK : K.val = sp.k) (hL : L.val = sp.ℓ)
+    (hl0 : 0 < sp.ℓ) (hk8 : sp.k ≤ 8) (hkl : sp.k + sp.ℓ < 256) (rho : Array U8 32#usize) :
+    sampling.expand_a_x4 K L Sh4 rho = sampling.expand_a K L rho := by
+  have hLpos : 0 < L.val := by omega
+  have hLs : L.val < 256 := by omega
+  have hK256 : K.val < 256 := by omega
+  have hKL : K.val * L.val ≤ 2048 := by
+    have : K.val * L.val ≤ 8 * 255 := Nat.mul_le_mul (by omega) (by omega)
+    omega
+  refine rustM_eq_of_partial _ _ (∃ (A : Vector (Vector Poly sp.ℓ) sp.k) (F : Nat),
+      Spec.ExpandA sp F (bytesA rho) = some A) _ _
+    (expand_a_x4_partial sp K L hK hL hLpos hLs hK256 hKL rho) (expand_a_partial sp K L hK hL rho)
+    (fun a ⟨A, F, h, _⟩ => ⟨A, F, h⟩) (fun a ⟨A, F, h, _⟩ => ⟨A, F, h⟩) ?_ ?_ ?_
+  · rintro ⟨A, F, hA⟩
+    have hF : ∀ e, e < K.val * L.val →
+        ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P := by
+      intro e he
+      have h1 : e / L.val < sp.k := by
+        rw [← hK]; exact Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; exact he)
+      have h2 : e % L.val < sp.ℓ := by rw [← hL]; exact Nat.mod_lt _ hLpos
+      exact ⟨_, expandA_ent sp F (bytesA rho) A hA _ h1 _ h2⟩
+    exact WP.spec_imp_exists (expand_a_x4_term rho hLpos hLs hK256 hKL F hF) |>.imp fun r hr => hr.1
+  · rintro ⟨A, F, hA⟩
+    exact (WP.spec_imp_exists (expand_a_spec sp K L hK hL rho A F hA)).imp fun r hr => hr.1
+  · intro a b ha hb
+    have h1 := expand_a_x4_partial sp K L hK hL hLpos hLs hK256 hKL rho
+    have h2 := expand_a_partial sp K L hK hL rho
+    rw [ha] at h1
+    rw [hb] at h2
+    obtain ⟨A1, F1, e1, r1⟩ := (WP.dspec_ok _).1 h1
+    obtain ⟨A2, F2, e2, r2⟩ := (WP.dspec_ok _).1 h2
+    have e1' := ExpandA_mono sp _ F1 (max F1 F2) A1 e1 (le_max_left _ _)
+    have e2' := ExpandA_mono sp _ F2 (max F1 F2) A2 e2 (le_max_right _ _)
+    have hAA : A1 = A2 := Option.some.inj (e1'.symm.trans e2')
+    subst hAA
+    exact ReprMat.unique r1 r2
+
 end Proofs
