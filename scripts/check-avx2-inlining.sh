@@ -46,4 +46,19 @@ if [ -n "$not_inlined" ]; then
   echo "$not_inlined"
   exit 1
 fi
+# The prepared-key wrapper must itself contain the vector code: its body is the inlined proved verify, so each of its
+# instantiations (K = 4, 6, 8) has to hold ymm instructions, and there have to be three of them. A wrapper whose callee was
+# not inlined would be a thin call with no ymm code in it (and the check above would also fire).
+prep="$(awk '
+  /^[^ .#][^:]*verify_prepared_avx2[^:]*:/ { name=$0; inbody=1; n[name]=0; next }
+  inbody && /\.cfi_endproc/ { inbody=0 }
+  inbody && /ymm/ { n[name]++ }
+  END { for (k in n) print n[k], k }' "$ASM")"
+echo "verify_prepared_avx2 instantiations (ymm lines, symbol):"
+echo "$prep"
+if [ "$(echo "$prep" | grep -c .)" -lt 3 ]; then echo "FAIL: expected three verify_prepared_avx2 instantiations (K = 4, 6, 8) in the assembly"; exit 1; fi
+if echo "$prep" | awk '$1 < 100 { bad=1 } END { exit !bad }'; then
+  echo "FAIL: a verify_prepared_avx2 instantiation has (almost) no ymm code: the proved verify was not inlined into it"
+  exit 1
+fi
 echo "OK: no out-of-line intrinsic wrappers; verify-only arithmetic fully inlined; $ymm lines of ymm code"
