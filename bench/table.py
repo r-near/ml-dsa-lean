@@ -99,7 +99,7 @@ PREP = {"ours": "ours+prepared-sk", "rustcrypto": "rustcrypto+cached-sk", "aws-l
 PREPV = {"ours": "ours+prepared-vk", "rustcrypto": "rustcrypto+cached-vk"}
 
 
-def report(args):
+def report(args, label="mean of two runs", compact=None):
     runs = [load(a) for a in args[:6]]
     long_aws = load(args[6]) if len(args) > 6 else None
 
@@ -129,7 +129,7 @@ def report(args):
             ("RustCrypto ml-dsa, `-C target-cpu=x86-64-v3`", v, "rustcrypto", "v3"),
             ("libcrux-ml-dsa portable, `-C target-cpu=x86-64-v3`", v, "libcrux-portable", "v3")]
     for st in (44, 65, 87):
-        print(f"\n#### ML-DSA-{st} (microseconds, median of 15 rounds, mean of two runs)\n")
+        print(f"\n#### ML-DSA-{st} (microseconds, median of 15 rounds, {label})\n")
         print("| implementation | " + " | ".join(c[0] for c in COLS) + " |")
         print("|---|" + "---|" * len(COLS))
         vals = {}
@@ -166,7 +166,48 @@ def report(args):
                   f"cached key {us(long_aws[(st, 'sign-hedged', 'aws-lc-rs+cached-sk')]['med'])}")
 
 
+def compact(args):
+    """table.py compact FRESH(d1 d2 a1 a2 v1 v2) WARM(d1 d2 a1 a2 v1 v2): one table per set; a cell is `fresh / in-process` when
+    the two differ by more than 3%, else one number. Ratios (this crate / fastest other) are given for each state."""
+    import io, contextlib
+    fr = args[:6]
+    wa = args[6:12]
+    outs = []
+    for src in (fr, wa):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            report(src)
+        outs.append(buf.getvalue())
+    tabs = []
+    for o in outs:
+        cur = None
+        t = {}
+        for line in o.splitlines():
+            if line.startswith("####"):
+                cur = int(line.split("ML-DSA-")[1].split()[0])
+                t[cur] = []
+            elif cur and line.startswith("| ") and not line.startswith("| implementation") and not line.startswith("|---"):
+                t[cur].append([c.strip() for c in line.strip("|").split("|")])
+        tabs.append(t)
+    for st in (44, 65, 87):
+        print(f"\n#### ML-DSA-{st} (microseconds; `fresh / in-process` where the two states differ by more than 3%)\n")
+        hdr = ["implementation", "keygen", "sign (det)", "sign (hedged)", "sign, prepared (det)", "sign, prepared (hedged)", "verify", "verify, prepared"]
+        print("| " + " | ".join(hdr) + " |")
+        print("|" + "---|" * len(hdr))
+        for rf, rw in zip(tabs[0][st], tabs[1][st]):
+            cells = [rf[0]]
+            for a, b in zip(rf[1:], rw[1:]):
+                if a == "n/a" or b == "n/a":
+                    cells.append(a)
+                elif abs(float(a) / float(b) - 1) > 0.03:
+                    cells.append(f"{a} / {b}")
+                else:
+                    cells.append(b)
+            print("| " + " | ".join(cells) + " |")
+
+
 if __name__ == "__main__":
     cmd, args = sys.argv[1], sys.argv[2:]
     {"headline": lambda: headline(args[0]), "variants": lambda: variants(args), "repeat": lambda: repeat(*args),
-     "spread": lambda: spread(args[0]), "report": lambda: report(args)}[cmd]()
+     "spread": lambda: spread(args[0]), "report": lambda: report(args), "fresh": lambda: report(args, "fresh process per implementation, mean of two runs"),
+     "compact": lambda: compact(args)}[cmd]()
