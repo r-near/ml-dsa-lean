@@ -66,7 +66,7 @@ PY
 echo "pinned cpu $CPU (sibling $((CPU + HT)))"
 for v in scalar avx2 v3; do
   echo "== $v $(date -u +%H:%M:%S) load $(cut -d' ' -f1-3 /proc/loadavg)"
-  taskset -c "$CPU" "$OUT/bench-$v" --label "$L-$v-cpu$CPU" --sets "$SETS" --rounds "$ROUNDS" --only verify | tee "$OUT/$v.cpu$CPU.tsv"
+  taskset -c "$CPU" "$OUT/bench-$v" --label "$L-$v-cpu$CPU" --sets "$SETS" --rounds "$ROUNDS" --only verify,verifying-key | tee "$OUT/$v.cpu$CPU.tsv"
 done
 echo "== done; load $(cut -d' ' -f1-3 /proc/loadavg)"
 python3 - "$OUT" "$CPU" "$SETS" <<'PY'
@@ -76,14 +76,14 @@ def load(v):
     rows = {}
     for line in open(f"{out}/{v}.cpu{cpu}.tsv"):
         f = line.rstrip("\n").split("\t")
-        if f[0] == "ROW" and f[1] != "label" and f[3] == "verify":
+        if f[0] == "ROW" and f[1] != "label" and f[3] in ("verify", "verifying-key"):
             rows[(int(f[2]), f[4])] = float(f[5]) / 1000
     return rows
 data = {v: load(v) for v in ("scalar", "avx2", "v3")}
 for st in sets:
     print(f"\nML-DSA-{st} verify, microseconds (median of rounds), nearcore profile")
     print(f"{'implementation':<28}{'scalar':>9}{'avx2':>9}{'v3':>9}")
-    for imp in ("ours", "ours+prepared-vk", "aws-lc-rs", "mldsa-native-avx2", "libcrux-avx2", "rustcrypto"):
+    for imp in ("ours", "ours+verifying-key", "ours+prepared-vk", "aws-lc-rs", "mldsa-native-avx2", "libcrux-avx2", "rustcrypto"):
         if (st, imp) in data["scalar"]:
             print(f"{imp:<28}" + "".join(f"{data[v].get((st, imp), float('nan')):>9.1f}" for v in ("scalar", "avx2", "v3")))
     s, a = data["scalar"].get((st, "ours")), data["avx2"].get((st, "ours"))

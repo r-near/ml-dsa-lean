@@ -193,6 +193,12 @@ macro_rules! define_set {
                 api::$vf(pk_a, &d.msgs[i], CTX, s) as u64
             });
 
+            // building the prepared verifying key (`verifying_key_NN`: ExpandA, NTT(t1 * 2^d), tr); dispatched like verify
+            cell(cells, "ours+verifying-key", "verifying-key", NMSG, move |_| {
+                std::hint::black_box(api::$vkf(std::hint::black_box(pk_a)));
+                1
+            });
+
             // prepared verifying key (Â, NTT(t1 * 2^d), tr computed once; boxed like a caller would)
             {
                 let vk = Box::new(api::$vkf(pk_a));
@@ -314,7 +320,7 @@ pub fn build_set(set: u32) -> SetData {
     }
 }
 
-/// All implementations' closures for ML-DSA-`set`, ordered by operation (keygen, sign-det, sign-hedged, verify).
+/// All implementations' closures for ML-DSA-`set`, ordered by operation (keygen, sign-det, sign-hedged, verify, verifying-key).
 pub fn cells_for<'a>(set: u32, d: &'a SetData) -> Vec<Cell<'a>> {
     let mut cells: Vec<Cell> = vec![];
     match set {
@@ -322,7 +328,7 @@ pub fn cells_for<'a>(set: u32, d: &'a SetData) -> Vec<Cell<'a>> {
         65 => cells_65(d, &mut cells),
         _ => cells_87(d, &mut cells),
     }
-    let order = ["keygen", "sign-det", "sign-hedged", "verify"];
+    let order = ["keygen", "sign-det", "sign-hedged", "verify", "verifying-key"];
     cells.sort_by_key(|c| order.iter().position(|g| *g == c.group).unwrap());
     cells
 }
