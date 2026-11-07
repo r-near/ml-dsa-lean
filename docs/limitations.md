@@ -33,8 +33,22 @@ input.
   has been cross-checked against test vectors and against ocaml-pq's independent transcription (proved equal in `xspec/`,
   with the qualifiers in [assurance.md](assurance.md) section 1.8: their Sign loop stops after 821 attempts, their key import
   rejects inconsistent keys that FIPS 204 accepts, and some directions assume their rejection samplers terminate).
-- **The `zeroize` and `avx2` features are outside the proof.** `avx2` is the crate's only `unsafe`; without it the crate has
-  `forbid(unsafe_code)`.
+- **The `zeroize` feature is outside the proof.**
+- **The `avx2` feature is proved only modulo a tested link.** Without it, the code that ships is exactly the extracted code
+  and the crate has `forbid(unsafe_code)`. With it on x86_64, `verify_NN` and `verifying_key_NN` check the CPU at run time and
+  use a 4-way body (4-way Keccak-f[1600], SHAKE128 and ExpandA). Lean proves that body equal to the scalar verify on every
+  input, divergence included, but for its plain-Rust instance `Shim4` (`lean/fast-verify-theorems.txt`,
+  [assurance.md](assurance.md) section 1.9). The shipped AVX2 build runs the same body over intrinsic lane operations
+  (`Avx2`), which are tested equal to `Shim4`, not proved (`tests/keccak4_avx2.rs`). So that build is proved modulo the tested
+  equivalence of the AVX2 lane operations to the proved shim. Also outside the proof:
+  - the dispatch glue (`src/fast_verify/dispatch.rs`) and the CPU and OS detection (`src/cpu.rs`);
+  - rustc and LLVM compiling the `#[target_feature(enable = "avx2")]` clone of the body, which the proof does not see (a
+    missed inlining would change only speed, and `scripts/check-avx2-inlining.sh` checks for that);
+  - the AVX2 copy of the NTT, which is tested against the portable copy (`tests/dispatch.rs`), not proved.
+
+  These make up the crate's only `unsafe`. A lane operation that differs from the shim on an input the tests missed, or a
+  compiler error in the AVX2 clone, would let the AVX2 verdict differ from the proved one; the tests are evidence against
+  that, not a proof.
 - **HashML-DSA and external μ are not implemented.**
 - **Constant time is not proved.** It is checked on compiled code with BINSEC (next section).
 - **Not audited by any third party, not FIPS-validated, and not a certified module.**
@@ -45,6 +59,10 @@ BINSEC checks compiled probes of every secret-touching step of KeyGen and Sign (
 (several build profiles), thumbv7em, riscv32imac and AArch64 without NEON. No unexpected leak is open; three real ones were
 found and fixed. The limits:
 
+- Verify, including the AVX2 fast verify, handles only public data (public key, message, signature), so it has no probes and
+  needs none. Sign and KeyGen do not call the 4-way body or the verify-only `poly_use_hint_pub` and `bit_unpack_pub`. The
+  sweep predates the fast verify and was not rerun on this tree; the harness (`../checkct/driver`) does not build on it until it
+  gains the new modules (assurance.md section 4).
 - The whole KeyGen, Sign and `pk_from_sk` functions have no verdict, and the glue between steps is covered by code reading
   only. ExpandS is covered only through its per-nibble helper; its sampler loop branches on its public accept/reject
   outcome.
@@ -64,6 +82,9 @@ Tests are evidence, not proofs.
 
 - **Differential tests** against RustCrypto `ml-dsa`, `aws-lc-rs` (0 verdict differences in about 3.2M verify comparisons;
   empty context only), libcrux-ml-dsa and mldsa-native (`../crosscheck/`).
+- **AVX2 fast verify** (needs a CPU with AVX2): the AVX2 lane operations, rotations and whole permutations against `Shim4`
+  and the scalar permutation (`../tests/keccak4_avx2.rs`); the dispatched and AVX2 verify against the scalar verify on ACVP,
+  Wycheproof and random inputs through every API path (`../tests/fast_verify.rs`).
 - **Test vectors:** NIST ACVP (keyGen, sigGen, sigVer; the preHash and external-μ cases are skipped) and Wycheproof.
 - **Fuzzing:** differential fuzz targets against RustCrypto (`../fuzz/`) and the other implementations.
 

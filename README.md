@@ -49,13 +49,16 @@ cover the rest.
 Optional features:
 
 - `zeroize` wipes dropped signing keys and, best effort, secret intermediates.
-- `avx2` adds runtime-dispatched AVX2 code on x86_64: the NTT, and a 4-way Keccak for verify. Outside the Lean proof; see `docs/limitations.md`.
+- `avx2` adds runtime-dispatched AVX2 code on x86_64: a fast verify whose 4-way body is proved equal to the scalar verify,
+  with the AVX2 lane operations it runs on tested equal to the proved model, not proved, and an AVX2 NTT that is tested, not
+  proved. The dispatch glue is outside the proof; see `docs/limitations.md`.
 
 Requires Rust 1.86 or newer.
 
 ## How it's checked
 
-- **Proof.** 407 Lean theorems, from the top-level API down to the arithmetic (listed in `lean/headline-theorems.txt`).
+- **Proof.** 412 Lean theorems, from the top-level API down to the arithmetic (listed in `lean/headline-theorems.txt`), and
+  45 more for the 4-way verify (`lean/fast-verify-theorems.txt`, `lean/keccak4-theorems.txt`).
 - **Constant time.** [BINSEC](https://binsec.github.io/) checks the compiled secret-handling code for secret-dependent
   branches and memory accesses on x86_64, 32-bit Arm, RISC-V and AArch64.
 - **Tests.** Differential testing against RustCrypto, aws-lc-rs, libcrux and mldsa-native, NIST ACVP and Wycheproof
