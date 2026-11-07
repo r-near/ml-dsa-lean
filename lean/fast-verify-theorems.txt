@@ -3,14 +3,17 @@
 #   scripts/check-axioms.sh --list fast-verify-theorems.txt --no-impl
 # (wired into scripts/lean-check.sh next to keccak4-theorems.txt; headline-theorems.txt is unchanged).
 import Proofs.FastVerify
-# The 4-lane sponge/sampler is the scalar one: stream relation, state init, the rate bytes, the branchless block parse
-# (one candidate, one block, one lane), the loop, the group sampler.
+# The 4-lane sponge/sampler is the scalar one: stream relation, state init, the branchless block parse straight from the
+# lane words (one candidate, eight candidates of three lanes, one block, one lane), the loop, the group sampler.
 Proofs.absorb_pad34
 Proofs.shake_stream
 Proofs.init_state_x4_spec
-Proofs.rate_bytes_x4_spec
-Proofs.three_bytes_value_spec
 Proofs.laneInv_step
+Proofs.push_candidate_spec
+Proofs.al_val
+Proofs.st6_val
+Proofs.st7_val
+Proofs.rej_ntt_cands8_spec
 Proofs.rej_ntt_block_x4_spec
 Proofs.rej_ntt_lane_x4_spec
 Proofs.first_256_spec

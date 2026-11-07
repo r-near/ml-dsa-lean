@@ -191,32 +191,32 @@ theorem rnd_getElem (A : Spec.Keccak.State) (ir k : Nat) (hk : k < 25) :
   · rw [e k hk]
 
 set_option maxHeartbeats 4000000 in
-theorem round_lane (s : St4) (rc : U64) (i : Nat) (hi : i < 4) (ir : Nat)
+theorem round_lane (src dst : St4) (rc : U64) (i : Nat) (hi : i < 4) (ir : Nat)
     (hrc : toU64 rc = Spec.Keccak.RCs[ir]!) :
-    keccak4.round keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4 s rc ⦃ s' =>
-      pj s' i = Spec.Keccak.Rnd (pj s i) ir ⦄ := by
+    keccak4.round keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4 src dst rc ⦃ s' =>
+      pj s' i = Spec.Keccak.Rnd (pj src i) ir ⦄ := by
   unfold keccak4.round
   step*
   apply vec_ext25
   intro k hk
   rw [pj_getElem _ _ k hk, rnd_getElem _ _ _ hk]
   rcases (by omega : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 ∨ k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11 ∨ k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15 ∨ k = 16 ∨ k = 17 ∨ k = 18 ∨ k = 19 ∨ k = 20 ∨ k = 21 ∨ k = 22 ∨ k = 23 ∨ k = 24) with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals simp [a0_post2, a1_post2, a2_post2, a3_post2, a4_post2, a5_post2, a6_post2, a7_post2, a8_post2, a9_post2, a10_post2, a11_post2, a12_post2, a13_post2, a14_post2, a15_post2, a16_post2, a17_post2, a18_post2, a19_post2, a20_post2, a21_post2, a22_post2, a23_post2, a24_post2, a_post, a25_post, a26_post, c0_post, a27_post, a28_post, a29_post, c1_post, a30_post, a31_post, a32_post, c2_post, a33_post, a34_post, a35_post, c3_post, a36_post, a37_post, a38_post, c4_post, a39_post, d0_post, a40_post, d1_post, a41_post, d2_post, a42_post, d3_post, a43_post, d4_post, b0_post, a44_post, b16_post, a45_post, b7_post, a46_post, b23_post, a47_post, b14_post, a48_post, b10_post, a49_post, b1_post, a50_post, b17_post, a51_post, b8_post, a52_post, b24_post, a53_post, b20_post, a54_post, b11_post, a55_post, b2_post, a56_post, b18_post, a57_post, b9_post, a58_post, b5_post, a59_post, b21_post, a60_post, b12_post, a61_post, b3_post, a62_post, b19_post, a63_post, b15_post, a64_post, b6_post, a65_post, b22_post, a66_post, b13_post, a67_post, b4_post, a68_post, a69_post, a70_post, a71_post, a72_post, a73_post, a74_post, a75_post, a76_post, a77_post, a78_post, a79_post, a80_post, a81_post, a82_post, a83_post, a84_post, a85_post, a86_post, a87_post, a88_post, a89_post, a90_post, a91_post, a92_post, a93_post, a94_post, a95_post, a96_post, a97_post, a98_post, a99_post, a100_post, a101_post, a102_post, a103_post, a104_post, a105_post, a106_post, a107_post, a108_post, a109_post, a110_post, a111_post, a112_post, a113_post, a114_post, a115_post, a116_post, a117_post, a118_post, a119_post, s1_post, s2_post, s3_post, s4_post, s5_post, s6_post, s7_post, s8_post, s9_post, s10_post, s11_post, s12_post, s13_post, s14_post, s15_post, s16_post, s17_post, s18_post, s19_post, s20_post, s21_post, s22_post, s23_post, s24_post, s'_post, at4_set, at4_getElem, hi, hrc, pj_getElem', rotl_zero, rhoOffsets_eq, XV, Bf, Dv', Cs, srcI]
-
+  all_goals simp [*, at4_set, at4_getElem, pj_getElem', rotl_zero, rhoOffsets_eq, XV, Bf, Dv', Cs, srcI]
 
 /-! ## One round for all four states, and the 24 rounds -/
 
 /-- The shim instance of the extracted trait, as the generic kernel takes it. -/
 abbrev Sh4 := keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4
 
-/-- **One round, all four states.** Lane `i` of the output is `Rnd` of lane `i` of the input, for every `i < 4`. -/
-theorem round_spec (s : St4) (rc : U64) (ir : Nat) (hrc : toU64 rc = Spec.Keccak.RCs[ir]!) :
-    keccak4.round Sh4 s rc ⦃ s' => ∀ i, i < 4 → pj s' i = Spec.Keccak.Rnd (pj s i) ir ⦄ := by
-  obtain ⟨s0, h0, _⟩ := WP.spec_imp_exists (round_lane s rc 0 (by decide) ir hrc)
+/-- **One round, all four states.** Lane `i` of the output is `Rnd` of lane `i` of the input, for every `i < 4`
+(whatever `dst` held: the round overwrites all 25 entries). -/
+theorem round_spec (src dst : St4) (rc : U64) (ir : Nat) (hrc : toU64 rc = Spec.Keccak.RCs[ir]!) :
+    keccak4.round Sh4 src dst rc ⦃ s' => ∀ i, i < 4 → pj s' i = Spec.Keccak.Rnd (pj src i) ir ⦄ := by
+  obtain ⟨s0, h0, _⟩ := WP.spec_imp_exists (round_lane src dst rc 0 (by decide) ir hrc)
   rw [h0]
   simp only [WP.spec_ok]
   intro i hi
-  obtain ⟨s1, h1, p1⟩ := WP.spec_imp_exists (round_lane s rc i hi ir hrc)
+  obtain ⟨s1, h1, p1⟩ := WP.spec_imp_exists (round_lane src dst rc i hi ir hrc)
   rw [h0] at h1
   have : s0 = s1 := by simpa using h1
   subst this
@@ -226,32 +226,39 @@ theorem RC_idx4 (i : Usize) (hi : i.val < 24) (v : U64) (hv : v = keccak.RC.val[
     rw [RC_len]; exact hi)) : toU64 v = Spec.Keccak.RCs[i.val]! := RC_idx i hi v hv
 
 /-- **Keccak-f[1600] on four states (shim instance).** Lane `i` of the output state is
-`Spec.KeccakF1600` of lane `i` of the input state; it neither fails nor diverges. -/
+`Spec.KeccakF1600` of lane `i` of the input state; it neither fails nor diverges. The kernel runs two rounds per loop
+iteration, ping-ponging between the state and a scratch copy. -/
 theorem keccak_f1600_x4_shim_spec (s : St4) :
     keccak4.keccak_f1600_x4 Sh4 s ⦃ s' => ∀ i, i < 4 → pj s' i = Spec.KeccakF1600 (pj s i) ⦄ := by
   unfold keccak4.keccak_f1600_x4 keccak4.keccak_f1600_x4_loop
   apply loop.spec_decr_nat
-    (fun (p : St4 × Usize) => 24 - p.2.val)
-    (fun p => p.2.val ≤ 24 ∧ ∀ i, i < 4 → pj p.1 i = (List.range p.2.val).foldl Spec.Keccak.Rnd (pj s i))
-  · rintro ⟨sc, r⟩ ⟨h1, h2⟩
-    dsimp only at h1 h2
+    (fun (p : St4 × St4 × Usize) => 24 - p.2.2.val)
+    (fun p => p.2.2.val ≤ 24 ∧ p.2.2.val % 2 = 0 ∧
+      ∀ i, i < 4 → pj p.1 i = (List.range p.2.2.val).foldl Spec.Keccak.Rnd (pj s i))
+  · rintro ⟨sc, tc, r⟩ ⟨h1, h1', h2⟩
+    dsimp only at h1 h1' h2
     simp only [keccak4.keccak_f1600_x4_loop.body]
     split
     · rename_i hr
       have hr24 : r.val < 24 := by scalar_tac
+      have hr23 : r.val + 1 < 24 := by omega
       step*
       have hrc := RC_idx4 r hr24 _ i_post2
-      step with round_spec sc _ r.val hrc as ⟨s1, hs1⟩
+      step with round_spec sc tc _ r.val hrc as ⟨t1, ht1⟩
+      step*
+      have hrc2 := RC_idx4 i1 (by omega) _ i2_post2
+      step with round_spec t1 sc _ i1.val hrc2 as ⟨s1, hs1⟩
       step as ⟨r1, hr1⟩
-      refine ⟨by omega, fun k hk => ?_, by omega⟩
-      rw [hs1 k hk, h2 k hk, hr1, List.range_succ, List.foldl_append, List.foldl_cons, List.foldl_nil]
+      refine ⟨by omega, by omega, fun k hk => ?_, by omega⟩
+      rw [hs1 k hk, ht1 k hk, h2 k hk, hr1, i1_post, List.range_succ, List.range_succ, List.foldl_append, List.foldl_append,
+        List.foldl_cons, List.foldl_nil, List.foldl_cons, List.foldl_nil]
     · rename_i hr
       have : r.val = 24 := by scalar_tac
       simp only [WP.spec_ok]
       intro i hi
       rw [h2 i hi, this]
       rfl
-  · exact ⟨by simp, fun i hi => by simp⟩
+  · exact ⟨by simp, by simp, fun i hi => by simp⟩
 
 /-- The portable entry point is the shim instantiation. -/
 theorem keccak_f1600_x4_portable_spec (s : St4) :
