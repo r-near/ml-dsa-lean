@@ -45,6 +45,10 @@ mod sign;
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/keygen.rs"]
 mod keygen;
+// The verify-only arithmetic that `verify.rs` calls (public data only; the probes never reach it).
+#[allow(dead_code, unexpected_cfgs)]
+#[path = "../../../src/verify_arith.rs"]
+mod verify_arith;
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/verify.rs"]
 mod verify;
