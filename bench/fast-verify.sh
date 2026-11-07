@@ -3,7 +3,9 @@
 # next to aws-lc-rs and mldsa-native AVX2 as references. Run from the repository root on an otherwise idle x86_64 Linux machine:
 #   bash bench/fast-verify.sh LABEL [CPU] 2>&1 | tee fast-verify-LABEL.log
 # Environment: SETS (default 65; e.g. 44,65,87), ROUNDS (default 15), ML_DSA_SCRATCH (output root, as in compare.sh),
-#              HT_OFFSET (distance to the hyper-thread sibling, default half the logical CPUs).
+#              HT_OFFSET (distance to the hyper-thread sibling, default half the logical CPUs),
+#              TOOLCHAIN (a rustup toolchain such as 1.95.0, nearcore's; default: the toolchain in effect). The numbers in
+#              bench/results say which one they used.
 #
 # Variants (all in the `nearcore` profile of bench/Cargo.toml: opt-level 3, fat LTO, one codegen unit, abort on panic, plus
 # overflow-checks, exactly as nearcore's [profile.release]; and nearcore's x86_64 target features, which do not include AVX2):
@@ -29,7 +31,7 @@ for v in scalar avx2 v3; do
   RF="$NC_RUSTFLAGS"; FEAT=""
   [ "$v" = avx2 ] && FEAT="--features avx2"
   [ "$v" = v3 ] && { RF="-C target-cpu=x86-64-v3"; FEAT="--features avx2"; }
-  CARGO_PROFILE_NEARCORE_OVERFLOW_CHECKS=true RUSTFLAGS="$RF" cargo build --profile nearcore --bin bench $FEAT \
+  CARGO_PROFILE_NEARCORE_OVERFLOW_CHECKS=true RUSTFLAGS="$RF" cargo ${TOOLCHAIN:+"+$TOOLCHAIN"} build --profile nearcore --bin bench $FEAT \
     --message-format=json-render-diagnostics >"$OUT/$v.json" || exit 1
   python3 - "$OUT/$v.json" "$OUT/bench-$v" <<'PY'
 import json, shutil, sys

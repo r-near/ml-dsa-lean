@@ -49,7 +49,7 @@ cover the rest.
 Optional features:
 
 - `zeroize` wipes dropped signing keys and, best effort, secret intermediates.
-- `avx2` adds a runtime-dispatched AVX2 NTT on x86_64.
+- `avx2` adds runtime-dispatched AVX2 code on x86_64: the NTT, and a 4-way Keccak for verify. Outside the Lean proof; see `docs/limitations.md`.
 
 Requires Rust 1.86 or newer.
 
