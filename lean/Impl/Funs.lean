@@ -6711,37 +6711,38 @@ def sampling.init_state_x4
   let i1 ← lift (UScalar.cast .U64 i)
   let i2 ← Array.index_usize r 0#usize
   let i3 ← lift (UScalar.cast .U64 i2)
-  let i4 ← i3 <<< 8#i32
+  let i4 ← i3 <<< 8#usize
   let i5 ← lift (i1 ||| i4)
-  let i6 ← 31#u64 <<< 16#i32
-  let i7 ← lift (i5 ||| i6)
-  let i8 ← Array.index_usize s 1#usize
-  let i9 ← lift (UScalar.cast .U64 i8)
-  let i10 ← Array.index_usize r 1#usize
-  let i11 ← lift (UScalar.cast .U64 i10)
-  let i12 ← i11 <<< 8#i32
-  let i13 ← lift (i9 ||| i12)
-  let i14 ← lift (i13 ||| i6)
-  let i15 ← Array.index_usize s 2#usize
-  let i16 ← lift (UScalar.cast .U64 i15)
-  let i17 ← Array.index_usize r 2#usize
-  let i18 ← lift (UScalar.cast .U64 i17)
-  let i19 ← i18 <<< 8#i32
-  let i20 ← lift (i16 ||| i19)
-  let i21 ← lift (i20 ||| i6)
-  let i22 ← Array.index_usize s 3#usize
-  let i23 ← lift (UScalar.cast .U64 i22)
-  let i24 ← Array.index_usize r 3#usize
-  let i25 ← lift (UScalar.cast .U64 i24)
-  let i26 ← i25 <<< 8#i32
-  let i27 ← lift (i23 ||| i26)
-  let i28 ← lift (i27 ||| i6)
+  let i6 ← lift (i5 ||| 2031616#u64)
+  let i7 ← Array.index_usize s 1#usize
+  let i8 ← lift (UScalar.cast .U64 i7)
+  let i9 ← Array.index_usize r 1#usize
+  let i10 ← lift (UScalar.cast .U64 i9)
+  let i11 ← i10 <<< 8#usize
+  let i12 ← lift (i8 ||| i11)
+  let i13 ← lift (i12 ||| 2031616#u64)
+  let i14 ← Array.index_usize s 2#usize
+  let i15 ← lift (UScalar.cast .U64 i14)
+  let i16 ← Array.index_usize r 2#usize
+  let i17 ← lift (UScalar.cast .U64 i16)
+  let i18 ← i17 <<< 8#usize
+  let i19 ← lift (i15 ||| i18)
+  let i20 ← lift (i19 ||| 2031616#u64)
+  let i21 ← Array.index_usize s 3#usize
+  let i22 ← lift (UScalar.cast .U64 i21)
+  let i23 ← Array.index_usize r 3#usize
+  let i24 ← lift (UScalar.cast .U64 i23)
+  let i25 ← i24 <<< 8#usize
+  let i26 ← lift (i22 ||| i25)
+  let i27 ← lift (i26 ||| 2031616#u64)
   let st5 ←
-    Array.update st4 4#usize (Array.make 4#usize [ i7, i14, i21, i28 ] : Array
+    Array.update st4 4#usize (Array.make 4#usize [ i6, i13, i20, i27 ] : Array
       Std.U64 4#usize)
-  let last ← 128#u64 <<< 56#i32
-  Array.update st5 20#usize (Array.make 4#usize [ last, last, last, last ] :
-    Array Std.U64 4#usize)
+  Array.update st5 20#usize
+    (Array.make 4#usize [
+       9223372036854775808#u64, 9223372036854775808#u64,
+       9223372036854775808#u64, 9223372036854775808#u64
+       ] : Array Std.U64 4#usize)
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x4]: loop body 0:
     Source: 'src/sampling.rs', lines 167:4-174:5

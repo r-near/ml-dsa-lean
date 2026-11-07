@@ -131,15 +131,15 @@ fn init_state_x4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u64; 4]; 25] {
     st[1] = [x1, x1, x1, x1];
     st[2] = [x2, x2, x2, x2];
     st[3] = [x3, x3, x3, x3];
-    // Bytes 32, 33 of the message are s and r, byte 34 is the SHAKE domain/padding byte 0x1F.
+    // Bytes 32, 33 of the message are s and r, byte 34 is the SHAKE domain/padding byte 0x1F (bits 16..24 of the lane).
     st[4] = [
-        (s[0] as u64) | ((r[0] as u64) << 8) | (0x1Fu64 << 16),
-        (s[1] as u64) | ((r[1] as u64) << 8) | (0x1Fu64 << 16),
-        (s[2] as u64) | ((r[2] as u64) << 8) | (0x1Fu64 << 16),
-        (s[3] as u64) | ((r[3] as u64) << 8) | (0x1Fu64 << 16),
+        (s[0] as u64) | ((r[0] as u64) << 8usize) | 0x1F_0000u64,
+        (s[1] as u64) | ((r[1] as u64) << 8usize) | 0x1F_0000u64,
+        (s[2] as u64) | ((r[2] as u64) << 8usize) | 0x1F_0000u64,
+        (s[3] as u64) | ((r[3] as u64) << 8usize) | 0x1F_0000u64,
     ];
     // Byte 167 = 0x80 is the top byte of lane 20.
-    let last = 0x80u64 << 56;
+    let last = 0x8000_0000_0000_0000u64;
     st[20] = [last, last, last, last];
     st
 }
