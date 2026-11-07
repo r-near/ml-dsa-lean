@@ -47,7 +47,8 @@ PY
 done
 cd "$root" || exit 1
 uptime
-ps -eo pcpu,psr,comm --sort=-pcpu | head -6
+# Idleness check: only a count, no process names (they identify the machine).
+ps -eo pcpu --no-headers | awk '$1 > 5 { n++ } END { print "processes above 5% CPU:", n + 0 }'
 HT=${HT_OFFSET:-$(( $(nproc) / 2 ))}
 CPU=${2:-$(python3 - "$HT" <<'PY'
 import sys, time

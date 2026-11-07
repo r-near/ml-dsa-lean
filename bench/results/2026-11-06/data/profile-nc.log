@@ -10,10 +10,10 @@
 # steal jiffies: 0 of 18920859
 # measured core clock: 3.41 GHz (dependent add chain)
 # avx2: true
-PROF	65	ours	sign-det	20132 samples	25344 calls	794.4 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/default/ours.65.sign-det.folded
-PROF	65	ours	verify	20014 samples	119552 calls	167.4 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/default/ours.65.verify.folded
-PROF	87	ours	sign-det	20018 samples	20224 calls	989.9 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/default/ours.87.sign-det.folded
-PROF	87	ours	verify	20017 samples	72960 calls	274.4 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/default/ours.87.verify.folded
+PROF	65	ours	sign-det	20132 samples	25344 calls	794.4 us/call	ours.65.sign-det.folded
+PROF	65	ours	verify	20014 samples	119552 calls	167.4 us/call	ours.65.verify.folded
+PROF	87	ours	sign-det	20018 samples	20224 calls	989.9 us/call	ours.87.sign-det.folded
+PROF	87	ours	verify	20017 samples	72960 calls	274.4 us/call	ours.87.verify.folded
 == prof avx2 (ours,mldsa-native-avx2,libcrux-avx2) 00:55:37 load 1.00 1.12 1.18
 # prof: secs=20 freq=1000
 # cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
@@ -23,18 +23,18 @@ PROF	87	ours	verify	20017 samples	72960 calls	274.4 us/call	$HOME/rx/scratch/ben
 # steal jiffies: 0 of 19426245
 # measured core clock: 3.41 GHz (dependent add chain)
 # avx2: true
-PROF	65	ours	sign-det	20015 samples	50432 calls	396.9 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/ours.65.sign-det.folded
-PROF	65	libcrux-avx2	sign-det	20004 samples	120320 calls	166.3 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/libcrux-avx2.65.sign-det.folded
-PROF	65	mldsa-native-avx2	sign-det	20006 samples	194560 calls	102.8 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/mldsa-native-avx2.65.sign-det.folded
-PROF	65	ours	verify	20021 samples	169728 calls	118.0 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/ours.65.verify.folded
-PROF	65	libcrux-avx2	verify	20014 samples	293376 calls	68.2 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/libcrux-avx2.65.verify.folded
-PROF	65	mldsa-native-avx2	verify	20007 samples	546560 calls	36.6 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/mldsa-native-avx2.65.verify.folded
-PROF	87	ours	sign-det	20023 samples	39424 calls	507.9 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/ours.87.sign-det.folded
-PROF	87	libcrux-avx2	sign-det	20030 samples	89856 calls	222.9 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/libcrux-avx2.87.sign-det.folded
-PROF	87	mldsa-native-avx2	sign-det	20029 samples	162560 calls	123.2 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/mldsa-native-avx2.87.sign-det.folded
-PROF	87	ours	verify	20022 samples	101888 calls	196.5 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/ours.87.verify.folded
-PROF	87	libcrux-avx2	verify	20008 samples	180992 calls	110.6 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/libcrux-avx2.87.verify.folded
-PROF	87	mldsa-native-avx2	verify	20012 samples	359680 calls	55.6 us/call	$HOME/rx/scratch/bench-20261106/profile-nc/avx2/mldsa-native-avx2.87.verify.folded
+PROF	65	ours	sign-det	20015 samples	50432 calls	396.9 us/call	ours.65.sign-det.folded
+PROF	65	libcrux-avx2	sign-det	20004 samples	120320 calls	166.3 us/call	libcrux-avx2.65.sign-det.folded
+PROF	65	mldsa-native-avx2	sign-det	20006 samples	194560 calls	102.8 us/call	mldsa-native-avx2.65.sign-det.folded
+PROF	65	ours	verify	20021 samples	169728 calls	118.0 us/call	ours.65.verify.folded
+PROF	65	libcrux-avx2	verify	20014 samples	293376 calls	68.2 us/call	libcrux-avx2.65.verify.folded
+PROF	65	mldsa-native-avx2	verify	20007 samples	546560 calls	36.6 us/call	mldsa-native-avx2.65.verify.folded
+PROF	87	ours	sign-det	20023 samples	39424 calls	507.9 us/call	ours.87.sign-det.folded
+PROF	87	libcrux-avx2	sign-det	20030 samples	89856 calls	222.9 us/call	libcrux-avx2.87.sign-det.folded
+PROF	87	mldsa-native-avx2	sign-det	20029 samples	162560 calls	123.2 us/call	mldsa-native-avx2.87.sign-det.folded
+PROF	87	ours	verify	20022 samples	101888 calls	196.5 us/call	ours.87.verify.folded
+PROF	87	libcrux-avx2	verify	20008 samples	180992 calls	110.6 us/call	libcrux-avx2.87.verify.folded
+PROF	87	mldsa-native-avx2	verify	20012 samples	359680 calls	55.6 us/call	mldsa-native-avx2.87.verify.folded
 
 ML-DSA-65 sign-det (share of samples)
 | profile | Keccak + sponge + parsing | of which Keccak-f | NTT and NTT^-1 | pointwise, add, sub | rounding, hints, norms | encoding | copies, other |
