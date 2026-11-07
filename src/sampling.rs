@@ -86,31 +86,46 @@ pub fn expand_a<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256];
     a
 }
 
-/// Byte `p` (`p < 168`) of the rate part of state `i` of a 4-way Keccak state, as the scalar sponge reads it
-/// (`squeeze`): lane `p / 8`, shifted right by `8 * (p % 8)` bits.
+/// The 168 rate bytes of state `i` of a 4-way Keccak state, as the scalar sponge reads them (`squeeze`): byte `p` is lane
+/// `p / 8` shifted right by `8 * (p % 8)` bits. Requires `i < 4`.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-fn lane_byte_x4(st: &[[u64; 4]; 25], i: usize, p: usize) -> u8 {
-    (st[p / 8][i] >> (8 * (p % 8))) as u8
+fn rate_bytes_x4(st: &[[u64; 4]; 25], i: usize) -> [u8; 168] {
+    let mut buf = [0u8; 168];
+    let mut k = 0;
+    while k < 21 {
+        let w = st[k][i];
+        let mut b = 0;
+        while b < 8 {
+            buf[8 * k + b] = (w >> (8 * b)) as u8;
+            b += 1;
+        }
+        k += 1;
+    }
+    buf
 }
 
-/// Algorithm 30's loop on one 168-byte SHAKE128 block of state `i` of a 4-way state: the block is 56 whole
-/// three-byte candidates (168 = 56 · 3), so none straddles a block boundary. Every candidate is one step of the
-/// byte-wise sampler `rej_ntt_poly`: once `j = 256` coefficients are accepted the remaining candidates are ignored.
-/// Returns the new number of accepted coefficients. Requires nothing: `j ≤ 256` on entry and exit.
+/// The 23-bit value `z` of CoeffFromThreeBytes (Algorithm 14) without the `z < q` test, which the branchless parse
+/// below does separately.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-fn rej_ntt_block_x4(st: &[[u64; 4]; 25], i: usize, a: &mut [u32; 256], j: usize) -> usize {
+fn three_bytes_value(b0: u8, b1: u8, b2: u8) -> u32 {
+    let b2p = (b2 & 127) as u32;
+    (b2p << 16) | ((b1 as u32) << 8) | (b0 as u32)
+}
+
+/// Algorithm 30's loop on one 168-byte SHAKE128 block: the block is 56 whole three-byte candidates (168 = 56 · 3), so
+/// none straddles a block boundary. Branchless: every candidate `z` is written to `a[j]` and `j` advances only when
+/// `z < q`, so a rejected candidate's word is overwritten by the next one. All 56 candidates are parsed even if `j`
+/// reaches 256 inside the block; `a` has 56 words of slack past the 256 coefficients for that, and the words from index
+/// `min(j, 256)` on are unspecified (the caller keeps only the first 256 words, and only blocks entered with `j < 256`
+/// are parsed). Returns the new `j`. Requires `j < 256` (so every write index is at most 255 + 55 = 310).
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn rej_ntt_block_x4(buf: &[u8; 168], a: &mut [u32; 312], j: usize) -> usize {
     let mut j = j;
     let mut t = 0;
     while t < 56 {
-        if j < 256 {
-            let b0 = lane_byte_x4(st, i, 3 * t);
-            let b1 = lane_byte_x4(st, i, 3 * t + 1);
-            let b2 = lane_byte_x4(st, i, 3 * t + 2);
-            if let Some(x) = coeff_from_three_bytes(b0, b1, b2) {
-                a[j] = x;
-                j += 1;
-            }
-        }
+        let z = three_bytes_value(buf[3 * t], buf[3 * t + 1], buf[3 * t + 2]);
+        a[j] = z;
+        j += (z < Q) as usize;
         t += 1;
     }
     j
@@ -144,20 +159,45 @@ fn init_state_x4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u64; 4]; 25] {
     st
 }
 
+/// One lane's step of the 4-way sampler: parses the lane's block into its 312-word scratch while it still needs
+/// coefficients (`j < 256`), and does nothing once it has 256.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn rej_ntt_lane_x4(st: &[[u64; 4]; 25], i: usize, a: &mut [u32; 312], j: usize) -> usize {
+    if j < 256 {
+        let buf = rate_bytes_x4(st, i);
+        rej_ntt_block_x4(&buf, a, j)
+    } else {
+        j
+    }
+}
+
+/// The first 256 words of a lane's 312-word scratch.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn first_256(a: &[u32; 312]) -> [u32; 256] {
+    let mut r = [0u32; 256];
+    let mut k = 0;
+    while k < 256 {
+        r[k] = a[k];
+        k += 1;
+    }
+    r
+}
+
 /// Algorithm 30 RejNTTPoly on four seeds at once: the polynomial for the seeds `ρ ‖ s[i] ‖ r[i]`, `i < 4`.
-/// The four SHAKE128 streams are permuted together (`keccak_f1600_x4`); candidates are parsed per state in plain
-/// Rust, block by block. State `i` stops contributing once it has accepted 256 coefficients and the loop ends when
-/// all four have. Diverges exactly when one of the four unbounded samplers does (as `rej_ntt_poly` does).
+/// The four SHAKE128 streams are permuted together (`keccak_f1600_x4`); each state's block is then stored as bytes and
+/// parsed without branches (`rej_ntt_block_x4`), block by block. State `i` stops contributing once it has accepted 256
+/// coefficients and the loop ends when all four have. Diverges exactly when one of the four unbounded samplers does (as
+/// `rej_ntt_poly` does).
 ///
 /// The result for seed `i` is `rej_ntt_poly(ρ ‖ s[i] ‖ r[i])` (proved equal for the `Shim4` instantiation,
 /// `Proofs/Sample4.lean`).
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn rej_ntt_poly_x4<X: Lanes4>(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
     let mut st = init_state_x4(rho, s, r);
-    let mut p0 = [0u32; 256];
-    let mut p1 = [0u32; 256];
-    let mut p2 = [0u32; 256];
-    let mut p3 = [0u32; 256];
+    let mut p0 = [0u32; 312];
+    let mut p1 = [0u32; 312];
+    let mut p2 = [0u32; 312];
+    let mut p3 = [0u32; 312];
     let mut j0 = 0;
     let mut j1 = 0;
     let mut j2 = 0;
@@ -166,13 +206,13 @@ pub fn rej_ntt_poly_x4<X: Lanes4>(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u
     let mut more = true;
     while more {
         keccak_f1600_x4::<X>(&mut st);
-        j0 = rej_ntt_block_x4(&st, 0, &mut p0, j0);
-        j1 = rej_ntt_block_x4(&st, 1, &mut p1, j1);
-        j2 = rej_ntt_block_x4(&st, 2, &mut p2, j2);
-        j3 = rej_ntt_block_x4(&st, 3, &mut p3, j3);
+        j0 = rej_ntt_lane_x4(&st, 0, &mut p0, j0);
+        j1 = rej_ntt_lane_x4(&st, 1, &mut p1, j1);
+        j2 = rej_ntt_lane_x4(&st, 2, &mut p2, j2);
+        j3 = rej_ntt_lane_x4(&st, 3, &mut p3, j3);
         more = j0 < 256 || j1 < 256 || j2 < 256 || j3 < 256;
     }
-    [p0, p1, p2, p3]
+    [first_256(&p0), first_256(&p1), first_256(&p2), first_256(&p3)]
 }
 
 /// The matrix entry (flattened `r * L + s`) that lane `l` of the group starting at `first` computes: `first + l`,

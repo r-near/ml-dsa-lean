@@ -1,5 +1,6 @@
 import Proofs.Keccak4
 import Proofs.PartialSample
+import Proofs.Sample4Block
 
 /-!
 # The 4-way RejNTTPoly / ExpandA sampler (scratch)
@@ -12,23 +13,6 @@ set_option maxRecDepth 8192
 namespace Proofs
 open Impl
 open SampleA
-
-@[step]
-theorem lane_byte_x4_spec (st : St4) (i p : Usize) (hi : i.val < 4) (hp : p.val < 168) :
-    sampling.lane_byte_x4 st i p ⦃ b => UInt8.ofNat b.val = KM.sb (pj st i.val) p.val ⦄ := by
-  unfold sampling.lane_byte_x4
-  step*
-  have hm : p.val % 8 < 8 := Nat.mod_lt _ (by omega)
-  have h := read_byte _ i5 i4 (UScalar.cast .U8 i5) (p.val % 8) hm (by omega) i5_post1 rfl
-  rw [h]
-  unfold KM.sb
-  have hk : p.val / 8 < 25 := by omega
-  rw [pj_getElem _ _ _ hk]
-  have e1 := ln_of_get _ i.val i2 _ i2_post2
-  have e2 : at4 st i1.val = _ := (at4_idx st i1 _ (by omega) a_post2).symm
-  rw [i1_post] at e2
-  rw [← e2] at e1
-  rw [e1]
 
 /-- The padded message block: the state after absorbing the 34-byte message `M` and the SHAKE padding, before the
 first permutation. -/
@@ -273,105 +257,6 @@ theorem init_state_x4_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) :
 
 
 
-/-! ## One block of one lane: `rej_ntt_block_x4` -/
-
-/-- Lane invariant: the coefficient array, its Z_q image and the fill count are the pure fold's state after `n`
-candidates of the stream `T`. -/
-def LaneInv (T : List UInt8) (n : Nat) (a : Array U32 256#usize) (j : Usize) : Prop :=
-  Canonical a ∧ toZq a = (stA T n).1 ∧ j.val = (stA T n).2
-
-theorem getE_of_opt (T : List UInt8) (k : Nat) (v : UInt8) (h : T[k]? = some v) : T[k]! = v := by
-  obtain ⟨hk, rfl⟩ := List.getElem?_eq_some_iff.mp h
-  rw [getElem!_pos T k hk]
-
-theorem tripleAt_get (T : List UInt8) (n c : Nat) (hc : c < 3) (h : 3 * n + c < T.length) :
-    (tripleAt T n)[c]! = T[3 * n + c]! := by
-  have h1 : c < (tripleAt T n).length := by
-    simp only [tripleAt, List.length_take, List.length_drop]; omega
-  rw [getElem!_pos (tripleAt T n) c h1, getElem!_pos T (3 * n + c) h]
-  simp [tripleAt, List.getElem_take, List.getElem_drop]
-
-theorem rej_ntt_block_x4_spec (T : List UInt8) (st : St4) (i : Usize) (b : Nat) (hi : i.val < 4)
-    (hT : ∀ p < 168, T[168 * b + p]? = some (KM.sb (pj st i.val) p))
-    (a : Array U32 256#usize) (j : Usize) (h : LaneInv T (56 * b) a j) :
-    sampling.rej_ntt_block_x4 st i a j ⦃ r => LaneInv T (56 * (b + 1)) r.2 r.1 ⦄ := by
-  unfold sampling.rej_ntt_block_x4 sampling.rej_ntt_block_x4_loop
-  apply loop.spec_decr_nat
-    (fun (p : Array U32 256#usize × Usize × Usize) => 56 - p.2.2.val)
-    (fun (p : Array U32 256#usize × Usize × Usize) =>
-      p.2.2.val ≤ 56 ∧ LaneInv T (56 * b + p.2.2.val) p.1 p.2.1)
-  · rintro ⟨a, j, t⟩ ⟨ht, hc, ha, hj⟩
-    dsimp only at ht hc ha hj
-    simp only [sampling.rej_ntt_block_x4_loop.body]
-    split
-    · rename_i htlt
-      have ht56 : t.val < 56 := by scalar_tac
-      have hP : ∀ c : Nat, c < 3 → 168 * b + 3 * t.val + c < T.length := by
-        intro c hc3
-        have := hT (3 * t.val + c) (by omega)
-        have := (List.getElem?_eq_some_iff.mp this).1
-        omega
-      have hdiv : ∀ c : Nat, c < 3 → 3 * (56 * b + t.val) + c = 168 * b + (3 * t.val + c) := by
-        intro c hc3; omega
-      split
-      · rename_i hjlt
-        have hj256 : j.val < 256 := by scalar_tac
-        have hlt' : (stA T (56 * b + t.val)).2 < 256 := by omega
-        step*
-        rename_i i1 _m1 h1 b0 _m2 hb0 i2 _m3 h2 b1 _m4 hb1 i3 _m5 h3 b2 _m6 hb2
-        have key : ∀ (c : Nat) (hc3 : c < 3) (q : Usize) (bq : U8), q.val = 3 * t.val + c →
-            UInt8.ofNat bq.val = KM.sb (pj st i.val) q.val → (tripleAt T (56 * b + t.val))[c]! = UInt8.ofNat bq.val := by
-          intro c hc3 q bq hq hbq
-          rw [tripleAt_get T _ c hc3 (by have := hP c hc3; omega), hdiv c hc3, hbq]
-          exact getE_of_opt T _ _ (by rw [hq] at *; exact hT (3 * t.val + c) (by omega))
-        have k0 := key 0 (by omega) i1 b0 (by omega) hb0
-        have k1 := key 1 (by omega) i2 b1 (by omega) hb1
-        have k2 := key 2 (by omega) i3 b2 (by omega) hb2
-        have hx : x.map (fun x => x.val) = (triAt T (56 * b + t.val)).map ZMod.val := by
-          rw [x_post]; unfold triAt; rw [k0, k1, k2]
-        have hn1 : 56 * b + (t.val + 1) = (56 * b + t.val) + 1 := by omega
-        rcases hxo : x with _ | xv
-        · have htri : triAt T (56 * b + t.val) = none := by
-            rw [hxo] at hx; simpa using hx.symm
-          have hst := stA_succ_none _ _ htri hlt'
-          simp only []
-          step*
-          refine ⟨by omega, ⟨hc, ?_, ?_⟩, by omega⟩
-          · rw [t1_post, hn1, hst]; exact ha
-          · rw [t1_post, hn1, hst]; exact hj
-        · obtain ⟨v, htri, hxv⟩ : ∃ v, triAt T (56 * b + t.val) = some v ∧ xv.val = v.val := by
-            rw [hxo] at hx
-            revert hx
-            rcases hv : triAt T (56 * b + t.val) with _ | v
-            · simp
-            · simp only [Option.map_some, Option.some.injEq]
-              intro h; exact ⟨v, rfl, h⟩
-          have hst := stA_succ_some _ _ v htri hlt'
-          have hxq : xv.val < Spec.q := by rw [hxv]; exact ZMod.val_lt v
-          have hxz : ((xv.val : Nat) : Zq) = v := by rw [hxv]; exact ZMod.natCast_zmod_val v
-          simp only []
-          step*
-          rename_i a2 _m1 ha2 _m2
-          refine ⟨by omega, ⟨?_, ?_, ?_⟩, by omega⟩
-          · rw [ha2]; exact canonical_set a j xv hc hxq
-          · rw [t1_post, hn1, hst, ha2, toZq_set a j xv hj256, ha, hj, hxz]
-          · rw [t1_post, hn1, hst, x_post, hj]
-      · rename_i hjge
-        have hj256 : 256 ≤ j.val := by scalar_tac
-        have hst := stA_stable T (56 * b + t.val) (56 * b + t.val + 1) (by omega) (by omega)
-        step*
-        refine ⟨by omega, ⟨hc, ?_, ?_⟩, by omega⟩
-        · rw [t1_post, show 56 * b + (t.val + 1) = 56 * b + t.val + 1 by omega, hst]; exact ha
-        · rw [t1_post, show 56 * b + (t.val + 1) = 56 * b + t.val + 1 by omega, hst]; exact hj
-    · rename_i htge
-      have ht56 : t.val = 56 := by scalar_tac
-      simp only [WP.spec_ok]
-      rw [ht56] at ha hj
-      refine ⟨hc, ?_, hj⟩
-      rw [show 56 * (b + 1) = 56 * b + 56 by ring]; exact ha
-  · exact ⟨by simp, h.1, by simpa using h.2.1, by simpa using h.2.2⟩
-
-
 /-! ## The four-lane sampler loop -/
 
 /-- The 34-byte seed `ρ ‖ s[i] ‖ r[i]` of lane `i`. -/
@@ -395,7 +280,7 @@ theorem shake_stream (M : List UInt8) (hM : M.length = 34) (N b p : Nat) (hp : p
 
 /-- The part of the loop invariant after `b` permutations that does not mention `more`. -/
 def GCore (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N b : Nat) (st : St4)
-    (p0 p1 p2 p3 : Array U32 256#usize) (j0 j1 j2 j3 : Usize) : Prop :=
+    (p0 p1 p2 p3 : Array U32 312#usize) (j0 j1 j2 j3 : Usize) : Prop :=
   (∀ i, i < 4 → pj st i = Spec.KeccakF1600^[b] (padSt (Mi rho s r i))) ∧
   LaneInv (Tn rho s r N 0) (56 * b) p0 j0 ∧ LaneInv (Tn rho s r N 1) (56 * b) p1 j1 ∧
   LaneInv (Tn rho s r N 2) (56 * b) p2 j2 ∧ LaneInv (Tn rho s r N 3) (56 * b) p3 j3
@@ -404,7 +289,7 @@ def MoreIff (j0 j1 j2 j3 : Usize) (more : Bool) : Prop :=
   more = true ↔ (j0.val < 256 ∨ j1.val < 256 ∨ j2.val < 256 ∨ j3.val < 256)
 
 def GInv (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N b : Nat)
-    (x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Usize × Usize ×
+    (x : St4 × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Usize × Usize ×
       Usize × Usize × Bool) : Prop :=
   GCore rho s r N b x.1 x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2.1 x.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.1
     x.2.2.2.2.2.2.2.2.1 ∧ MoreIff x.2.2.2.2.2.1 x.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.2.1
@@ -419,7 +304,7 @@ theorem keccak_step_lanes (rho : Array U8 32#usize) (s r : Array U8 4#usize) (b 
 
 
 theorem rej_x4_body_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N b : Nat)
-    (st : St4) (p0 p1 p2 p3 : Array U32 256#usize) (j0 j1 j2 j3 : Usize) (more : Bool)
+    (st : St4) (p0 p1 p2 p3 : Array U32 312#usize) (j0 j1 j2 j3 : Usize) (more : Bool)
     (hb : more = true → 56 * (b + 1) ≤ N)
     (h : GInv rho s r N b (st, p0, p1, p2, p3, j0, j1, j2, j3, more)) :
     sampling.rej_ntt_poly_x4_loop.body Sh4 st p0 p1 p2 p3 j0 j1 j2 j3 more ⦃ c =>
@@ -437,10 +322,10 @@ theorem rej_x4_body_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N b
       rw [hst1' i hi]
       have hb' := hb hm
       exact shake_stream _ (Mi_length rho s r i) N b p hp (by omega)
-    have b0 := rej_ntt_block_x4_spec (Tn rho s r N 0) st1 0#usize b (by simp) (hT 0 (by omega)) p0 j0 hl0
-    have b1 := rej_ntt_block_x4_spec (Tn rho s r N 1) st1 1#usize b (by simp) (hT 1 (by omega)) p1 j1 hl1
-    have b2 := rej_ntt_block_x4_spec (Tn rho s r N 2) st1 2#usize b (by simp) (hT 2 (by omega)) p2 j2 hl2
-    have b3 := rej_ntt_block_x4_spec (Tn rho s r N 3) st1 3#usize b (by simp) (hT 3 (by omega)) p3 j3 hl3
+    have b0 := rej_ntt_lane_x4_spec (Tn rho s r N 0) st1 0#usize b (by simp) (hT 0 (by omega)) p0 j0 hl0
+    have b1 := rej_ntt_lane_x4_spec (Tn rho s r N 1) st1 1#usize b (by simp) (hT 1 (by omega)) p1 j1 hl1
+    have b2 := rej_ntt_lane_x4_spec (Tn rho s r N 2) st1 2#usize b (by simp) (hT 2 (by omega)) p2 j2 hl2
+    have b3 := rej_ntt_lane_x4_spec (Tn rho s r N 3) st1 3#usize b (by simp) (hT 3 (by omega)) p3 j3 hl3
     step with b0
     step with b1
     step with b2
@@ -479,30 +364,20 @@ theorem rej_x4_body_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N b
     exact ⟨hmf, trivial⟩
 
 
-/-- What the sampler returns for one lane: the Z_q image is the pure fold's polynomial. -/
-def FinL (T : List UInt8) (n : Nat) (a : Array U32 256#usize) : Prop :=
-  Canonical a ∧ toZq a = (stA T n).1
-
-theorem lane_fin (T : List UInt8) (n m : Nat) (hnm : n ≤ m) (a : Array U32 256#usize) (j : Usize)
-    (h : LaneInv T n a j) (hj : 256 ≤ j.val) : FinL T m a := by
-  obtain ⟨hc, ha, hj'⟩ := h
-  refine ⟨hc, ?_⟩
-  rw [stA_stable T n m (by omega) hnm, ha]
-
-def runLoop (x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
+def runLoop (x : St4 × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize ×
     Usize × Usize × Usize × Usize × Bool) :
-    RustM (Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize) :=
+    RustM (Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize) :=
   sampling.rej_ntt_poly_x4_loop Sh4 x.1 x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2.1 x.2.2.2.2.2.2.1
     x.2.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.2.2
 
 def FinAll (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N : Nat)
-    (q : Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize) : Prop :=
+    (q : Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize) : Prop :=
   FinL (Tn rho s r N 0) N q.1 ∧ FinL (Tn rho s r N 1) N q.2.1 ∧ FinL (Tn rho s r N 2) N q.2.2.1 ∧
     FinL (Tn rho s r N 3) N q.2.2.2
 
 theorem more_lt (rho : Array U8 32#usize) (s r : Array U8 4#usize) (G b : Nat)
     (hfin : ∀ i, i < 4 → 256 ≤ (stA (Tn rho s r (56 * G) i) (56 * G)).2) (hbG : b ≤ G)
-    (st : St4) (p0 p1 p2 p3 : Array U32 256#usize) (j0 j1 j2 j3 : Usize) (more : Bool)
+    (st : St4) (p0 p1 p2 p3 : Array U32 312#usize) (j0 j1 j2 j3 : Usize) (more : Bool)
     (h : GInv rho s r (56 * G) b (st, p0, p1, p2, p3, j0, j1, j2, j3, more)) (hm : more = true) : b < G := by
   by_contra hcon
   have hbe : b = G := by omega
@@ -514,15 +389,15 @@ theorem more_lt (rho : Array U8 32#usize) (s r : Array U8 4#usize) (G b : Nat)
   have f1 := hfin 1 (by omega)
   have f2 := hfin 2 (by omega)
   have f3 := hfin 3 (by omega)
-  have e0 : j0.val = (stA (Tn rho s r (56 * b) 0) (56 * b)).2 := hl0.2.2
-  have e1 : j1.val = (stA (Tn rho s r (56 * b) 1) (56 * b)).2 := hl1.2.2
-  have e2 : j2.val = (stA (Tn rho s r (56 * b) 2) (56 * b)).2 := hl2.2.2
-  have e3 : j3.val = (stA (Tn rho s r (56 * b) 3) (56 * b)).2 := hl3.2.2
+  have e0 : min 256 j0.val = (stA (Tn rho s r (56 * b) 0) (56 * b)).2 := hl0.2.1
+  have e1 : min 256 j1.val = (stA (Tn rho s r (56 * b) 1) (56 * b)).2 := hl1.2.1
+  have e2 : min 256 j2.val = (stA (Tn rho s r (56 * b) 2) (56 * b)).2 := hl2.2.1
+  have e3 : min 256 j3.val = (stA (Tn rho s r (56 * b) 3) (56 * b)).2 := hl3.2.1
   rcases hany with h0 | h0 | h0 | h0 <;> omega
 
 theorem rej_x4_loop_step (rho : Array U8 32#usize) (s r : Array U8 4#usize) (G b : Nat)
     (hfin : ∀ i, i < 4 → 256 ≤ (stA (Tn rho s r (56 * G) i) (56 * G)).2) (hbG : b ≤ G)
-    (x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
+    (x : St4 × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize ×
       Usize × Usize × Usize × Usize × Bool)
     (h : GInv rho s r (56 * G) b x)
     (IH : ∀ x', b + 1 ≤ G → GInv rho s r (56 * G) (b + 1) x' → runLoop x' ⦃ q => FinAll rho s r (56 * G) q ⦄) :
@@ -567,13 +442,15 @@ theorem rej_x4_loop_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (G :
 
 theorem init_GInv (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N : Nat) (st : St4)
     (hst : ∀ i, i < 4 → pj st i = padSt (bytesA rho ++ [UInt8.ofNat (s.val[i]!).val, UInt8.ofNat (r.val[i]!).val])) :
-    GInv rho s r N 0 (st, Array.repeat 256#usize 0#u32, Array.repeat 256#usize 0#u32, Array.repeat 256#usize 0#u32,
-      Array.repeat 256#usize 0#u32, 0#usize, 0#usize, 0#usize, 0#usize, true) := by
-  have hl : ∀ T : List UInt8, LaneInv T (56 * 0) (Array.repeat 256#usize 0#u32) 0#usize := by
+    GInv rho s r N 0 (st, Array.repeat 312#usize 0#u32, Array.repeat 312#usize 0#u32, Array.repeat 312#usize 0#u32,
+      Array.repeat 312#usize 0#u32, 0#usize, 0#usize, 0#usize, 0#usize, true) := by
+  have hl : ∀ T : List UInt8, LaneInv T (56 * 0) (Array.repeat 312#usize 0#u32) 0#usize := by
     intro T
-    refine ⟨canonical_repeat_zero, ?_, ?_⟩
-    · rw [toZq_repeat_zero]; rfl
-    · show (0#usize).val = 0; rfl
+    have hj0 : (0#usize).val = 0 := rfl
+    have h0 : stA T (56 * 0) = (Poly.zero, 0) := by simp [stA]
+    refine ⟨by rw [hj0]; omega, ?_, ?_⟩
+    · rw [hj0, h0]; rfl
+    · rw [h0]; intro k hk; exact absurd hk (by simp)
   refine ⟨⟨fun i hi => ?_, hl _, hl _, hl _, hl _⟩, ?_⟩
   · rw [hst i hi]; rfl
   · show true = true ↔ _
@@ -597,19 +474,19 @@ theorem rej_ntt_poly_x4_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) 
   unfold runLoop at hloop
   dsimp only at hloop
   step with hloop
-  obtain ⟨⟨c0, e0⟩, ⟨c1, e1⟩, ⟨c2, e2⟩, ⟨c3, e3⟩⟩ := p01_post
+  step*
   intro i hi hi4
   interval_cases i
-  · exact ⟨c0, e0.trans (hfinP 0 (by omega)).2⟩
-  · exact ⟨c1, e1.trans (hfinP 1 (by omega)).2⟩
-  · exact ⟨c2, e2.trans (hfinP 2 (by omega)).2⟩
-  · exact ⟨c3, e3.trans (hfinP 3 (by omega)).2⟩
+  · exact repr_of_first_256 _ _ _ a_post (finP_of _ _ _ _ p01_post.1 (hfinP 0 (by omega)).2)
+  · exact repr_of_first_256 _ _ _ a1_post (finP_of _ _ _ _ p01_post.2.1 (hfinP 1 (by omega)).2)
+  · exact repr_of_first_256 _ _ _ a2_post (finP_of _ _ _ _ p01_post.2.2.1 (hfinP 2 (by omega)).2)
+  · exact repr_of_first_256 _ _ _ a3_post (finP_of _ _ _ _ p01_post.2.2.2 (hfinP 3 (by omega)).2)
 
 
 /-! ## Partial correctness of the 4-lane sampler -/
 
 theorem LaneInv_fuel (rho : Array U8 32#usize) (s r : Array U8 4#usize) (i b N N' : Nat) (hb : 56 * b ≤ N)
-    (hN : N ≤ N') (a : Array U32 256#usize) (j : Usize) (h : LaneInv (Tn rho s r N i) (56 * b) a j) :
+    (hN : N ≤ N') (a : Array U32 312#usize) (j : Usize) (h : LaneInv (Tn rho s r N i) (56 * b) a j) :
     LaneInv (Tn rho s r N' i) (56 * b) a j := by
   obtain ⟨hc, ha, hj⟩ := h
   have := stA_shake_mono (Mi rho s r i) (56 * b) N N' hb hN
@@ -618,7 +495,7 @@ theorem LaneInv_fuel (rho : Array U8 32#usize) (s r : Array U8 4#usize) (i b N N
   · unfold Tn; rw [this]; exact hj
 
 theorem GInv_fuel (rho : Array U8 32#usize) (s r : Array U8 4#usize) (b N N' : Nat) (hb : 56 * b ≤ N)
-    (hN : N ≤ N') (x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
+    (hN : N ≤ N') (x : St4 × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize ×
       Usize × Usize × Usize × Usize × Bool) (h : GInv rho s r N b x) : GInv rho s r N' b x := by
   obtain ⟨⟨hst, hl0, hl1, hl2, hl3⟩, hm⟩ := h
   exact ⟨⟨hst, LaneInv_fuel rho s r 0 b N N' hb hN _ _ hl0, LaneInv_fuel rho s r 1 b N N' hb hN _ _ hl1,
@@ -626,7 +503,7 @@ theorem GInv_fuel (rho : Array U8 32#usize) (s r : Array U8 4#usize) (b N N' : N
 
 theorem GInv_fuel' (rho : Array U8 32#usize) (s r : Array U8 4#usize) (b N N' : Nat) (hb : 56 * b ≤ N)
     (hN : N ≤ N')
-    (x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
+    (x : St4 × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize ×
       Usize × Usize × Usize × Usize × Bool) (h : GInv rho s r N' b x) : GInv rho s r N b x := by
   obtain ⟨⟨hst, hl0, hl1, hl2, hl3⟩, hm⟩ := h
   have back : ∀ i a j, LaneInv (Tn rho s r N' i) (56 * b) a j → LaneInv (Tn rho s r N i) (56 * b) a j := by
@@ -639,14 +516,14 @@ theorem GInv_fuel' (rho : Array U8 32#usize) (s r : Array U8 4#usize) (b N N' : 
   exact ⟨⟨hst, back 0 _ _ hl0, back 1 _ _ hl1, back 2 _ _ hl2, back 3 _ _ hl3⟩, hm⟩
 
 theorem rej_x4_loop_partial (rho : Array U8 32#usize) (s r : Array U8 4#usize)
-    (x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
+    (x : St4 × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize ×
       Usize × Usize × Usize × Usize × Bool) (hx : ∃ b, GInv rho s r (56 * b) b x) :
     runLoop x ⦃ q => ∃ (F : Nat) (P : Nat → Poly),
       (∀ i, i < 4 → Spec.RejNTTPoly F (Mi rho s r i) = some (P i)) ∧
-      Repr q.1 (P 0) ∧ Repr q.2.1 (P 1) ∧ Repr q.2.2.1 (P 2) ∧ Repr q.2.2.2 (P 3) ⦄div := by
+      FinP (P 0) q.1 ∧ FinP (P 1) q.2.1 ∧ FinP (P 2) q.2.2.1 ∧ FinP (P 3) q.2.2.2 ⦄div := by
   unfold runLoop sampling.rej_ntt_poly_x4_loop
-  refine loop.dspec_inv _ (fun x : St4 × Array U32 256#usize × Array U32 256#usize × Array U32 256#usize ×
-      Array U32 256#usize × Usize × Usize × Usize × Usize × Bool => ∃ b, GInv rho s r (56 * b) b x) ?_ ?_ x hx
+  refine loop.dspec_inv _ (fun x : St4 × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize ×
+      Array U32 312#usize × Usize × Usize × Usize × Usize × Bool => ∃ b, GInv rho s r (56 * b) b x) ?_ ?_ x hx
   · rintro ⟨st, p0, p1, p2, p3, j0, j1, j2, j3, more⟩ ⟨b, hI⟩
     have hI' := GInv_fuel rho s r b (56 * b) (56 * (b + 1)) le_rfl (by omega) _ hI
     have hbody := rej_x4_body_spec rho s r (56 * (b + 1)) b st p0 p1 p2 p3 j0 j1 j2 j3 more (fun _ => le_rfl) hI'
@@ -658,10 +535,10 @@ theorem rej_x4_loop_partial (rho : Array U8 32#usize) (s r : Array U8 4#usize)
       have hn : ¬ (j0.val < 256 ∨ j1.val < 256 ∨ j2.val < 256 ∨ j3.val < 256) := fun hh => by
         have := hmore.mpr hh; simp [hmf] at this
       simp only [not_or, not_lt] at hn
-      have e0 : j0.val = (stA (Tn rho s r (56 * b) 0) (56 * b)).2 := hl0.2.2
-      have e1 : j1.val = (stA (Tn rho s r (56 * b) 1) (56 * b)).2 := hl1.2.2
-      have e2 : j2.val = (stA (Tn rho s r (56 * b) 2) (56 * b)).2 := hl2.2.2
-      have e3 : j3.val = (stA (Tn rho s r (56 * b) 3) (56 * b)).2 := hl3.2.2
+      have e0 : min 256 j0.val = (stA (Tn rho s r (56 * b) 0) (56 * b)).2 := hl0.2.1
+      have e1 : min 256 j1.val = (stA (Tn rho s r (56 * b) 1) (56 * b)).2 := hl1.2.1
+      have e2 : min 256 j2.val = (stA (Tn rho s r (56 * b) 2) (56 * b)).2 := hl2.2.1
+      have e3 : min 256 j3.val = (stA (Tn rho s r (56 * b) 3) (56 * b)).2 := hl3.2.1
       have hfin : ∀ i, i < 4 → Spec.RejNTTPoly (56 * b) (Mi rho s r i) =
           some (stA (Tn rho s r (56 * b) i) (56 * b)).1 := by
         intro i hi
@@ -669,10 +546,10 @@ theorem rej_x4_loop_partial (rho : Array U8 32#usize) (s r : Array U8 4#usize)
         show 256 ≤ (stA (Tn rho s r (56 * b) i) (56 * b)).2
         interval_cases i <;> omega
       refine ⟨56 * b, fun i => (stA (Tn rho s r (56 * b) i) (56 * b)).1, hfin, ?_, ?_, ?_, ?_⟩
-      · exact ⟨hl0.1, hl0.2.1⟩
-      · exact ⟨hl1.1, hl1.2.1⟩
-      · exact ⟨hl2.1, hl2.2.1⟩
-      · exact ⟨hl3.1, hl3.2.1⟩
+      · exact lane_fin _ _ _ le_rfl _ _ hl0 hn.1
+      · exact lane_fin _ _ _ le_rfl _ _ hl1 hn.2.1
+      · exact lane_fin _ _ _ le_rfl _ _ hl2 hn.2.2.1
+      · exact lane_fin _ _ _ le_rfl _ _ hl3 hn.2.2.2
 
 theorem rej_ntt_poly_x4_partial (rho : Array U8 32#usize) (s r : Array U8 4#usize) :
     sampling.rej_ntt_poly_x4 Sh4 rho s r ⦃ q => ∃ (F : Nat) (P : Nat → Poly),
@@ -681,20 +558,20 @@ theorem rej_ntt_poly_x4_partial (rho : Array U8 32#usize) (s r : Array U8 4#usiz
   unfold sampling.rej_ntt_poly_x4
   step*
   have hloop := rej_x4_loop_partial rho s r
-    (st, Array.repeat 256#usize 0#u32, Array.repeat 256#usize 0#u32, Array.repeat 256#usize 0#u32,
-      Array.repeat 256#usize 0#u32, 0#usize, 0#usize, 0#usize, 0#usize, true)
+    (st, Array.repeat 312#usize 0#u32, Array.repeat 312#usize 0#u32, Array.repeat 312#usize 0#u32,
+      Array.repeat 312#usize 0#u32, 0#usize, 0#usize, 0#usize, 0#usize, true)
     ⟨0, init_GInv rho s r (56 * 0) st st_post⟩
   unfold runLoop at hloop
   dsimp only at hloop
   step with hloop
   obtain ⟨a0, a1, a2, a3⟩ := p21
-  refine (WP.dspec_ok _).2 ?_
+  step*
   refine ⟨p01, p11, p31, ?_⟩
   intro i hi hi4
   interval_cases i
-  · exact p01_post2
-  · exact p01_post3
-  · exact p01_post4
-  · exact p01_post5
+  · exact repr_of_first_256 _ _ _ a_post p01_post2
+  · exact repr_of_first_256 _ _ _ a1_post p01_post3
+  · exact repr_of_first_256 _ _ _ a2_post p01_post4
+  · exact repr_of_first_256 _ _ _ a3_post p01_post5
 
 end Proofs
