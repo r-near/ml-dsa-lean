@@ -385,4 +385,151 @@ theorem expand_a_into_x4_partial {K L : Usize} (rho : Array U8 32#usize) (hL : 0
   rw [hn'] at y_post
   exact ⟨_, _, y_post⟩
 
+
+/-! ## From the pointwise statement to `ReprMat` -/
+
+theorem flat_div (r s L : Nat) (hs : s < L) : (s + r * L) / L = r := by
+  rw [Nat.add_mul_div_right _ _ (by omega), Nat.div_eq_of_lt hs]; omega
+
+theorem flat_mod (r s L : Nat) (hs : s < L) : (s + r * L) % L = s := by
+  rw [Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt hs]
+
+theorem goodA_to_expandA {K L : Usize} (sp : Spec.Params) (hK : K.val = sp.k) (hL : L.val = sp.ℓ)
+    (rho : Array U8 32#usize) (F : Nat) (Pf : Nat → Poly) (y : Array (Array (Array U32 256#usize) L) K)
+    (h : GoodA rho (K.val * L.val) F Pf y (K.val * L.val)) :
+    ∃ A : Vector (Vector Poly sp.ℓ) sp.k, Spec.ExpandA sp F (bytesA rho) = some A ∧ ReprMat y A := by
+  have hent : ∀ r s, r < sp.k → s < sp.ℓ → s + r * L.val < K.val * L.val := by
+    intro r s hr hs
+    have : r * L.val + L.val ≤ K.val * L.val := by
+      have : (r + 1) * L.val ≤ K.val * L.val := Nat.mul_le_mul_right _ (by omega)
+      nlinarith
+    omega
+  have hall : ∀ r, r < sp.k → ∀ s, s < sp.ℓ → (Spec.RejNTTPoly F (pSeed (bytesA rho) r s)).isSome = true := by
+    intro r hr s hs
+    obtain ⟨h1, _⟩ := h (s + r * L.val) (hent r s hr hs) (hent r s hr hs)
+    rw [flat_div r s L.val (by omega), flat_mod r s L.val (by omega)] at h1
+    rw [h1]; rfl
+  obtain ⟨A, hA⟩ := Option.isSome_iff_exists.mp (expandA_isSome sp F (bytesA rho) hall)
+  refine ⟨A, hA, hK, fun i hi => ⟨hL, fun j hj => ?_⟩⟩
+  obtain ⟨h1, r1, c, h2, h3, h4⟩ := h (j + i * L.val) (hent i j hi hj) (hent i j hi hj)
+  rw [flat_div i j L.val (by omega), flat_mod i j L.val (by omega)] at h1
+  rw [flat_div i j L.val (by omega)] at h2
+  rw [flat_mod i j L.val (by omega)] at h3
+  have hent' := expandA_ent sp F (bytesA rho) A hA i hi j hj
+  rw [h1] at hent'
+  have hP : Pf (j + i * L.val) = (A[i]'hi)[j]'hj := Option.some.inj hent'
+  have hlen : i < y.val.length := by have := y.property; omega
+  have hr1 : r1 = y.val[i] := by
+    rw [List.getElem?_eq_getElem hlen] at h2
+    exact (Option.some.inj h2).symm
+  subst hr1
+  have hlen2 : j < (y.val[i]).val.length := by have := (y.val[i]).property; omega
+  rw [List.getElem?_eq_getElem hlen2] at h3
+  have hc : c = (y.val[i]).val[j] := (Option.some.inj h3).symm
+  rw [← hc, ← hP]
+  exact h4
+
+
+theorem expand_a_x4_partial (sp : Spec.Params) (K L : Usize) (hK : K.val = sp.k) (hL : L.val = sp.ℓ)
+    (hLpos : 0 < L.val) (hLs : L.val < 256) (hK256 : K.val < 256) (hKL : K.val * L.val ≤ 2048)
+    (rho : Array U8 32#usize) :
+    sampling.expand_a_x4 K L Sh4 rho ⦃ r => ∃ (A : Vector (Vector Poly sp.ℓ) sp.k) (F : Nat),
+      Spec.ExpandA sp F (bytesA rho) = some A ∧ ReprMat r A ⦄div := by
+  unfold sampling.expand_a_x4
+  step*
+  have := expand_a_into_x4_partial (K := K) (L := L) rho hLpos hLs hK256 hKL
+    (Array.repeat K (Array.repeat L (Array.repeat 256#usize 0#u32)))
+  step with this
+  obtain ⟨A, hA, hR⟩ := goodA_to_expandA sp hK hL rho _ _ _ r_post
+  exact ⟨A, _, hA, hR⟩
+
+
+/-! ## Termination of the group loop -/
+
+theorem x4_body_term {K L : Usize} (rho : Array U8 32#usize) (n : Usize)
+    (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) (hn : n.val ≤ 2048)
+    (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
+    (F : Nat) (hF : ∀ e, e < n.val → ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P) :
+    sampling.expand_a_into_x4_loop.body Sh4 rho n a first ⦃ c =>
+      match c with
+      | .done _ => ¬ first.val < n.val
+      | .cont (_, first') => first.val < n.val ∧ first'.val = first.val + 4 ⦄ := by
+  unfold sampling.expand_a_into_x4_loop.body
+  split
+  · rename_i hlt
+    have hf : first.val < n.val := by scalar_tac
+    step*
+    have hlenA : a.val.length = K.val := a.property
+    have hn1 : 1 ≤ n.val := by omega
+    have he0 : e0.val < n.val := by rw [e0_post]; split_ifs <;> omega
+    have he1 : e1.val < n.val := by rw [e1_post]; split_ifs <;> omega
+    have he2 : e2.val < n.val := by rw [e2_post]; split_ifs <;> omega
+    have he3 : e3.val < n.val := by rw [e3_post]; split_ifs <;> omega
+    have hdiv : ∀ e : Nat, e < n.val → e / L.val < K.val := fun e he =>
+      Nat.div_lt_of_lt_mul (by rw [Nat.mul_comm]; omega)
+    have hmod : ∀ e : Nat, e % L.val < L.val := fun e => Nat.mod_lt _ hL
+    have hi8 : i8.val < K.val := by rw [i8_post]; exact hdiv _ he0
+    have hi10 : i10.val < K.val := by rw [i10_post]; exact hdiv _ he1
+    have hi12 : i12.val < K.val := by rw [i12_post]; exact hdiv _ he2
+    have hi14 : i14.val < K.val := by rw [i14_post]; exact hdiv _ he3
+    have hj0 : i.val < L.val := by rw [i_post]; exact hmod _
+    have hj1 : i2.val < L.val := by rw [i2_post]; exact hmod _
+    have hj2 : i4.val < L.val := by rw [i4_post]; exact hmod _
+    have hj3 : i6.val < L.val := by rw [i6_post]; exact hmod _
+    have hmod256 : ∀ e : Nat, e % L.val < 256 := fun e => lt_trans (hmod e) hLs
+    have hdiv256 : ∀ e : Nat, e < n.val → e / L.val < 256 := fun e he => lt_trans (hdiv e he) hK
+    have hs0 : Mi rho (Array.make 4#usize [i1, i3, i5, i7] (by simp)) (Array.make 4#usize [i9, i11, i13, i15] (by simp)) 0
+        = pSeed (bytesA rho) (e0.val / L.val) (e0.val % L.val) :=
+      seed_of_cast rho e0.val L.val i1 i9 i i8 i1_post i9_post i_post i8_post (by rw [i_post]; exact hmod256 _)
+        (by rw [i8_post]; exact hdiv256 _ he0)
+    have hs1 : Mi rho (Array.make 4#usize [i1, i3, i5, i7] (by simp)) (Array.make 4#usize [i9, i11, i13, i15] (by simp)) 1
+        = pSeed (bytesA rho) (e1.val / L.val) (e1.val % L.val) :=
+      seed_of_cast rho e1.val L.val i3 i11 i2 i10 i3_post i11_post i2_post i10_post (by rw [i2_post]; exact hmod256 _)
+        (by rw [i10_post]; exact hdiv256 _ he1)
+    have hs2 : Mi rho (Array.make 4#usize [i1, i3, i5, i7] (by simp)) (Array.make 4#usize [i9, i11, i13, i15] (by simp)) 2
+        = pSeed (bytesA rho) (e2.val / L.val) (e2.val % L.val) :=
+      seed_of_cast rho e2.val L.val i5 i13 i4 i12 i5_post i13_post i4_post i12_post (by rw [i4_post]; exact hmod256 _)
+        (by rw [i12_post]; exact hdiv256 _ he2)
+    have hs3 : Mi rho (Array.make 4#usize [i1, i3, i5, i7] (by simp)) (Array.make 4#usize [i9, i11, i13, i15] (by simp)) 3
+        = pSeed (bytesA rho) (e3.val / L.val) (e3.val % L.val) :=
+      seed_of_cast rho e3.val L.val i7 i15 i6 i14 i7_post i15_post i6_post i14_post (by rw [i6_post]; exact hmod256 _)
+        (by rw [i14_post]; exact hdiv256 _ he3)
+    obtain ⟨P0, hP0⟩ := hF _ he0
+    obtain ⟨P1, hP1⟩ := hF _ he1
+    obtain ⟨P2, hP2⟩ := hF _ he2
+    obtain ⟨P3, hP3⟩ := hF _ he3
+    have hP : ∀ i, i < 4 → Spec.RejNTTPoly F (Mi rho (Array.make 4#usize [i1, i3, i5, i7] (by simp))
+        (Array.make 4#usize [i9, i11, i13, i15] (by simp)) i) =
+        some ((fun k => if k = 0 then P0 else if k = 1 then P1 else if k = 2 then P2 else P3) i) := by
+      intro k hk
+      interval_cases k
+      · rw [hs0]; exact hP0
+      · rw [hs1]; exact hP1
+      · rw [hs2]; exact hP2
+      · rw [hs3]; exact hP3
+    step with rej_ntt_poly_x4_spec rho (Array.make 4#usize [i1, i3, i5, i7] (by simp))
+      (Array.make 4#usize [i9, i11, i13, i15] (by simp)) F _ hP
+    step*
+  · rename_i hlt
+    have hf : ¬ first.val < n.val := by scalar_tac
+    simp only [WP.spec_ok]
+    exact hf
+
+
+theorem x4_loop_term {K L : Usize} (rho : Array U8 32#usize) (n : Usize) (hn : n.val ≤ 2048)
+    (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
+    (F : Nat) (hF : ∀ e, e < n.val → ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P)
+    (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) :
+    sampling.expand_a_into_x4_loop Sh4 rho a n first ⦃ _ => True ⦄ := by
+  unfold sampling.expand_a_into_x4_loop
+  apply loop.spec_decr_nat
+    (fun (p : Array (Array (Array U32 256#usize) L) K × Usize) => n.val - p.2.val)
+    (fun _ => True)
+  · rintro ⟨a', first'⟩ _
+    refine WP.spec_mono (x4_body_term rho n a' first' hn hL hLs hK hnKL F hF) ?_
+    rintro (⟨a'', first''⟩ | y) h
+    · exact ⟨trivial, by show n.val - first''.val < n.val - first'.val; omega⟩
+    · trivial
+  · trivial
+
 end Proofs
