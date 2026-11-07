@@ -86,47 +86,46 @@ pub fn expand_a<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256];
     a
 }
 
-/// The 168 rate bytes of state `i` of a 4-way Keccak state, as the scalar sponge reads them (`squeeze`): byte `p` is lane
-/// `p / 8` shifted right by `8 * (p % 8)` bits. Requires `i < 4`.
+/// The mask of the 23 bits CoeffFromThreeBytes keeps: `z` is bits 0..22 of the three-byte little-endian value (the top
+/// bit of the third byte is cleared).
+const M23: u64 = 0x7F_FFFF;
+
+/// One candidate of Algorithm 30's loop, branchless: `z` is written to `a[j]` and `j` advances only when `z < q`, so a
+/// rejected candidate's word is overwritten by the next one. Requires `j < 312`.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-fn rate_bytes_x4(st: &[[u64; 4]; 25], i: usize) -> [u8; 168] {
-    let mut buf = [0u8; 168];
-    let mut k = 0;
-    while k < 21 {
-        let w = st[k][i];
-        let mut b = 0;
-        while b < 8 {
-            buf[8 * k + b] = (w >> (8 * b)) as u8;
-            b += 1;
-        }
-        k += 1;
-    }
-    buf
+fn push_candidate(a: &mut [u32; 312], j: usize, z: u32) -> usize {
+    a[j] = z;
+    j + (z < Q) as usize
 }
 
-/// The 23-bit value `z` of CoeffFromThreeBytes (Algorithm 14) without the `z < q` test, which the branchless parse
-/// below does separately.
+/// The eight three-byte candidates in 24 consecutive rate bytes, which are three whole lanes `w0, w1, w2` (little-endian
+/// bytes): candidate `t` is bits `24t .. 24t+22` of the 192-bit value `w0 + 2^64 w1 + 2^128 w2`, taken from the lanes by
+/// shifts and masks instead of byte by byte. Candidates 2 and 5 straddle a lane boundary. Requires `j + 7 < 312`.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-fn three_bytes_value(b0: u8, b1: u8, b2: u8) -> u32 {
-    let b2p = (b2 & 127) as u32;
-    (b2p << 16) | ((b1 as u32) << 8) | (b0 as u32)
+fn rej_ntt_cands8(w0: u64, w1: u64, w2: u64, a: &mut [u32; 312], j: usize) -> usize {
+    let j = push_candidate(a, j, (w0 & M23) as u32);
+    let j = push_candidate(a, j, ((w0 >> 24) & M23) as u32);
+    let j = push_candidate(a, j, ((w0 >> 48).wrapping_add(w1 << 16) & M23) as u32);
+    let j = push_candidate(a, j, ((w1 >> 8) & M23) as u32);
+    let j = push_candidate(a, j, ((w1 >> 32) & M23) as u32);
+    let j = push_candidate(a, j, ((w1 >> 56).wrapping_add(w2 << 8) & M23) as u32);
+    let j = push_candidate(a, j, ((w2 >> 16) & M23) as u32);
+    push_candidate(a, j, ((w2 >> 40) & M23) as u32)
 }
 
-/// Algorithm 30's loop on one 168-byte SHAKE128 block: the block is 56 whole three-byte candidates (168 = 56 · 3), so
-/// none straddles a block boundary. Branchless: every candidate `z` is written to `a[j]` and `j` advances only when
-/// `z < q`, so a rejected candidate's word is overwritten by the next one. All 56 candidates are parsed even if `j`
-/// reaches 256 inside the block; `a` has 56 words of slack past the 256 coefficients for that, and the words from index
-/// `min(j, 256)` on are unspecified (the caller keeps only the first 256 words, and only blocks entered with `j < 256`
-/// are parsed). Returns the new `j`. Requires `j < 256` (so every write index is at most 255 + 55 = 310).
+/// Algorithm 30's loop on one SHAKE128 block of state `i`: the block is the 21 rate lanes `st[0..21][i]` (168 bytes =
+/// 56 whole three-byte candidates, so none straddles a block boundary), parsed straight from the lanes in seven groups
+/// of three. All 56 candidates are parsed even if `j` reaches 256 inside the block; `a` has 56 words of slack past the
+/// 256 coefficients for that, and the words from index `min(j, 256)` on are unspecified (the caller keeps only the
+/// first 256 words, and only blocks entered with `j < 256` are parsed). Returns the new `j`. Requires `i < 4` and
+/// `j < 256` (so every write index is at most 255 + 55 = 310).
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-fn rej_ntt_block_x4(buf: &[u8; 168], a: &mut [u32; 312], j: usize) -> usize {
+fn rej_ntt_block_x4(st: &[[u64; 4]; 25], i: usize, a: &mut [u32; 312], j: usize) -> usize {
     let mut j = j;
-    let mut t = 0;
-    while t < 56 {
-        let z = three_bytes_value(buf[3 * t], buf[3 * t + 1], buf[3 * t + 2]);
-        a[j] = z;
-        j += (z < Q) as usize;
-        t += 1;
+    let mut g = 0;
+    while g < 7 {
+        j = rej_ntt_cands8(st[3 * g][i], st[3 * g + 1][i], st[3 * g + 2][i], a, j);
+        g += 1;
     }
     j
 }
@@ -163,12 +162,7 @@ fn init_state_x4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u64; 4]; 25] {
 /// coefficients (`j < 256`), and does nothing once it has 256.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn rej_ntt_lane_x4(st: &[[u64; 4]; 25], i: usize, a: &mut [u32; 312], j: usize) -> usize {
-    if j < 256 {
-        let buf = rate_bytes_x4(st, i);
-        rej_ntt_block_x4(&buf, a, j)
-    } else {
-        j
-    }
+    if j < 256 { rej_ntt_block_x4(st, i, a, j) } else { j }
 }
 
 /// The first 256 words of a lane's 312-word scratch.
@@ -388,11 +382,12 @@ pub fn expand_s<const K: usize, const L: usize>(
 mod boundary_tests {
     //! Deterministic boundary tests of the branchless 4-way rejection parse, on rate bytes chosen to sit on the edges of
     //! Algorithm 14 and Algorithm 30: candidates q − 1, q, q + 1, values with bit 23 set (which CoeffFromThreeBytes masks
-    //! off), and the cutoff at 256 accepted coefficients. SHAKE output cannot be steered, so these call the parse on chosen
-    //! bytes, and compare every case with the scalar `coeff_from_three_bytes`. They pin down, for example, the mutants
-    //! `z < Q` → `z <= Q`, `b2 & 127` → `b2 & 255`, `j < 256` → `j <= 256` in `rej_ntt_lane_x4`, and an off-by-one in
-    //! `first_256`. The parse does not involve the Keccak lane operations (`Shim4` or AVX2); their agreement is tested
-    //! on whole permutations in `tests/keccak4_avx2.rs` and on whole samplers in `tests/fast_verify.rs`.
+    //! off), candidates that straddle a lane boundary, and the cutoff at 256 accepted coefficients. SHAKE output cannot be
+    //! steered, so these build the interleaved state from chosen bytes and call the parse on it, and compare every case
+    //! with the scalar `coeff_from_three_bytes`. They pin down, for example, the mutants `z < Q` → `z <= Q`,
+    //! `& M23` → `& 0xFF_FFFF`, a wrong shift in `rej_ntt_cands8`, `j < 256` → `j <= 256` in `rej_ntt_lane_x4`, and an
+    //! off-by-one in `first_256`. The parse does not involve the Keccak lane operations (`Shim4` or AVX2); their agreement
+    //! is tested on whole permutations in `tests/keccak4_avx2.rs` and on whole samplers in `tests/fast_verify.rs`.
     extern crate std;
     use super::*;
     use std::vec::Vec;
@@ -410,12 +405,32 @@ mod boundary_tests {
         b
     }
 
+    /// A 4-way state whose lane `i` holds `buf` as its 21 rate lanes (little-endian bytes); the other three states hold
+    /// unrelated words that must not leak into state `i`'s candidates.
+    fn state_with(buf: &[u8; 168], i: usize) -> [[u64; 4]; 25] {
+        let mut st = [[0u64; 4]; 25];
+        for k in 0..25 {
+            for lane in 0..4 {
+                st[k][lane] = (k as u64 + 1).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ ((lane as u64) << 59) ^ 0x5555_5555_5555_5555;
+            }
+        }
+        for k in 0..21 {
+            let mut w = 0u64;
+            for b in 0..8 {
+                w |= (buf[8 * k + b] as u64) << (8 * b);
+            }
+            st[k][i] = w;
+        }
+        st
+    }
+
     /// The accepted values of a block per Algorithm 14, in order.
     fn accepted(buf: &[u8; 168]) -> Vec<u32> {
         (0..56).filter_map(|t| coeff_from_three_bytes(buf[3 * t], buf[3 * t + 1], buf[3 * t + 2])).collect()
     }
 
-    /// Candidate lists around the boundaries, rotated so that each edge value is tried at every position mod 56.
+    /// Candidate lists around the boundaries, rotated so that each edge value is tried at every position mod 56 (so at
+    /// every offset within a lane, including the two candidates per group of three lanes that straddle one).
     fn edge_blocks() -> Vec<[u8; 168]> {
         let edges: [u32; 20] = [
             QU - 2, QU - 1, QU, QU + 1, QU + 2, 0x7F_FFFF, 0x80_0000, 0x80_0001, 0x80_0000 | (QU - 1), 0x80_0000 | QU,
@@ -442,45 +457,50 @@ mod boundary_tests {
         out
     }
 
+    /// The eight candidates of three lanes, one by one, including the two that straddle a lane boundary.
     #[test]
-    fn three_bytes_value_masks_bit_23() {
-        assert_eq!(three_bytes_value(0, 0, 0x80), 0);
-        assert_eq!(three_bytes_value(0xFF, 0xFF, 0xFF), 0x7F_FFFF);
-        assert_eq!(three_bytes_value(0, 0, 0x7F), 0x7F_0000);
-        // q − 1 = 0x7FE000, q = 0x7FE001.
-        assert_eq!(three_bytes_value(0x00, 0xE0, 0x7F), QU - 1);
-        assert_eq!(three_bytes_value(0x01, 0xE0, 0x7F), QU);
-        assert_eq!(three_bytes_value(0x01, 0xE0, 0xFF), QU);
+    fn cands8_reads_each_candidate_from_the_right_bits() {
+        // Candidate t = 24t.. of the 192-bit value; use a value whose candidates are distinct and have bit 23 set in some.
+        let cands: [u32; 8] = [0x7F_E000, 0xFF_E001, 0x12_3456, 0x89_ABCD, 0x7F_FFFF, 0x80_0000, 0x00_0001, 0xFE_DCBA];
+        let mut bytes = [0u8; 24];
+        for (t, &v) in cands.iter().enumerate() {
+            bytes[3 * t] = v as u8;
+            bytes[3 * t + 1] = (v >> 8) as u8;
+            bytes[3 * t + 2] = (v >> 16) as u8;
+        }
+        let w = |k: usize| u64::from_le_bytes(bytes[8 * k..8 * k + 8].try_into().unwrap());
+        let mut a = [0u32; 312];
+        let j = rej_ntt_cands8(w(0), w(1), w(2), &mut a, 0);
+        let want: Vec<u32> = cands.iter().filter_map(|&v| if (v & 0x7F_FFFF) < QU { Some(v & 0x7F_FFFF) } else { None }).collect();
+        assert_eq!(j, want.len());
+        assert_eq!(&a[..j], &want[..]);
+        // Every candidate position written, accepted or not: the word stored at the call's end for rejected candidates is
+        // the masked value, so the stores are exactly the 23-bit values, in order, at j(t).
+        let mut a2 = [0u32; 312];
+        let mut jj = 0;
+        for &v in &cands {
+            if (v & 0x7F_FFFF) < QU {
+                jj += 1;
+            }
+        }
+        assert_eq!(rej_ntt_cands8(w(0), w(1), w(2), &mut a2, 5), 5 + jj);
+        assert_eq!(&a2[5..5 + jj], &want[..]);
     }
 
     #[test]
     fn block_parse_matches_scalar_on_boundary_candidates() {
         for buf in edge_blocks() {
             let acc = accepted(&buf);
-            for j0 in [0usize, 1, 100, 199, 200, 254, 255] {
-                let mut a = [0xDEAD_BEEFu32; 312];
-                let j1 = rej_ntt_block_x4(&buf, &mut a, j0);
-                assert_eq!(j1, j0 + acc.len(), "count, j0={j0}");
-                // Every accepted word is stored at its position (the slack words keep them past 256 too).
-                assert_eq!(&a[j0..j1], &acc[..], "words, j0={j0}");
-            }
-        }
-    }
-
-    #[test]
-    fn rate_bytes_round_trip_through_the_state_layout() {
-        for (i, buf) in edge_blocks().into_iter().take(4).enumerate() {
-            let mut st = [[0u64; 4]; 25];
-            for k in 0..21 {
-                let mut w = 0u64;
-                for b in 0..8 {
-                    w |= (buf[8 * k + b] as u64) << (8 * b);
+            for i in 0..4 {
+                let st = state_with(&buf, i);
+                for j0 in [0usize, 1, 100, 199, 200, 254, 255] {
+                    let mut a = [0xDEAD_BEEFu32; 312];
+                    let j1 = rej_ntt_block_x4(&st, i, &mut a, j0);
+                    assert_eq!(j1, j0 + acc.len(), "count, state {i}, j0={j0}");
+                    // Every accepted word is stored at its position (the slack words keep them past 256 too).
+                    assert_eq!(&a[j0..j1], &acc[..], "words, state {i}, j0={j0}");
                 }
-                st[k][i] = w;
-                // Other lanes hold unrelated data that must not leak into state i's bytes.
-                st[k][(i + 1) % 4] = !w;
             }
-            assert_eq!(rate_bytes_x4(&st, i), buf);
         }
     }
 
@@ -488,19 +508,8 @@ mod boundary_tests {
     /// first accepted candidate of the block.
     #[test]
     fn lane_step_stops_exactly_at_256() {
-        let first = [QU - 1; 56];
-        let buf = block(&first);
-        let mut st = [[0u64; 4]; 25];
         for lane in 0..4 {
-            for k in 0..21 {
-                let mut w = 0u64;
-                for b in 0..8 {
-                    w |= (buf[8 * k + b] as u64) << (8 * b);
-                }
-                st[k][lane] = w;
-            }
-        }
-        for lane in 0..4 {
+            let st = state_with(&block(&[QU - 1; 56]), lane);
             // 256 already: untouched, same j.
             let mut a = [7u32; 312];
             assert_eq!(rej_ntt_lane_x4(&st, lane, &mut a, 256), 256);
@@ -510,17 +519,8 @@ mod boundary_tests {
             assert_eq!(rej_ntt_lane_x4(&st, lane, &mut a, 255), 255 + 56);
             assert_eq!(a[255], QU - 1);
             assert_eq!(first_256(&a)[255], QU - 1);
-            // 255 with every candidate rejected: j stays, and the 256th word is not set to a rejected value by the caller's
-            // view (it is unspecified past j, so only j is checked).
-            let mut st2 = st;
-            let rej = block(&[QU; 56]);
-            for k in 0..21 {
-                let mut w = 0u64;
-                for b in 0..8 {
-                    w |= (rej[8 * k + b] as u64) << (8 * b);
-                }
-                st2[k][lane] = w;
-            }
+            // 255 with every candidate rejected: j stays (the word at 255 is then unspecified, so only j is checked).
+            let st2 = state_with(&block(&[QU; 56]), lane);
             let mut a = [7u32; 312];
             assert_eq!(rej_ntt_lane_x4(&st2, lane, &mut a, 255), 255);
         }
