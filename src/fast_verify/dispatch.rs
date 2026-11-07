@@ -5,9 +5,7 @@ use crate::cpu::has_avx2;
 use crate::keccak4::avx2::Avx2;
 use crate::params::Params;
 use crate::verify::{self, PreparedVk};
-// INTEGRATION: when `verify::{verify_internal_x4, prepare_vk_x4}` (stream W1) land, replace this line with
-// `use crate::verify::{prepare_vk_x4, verify_internal_x4};` and delete `fast_verify_stub.rs`.
-use crate::fast_verify_stub::{prepare_vk_x4, verify_internal_x4};
+use crate::verify::{prepare_vk_x4, verify_internal_x4};
 
 #[cfg(feature = "internals")]
 use core::sync::atomic::{AtomicUsize, Ordering};

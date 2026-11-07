@@ -1,14 +1,13 @@
 //! Run-time dispatch of verify to the 4-way AVX2 body. Opt-in (feature `avx2`), x86_64 only, never under Miri.
 //! NOT part of the Lean proof; read this before relying on the theorems for a shipped binary.
 //!
-//! What is proved and what is not (the target state; the 4-way body is still the temporary stand-in
-//! `fast_verify_stub.rs` until stream W1's proved version is integrated):
+//! What is proved and what is not:
 //!
 //! * `verify::verify_internal` and `verify::prepare_vk` are the proved scalar functions. Every `api` function equals the
 //!   FIPS 204 transcription in Lean.
-//! * The 4-way versions (`verify_internal_x4::<K, L, X>` and `prepare_vk_x4::<K, L, X>`, with `X: keccak4::Lanes4`) are
-//!   meant to be extracted and proved equal to the scalar functions on every input, with their theorem names in
-//!   `lean/fast-verify-theorems.txt`. Neither the proof nor the list exists on this branch yet.
+//! * The 4-way versions (`verify::verify_internal_x4::<K, L, X>` and `verify::prepare_vk_x4::<K, L, X>`, with
+//!   `X: keccak4::Lanes4`) are extracted and proved equal to the scalar functions on every input for `X = Shim4`
+//!   (`Proofs/FastVerify.lean`; theorem names in `lean/fast-verify-theorems.txt`).
 //! * This module instantiates them with `keccak4::avx2::Avx2` inside a `#[target_feature(enable = "avx2")]` wrapper and
 //!   chooses between them and the scalar functions with a cached CPU check. The `Avx2` lane operations are tested equal
 //!   to the proved `Shim4` operations (`tests/keccak4_avx2.rs`: every operation, every rotation immediate the kernel

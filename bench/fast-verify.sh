@@ -12,8 +12,7 @@
 #   scalar  no `avx2` feature: the proved scalar verify.                                   RUSTFLAGS = nearcore's
 #   avx2    `--features avx2`: runtime dispatch; on AVX2 hardware verify is the 4-way body. RUSTFLAGS = nearcore's
 #   v3      `--features avx2` and -C target-cpu=x86-64-v3: AVX2 is static, no detection.   RUSTFLAGS = target-cpu=x86-64-v3
-# What the `avx2` rows show once the proved 4-way body is integrated is the shipping configuration; until then the body is
-# the stand-in of src/fast_verify_stub.rs and the numbers understate it (the file header says how).
+# The `avx2` rows are the shipping configuration: the proved 4-way body (verify::verify_internal_x4) with the AVX2 lane ops.
 #
 # `ours+prepared-vk verify` is the prepared-key verify: not dispatched (it runs no ExpandA), so it is the same code in all
 # three variants up to the NTT dispatch. `ours verify` includes building the key's matrix every call.

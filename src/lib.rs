@@ -34,9 +34,6 @@ mod cpu;
 pub mod fast_verify;
 #[cfg(not(feature = "internals"))]
 mod fast_verify;
-// TEMPORARY (stream W2): stand-in for the proved 4-way verify body; deleted at integration. See the file header.
-#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
-mod fast_verify_stub;
 #[cfg(feature = "internals")]
 pub mod field;
 #[cfg(not(feature = "internals"))]
@@ -48,7 +45,6 @@ mod keccak;
 #[cfg(feature = "internals")]
 pub mod keccak4;
 #[cfg(not(feature = "internals"))]
-#[allow(dead_code)]
 mod keccak4;
 #[cfg(feature = "internals")]
 pub mod keygen;
