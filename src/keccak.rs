@@ -86,7 +86,7 @@ pub fn keccak_f1600(a: &mut [u64; 25]) {
 }
 
 /// Little-endian lane `data[i..i + 8]`. Requires `data.len() - i >= 8`.
-fn load_lane(data: &[u8], i: usize) -> u64 {
+pub(crate) fn load_lane(data: &[u8], i: usize) -> u64 {
     (data[i] as u64)
         | ((data[i + 1] as u64) << 8usize)
         | ((data[i + 2] as u64) << 16usize)
