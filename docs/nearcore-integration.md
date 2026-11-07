@@ -187,7 +187,7 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   the AVX2 rows without changing nearcore's target features, nearcore would enable our opt-in `avx2` cargo feature: it checks
   the CPU at run time (a cached CPUID/XGETBV check) and dispatches the NTT, `verify_NN` and `verifying_key_NN` to AVX2 code, and
   runs the scalar code on a CPU without AVX2. The alternative, `-C target-cpu=x86-64-v3`, makes the binary require AVX2 and, for
-  verify, was not reliably faster than the feature (section 6). Either is nearcore's decision. What the feature costs in
+  verify, was not reliably faster than the feature (`docs/assurance.md` §5, Benchmarks: ML-DSA-65 on 1.95.0 took 60.9 µs against 55.4 µs). Either is nearcore's decision. What the feature costs in
   assurance: the crate then has `unsafe` (the dispatch and the AVX2 lane operations), and the verify it runs is proved modulo
   the tested equivalence of the AVX2 lane operations to the proved plain-Rust model, with the dispatch glue, the CPU detection and
   the compiler's output for the AVX2 clone outside the proof (`docs/assurance.md` §1.9, §3, FV-1 in §7). Because the

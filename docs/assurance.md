@@ -29,7 +29,7 @@ named in `lean/headline-theorems.txt` and `lean/witness-theorems.txt` (553 names
 | `scripts/ci.sh --lean` | 20 of 20 steps passed (including `extract-hash`, `axiom-gate-selftest`, `lean`) |
 
 The fast verify (1.9) is a later tree: the branch `fast-verify` at fe99427, on which the Lean gate and the AVX2 checks were run
-on the Linux build box on 2026-11-07 (the documentation commits on top of it change no file under `src/` or `lean/`):
+on the Linux build box (`extract-hash` and the README example test on a Mac) on 2026-11-07 (the documentation commits on top of it change no file under `src/` or `lean/`):
 
 | Gate | Result on fe99427 |
 |---|---|
@@ -296,8 +296,10 @@ dispatch exists. Thus:
   `api.verifying_key_NN` with the 4-way body: the proved statements are about `verify_internal_NN` and `prepare_vk`, and the
   wrapper code around the dispatched call is the extracted wrapper code, which is a reading of the source, backed by the tests
   above.
-- **Not proved either way:** speed. The portable 4-way Keccak (`Shim4`) is slower than four scalar permutations (the ignored
-  timing test of `tests/keccak4.rs`), so no portable build calls it; only the AVX2 instance is dispatched to.
+- **Not proved either way:** speed. The portable 4-way Keccak (`Shim4`) is slower than four scalar permutations, so no portable
+  build calls it; only the AVX2 instance is dispatched to. A sanity timing on the build box (the ignored timing test of
+  `tests/keccak4.rs`, best of 7 runs of 200,000 calls, ns per call of four permutations; not a benchmark): default flags, four
+  scalar permutations 1460, `Shim4` 2018, `Avx2` 489; nearcore's flags, 1348, 1790 and 499.
 
 ## 2. What each result assumes: the trusted base
 

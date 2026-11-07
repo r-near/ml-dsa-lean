@@ -37,7 +37,7 @@ input.
 - **The `avx2` feature is proved only modulo a tested link.** Without it, the code that ships is exactly the extracted code
   and the crate has `forbid(unsafe_code)`. With it on x86_64, `verify_NN` and `verifying_key_NN` check the CPU at run time and
   use a 4-way body (4-way Keccak-f[1600], SHAKE128 and ExpandA). Lean proves that body equal to the scalar verify on every
-  input, divergence included, but for its plain-Rust instance `Shim4` (`lean/fast-verify-theorems.txt`,
+  input, divergence included, for its plain-Rust instance `Shim4` only (`lean/fast-verify-theorems.txt`,
   [assurance.md](assurance.md) section 1.9). The shipped AVX2 build runs the same body over intrinsic lane operations
   (`Avx2`), which are tested equal to `Shim4`, not proved (`tests/keccak4_avx2.rs`). So that build is proved modulo the tested
   equivalence of the AVX2 lane operations to the proved shim. Also outside the proof:
