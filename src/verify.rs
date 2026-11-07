@@ -2,8 +2,7 @@
 
 use crate::encode::{pk_decode, sig_decode, w1_encode};
 use crate::keccak::Shake;
-use crate::ntt::{ntt, ntt_inverse, ntt_vec};
-use crate::verify_arith::mac_row_pub;
+use crate::verify_arith::{mac_row_pub, ntt_inverse_pub, ntt_pub, ntt_vec_pub};
 use crate::params::{pk_len, sig_len, Params};
 use crate::rounding::{poly_use_hint_pub, vec_norm_lt_pub};
 use crate::keccak4::Lanes4;
@@ -113,7 +112,7 @@ pub(crate) fn prepare_vk_into<const K: usize, const L: usize>(pk: &[u8], out: &m
     // 7: tr ← H(pk, 64)
     out.tr = hash_pk(pk);
     // 10 (key half): NTT(t1 · 2^d)
-    out.t1_2d_hat = ntt_vec(&scale_vec_by_2d(&t1));
+    out.t1_2d_hat = ntt_vec_pub(&scale_vec_by_2d(&t1));
 }
 
 /// Steps 1, 6, 7 and the key-dependent half of step 10 of Algorithm 8, returned by value: the same computation as
@@ -137,7 +136,7 @@ pub(crate) fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedV
     // 7: tr ← H(pk, 64)
     let tr = hash_pk(pk);
     // 10 (key half): NTT(t1 · 2^d)
-    let t1_2d_hat = ntt_vec(&scale_vec_by_2d(&t1));
+    let t1_2d_hat = ntt_vec_pub(&scale_vec_by_2d(&t1));
     PreparedVk { a_hat, t1_2d_hat, tr }
 }
 
@@ -157,7 +156,7 @@ pub fn prepare_vk_into_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8], 
     // 7: tr ← H(pk, 64)
     out.tr = hash_pk(pk);
     // 10 (key half): NTT(t1 · 2^d)
-    out.t1_2d_hat = ntt_vec(&scale_vec_by_2d(&t1));
+    out.t1_2d_hat = ntt_vec_pub(&scale_vec_by_2d(&t1));
 }
 
 /// `prepare_vk` with the 4-way ExpandA, returned by value (the prepared-key constructor of the fast path). Proved
@@ -172,7 +171,7 @@ pub fn prepare_vk_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8]) -> Pr
     // 7: tr ← H(pk, 64)
     let tr = hash_pk(pk);
     // 10 (key half): NTT(t1 · 2^d)
-    let t1_2d_hat = ntt_vec(&scale_vec_by_2d(&t1));
+    let t1_2d_hat = ntt_vec_pub(&scale_vec_by_2d(&t1));
     PreparedVk { a_hat, t1_2d_hat, tr }
 }
 
@@ -202,13 +201,13 @@ fn verify_core<const K: usize, const L: usize>(
     h: &[[bool; 256]; K],
 ) -> bool {
     // 10: w′_Approx ← NTT⁻¹(Â ∘ NTT(z) − NTT(c) ∘ NTT(t1 · 2^d))
-    let z_hat = ntt_vec(z);
-    let c_hat = ntt(c);
+    let z_hat = ntt_vec_pub(z);
+    let c_hat = ntt_pub(c);
     let mut w1 = [[0u32; 256]; K];
     let mut i = 0;
     while i < K {
         let w_hat = mac_row_pub::<L>(&vk.a_hat[i], &z_hat, &c_hat, &vk.t1_2d_hat[i]);
-        let w_approx = ntt_inverse(&w_hat);
+        let w_approx = ntt_inverse_pub(&w_hat);
         // 11: w′1 ← UseHint(h, w′_Approx)
         w1[i] = poly_use_hint_pub(p, &h[i], &w_approx);
         i += 1;
