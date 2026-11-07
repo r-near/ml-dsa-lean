@@ -21,6 +21,12 @@ name = "expanda"
 path = "src/bin/expanda.rs"
 required-features = ["internals", "avx2"]
 
+# 4-way Keccak-f[1600] micro-benchmark (AVX2 lane operations).
+[[bin]]
+name = "keccak4"
+path = "src/bin/keccak4.rs"
+required-features = ["internals", "avx2"]
+
 # Sampling profiler (SIGPROF) over the public APIs.
 [[bin]]
 name = "prof"
