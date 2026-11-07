@@ -42,6 +42,9 @@ Proofs.use_hint_spec
 Proofs.poly_high_bits_spec
 Proofs.poly_low_bits_spec
 Proofs.poly_use_hint_spec
+Proofs.use_hint_g32_spec
+Proofs.use_hint_g88_spec
+Proofs.poly_use_hint_pub_spec
 Proofs.poly_power2round_spec
 Proofs.rounding_hypotheses_ML_DSA_44
 Proofs.rounding_hypotheses_ML_DSA_65
@@ -74,6 +77,8 @@ Proofs.bit_pack_spec
 Proofs.bit_pack_spec_repr
 Proofs.bit_unpack_spec
 Proofs.bit_unpack_spec_repr
+Proofs.bit_unpack_pub_core
+Proofs.bit_unpack_pub_spec_repr
 Proofs.pack_signed_spec
 Proofs.unpack_signed_spec
 Proofs.w1_encode_spec

@@ -357,7 +357,7 @@ theorem pk_decode_loop1_spec {K : Usize} (b : Nat) (hc : bitlen b = 10) (k : Nat
         rw [this, i5_post, i2_post, i4_post, i3_post, i1_post]
         have e : (i.val + 1) * 320 = i.val * 320 + 320 := by ring
         rw [e]; simp; omega
-      refine WP.spec_bind (bit_unpack_spec_repr s 10#usize b (by simp [hc]) (by simp) hslen) ?_
+      refine WP.spec_bind (bit_unpack_pub_spec_repr s 10#usize b (by simp [hc]) (by simp) hslen) ?_
       intro a ha
       step*
       have hsb : bytes s = slice (bytes pk) (32 + i.val * 320) 320 := by
