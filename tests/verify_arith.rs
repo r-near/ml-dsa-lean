@@ -5,6 +5,7 @@
 use ml_dsa_lean::encode::{bit_pack, bit_pack_pub};
 use ml_dsa_lean::field::Q;
 use ml_dsa_lean::ntt::{add_poly, multiply_ntt, ntt, ntt_inverse, sub_poly};
+use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
 use ml_dsa_lean::rounding::{vec_infinity_norm, vec_norm_lt_pub};
 use ml_dsa_lean::verify_arith::{mac_row_pub, ntt_inverse_pub, ntt_pub, ntt_vec_pub};
 
@@ -99,8 +100,17 @@ fn mac_row_pub_matches_matrix_vector_row() {
 #[test]
 fn vec_norm_lt_pub_matches_vec_infinity_norm() {
     let mut r = XorShift(0xdead_beef_cafe_f00d);
-    // bounds γ1 − β of the three sets, and the edges around them
-    let bounds = [131_072 - 196, 524_288 - 196, 524_288 - 120, 524_288 - 275, 1, 2, 4_190_208, Q - 1];
+    // the bounds γ1 − β of the three parameter sets, then synthetic edges
+    let bounds = [
+        ML_DSA_44.gamma1 - ML_DSA_44.beta,
+        ML_DSA_65.gamma1 - ML_DSA_65.beta,
+        ML_DSA_87.gamma1 - ML_DSA_87.beta,
+        131_072 - 196,
+        1,
+        2,
+        4_190_208,
+        Q - 1,
+    ];
     for &bound in &bounds {
         // an entry of exactly the norm `n` at position `pos`, positive or negative, among small values
         for n in [0u32, 1, bound - 1, bound, bound + 1, (Q - 1) / 2, (Q - 1) / 2 - 1] {

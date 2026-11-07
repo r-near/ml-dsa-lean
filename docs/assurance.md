@@ -42,7 +42,7 @@ box on 2026-11-07 (the README example test too; the commits after c4d522a change
 | `cargo +1.86.0 build --features avx2` | builds (the declared MSRV) |
 | README example test (`cargo test --test readme_example`) | 2 passed |
 | `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (sha 24d4bacc59c5369680663c0aa996daf0b4532f4fcddbc6b8dfe2f74ef5095822) |
-| checkct driver | builds for every target and profile; the smoke run matches the sweep's verdicts (section 4) |
+| checkct driver | on 997b2e5 (the driver gains `src/verify_arith.rs`): builds for riscv32imac, thumbv7em and x86_64, with and without `avx2`. The full profile build and the BINSEC smoke run (verdicts match the sweep) were run on 6ccc3e6 and not repeated after the verify-only arithmetic; Sign and KeyGen sources are unchanged since (section 4) |
 
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
@@ -293,7 +293,7 @@ The callers' theorems keep their statements except `Verify.verify_loop_spec`, wh
 (its statement changed with the extracted loop; `verify_core_spec` and `prepare_vk_spec` have the statements they had, and the
 API statements of 1.1 are unchanged). `tests/verify_arith.rs` additionally compares each function with its shared counterpart on
 corner and random inputs (4,000 random polynomials for the NTTs, rows of L = 4, 5, 7 including all-(q − 1) inputs, norm edges at
-the three bounds, widths 1, 4, 6, 8, 10); that is evidence about the source, not part of the proof.
+the three sets' bounds γ1 − β, taken from the parameter sets, widths 1, 4, 6, 8, 10); that is evidence about the source, not part of the proof.
 
 **What the shipped AVX2 build adds, and its status.** With the `avx2` feature on x86_64 (not under Miri), `src/fast_verify.rs`
 exports `verify_internal` and `prepare_vk`, and `api.rs` calls those. Each checks `cpu::has_avx2` (CPUID leaf 7 AVX2, leaf 1
