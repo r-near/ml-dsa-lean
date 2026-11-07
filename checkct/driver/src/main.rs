@@ -24,6 +24,15 @@ mod ntt;
 #[allow(dead_code)]
 #[path = "../../../src/keccak.rs"]
 mod keccak;
+// The 4-way Keccak of the fast verify (`Lanes4`, `Shim4`, and with the `avx2` feature on x86_64 the AVX2 lane operations).
+#[allow(dead_code, unexpected_cfgs)]
+#[path = "../../../src/keccak4.rs"]
+mod keccak4;
+// The CPU check of the `avx2` feature, with the cfg of the crate's `lib.rs` (the driver never sets `miri`).
+#[cfg(all(feature = "avx2", target_arch = "x86_64"))]
+#[allow(dead_code, unexpected_cfgs)]
+#[path = "../../../src/cpu.rs"]
+mod cpu;
 #[allow(dead_code)]
 #[path = "../../../src/encode.rs"]
 mod encode;
@@ -39,6 +48,23 @@ mod keygen;
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/verify.rs"]
 mod verify;
+// The verify dispatch of src/fast_verify.rs. That file cannot be included by `#[path]` itself: its `mod dispatch;` would
+// be looked up next to it as src/dispatch.rs, not in src/fast_verify/. So this module repeats its two items, each with
+// the cfg of the original, and includes the real dispatch file (src/fast_verify/dispatch.rs) by `#[path]`; the
+// attribute on the module sets the directory. Without the `avx2` feature (or off x86_64) it only re-exports the scalar
+// functions of `verify`, as in the crate.
+#[path = "../../../src/fast_verify"]
+mod fast_verify {
+    #[cfg(not(all(feature = "avx2", target_arch = "x86_64")))]
+    pub(crate) use crate::verify::{prepare_vk, verify_internal};
+
+    #[cfg(all(feature = "avx2", target_arch = "x86_64"))]
+    #[allow(dead_code, unexpected_cfgs)]
+    #[path = "dispatch.rs"]
+    mod dispatch;
+    #[cfg(all(feature = "avx2", target_arch = "x86_64"))]
+    pub use dispatch::*;
+}
 // The public API, so that the probes enter through the same functions callers use.
 #[allow(dead_code)]
 #[path = "../../../src/api.rs"]

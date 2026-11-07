@@ -12,7 +12,7 @@
 #   OUT      as in run.sh (copies the compiled drivers)
 #   PROFILE  as in run.sh (nearcore = opt-level 3, fat LTO, one codegen unit), plus the dispatch profiles:
 #            dispatch          the checkct profile with the driver's `avx2` cargo feature, which turns on the crate's
-#                              `cfg(feature = "avx2")`: the runtime AVX2 dispatch of src/ntt.rs is compiled in (x86_64 only)
+#                              `cfg(feature = "avx2")`: the runtime AVX2 dispatch of src/ntt.rs and src/fast_verify.rs is compiled in (x86_64 only)
 #            nearcore-dispatch the nearcore settings plus the same feature
 #            nearcore-exact    the exact nearcore release build (see the block comment below): nearcore's [profile.release] incl.
 #                              overflow-checks = true, nearcore's x86_64 target features and Rust 1.95.0 (CT_TOOLCHAIN)
@@ -144,10 +144,11 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
     echo "driver .comment ($t): $cm"
     if [ -n "$EXACT" ] && [ "${CT_TOOLCHAIN:-1.95.0}" = 1.95.0 ] && ! echo "$cm" | grep -q "rustc version 1.95.0 "; then
       echo "TOOLCHAIN MISMATCH: PROFILE=$PROFILE_NAME wants rustc 1.95.0 but the driver was built by something else"; exit 1; fi ;; esac; done
-  # The dispatch static of src/ntt.rs (mod dispatch, static AVX2: AtomicU8): print the address of exactly that symbol.
-  # v0 mangling _RNvNtNtC<crate hash>_6driver3ntt8dispatch4AVX2 (legacy: _ZN6driver3ntt8dispatch4AVX217h<hash>E), plus
-  # the suffixes LTO adds (.0, .llvm.<number>). No other symbol of the binary matches (the NTT bodies are functions, type t).
-  avx2_sym() { nm "$1/release/driver" 2>/dev/null | grep -E "^[0-9a-f]+ [bBdD] (_RNvNtNtC[A-Za-z0-9]+_6driver3ntt8dispatch4AVX2|_ZN6driver3ntt8dispatch4AVX217h[0-9a-f]{16}E)(\.[0-9]+)?(\.llvm\.[0-9]+)?\$" | cut -d" " -f1; }
+  # The dispatch static of src/cpu.rs (static AVX2: AtomicU8, shared by the NTT dispatch and the verify dispatch): print
+  # the address of exactly that symbol. v0 mangling _RNvNtC<crate hash>_6driver3cpu4AVX2 (legacy:
+  # _ZN6driver3cpu4AVX217h<hash>E), plus the suffixes LTO adds (.0, .llvm.<number>). No other symbol of the binary
+  # matches (the dispatched bodies are functions, type t).
+  avx2_sym() { nm "$1/release/driver" 2>/dev/null | grep -E "^[0-9a-f]+ [bBdD] (_RNvNtC[A-Za-z0-9]+_6driver3cpu4AVX2|_ZN6driver3cpu4AVX217h[0-9a-f]{16}E)(\.[0-9]+)?(\.llvm\.[0-9]+)?\$" | cut -d" " -f1; }
   export -f avx2_sym
   rm -f /tmp/preset-failed
   for t in $TARGETS; do
@@ -155,7 +156,7 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
     n=$(avx2_sym "$t" | wc -l)
     if [ -n "$DISPATCH" ]; then
       if [ "$n" -eq 1 ]; then echo "preset $t: PROFILE=$PROFILE_NAME: dispatch compiled in, AVX2 cache static at 0x$(avx2_sym "$t"); every script gets @[0x..., 1] := 1"
-      else echo "PRESET FAILED $t: PROFILE=$PROFILE_NAME is a dispatch profile but $n symbols match driver::ntt::dispatch::AVX2 (expected 1)" | tee -a /tmp/preset-failed; fi
+      else echo "PRESET FAILED $t: PROFILE=$PROFILE_NAME is a dispatch profile but $n symbols match driver::cpu::AVX2 (expected 1)" | tee -a /tmp/preset-failed; fi
     else
       if [ "$n" -eq 0 ]; then echo "preset $t: PROFILE=$PROFILE_NAME: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set"
       else echo "PRESET FAILED $t: PROFILE=$PROFILE_NAME is not a dispatch profile but the binary has the dispatch static" | tee -a /tmp/preset-failed; fi
@@ -166,8 +167,9 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
     t=$1; s=$2; isa=""
     case "$t" in thumb*) isa="-isa armv7:thumb" ;; esac
     ep=$(basename "$s" .binsec); ep=${ep#driver.}; ep=$(echo "$ep" | sed "s/__/::/g")
-    # The runtime AVX2 dispatch (src/ntt.rs, compiled only in the dispatch profiles) caches its CPUID answer in a
-    # static. BINSEC leaves .bss symbolic, so it would explore the AVX2 arm, whose VEX instructions it cannot lift
+    # The runtime AVX2 dispatch (src/ntt.rs and src/fast_verify.rs, compiled only in the dispatch profiles) caches its
+    # CPUID answer in one static (src/cpu.rs). BINSEC leaves .bss symbolic, so it would explore the AVX2 arm, whose VEX
+    # instructions it cannot lift
     # ("KO", status unknown). cargo-checkct models cpuid as "no optional features"; do the same for the cache: pre-set
     # it to 1 ("checked, no AVX2") on x86_64. The symbol is matched exactly (avx2_sym); a missing symbol or anchor
     # fails the run.

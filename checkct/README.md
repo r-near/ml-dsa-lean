@@ -1,9 +1,10 @@
 # checkct: binary-level constant-time checks (BINSEC)
 
 Port of the RustCrypto `ml-dsa/checkct` harness (signatures repo, rev a3690c4) to this crate. The driver
-`#[path]`-includes the crate sources unchanged (`params`, `field`, `rounding`, `ntt`, `keccak`, `encode`, `sampling`,
-`keygen`, `sign`, `verify`, `api`; the crate is `no_std` with no dependencies, so no shims are needed), marks every
-probe input secret through the `__checkct_private_rand` hook, and lets BINSEC (via `cargo-checkct`) symbolically
+`#[path]`-includes the crate sources unchanged (`params`, `field`, `rounding`, `ntt`, `keccak`, `keccak4`, `cpu` (with the
+`avx2` feature, x86_64), `encode`, `sampling`, `keygen`, `sign`, `verify`, `api`; `fast_verify` is included through a
+module that repeats its two cfg-gated items and includes `src/fast_verify/dispatch.rs`, see `driver/src/main.rs`; the
+crate is `no_std` with no dependencies, so no shims are needed), marks every probe input secret through the `__checkct_private_rand` hook, and lets BINSEC (via `cargo-checkct`) symbolically
 execute the compiled release binary, flagging any secret-dependent branch, memory access, or division operand.
 
 This directory is its own workspace (`[workspace]` in `checkct/Cargo.toml`). It is not a member of the main
@@ -50,7 +51,8 @@ can run well past `TIMEOUT`.
 
 ### Profiles for the AVX2 dispatch
 
-The crate's runtime AVX2 dispatch of the NTT bodies (`src/ntt.rs`, `mod dispatch`) exists only with the opt-in cargo
+The crate's runtime AVX2 dispatch of the NTT bodies (`src/ntt.rs`, `mod dispatch`) and of verify (`src/fast_verify.rs`), with the one
+cached CPU check they share (`src/cpu.rs`), exists only with the opt-in cargo
 feature `avx2`. The driver includes `src/` through `#[path]`, so the sources are modules of the driver crate and see
 the driver's own feature: `checkct/driver/Cargo.toml` declares `avx2 = []`, off by default like the crate's. A build of
 the driver without it has no dispatch (the default; what `run.sh` builds). `cargo-checkct` has no `--features` option, so
@@ -73,7 +75,7 @@ status `unknown`). The run is loud about it:
 
 - before any probe starts, it prints `preset <target>: PROFILE=...: dispatch compiled in, AVX2 cache static at 0x...` (or
   `no dispatch compiled ... nothing to pre-set`), and aborts with `PRESET FAILED` unless `nm` finds exactly one symbol
-  `driver::ntt::dispatch::AVX2` (matched exactly, in v0 or legacy mangling with the LTO suffixes) in a dispatch profile
+  `driver::cpu::AVX2` (matched exactly, in v0 or legacy mangling with the LTO suffixes) in a dispatch profile
   and none in any other profile;
 - per probe it checks that the `@[rsp, 8] :=` anchor of the generated script matched and the inserted line is there,
   and prints `done <target> <probe> <status> (AVX2 cache 0x... pre-set to 1)`; a missing anchor reports the probe as
