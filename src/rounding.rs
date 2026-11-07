@@ -104,6 +104,25 @@ pub fn vec_infinity_norm<const N: usize>(w: &[[u32; 256]; N]) -> u32 {
     acc
 }
 
+/// Whether `max_i |w_i mod± q| < bound` for the public vector `z` of verify: every entry `x < q` has `x < bound` or
+/// `x > q - bound`. Plain arithmetic (no mask or barrier), so the loop vectorizes; not for secret data
+/// (`vec_infinity_norm` is the constant-time one). Requires `0 < bound < q`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn vec_norm_lt_pub<const N: usize>(w: &[[u32; 256]; N], bound: u32) -> bool {
+    let mut bad = 0u32;
+    let mut i = 0;
+    while i < N {
+        let mut j = 0;
+        while j < 256 {
+            let x = w[i][j];
+            bad |= (!((x < bound) | (x > Q - bound))) as u32;
+            j += 1;
+        }
+        i += 1;
+    }
+    bad == 0
+}
+
 /// Algorithm 40 UseHint(h, r). Public data (Verify): branches are fine.
 pub fn use_hint(p: &Params, h: bool, r: u32) -> u32 {
     // 1: m ← (q − 1)/(2γ2)

@@ -4,7 +4,7 @@ use crate::encode::{pk_decode, sig_decode, w1_encode};
 use crate::keccak::Shake;
 use crate::ntt::{matrix_vector_ntt, multiply_ntt, ntt, ntt_inverse, ntt_vec, sub_poly};
 use crate::params::{pk_len, sig_len, Params};
-use crate::rounding::{poly_use_hint_pub, vec_infinity_norm};
+use crate::rounding::{poly_use_hint_pub, vec_norm_lt_pub};
 use crate::keccak4::Lanes4;
 use crate::sampling::{expand_a, expand_a_into_x4, expand_a_x4, rej_ntt_poly, sample_in_ball};
 
@@ -223,7 +223,7 @@ fn verify_core<const K: usize, const L: usize>(
     hash.finalize();
     hash.squeeze(&mut c_tilde_prime[..p.c_tilde_len]);
     // 13: return ‖z‖∞ < γ1 − β and c̃ = c̃′
-    let norm_ok = vec_infinity_norm(z) < p.gamma1 - p.beta;
+    let norm_ok = vec_norm_lt_pub(z, p.gamma1 - p.beta);
     let hash_ok = prefix_eq(c_tilde, &c_tilde_prime, p.c_tilde_len);
     norm_ok && hash_ok
 }
