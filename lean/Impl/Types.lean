@@ -124,7 +124,7 @@ structure keccak4.Lanes4 (Self : Type) where
   splat : Std.U64 → RustM (Array Std.U64 4#usize)
 
 /-- [ml_dsa_lean::keccak4::Shim4]
-    Source: 'src/keccak4.rs', lines 26:0-26:17
+    Source: 'src/keccak4.rs', lines 29:0-29:17
     Visibility: public -/
 @[reducible]
 def keccak4.Shim4 := Unit
