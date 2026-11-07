@@ -22,23 +22,23 @@ theorem Q_eq : field.Q = 8380417#u32 := by
   unfold field.Q; rfl
 
 /-- Every coefficient is below `B`. -/
-def Bounded (B : Nat) (w : Array U32 256#usize) : Prop := ∀ x ∈ w.val, x.val < B
+def LazyBounded (B : Nat) (w : Array U32 256#usize) : Prop := ∀ x ∈ w.val, x.val < B
 
-theorem bounded_mono {B B' : Nat} (h : B ≤ B') {w : Array U32 256#usize} (hw : Bounded B w) : Bounded B' w :=
+theorem bounded_mono {B B' : Nat} (h : B ≤ B') {w : Array U32 256#usize} (hw : LazyBounded B w) : LazyBounded B' w :=
   fun x hx => lt_of_lt_of_le (hw x hx) h
 
-theorem bounded_set (B : Nat) (w : Array U32 256#usize) (i : Usize) (x : U32) (hw : Bounded B w)
-    (hx : x.val < B) : Bounded B (w.set i x) := by
+theorem bounded_set (B : Nat) (w : Array U32 256#usize) (i : Usize) (x : U32) (hw : LazyBounded B w)
+    (hx : x.val < B) : LazyBounded B (w.set i x) := by
   intro y hy
   rw [Array.set_val_eq] at hy
   rcases List.mem_or_eq_of_mem_set hy with h | h
   · exact hw y h
   · subst h; exact hx
 
-theorem bounded_get {B : Nat} {w : Array U32 256#usize} (hw : Bounded B w) {k : Nat} (h : k < w.val.length) :
+theorem bounded_get {B : Nat} {w : Array U32 256#usize} (hw : LazyBounded B w) {k : Nat} (h : k < w.val.length) :
     (w.val[k]).val < B := hw _ (List.getElem_mem h)
 
-theorem canonical_iff_bounded (w : Array U32 256#usize) : Canonical w ↔ Bounded 8380417 w := Iff.rfl
+theorem canonical_iff_bounded (w : Array U32 256#usize) : Canonical w ↔ LazyBounded 8380417 w := Iff.rfl
 
 /-! ## Lazy Shoup product -/
 
@@ -212,9 +212,9 @@ def OutInv (LEN i Bin : Nat) (w : Array U32 256#usize) : Prop :=
 
 theorem outer_lazy_loop (LEN ITER : Usize) (hLEN : 0 < LEN.val) (hprod : LEN.val * ITER.val = 128)
     (Bin : Nat) (hB : Bin + 2 * 8380417 ≤ 4294967296)
-    (w0 : Array U32 256#usize) (hw0 : Bounded Bin w0) (m0 : Usize) (hm : m0.val + ITER.val < 256) :
+    (w0 : Array U32 256#usize) (hw0 : LazyBounded Bin w0) (m0 : Usize) (hm : m0.val + ITER.val < 256) :
     verify_arith.ntt_lazy_layer_loop0 LEN ITER w0 m0 0#usize ⦃ r =>
-      Bounded (Bin + 2 * 8380417) r.1 ∧ r.2.val = m0.val + ITER.val ∧
+      LazyBounded (Bin + 2 * 8380417) r.1 ∧ r.2.val = m0.val + ITER.val ∧
       toZq r.1 = (blockFold LEN.val m0.val (toZq w0) ITER.val).snd.snd ⦄ := by
   unfold verify_arith.ntt_lazy_layer_loop0
   apply loop.spec_decr_nat
@@ -277,9 +277,9 @@ theorem outer_lazy_loop (LEN ITER : Usize) (hLEN : 0 < LEN.val) (hprod : LEN.val
 
 @[step]
 theorem lazy_layer_spec (LEN ITER : Usize) (hLEN : 0 < LEN.val) (hprod : LEN.val * ITER.val = 128)
-    (w : Array U32 256#usize) (Bin : Nat) (hw : Bounded Bin w) (hB : Bin + 2 * 8380417 ≤ 4294967296)
+    (w : Array U32 256#usize) (Bin : Nat) (hw : LazyBounded Bin w) (hB : Bin + 2 * 8380417 ≤ 4294967296)
     (m : Usize) (hm : m.val + ITER.val < 256) :
-    verify_arith.ntt_lazy_layer LEN ITER w m ⦃ r => Bounded (Bin + 2 * 8380417) r.1 ∧
+    verify_arith.ntt_lazy_layer LEN ITER w m ⦃ r => LazyBounded (Bin + 2 * 8380417) r.1 ∧
       r.2.val = m.val + ITER.val ∧ (toZq r.1, r.2.val) = nttLayer LEN.val (toZq w) m.val ⦄ := by
   unfold verify_arith.ntt_lazy_layer
   apply WP.spec_mono (outer_lazy_loop LEN ITER hLEN hprod Bin hB w hw m hm)
@@ -369,7 +369,7 @@ theorem reduce_loop (w0 : Array U32 256#usize) :
 /-- `ntt_pub_in_place` is `Spec.NTT` on canonical input, with canonical output. -/
 theorem ntt_pub_in_place_spec (w : Array U32 256#usize) (hw : Canonical w) :
     verify_arith.ntt_pub_in_place w ⦃ r => Canonical r ∧ toZq r = Spec.NTT (toZq w) ⦄ := by
-  have hw0 : Bounded 8380417 w := hw
+  have hw0 : LazyBounded 8380417 w := hw
   unfold verify_arith.ntt_pub_in_place
   step with lazy_layer_spec 128#usize 1#usize (by scalar_tac) (by scalar_tac) w _ hw0 (by norm_num) 0#usize (by simp)
   step with lazy_layer_spec 64#usize 2#usize (by scalar_tac) (by scalar_tac) w1 _ w1_post1 (by norm_num) m (by scalar_tac)
@@ -565,10 +565,10 @@ def OutInvG (LEN i Bin Bout : Nat) (w : Array U32 256#usize) : Prop :=
 
 theorem outer_lazy_inv_loop (LEN ITER : Usize) (hLEN : 0 < LEN.val) (hprod : LEN.val * ITER.val = 128)
     (b : U32) (hb0 : ((b.val : Nat) : Zq) = 0) (hbq : 8380417 ≤ b.val) (hbB : 2 * b.val ≤ 4294967296)
-    (w0 : Array U32 256#usize) (hw0 : Bounded b.val w0) (m0 : Usize)
+    (w0 : Array U32 256#usize) (hw0 : LazyBounded b.val w0) (m0 : Usize)
     (hm : ITER.val ≤ m0.val) (hm' : m0.val ≤ 256) :
     verify_arith.ntt_inverse_lazy_layer_loop0 LEN ITER w0 m0 b 0#usize ⦃ r =>
-      Bounded (2 * b.val) r.1 ∧ r.2.val = m0.val - ITER.val ∧
+      LazyBounded (2 * b.val) r.1 ∧ r.2.val = m0.val - ITER.val ∧
       toZq r.1 = (blockFoldInv LEN.val m0.val (toZq w0) ITER.val).snd.snd ⦄ := by
   unfold verify_arith.ntt_inverse_lazy_layer_loop0
   apply loop.spec_decr_nat
@@ -630,10 +630,10 @@ theorem outer_lazy_inv_loop (LEN ITER : Usize) (hLEN : 0 < LEN.val) (hprod : LEN
     · simp [blockFoldInv_zero]
 
 theorem lazy_inv_layer_spec (LEN ITER : Usize) (hLEN : 0 < LEN.val) (hprod : LEN.val * ITER.val = 128)
-    (w : Array U32 256#usize) (b : U32) (hw : Bounded b.val w) (hb0 : ((b.val : Nat) : Zq) = 0)
+    (w : Array U32 256#usize) (b : U32) (hw : LazyBounded b.val w) (hb0 : ((b.val : Nat) : Zq) = 0)
     (hbq : 8380417 ≤ b.val) (hbB : 2 * b.val ≤ 4294967296) (m : Usize)
     (hm : ITER.val ≤ m.val) (hm' : m.val ≤ 256) :
-    verify_arith.ntt_inverse_lazy_layer LEN ITER w m b ⦃ r => Bounded (2 * b.val) r.1 ∧
+    verify_arith.ntt_inverse_lazy_layer LEN ITER w m b ⦃ r => LazyBounded (2 * b.val) r.1 ∧
       r.2.val = m.val - ITER.val ∧ (toZq r.1, r.2.val) = nttInvLayer LEN.val (toZq w) m.val ⦄ := by
   unfold verify_arith.ntt_inverse_lazy_layer
   apply WP.spec_mono (outer_lazy_inv_loop LEN ITER hLEN hprod b hb0 hbq hbB w hw m hm hm')
@@ -695,7 +695,7 @@ theorem cast_q_eq_zero (b : U32) (n : Nat) (h : b.val = n * 8380417) : ((b.val :
 /-- `ntt_inverse_pub_in_place` is `Spec.NTTInv` on canonical input, with canonical output. -/
 theorem ntt_inverse_pub_in_place_spec (w : Array U32 256#usize) (hw : Canonical w) :
     verify_arith.ntt_inverse_pub_in_place w ⦃ r => Canonical r ∧ toZq r = Spec.NTTInv (toZq w) ⦄ := by
-  have hw0 : Bounded 8380417 w := hw
+  have hw0 : LazyBounded 8380417 w := hw
   unfold verify_arith.ntt_inverse_pub_in_place
   simp only [Q_eq]
   step with lazy_inv_layer_spec 1#usize 128#usize (by scalar_tac) (by scalar_tac) w 8380417#u32 hw0 (cast_q_eq_zero _ 1 (by scalar_tac)) (by scalar_tac) (by scalar_tac) 256#usize (by scalar_tac) (by scalar_tac)
