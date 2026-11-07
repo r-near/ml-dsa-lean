@@ -19,7 +19,9 @@
 //! `#[target_feature(enable = "avx2")]` wrapper in `fast_verify.rs` and the intrinsics must be `#[inline(always)]`
 //! (under `feature = "avx2"`, not miri, x86_64), as `keccak_f1600_x4` is. A callee that is not inlined is compiled
 //! without AVX2 and calls the intrinsics out of line, which is correct but several times slower than scalar.
-//! `scripts/check-avx2-inlining.sh` checks for this.
+//! `scripts/check-avx2-inlining.sh` checks for this (it caught an `#[inline(never)]` on this file's first draft of
+//! `prepare_vk_x4_into`, which is why the stub's prepare functions are `#[inline(always)]`; `verify.rs`'s `prepare_vk*`
+//! are `#[inline(never)]` for stack-frame reasons, so the 4-way versions cannot simply copy that attribute).
 
 use crate::encode::{pk_decode, sig_decode, w1_encode};
 use crate::field::Q;
@@ -116,7 +118,7 @@ fn hash_pk(pk: &[u8]) -> [u8; 64] {
     tr
 }
 
-#[inline(never)]
+#[inline(always)]
 fn prepare_vk_x4_into<const K: usize, const L: usize, X: Lanes4>(pk: &[u8], out: &mut PreparedVk<K, L>) {
     let (rho, t1) = pk_decode::<K>(pk);
     expand_a_x4_into::<K, L, X>(&rho, &mut out.a_hat);
@@ -125,7 +127,7 @@ fn prepare_vk_x4_into<const K: usize, const L: usize, X: Lanes4>(pk: &[u8], out:
 }
 
 /// `verify::prepare_vk` with the 4-way ExpandA. Precondition: `pk.len() == 32 + 320 * K`.
-#[inline(never)]
+#[inline(always)]
 pub(crate) fn prepare_vk_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8]) -> PreparedVk<K, L> {
     let (rho, t1) = pk_decode::<K>(pk);
     let mut a_hat = [[[0u32; 256]; L]; K];
