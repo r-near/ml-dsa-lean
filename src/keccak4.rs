@@ -221,6 +221,7 @@ pub mod avx2 {
     /// The CPU must support AVX2 (a safe `#[target_feature]` function on Rust 1.86; callers outside AVX2 code need
     /// `unsafe`).
     #[target_feature(enable = "avx2")]
+    #[cfg_attr(not(feature = "internals"), allow(dead_code))] // the verify dispatch inlines the kernel itself; tests and benches call this
     pub fn keccak_f1600_x4_avx2(s: &mut [[u64; 4]; 25]) {
         keccak_f1600_x4::<Avx2>(s)
     }
