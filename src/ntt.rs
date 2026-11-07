@@ -248,7 +248,7 @@ mod dispatch {
 #[allow(unsafe_code)]
 mod dispatch {
     use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body, ntt_inverse_body_mut};
-    use core::sync::atomic::{AtomicU8, Ordering};
+    use crate::cpu::has_avx2;
 
     #[target_feature(enable = "avx2")]
     fn ntt_avx2(w: &[u32; 256]) -> [u32; 256] {
@@ -269,44 +269,6 @@ mod dispatch {
     #[target_feature(enable = "avx2")]
     fn multiply_ntt_avx2(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
         multiply_ntt_body(a, b)
-    }
-
-    /// CPUID leaf 7 EBX bit 5 (AVX2), plus leaf 1 XSAVE, OSXSAVE and AVX, and XCR0 bits 1 and 2 (the OS saves XMM
-    /// and YMM state). Not for SGX enclaves, where CPUID faults; the `avx2` feature does not support them.
-    /// Public data (the CPU model), no secret input. CPUID traps to the hypervisor on virtual machines
-    /// (microseconds), so the answer is cached.
-    fn detect_avx2() -> bool {
-        use core::arch::x86_64::{__cpuid, __cpuid_count, _xgetbv};
-        // SAFETY: CPUID exists on every x86_64 CPU; XGETBV is executed only after OSXSAVE is reported.
-        #[allow(unused_unsafe)]
-        unsafe {
-            if __cpuid(0).eax < 7 {
-                return false;
-            }
-            // Leaf 1 ECX: bit 26 XSAVE, bit 27 OSXSAVE (the OS enabled XSAVE), bit 28 AVX.
-            if (__cpuid(1).ecx >> 26) & 0b111 != 0b111 {
-                return false;
-            }
-            if _xgetbv(0) & 0b110 != 0b110 {
-                return false;
-            }
-            (__cpuid_count(7, 0).ebx >> 5) & 1 == 1
-        }
-    }
-
-    /// 0 = not yet checked, 1 = no AVX2, 2 = AVX2. Relaxed is enough: racing threads compute the same value.
-    static AVX2: AtomicU8 = AtomicU8::new(0);
-
-    fn has_avx2() -> bool {
-        match AVX2.load(Ordering::Relaxed) {
-            2 => true,
-            1 => false,
-            _ => {
-                let yes = detect_avx2();
-                AVX2.store(if yes { 2 } else { 1 }, Ordering::Relaxed);
-                yes
-            }
-        }
     }
 
     pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
