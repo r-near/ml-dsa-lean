@@ -44,7 +44,7 @@ all covered by the single `Bool` `b`.
 Leaf specs: `pk_decode_spec_range`, `sig_decode_spec`, `expand_a_spec`, `shake256_spec`, `absorb_spec`,
 `finalize_spec`, `squeeze_spec` (three hashes; `M′ = m_prefix ‖ m` is absorbed by two `absorb_spec` steps, so the
 concatenation needs no extra lemma), `sample_in_ball_spec`, `ntt_vec_spec`, `matrix_vector_ntt_spec`, `ntt_spec`,
-`scale_vec_by_2d_pk_decode`, `multiply_ntt_spec`, `sub_poly_spec`, `ntt_inverse_spec`, `poly_use_hint_spec`
+`scale_vec_by_2d_pk_decode`, `multiply_ntt_spec`, `sub_poly_spec`, `ntt_inverse_spec`, `poly_use_hint_pub_spec`
 (the loop of steps 10-11 is `Verify.verify_loop_spec`), `w1_encode_spec_long` (the `EncodeKeys` spec for a buffer
 longer than the encoding, proved here), `vec_infinity_norm_spec`, `prefix_eq_spec`.
 -/
@@ -286,7 +286,7 @@ theorem verify_loop_spec {K L : Usize} {k : Nat} {ip : Impl.params.Params} {sp :
         rw [hW]; exact ⟨ha3, by rw [ha3', ha2.eq]⟩
       have hrW' : Repr a5 ((NTTInvVec (AZ - ScalarVectorNTT C T))[i.val]'hik) := by
         rw [← vget! _ _ hik]; exact hrW
-      step with poly_use_hint_spec hp hg a4 H[i.val] ha4 a5 _ hrW' as ⟨a6, ha6, ha6'⟩
+      step with poly_use_hint_pub_spec hp hg a4 H[i.val] ha4 a5 _ hrW' as ⟨a6, ha6, ha6'⟩
       step*
       have hrow : W1Row sp (UseHintVec sp H (NTTInvVec (AZ - ScalarVectorNTT C T))) i.val a6 := by
         refine ⟨?_, fun c hc => ?_⟩

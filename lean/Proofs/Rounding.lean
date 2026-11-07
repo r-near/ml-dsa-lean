@@ -495,6 +495,265 @@ theorem use_hint_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
       (Or.inr (Or.inr ⟨rfl, rfl⟩))
 
 
+/-! ## `use_hint_g32` and `use_hint_g88` (the verify path, public data) -/
+
+theorem uh_facts_65 (sp : Spec.Params) (hsp : sp.γ₂ = 261888) (r : Nat) (hr : r < 8380417) :
+    ∃ t k : Int, (r:Int) = 523776 * k + t ∧ -261888 < t ∧ t ≤ 261888 ∧ 0 ≤ k ∧ k ≤ 16 ∧
+      (Spec.Decompose sp ((r:Nat):Zq)).1 = (if k = 16 then 0 else k) ∧
+      (Spec.Decompose sp ((r:Nat):Zq)).2 = (if k = 16 then t - 1 else t) := by
+  have hmod := modPM_cases (r:Int) (2*261888)
+  rw [Decompose_eq, hsp, zq_val _ hr]
+  generalize Spec.modPM (r:Int) (2*261888) = t at hmod ⊢
+  simp only [Nat.cast_mul, Nat.cast_ofNat, Spec.q] at hmod ⊢
+  refine ⟨t, ((r:Int) - t)/523776, ?_⟩
+  by_cases hE : (r:Int) - t = 8380417 - 1
+  · rw [if_pos hE]
+    refine ⟨by omega, by omega, by omega, by omega, by omega, ?_, ?_⟩
+    · rw [if_pos (by omega)]
+    · rw [if_pos (by omega)]
+  · rw [if_neg hE]
+    refine ⟨by omega, by omega, by omega, by omega, by omega, ?_, ?_⟩
+    · rw [if_neg (by omega)]; omega
+    · rw [if_neg (by omega)]
+
+theorem uh_facts_44 (sp : Spec.Params) (hsp : sp.γ₂ = 95232) (r : Nat) (hr : r < 8380417) :
+    ∃ t k : Int, (r:Int) = 190464 * k + t ∧ -95232 < t ∧ t ≤ 95232 ∧ 0 ≤ k ∧ k ≤ 44 ∧
+      (Spec.Decompose sp ((r:Nat):Zq)).1 = (if k = 44 then 0 else k) ∧
+      (Spec.Decompose sp ((r:Nat):Zq)).2 = (if k = 44 then t - 1 else t) := by
+  have hmod := modPM_cases (r:Int) (2*95232)
+  rw [Decompose_eq, hsp, zq_val _ hr]
+  generalize Spec.modPM (r:Int) (2*95232) = t at hmod ⊢
+  simp only [Nat.cast_mul, Nat.cast_ofNat, Spec.q] at hmod ⊢
+  refine ⟨t, ((r:Int) - t)/190464, ?_⟩
+  by_cases hE : (r:Int) - t = 8380417 - 1
+  · rw [if_pos hE]
+    refine ⟨by omega, by omega, by omega, by omega, by omega, ?_, ?_⟩
+    · rw [if_pos (by omega)]
+    · rw [if_pos (by omega)]
+  · rw [if_neg hE]
+    refine ⟨by omega, by omega, by omega, by omega, by omega, ?_, ?_⟩
+    · rw [if_neg (by omega)]; omega
+    · rw [if_neg (by omega)]
+
+theorem low_is_positive_spec (t : U32) :
+    rounding.low_is_positive t ⦃ b => (b = true ↔ (2 ^ 32 - 1 + t.val) % 2 ^ 32 < 4190208) ⦄ := by
+  unfold rounding.low_is_positive
+  step*
+  have hQ : field.Q.val = 8380417 := by first | rfl | decide | simp [field.Q]
+  have h1 : (1#u32).val = 1 := rfl
+  have hiv : i.val = (2 ^ 32 - 1 + t.val) % 2 ^ 32 := by rw [i_post, wrapping_sub_val_u32, h1]
+  rw [decide_eq_true_iff, UScalar.lt_equiv, hiv, i1_post1, hQ, Nat.shiftRight_eq_div_pow]
+
+attribute [local step] low_is_positive_spec
+
+/-- The multiply-shift of `use_hint_g32` computes `((⌊(r+127)/128⌋·1025 + 2^21) / 2^22) mod 16`. -/
+theorem g32_hi (r i a i1 i2 i3 i4 r1 : U32) (hr : r.val < 8380417) (hi : i = core.num.U32.wrapping_add r 127#u32)
+    (ha : a.val = i.val >>> 7) (hi1 : i1 = core.num.U32.wrapping_mul a 1025#u32)
+    (hi2 : i2.val = 1 <<< 21 % U32.size) (hi3 : i3 = core.num.U32.wrapping_add i1 i2)
+    (hi4 : i4.val = i3.val >>> 22) (hr1 : r1.val = (i4 &&& 15#u32).val) :
+    r1.val = ((r.val + 127) / 128 * 1025 + 2097152) / 4194304 % 16 := by
+  have h127 : (127#u32).val = 127 := rfl
+  have h1025 : (1025#u32).val = 1025 := rfl
+  have h15 : (15#u32).val = 15 := rfl
+  have hU : U32.size = 4294967296 := by scalar_tac
+  have hiv : i.val = r.val + 127 := by
+    rw [hi, wrapping_add_val_u32, h127]; apply Nat.mod_eq_of_lt; omega
+  rw [Nat.shiftRight_eq_div_pow, hiv] at ha
+  have ha' : a.val = (r.val + 127) / 128 := by rw [ha]
+  have hi1v : i1.val = a.val * 1025 := by
+    rw [hi1, wrapping_mul_val_u32, h1025]; apply Nat.mod_eq_of_lt; omega
+  have hi2v : i2.val = 2097152 := by rw [hi2, hU]; rfl
+  have hi3v : i3.val = i1.val + i2.val := by
+    rw [hi3, wrapping_add_val_u32]; apply Nat.mod_eq_of_lt; omega
+  rw [Nat.shiftRight_eq_div_pow] at hi4
+  rw [hr1, UScalar.val_and, h15]
+  have e : (15 : Nat) = 2 ^ 4 - 1 := by norm_num
+  rw [e, Nat.and_two_pow_sub_one_eq_mod, hi4, hi3v, hi1v, hi2v, ha']
+
+
+theorem g32_t (r r1 i5 t : U32) (hr : r.val < 8380417) (hr1 : r1.val ≤ 16)
+    (hi5 : i5 = core.num.U32.wrapping_mul r1 523776#u32) (ht : t = core.num.U32.wrapping_sub r i5) :
+    t.val = (2 ^ 32 - r1.val * 523776 + r.val) % 2 ^ 32 := by
+  have h : (523776#u32).val = 523776 := rfl
+  have hi5v : i5.val = r1.val * 523776 := by
+    rw [hi5, wrapping_mul_val_u32, h]; apply Nat.mod_eq_of_lt; omega
+  rw [ht, wrapping_sub_val_u32, hi5v]
+
+theorem g32_r1k (r : Nat) (hr : r < 8380417) (t k : Int) (hrk : (r : Int) = 523776 * k + t) (ht1 : -261888 < t)
+    (ht2 : t ≤ 261888) (hk0 : 0 ≤ k) (hk16 : k ≤ 16) (r1 : Nat)
+    (h1 : r1 = ((r + 127) / 128 * 1025 + 2097152) / 4194304 % 16) : (r1 : Int) = if k = 16 then 0 else k := by
+  have := uh65_r1 (r : Int) t k hrk ht1 ht2 hk0 hk16
+  rw [h1]
+  push_cast
+  exact this
+
+theorem g32_pos (r r1 tv : Nat) (t k : Int) (hr : r < 8380417) (hrk : (r : Int) = 523776 * k + t)
+    (ht1 : -261888 < t) (ht2 : t ≤ 261888) (hk0 : 0 ≤ k) (hk16 : k ≤ 16)
+    (hr1 : (r1 : Int) = if k = 16 then 0 else k) (htv : tv = (2 ^ 32 - r1 * 523776 + r) % 2 ^ 32) :
+    ((2 ^ 32 - 1 + tv) % 2 ^ 32 < 4190208 ↔ (if k = 16 then t - 1 else t) > 0) := by
+  split_ifs at hr1 ⊢ <;> omega
+
+theorem g32_fin_add (r1 i6 : U32) (h : i6 = core.num.U32.wrapping_add r1 1#u32) (hr1 : r1.val < 16) :
+    (i6 &&& 15#u32).val = (r1.val + 1) % 16 := by
+  have h1 : (1#u32).val = 1 := rfl
+  have h15 : (15#u32).val = 15 := rfl
+  rw [UScalar.val_and, h15, h, wrapping_add_val_u32, h1]
+  have e : (15 : Nat) = 2 ^ 4 - 1 := by norm_num
+  rw [e, Nat.and_two_pow_sub_one_eq_mod]
+  omega
+
+theorem g32_fin_sub (r1 i6 : U32) (h : i6 = core.num.U32.wrapping_sub r1 1#u32) (hr1 : r1.val < 16) :
+    (i6 &&& 15#u32).val = (r1.val + 15) % 16 := by
+  have h1 : (1#u32).val = 1 := rfl
+  have h15 : (15#u32).val = 15 := rfl
+  rw [UScalar.val_and, h15, h, wrapping_sub_val_u32, h1]
+  have e : (15 : Nat) = 2 ^ 4 - 1 := by norm_num
+  rw [e, Nat.and_two_pow_sub_one_eq_mod]
+  omega
+
+theorem use_hint_g32_spec (sp : Spec.Params) (hsp : sp.γ₂ = 261888) (h : Bool) (r : U32) (hr : r.val < 8380417) :
+    rounding.use_hint_g32 h r ⦃ y => y.val < 16 ∧ (y.val : Int) = Spec.UseHint sp h ((r.val : Nat) : Zq) ⦄ := by
+  obtain ⟨tt, k, hrk, ht1, ht2, hk0, hk16, hD1, hD2⟩ := uh_facts_65 sp hsp r.val hr
+  have hm : sp.m = 16 := by simp [Spec.Params.m, hsp, Spec.q]
+  rw [UseHint_eq, hD1, hD2, hm]
+  unfold rounding.use_hint_g32
+  step*
+  all_goals have hr1 := g32_hi r i a i1 i2 i3 i4 r1 hr i_post a_post1 i1_post i2_post1 i3_post i4_post1 r1_post1
+  all_goals have hr1k := g32_r1k r.val hr tt k hrk ht1 ht2 hk0 hk16 _ hr1
+  · have hpos := g32_pos r.val r1.val _ tt k hr hrk ht1 ht2 hk0 hk16 hr1k (g32_t r r1 i5 t hr (by omega) i5_post t_post)
+    have hb := b_post.mp ‹b = true›
+    have hf := g32_fin_add r1 i6 i6_post (by omega)
+    simp only [hpos] at hb
+    rw [hf]
+    split_ifs at hb hr1k ⊢ <;> omega
+  · have hpos := g32_pos r.val r1.val _ tt k hr hrk ht1 ht2 hk0 hk16 hr1k (g32_t r r1 i5 t hr (by omega) i5_post t_post)
+    have hb : ¬ ((2 ^ 32 - 1 + t.val) % 2 ^ 32 < 4190208) := fun hh => ‹¬ b = true› (b_post.mpr hh)
+    have hf := g32_fin_sub r1 i6 i6_post (by omega)
+    rw [hf]
+    split_ifs at hb hr1k hpos ⊢ <;> omega
+  · simp only [false_and, if_false] at *
+    constructor <;> (try split_ifs at *) <;> omega
+
+/-- The raw multiply-shift of `use_hint_g88`. -/
+theorem g88_hi (r i a i1 i2 i3 r1 : U32) (hr : r.val < 8380417) (hi : i = core.num.U32.wrapping_add r 127#u32)
+    (ha : a.val = i.val >>> 7) (hi1 : i1 = core.num.U32.wrapping_mul a 11275#u32)
+    (hi2 : i2.val = 1 <<< 23 % U32.size) (hi3 : i3 = core.num.U32.wrapping_add i1 i2)
+    (hr1 : r1.val = i3.val >>> 24) :
+    r1.val = ((r.val + 127) / 128 * 11275 + 8388608) / 16777216 := by
+  have h127 : (127#u32).val = 127 := rfl
+  have h11275 : (11275#u32).val = 11275 := rfl
+  have hU : U32.size = 4294967296 := by scalar_tac
+  have hiv : i.val = r.val + 127 := by
+    rw [hi, wrapping_add_val_u32, h127]; apply Nat.mod_eq_of_lt; omega
+  rw [Nat.shiftRight_eq_div_pow, hiv] at ha
+  have ha' : a.val = (r.val + 127) / 128 := by rw [ha]
+  have hi1v : i1.val = a.val * 11275 := by
+    rw [hi1, wrapping_mul_val_u32, h11275]; apply Nat.mod_eq_of_lt; omega
+  have hi2v : i2.val = 8388608 := by rw [hi2, hU]; rfl
+  have hi3v : i3.val = i1.val + i2.val := by
+    rw [hi3, wrapping_add_val_u32]; apply Nat.mod_eq_of_lt; omega
+  rw [Nat.shiftRight_eq_div_pow] at hr1
+  rw [hr1, hi3v, hi1v, hi2v, ha']
+
+theorem g88_t (r r1 i4 t : U32) (hr : r.val < 8380417) (hr1 : r1.val ≤ 43)
+    (hi4 : i4 = core.num.U32.wrapping_mul r1 190464#u32) (ht : t = core.num.U32.wrapping_sub r i4) :
+    t.val = (2 ^ 32 - r1.val * 190464 + r.val) % 2 ^ 32 := by
+  have h : (190464#u32).val = 190464 := rfl
+  have hi4v : i4.val = r1.val * 190464 := by
+    rw [hi4, wrapping_mul_val_u32, h]; apply Nat.mod_eq_of_lt; omega
+  rw [ht, wrapping_sub_val_u32, hi4v]
+
+theorem g88_pos (r r1 tv : Nat) (t k : Int) (hr : r < 8380417) (hrk : (r : Int) = 190464 * k + t)
+    (ht1 : -95232 < t) (ht2 : t ≤ 95232) (hk0 : 0 ≤ k) (hk44 : k ≤ 44)
+    (hr1 : (r1 : Int) = if k = 44 then 0 else k) (htv : tv = (2 ^ 32 - r1 * 190464 + r) % 2 ^ 32) :
+    ((2 ^ 32 - 1 + tv) % 2 ^ 32 < 4190208 ↔ (if k = 44 then t - 1 else t) > 0) := by
+  split_ifs at hr1 ⊢ <;> omega
+
+theorem g88_r1k (r : Nat) (hr : r < 8380417) (t k : Int) (hrk : (r : Int) = 190464 * k + t) (ht1 : -95232 < t)
+    (ht2 : t ≤ 95232) (hk0 : 0 ≤ k) (hk44 : k ≤ 44) (r1 : Nat)
+    (h1 : r1 = ((r + 127) / 128 * 11275 + 8388608) / 16777216) : (r1 : Int) = k := by
+  have := uh44_r1 (r : Int) t k hrk ht1 ht2 hk0 hk44
+  rw [h1]
+  push_cast
+  exact this
+
+theorem use_hint_g88_spec (sp : Spec.Params) (hsp : sp.γ₂ = 95232) (h : Bool) (r : U32) (hr : r.val < 8380417) :
+    rounding.use_hint_g88 h r ⦃ y => y.val < 44 ∧ (y.val : Int) = Spec.UseHint sp h ((r.val : Nat) : Zq) ⦄ := by
+  obtain ⟨tt, k, hrk, ht1, ht2, hk0, hk44, hD1, hD2⟩ := uh_facts_44 sp hsp r.val hr
+  have hm : sp.m = 44 := by simp [Spec.Params.m, hsp, Spec.q]
+  rw [UseHint_eq, hD1, hD2, hm]
+  unfold rounding.use_hint_g88
+  step*
+  have hr1 := g88_hi r i a i1 i2 i3 r1 hr i_post a_post1 i1_post i2_post1 i3_post r1_post1
+  have hr1k := g88_r1k r.val hr tt k hrk ht1 ht2 hk0 hk44 _ hr1
+  have h43 : (43#u32).val = 43 := rfl
+  clear hr1 a_post1 a_post2 a_post3 i2_post1 i2_post2 i2_post3 r1_post1 r1_post2 r1_post3 hD1 hD2
+  have h0 : (0#u32).val = 0 := rfl
+  have h1 : (1#u32).val = 1 := rfl
+  have h43' : (43#u32).val = 43 := rfl
+  by_cases hc : r1 > 43#u32
+  · have hk : k = 44 := by
+      have := (show 43#u32 < r1 from hc)
+      rw [UScalar.lt_equiv, h43'] at this; omega
+    simp only [hc, if_true, bind_tc_ok]
+    step*
+    · have ht := g88_t r 0#u32 i4 t hr (by simp [h0]) i4_post t_post
+      have hpos := g88_pos r.val (0#u32).val t.val tt k hr hrk ht1 ht2 hk0 hk44 (by simp [hk, h0]) ht
+      have hbp := b_post
+      subst hk
+      rw [h0] at ht
+      simp only [eq_self, if_true] at hpos ⊢
+      simp only [wrapping_add_val_u32, h0, h1, h43']
+      have hb := hbp.mp ‹b = true›
+      constructor <;> (try split_ifs) <;> omega
+    · have ht := g88_t r 0#u32 i4 t hr (by simp [h0]) i4_post t_post
+      have hpos := g88_pos r.val (0#u32).val t.val tt k hr hrk ht1 ht2 hk0 hk44 (by simp [hk, h0]) ht
+      have hbp := b_post
+      subst hk
+      rw [h0] at ht
+      simp only [eq_self, if_true] at hpos ⊢
+      simp only [wrapping_add_val_u32, h0, h1, h43']
+      have hb : ¬ ((2 ^ 32 - 1 + t.val) % 2 ^ 32 < 4190208) := fun hh => ‹¬ b = true› (hbp.mpr hh)
+      constructor <;> (try split_ifs) <;> omega
+  · have hk : k ≠ 44 := by
+      intro hk; apply hc; show 43#u32 < r1; rw [UScalar.lt_equiv, h43']; omega
+    have hr43 : r1.val ≤ 43 := by
+      by_contra hcon; apply hc; show 43#u32 < r1; rw [UScalar.lt_equiv, h43']; omega
+    simp only [hc, if_false, bind_tc_ok]
+    step*
+    · have ht := g88_t r r1 i4 t hr hr43 i4_post t_post
+      have hpos := g88_pos r.val r1.val t.val tt k hr hrk ht1 ht2 hk0 hk44 (by simp [hk, hr1k]) ht
+      have hbp := b_post
+      simp only [hk, if_false] at hpos ⊢
+      simp only [wrapping_add_val_u32, wrapping_sub_val_u32, h0, h1, h43']
+      have hb := hbp.mp ‹b = true›
+      have hv : r1.val = 43 := by rw [‹r1 = 43#u32›]; rfl
+      constructor <;> (try split_ifs) <;> omega
+    · have ht := g88_t r r1 i4 t hr hr43 i4_post t_post
+      have hpos := g88_pos r.val r1.val t.val tt k hr hrk ht1 ht2 hk0 hk44 (by simp [hk, hr1k]) ht
+      have hbp := b_post
+      simp only [hk, if_false] at hpos ⊢
+      simp only [wrapping_add_val_u32, wrapping_sub_val_u32, h0, h1, h43']
+      have hb := hbp.mp ‹b = true›
+      have hv : r1.val ≠ 43 := fun e => ‹¬ r1 = 43#u32› (UScalar.eq_of_val_eq (by rw [e]; rfl))
+      constructor <;> (try split_ifs) <;> omega
+    · have ht := g88_t r r1 i4 t hr hr43 i4_post t_post
+      have hpos := g88_pos r.val r1.val t.val tt k hr hrk ht1 ht2 hk0 hk44 (by simp [hk, hr1k]) ht
+      have hbp := b_post
+      simp only [hk, if_false] at hpos ⊢
+      simp only [wrapping_add_val_u32, wrapping_sub_val_u32, h0, h1, h43']
+      have hb : ¬ ((2 ^ 32 - 1 + t.val) % 2 ^ 32 < 4190208) := fun hh => ‹¬ b = true› (hbp.mpr hh)
+      have hv : r1.val = 0 := by rw [‹r1 = 0#u32›]; rfl
+      constructor <;> (try split_ifs) <;> omega
+    · have ht := g88_t r r1 i4 t hr hr43 i4_post t_post
+      have hpos := g88_pos r.val r1.val t.val tt k hr hrk ht1 ht2 hk0 hk44 (by simp [hk, hr1k]) ht
+      have hbp := b_post
+      simp only [hk, if_false] at hpos ⊢
+      simp only [wrapping_add_val_u32, wrapping_sub_val_u32, h0, h1, h43']
+      have hb : ¬ ((2 ^ 32 - 1 + t.val) % 2 ^ 32 < 4190208) := fun hh => ‹¬ b = true› (hbp.mpr hh)
+      have hv : r1.val ≠ 0 := fun e => ‹¬ r1 = 0#u32› (UScalar.eq_of_val_eq (by rw [e]; rfl))
+      constructor <;> (try split_ifs) <;> omega
+
 /-! ## Coefficientwise loops: a pointwise invariant -/
 
 /-- Loop invariant of the 256-element output loops: `out` is canonical with all entries `< B`, and entry `k`
@@ -733,6 +992,119 @@ theorem poly_use_hint_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Pa
   · have := hout.get k hk
     rw [(key k hk).1, (key k hk).2] at this
     simpa only [Vector.getElem_zipWith] using this
+
+/-! ### `poly_use_hint_pub` (the verify path) -/
+
+attribute [local step] use_hint_g32_spec use_hint_g88_spec
+
+theorem poly_use_hint_pub_loop0_spec {sp : Spec.Params} (hsp : sp.γ₂ = 95232) (h : Array Bool 256#usize)
+    (r : Array U32 256#usize) (hr : Canonical r) (out : Array U32 256#usize) (j : Usize) (hj : j.val ≤ 256)
+    (hinv : PInv out (fun k => Spec.UseHint sp ((toHint h)[k]!) ((toZq r)[k]!)) j.val 44) :
+    rounding.poly_use_hint_pub_loop0 h r out j ⦃ o =>
+      PInv o (fun k => Spec.UseHint sp ((toHint h)[k]!) ((toZq r)[k]!)) 256 44 ⦄ := by
+  unfold rounding.poly_use_hint_pub_loop0
+  apply loop.spec_decr_nat
+    (fun (p : Array U32 256#usize × Usize) => 256 - p.2.val)
+    (fun p => PInv p.1 (fun k => Spec.UseHint sp ((toHint h)[k]!) ((toZq r)[k]!)) p.2.val 44 ∧
+      p.2.val ≤ 256)
+  · rintro ⟨o, j⟩ ⟨hI, hj⟩
+    dsimp only at hI hj
+    simp only [rounding.poly_use_hint_pub_loop0.body]
+    split
+    · rename_i hlt
+      step*
+      · rw [i_post2]; exact canon_get hr _
+      · have hjlt : j.val < 256 := by scalar_tac
+        have hE : (i1.val : Int) =
+            Spec.UseHint sp ((toHint h)[j.val]!) ((toZq r)[j.val]!) := by
+          rw [i1_post2, i_post2, b_post2, toZq_getElem r j.val i, toHint_getElem! h j.val b]
+        have := PInv_set j i1 hI (by simp only [Spec.q]; omega) i1_post1 hE
+        refine ⟨?_, by omega, by omega⟩
+        rw [a_post, j1_post]; exact this
+    · rename_i hlt
+      simp only [WP.spec_ok]
+      have : j.val = 256 := by scalar_tac
+      rw [this] at hI
+      exact hI
+  · exact ⟨hinv, hj⟩
+
+theorem poly_use_hint_pub_loop1_spec {sp : Spec.Params} (hsp : sp.γ₂ = 261888) (h : Array Bool 256#usize)
+    (r : Array U32 256#usize) (hr : Canonical r) (out : Array U32 256#usize) (j : Usize) (hj : j.val ≤ 256)
+    (hinv : PInv out (fun k => Spec.UseHint sp ((toHint h)[k]!) ((toZq r)[k]!)) j.val 16) :
+    rounding.poly_use_hint_pub_loop1 h r out j ⦃ o =>
+      PInv o (fun k => Spec.UseHint sp ((toHint h)[k]!) ((toZq r)[k]!)) 256 16 ⦄ := by
+  unfold rounding.poly_use_hint_pub_loop1
+  apply loop.spec_decr_nat
+    (fun (p : Array U32 256#usize × Usize) => 256 - p.2.val)
+    (fun p => PInv p.1 (fun k => Spec.UseHint sp ((toHint h)[k]!) ((toZq r)[k]!)) p.2.val 16 ∧
+      p.2.val ≤ 256)
+  · rintro ⟨o, j⟩ ⟨hI, hj⟩
+    dsimp only at hI hj
+    simp only [rounding.poly_use_hint_pub_loop1.body]
+    split
+    · rename_i hlt
+      step*
+      · rw [i_post2]; exact canon_get hr _
+      · have hjlt : j.val < 256 := by scalar_tac
+        have hE : (i1.val : Int) =
+            Spec.UseHint sp ((toHint h)[j.val]!) ((toZq r)[j.val]!) := by
+          rw [i1_post2, i_post2, b_post2, toZq_getElem r j.val i, toHint_getElem! h j.val b]
+        have := PInv_set j i1 hI (by simp only [Spec.q]; omega) i1_post1 hE
+        refine ⟨?_, by omega, by omega⟩
+        rw [a_post, j1_post]; exact this
+    · rename_i hlt
+      simp only [WP.spec_ok]
+      have : j.val = 256 := by scalar_tac
+      rw [this] at hI
+      exact hI
+  · exact ⟨hinv, hj⟩
+
+/-- **`poly_use_hint_pub`**: the verify-path UseHint (plain arithmetic, public data) has the postcondition of
+`poly_use_hint_spec`: the output stores `UseHint(h, r)` coefficientwise, as exact values `< m`. -/
+theorem poly_use_hint_pub_spec {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Valid ip K L sp) (hg : StdGamma2 sp) (h : Array Bool 256#usize) (hv : HintPoly)
+    (hh : ReprHint h hv) (r : Array U32 256#usize) (v : Poly) (hr : Repr r v) :
+    rounding.poly_use_hint_pub ip h r ⦃ out => ReprInt out (Vector.zipWith (Spec.UseHint sp) hv v) ∧
+      ∀ (k : Nat) (hk : k < 256), ((out.val[k]'(by rw [len256 out]; exact hk)).val : Int) =
+        Spec.UseHint sp hv[k] v[k] ∧ (out.val[k]'(by rw [len256 out]; exact hk)).val < sp.m ⦄ := by
+  obtain ⟨hc, hvr⟩ := hr
+  have hfin : ∀ (out : Array U32 256#usize),
+      PInv out (fun k => Spec.UseHint sp ((toHint h)[k]!) ((toZq r)[k]!)) 256 sp.m →
+      ReprInt out (Vector.zipWith (Spec.UseHint sp) hv v) ∧
+      ∀ (k : Nat) (hk : k < 256), ((out.val[k]'(by rw [len256 out]; exact hk)).val : Int) =
+        Spec.UseHint sp hv[k] v[k] ∧ (out.val[k]'(by rw [len256 out]; exact hk)).val < sp.m := by
+    intro out hout
+    rw [← hvr, ← (hh : toHint h = hv)]
+    have key : ∀ k (hk : k < 256), (toHint h)[k]! = (toHint h)[k] ∧ (toZq r)[k]! = (toZq r)[k] :=
+      fun k hk => ⟨by rw [getElem!_pos _ _ (by simpa using hk)], toZq_getElem!_eq r k hk⟩
+    refine ⟨PInv_to_repr hout (fun k hk => ?_), fun k hk => ?_⟩
+    · simp only [Vector.getElem_zipWith, (key k hk).1, (key k hk).2]
+    · have := hout.get k hk
+      rw [(key k hk).1, (key k hk).2] at this
+      simpa only [Vector.getElem_zipWith] using this
+  unfold rounding.poly_use_hint_pub
+  simp only [global_simps]
+  split
+  · rename_i hge
+    have hsp : sp.γ₂ = 95232 := by
+      have := hp.gamma2
+      rw [hge] at this
+      exact this.symm
+    have hm : sp.m = 44 := by simp [Spec.Params.m, hsp, Spec.q]
+    apply WP.spec_mono (poly_use_hint_pub_loop0_spec hsp h r hc _ 0#usize (by simp)
+      (by simpa using PInv_zero _ 44 (by norm_num)))
+    intro out hout
+    exact hfin out (by rw [hm]; exact hout)
+  · rename_i hge
+    have hsp : sp.γ₂ = 261888 := by
+      rcases hg with h1 | h1
+      · exfalso; apply hge; apply UScalar.eq_of_val_eq; rw [hp.gamma2, h1]; rfl
+      · exact h1
+    have hm : sp.m = 16 := by simp [Spec.Params.m, hsp, Spec.q]
+    apply WP.spec_mono (poly_use_hint_pub_loop1_spec hsp h r hc _ 0#usize (by simp)
+      (by simpa using PInv_zero _ 16 (by norm_num)))
+    intro out hout
+    exact hfin out (by rw [hm]; exact hout)
 
 /-! ### `poly_power2round` -/
 

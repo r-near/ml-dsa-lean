@@ -54,6 +54,32 @@ theorem modPM_cases (x : Int) (M : Nat) :
   · left; exact ⟨by assumption, rfl⟩
   · right; exact ⟨by omega, rfl⟩
 
+/-! ## The multiply-shift high parts of `use_hint_g32` / `use_hint_g88` -/
+
+/-- The multiply-shift high part for γ₂ = (q-1)/32. -/
+theorem uh65_r1 (r t k : Int) (hk : r = 523776*k + t) (ht1 : -261888 < t)
+    (ht2 : t ≤ 261888) (hk0 : 0 ≤ k) (hk16 : k ≤ 16) :
+    ((r+127)/128*1025 + 2097152)/4194304 % 16 = if k = 16 then 0 else k := by
+  have ha : (r + 127) / 128 = 4092 * k + (t + 127) / 128 := by omega
+  rw [ha]
+  generalize (t + 127) / 128 = s at *
+  have hs1 : -2045 ≤ s := by omega
+  have hs2 : s ≤ 2046 := by omega
+  have hd : ((4092 * k + s) * 1025 + 2097152) / 4194304 = k := by omega
+  rw [hd]
+  split <;> omega
+
+/-- The multiply-shift high part for γ₂ = (q-1)/88 (before the edge case is mapped to 0). -/
+theorem uh44_r1 (r t k : Int) (hk : r = 190464*k + t) (ht1 : -95232 < t)
+    (ht2 : t ≤ 95232) (hk0 : 0 ≤ k) (hk44 : k ≤ 44) :
+    ((r+127)/128*11275 + 8388608)/16777216 = k := by
+  have ha : (r + 127) / 128 = 1488 * k + (t + 127) / 128 := by omega
+  rw [ha]
+  generalize (t + 127) / 128 = s at *
+  have hs1 : -743 ≤ s := by omega
+  have hs2 : s ≤ 744 := by omega
+  omega
+
 /-! ## Unfolding the specification -/
 
 theorem Power2Round_eq (sp : Spec.Params) (r : Zq) :
