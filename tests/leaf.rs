@@ -268,6 +268,33 @@ fn poly_use_hint_pub_matches_poly_use_hint_exhaustive() {
 }
 
 #[test]
+fn bit_unpack_pub_matches_bit_unpack() {
+    // Random, all-zero, all-ones and single-bit inputs for the three widths of the verify path.
+    let mut x = 0x9e37_79b9_7f4a_7c15u64;
+    let mut next = move || {
+        x ^= x << 13;
+        x ^= x >> 7;
+        x ^= x << 17;
+        x
+    };
+    for c in [10usize, 18, 20] {
+        let n = 32 * c;
+        let mut cases: Vec<Vec<u8>> = vec![vec![0; n], vec![0xff; n], vec![0xaa; n], vec![0x55; n]];
+        for bit in 0..8 * n {
+            let mut v = vec![0u8; n];
+            v[bit / 8] = 1 << (bit % 8);
+            cases.push(v);
+        }
+        for _ in 0..2000 {
+            cases.push((0..n).map(|_| next() as u8).collect());
+        }
+        for v in &cases {
+            assert_eq!(bit_unpack_pub(v, c), bit_unpack(v, c), "c={c}");
+        }
+    }
+}
+
+#[test]
 fn coeff_from_half_byte_naive() {
     for p in [&ML_DSA_44, &ML_DSA_65, &ML_DSA_87] {
         let eta = p.eta as i64;

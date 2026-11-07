@@ -46,6 +46,76 @@ pub fn bit_unpack(v: &[u8], c: usize) -> [u32; 256] {
     w
 }
 
+/// `bit_unpack` for the public inputs of verify, where `c` is 10 (t1 in pkDecode) or 18 or 20 (z in sigDecode): the
+/// same function, computed a fixed number of bytes at a time with constant offsets and shifts, so that no bit accumulator
+/// runs through the loop and the compiler can drop the bounds checks. Any other `c` takes the generic `bit_unpack`.
+/// `v` must hold `32·c` bytes (as for `bit_unpack`; a shorter `v` panics). Equal to `bit_unpack` for every `v`
+/// (`Proofs/Encode.lean`, `bit_unpack_pub_spec`; `tests/leaf.rs` compares them on random and extreme inputs).
+/// Not for secret data (the generic one is what the secret-key decoders use).
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn bit_unpack_pub(v: &[u8], c: usize) -> [u32; 256] {
+    let mut w = [0u32; 256];
+    if c == 20 {
+        // two values per five bytes
+        let v = &v[..640];
+        let mut g = 0;
+        while g < 128 {
+            let o = 5 * g;
+            let b0 = v[o] as u32;
+            let b1 = v[o + 1] as u32;
+            let b2 = v[o + 2] as u32;
+            let b3 = v[o + 3] as u32;
+            let b4 = v[o + 4] as u32;
+            w[2 * g] = b0 | (b1 << 8) | ((b2 & 15) << 16);
+            w[2 * g + 1] = (b2 >> 4) | (b3 << 4) | (b4 << 12);
+            g += 1;
+        }
+        w
+    } else if c == 18 {
+        // four values per nine bytes
+        let v = &v[..576];
+        let mut g = 0;
+        while g < 64 {
+            let o = 9 * g;
+            let b0 = v[o] as u32;
+            let b1 = v[o + 1] as u32;
+            let b2 = v[o + 2] as u32;
+            let b3 = v[o + 3] as u32;
+            let b4 = v[o + 4] as u32;
+            let b5 = v[o + 5] as u32;
+            let b6 = v[o + 6] as u32;
+            let b7 = v[o + 7] as u32;
+            let b8 = v[o + 8] as u32;
+            w[4 * g] = b0 | (b1 << 8) | ((b2 & 3) << 16);
+            w[4 * g + 1] = (b2 >> 2) | (b3 << 6) | ((b4 & 15) << 14);
+            w[4 * g + 2] = (b4 >> 4) | (b5 << 4) | ((b6 & 63) << 12);
+            w[4 * g + 3] = (b6 >> 6) | (b7 << 2) | (b8 << 10);
+            g += 1;
+        }
+        w
+    } else if c == 10 {
+        // four values per five bytes
+        let v = &v[..320];
+        let mut g = 0;
+        while g < 64 {
+            let o = 5 * g;
+            let b0 = v[o] as u32;
+            let b1 = v[o + 1] as u32;
+            let b2 = v[o + 2] as u32;
+            let b3 = v[o + 3] as u32;
+            let b4 = v[o + 4] as u32;
+            w[4 * g] = b0 | ((b1 & 3) << 8);
+            w[4 * g + 1] = (b1 >> 2) | ((b2 & 15) << 6);
+            w[4 * g + 2] = (b2 >> 4) | ((b3 & 63) << 4);
+            w[4 * g + 3] = (b3 >> 6) | (b4 << 2);
+            g += 1;
+        }
+        w
+    } else {
+        bit_unpack(v, c)
+    }
+}
+
 /// Algorithm 17/19 with a = b − 1 or a = b: coefficients w ∈ [−a, b] are stored as b − w.
 fn pack_signed(w: &[u32; 256], b: u32, c: usize, out: &mut [u8]) {
     let mut t = [0u32; 256];
@@ -78,8 +148,13 @@ fn unpack_signed_into(v: &[u8], b: u32, c: usize, w: &mut [u32; 256]) {
 /// `unpack_signed_into` returning a fresh polynomial. For public inputs (the signature's z); the secret-key
 /// decoders use `unpack_signed_into`.
 fn unpack_signed(v: &[u8], b: u32, c: usize) -> [u32; 256] {
+    let z = bit_unpack_pub(v, c);
     let mut w = [0u32; 256];
-    unpack_signed_into(v, b, c, &mut w);
+    let mut i = 0;
+    while i < 256 {
+        w[i] = sub(b, z[i]);
+        i += 1;
+    }
     w
 }
 
@@ -278,7 +353,7 @@ pub fn pk_decode<const K: usize>(pk: &[u8]) -> ([u8; 32], [[u32; 256]; K]) {
     let mut t1 = [[0u32; 256]; K];
     let mut i = 0;
     while i < K {
-        t1[i] = bit_unpack(&pk[32 + i * 320..32 + (i + 1) * 320], 10);
+        t1[i] = bit_unpack_pub(&pk[32 + i * 320..32 + (i + 1) * 320], 10);
         i += 1;
     }
     (rho, t1)
