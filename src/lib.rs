@@ -21,18 +21,18 @@ pub mod api;
 pub mod encode;
 #[cfg(not(feature = "internals"))]
 mod encode;
-// The `avx2` feature's CPU check and verify dispatch: only where the dispatch exists (see `fast_verify.rs`).
+// The `avx2` feature's CPU check: only where the dispatch exists (see `fast_verify.rs`).
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", feature = "internals"))]
 #[allow(unsafe_code)]
 pub mod cpu;
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(feature = "internals")))]
 #[allow(unsafe_code)]
 mod cpu;
-#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", feature = "internals"))]
-#[allow(unsafe_code)]
+// `fast_verify` always exists: `api.rs` imports `verify_internal` and `prepare_vk` from it. Without the dispatch it only
+// re-exports the scalar functions.
+#[cfg(feature = "internals")]
 pub mod fast_verify;
-#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(feature = "internals")))]
-#[allow(unsafe_code)]
+#[cfg(not(feature = "internals"))]
 mod fast_verify;
 // TEMPORARY (stream W2): stand-in for the proved 4-way verify body; deleted at integration. See the file header.
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]

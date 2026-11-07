@@ -82,14 +82,7 @@ use crate::encode::sk_is_well_formed;
 use crate::keygen::{keygen_internal, pk_from_sk};
 use crate::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
 use crate::sign::{prepare_sk_into, sign_internal, sign_prepared_internal, PreparedSk};
-use crate::verify::{verify_prepared_internal, PreparedVk};
-// With the opt-in `avx2` feature on x86_64 (not Miri) `verify_internal` and `prepare_vk` are the run-time dispatchers of
-// `fast_verify.rs` (same signatures; the 4-way AVX2 body when the CPU has AVX2, otherwise the functions below). In every
-// other build, including the extraction (`--cfg miri`), they are the scalar functions themselves.
-#[cfg(not(all(feature = "avx2", not(miri), target_arch = "x86_64")))]
-use crate::verify::{prepare_vk, verify_internal};
-#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
-use crate::fast_verify::{prepare_vk, verify_internal};
+use crate::{fast_verify::{prepare_vk, verify_internal}, verify::{verify_prepared_internal, PreparedVk}}; // fast_verify.rs: the dispatchers with `avx2`, else the verify.rs functions
 
 /// Builds the prefix 0 ‖ |ctx| ‖ ctx of M′ = IntegerToBytes(0, 1) ‖ IntegerToBytes(|ctx|, 1) ‖ ctx ‖ M.
 /// Returns the buffer (bytes `..2 + ctx.len()` are the prefix), or `None` if |ctx| > 255
