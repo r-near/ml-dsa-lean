@@ -1,4 +1,4 @@
-# Spike B (docs/fast-verify-spike-b.md): the 4-way Keccak theorems. Checked by
+# Fast verify (docs/assurance.md section 1.9): the 4-way Keccak theorems. Checked by
 #   scripts/check-axioms.sh --list keccak4-theorems.txt --no-impl
 # (the extracted keccak4 defs are covered by the default run over lean/Impl/Funs.lean).
 import Proofs.Keccak4

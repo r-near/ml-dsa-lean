@@ -32,8 +32,9 @@ zeroize = ["dep:zeroize"]
 # Keccak kernel uses AVX2 lane operations tested equal to the proved plain-Rust model; otherwise the scalar code. The
 # dispatch shims and the AVX2 lane operations are outside the Lean proof, they are the crate's only `unsafe`, and BINSEC
 # cannot lift the AVX2 copies (docs/object-code-assurance.md section 3.5). Alternative without `unsafe`: build with
-# `-C target-cpu=x86-64-v3` (4-9% faster again, but the binary then requires AVX2, and BINSEC cannot lift its vector
-# code either).
+# `-C target-cpu=x86-64-v3` (verify timings are within a few percent of the feature's, in either direction depending on
+# the rustc version, docs/assurance.md section 5; the binary then requires AVX2, and BINSEC cannot lift its vector code
+# either).
 avx2 = []
 # Tests and fuzzing only; exposes unproved internals.
 # Makes every module public (keygen::keygen_internal, sign::sign_internal and verify::verify_internal

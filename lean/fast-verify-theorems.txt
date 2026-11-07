@@ -1,4 +1,4 @@
-# Fast verify (docs/fast-verify*.md): the 4-way SHAKE128 sampler, the 4-way ExpandA and the 4-way verify body, all
+# Fast verify (docs/assurance.md section 1.9): the 4-way SHAKE128 sampler, the 4-way ExpandA and the 4-way verify body, all
 # instantiated at the portable `Sh4` shim. Checked by
 #   scripts/check-axioms.sh --list fast-verify-theorems.txt --no-impl
 # (wired into scripts/lean-check.sh next to keccak4-theorems.txt; headline-theorems.txt is unchanged).

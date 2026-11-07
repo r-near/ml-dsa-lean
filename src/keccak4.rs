@@ -1,7 +1,7 @@
 //! 4-way Keccak-f[1600]: four independent states permuted at once, written once against a trait of lane-wise
 //! operations (`Lanes4`) and instantiated twice.
 //!
-//! * `Shim4`: plain Rust over `[u64; 4]`. This is the instantiation Charon/Aeneas see and the one portable builds run.
+//! * `Shim4`: plain Rust over `[u64; 4]`, the proved instance (Charon/Aeneas see it); portable builds use the scalar path.
 //! * `avx2::Avx2` (feature `avx2`, x86_64, not Miri): the same operations as AVX2 intrinsics. Outside the Lean proof.
 //!   Crate-private on purpose: its `Lanes4` methods are safe to call and execute AVX2 instructions, so a public
 //!   `Avx2` would let safe code reach them on a CPU without AVX2 (SIGILL, i.e. undefined behavior). Outside code can

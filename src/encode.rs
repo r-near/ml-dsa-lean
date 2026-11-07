@@ -50,7 +50,7 @@ pub fn bit_unpack(v: &[u8], c: usize) -> [u32; 256] {
 /// same function, computed a fixed number of bytes at a time with constant offsets and shifts, so that no bit accumulator
 /// runs through the loop and the compiler can drop the bounds checks. Any other `c` takes the generic `bit_unpack`.
 /// `v` must hold `32·c` bytes (as for `bit_unpack`; a shorter `v` panics). Equal to `bit_unpack` for every `v`
-/// (`Proofs/Encode.lean`, `bit_unpack_pub_spec`; `tests/leaf.rs` compares them on random and extreme inputs).
+/// (`Proofs/Encode.lean`, `bit_unpack_pub_core` and `bit_unpack_pub_spec_repr`; `tests/leaf.rs` compares them on random and extreme inputs).
 /// Not for secret data (the generic one is what the secret-key decoders use).
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn bit_unpack_pub(v: &[u8], c: usize) -> [u32; 256] {
