@@ -23,6 +23,9 @@ pub trait Lanes4 {
 }
 
 /// The plain-Rust model of the operations: what extraction sees, and what portable builds run.
+// Dead only in a build that has neither `internals` nor the Lean extraction: nothing in the public API instantiates the
+// 4-way body with it, only the proofs, the tests and the extraction roots do.
+#[cfg_attr(not(feature = "internals"), allow(dead_code))]
 pub struct Shim4;
 
 impl Lanes4 for Shim4 {
@@ -152,6 +155,7 @@ pub fn keccak_f1600_x4<L: Lanes4>(s: &mut [[u64; 4]; 25]) {
 }
 
 /// The portable instantiation: `keccak_f1600_x4` over `Shim4`.
+#[cfg_attr(not(feature = "internals"), allow(dead_code))] // tests and benches only, as for `Shim4`
 pub fn keccak_f1600_x4_portable(s: &mut [[u64; 4]; 25]) {
     keccak_f1600_x4::<Shim4>(s)
 }
