@@ -109,9 +109,63 @@ macro_rules! mld_cells {
     }};
 }
 
+/// aws-lc-rs 1.18.2, called the way nearcore calls it: verify through `UnparsedPublicKey`, sign through
+/// `PqdsaKeyPair::from_raw_private_key` + `sign`, keygen through `PqdsaKeyPair::from_seed`. There is no context
+/// parameter (the empty context is implied) and signing is hedged with fresh randomness, so there is no
+/// deterministic sign and the sign outputs differ from run to run (`is_random_output`).
+macro_rules! aws_cells {
+    ($cells:ident, $d:ident, $kg:ident, $alg_v:path, $alg_s:path, $sig:literal) => {{
+        use aws_lc_rs::encoding::AsRawBytes;
+        use aws_lc_rs::signature::{KeyPair, PqdsaKeyPair, UnparsedPublicKey};
+        // Untimed sanity: the aws-lc key from the seed matches ours, and the signatures it produces verify under ours.
+        {
+            let kp = PqdsaKeyPair::from_seed(&$alg_s, &$d.seeds[0]).unwrap();
+            assert_eq!(kp.public_key().as_ref(), api::$kg(&$d.seeds[0]).0.as_slice());
+            let mut sig = [0u8; $sig];
+            let kp = PqdsaKeyPair::from_raw_private_key(&$alg_s, &$d.sk).unwrap();
+            assert_eq!(kp.sign(&$d.msgs[0], &mut sig).unwrap(), $sig);
+            assert!(UnparsedPublicKey::new(&$alg_v, &$d.pk).verify(&$d.msgs[0], &sig).is_ok());
+            assert!(UnparsedPublicKey::new(&$alg_v, &$d.pk).verify(&$d.msgs[0], &$d.sig_det[0]).is_ok());
+        }
+        cell($cells, "aws-lc-rs", "keygen", NSEED, move |i| {
+            let kp = PqdsaKeyPair::from_seed(&$alg_s, &$d.seeds[i]).unwrap();
+            tag(kp.public_key().as_ref())
+        });
+        // plus exporting the expanded secret key, which is part of the output of every other implementation's keygen
+        cell($cells, "aws-lc-rs+sk-export", "keygen", NSEED, move |i| {
+            let kp = PqdsaKeyPair::from_seed(&$alg_s, &$d.seeds[i]).unwrap();
+            let sk = kp.private_key().as_raw_bytes().unwrap();
+            tag(kp.public_key().as_ref()) ^ tag(sk.as_ref())
+        });
+        cell($cells, "aws-lc-rs", "sign-hedged", NMSG, move |i| {
+            let kp = PqdsaKeyPair::from_raw_private_key(&$alg_s, &$d.sk).unwrap();
+            let mut sig = [0u8; $sig];
+            assert_eq!(kp.sign(&$d.msgs[i], &mut sig).unwrap(), $sig);
+            tag(&sig)
+        });
+        {
+            let kp = PqdsaKeyPair::from_raw_private_key(&$alg_s, &$d.sk).unwrap();
+            cell($cells, "aws-lc-rs+cached-sk", "sign-hedged", NMSG, move |i| {
+                let mut sig = [0u8; $sig];
+                assert_eq!(kp.sign(&$d.msgs[i], &mut sig).unwrap(), $sig);
+                tag(&sig)
+            });
+        }
+        cell($cells, "aws-lc-rs", "verify", NMSG, move |i| {
+            UnparsedPublicKey::new(&$alg_v, &$d.pk).verify(&$d.msgs[i], &$d.sig_det[i]).is_ok() as u64
+        });
+    }};
+}
+
+/// Cells whose output cannot be compared with the other implementations' bytes: aws-lc-rs signs with fresh
+/// randomness, and its plain keygen cell returns only the public key's tag (the `+sk-export` cell is compared).
+pub fn skips_agreement_check(imp: &str, group: &str) -> bool {
+    (imp.starts_with("aws-lc-rs") && group.starts_with("sign")) || (imp == "aws-lc-rs" && group == "keygen")
+}
+
 macro_rules! define_set {
     ($build:ident, $cellsfn:ident, $lvl:literal, $P:ty, $kg:ident, $sg:ident, $vf:ident, $vkf:ident, $vpf:ident, $skf:ident, $spf:ident,
-     $pk:literal, $sk:literal, $sig:literal, $m:ident, $LSK:ident, $LVK:ident, $LSIG:ident) => {
+     $pk:literal, $sk:literal, $sig:literal, $m:ident, $LSK:ident, $LVK:ident, $LSIG:ident, $AV:path, $AS:path) => {
         pub fn $build() -> SetData {
             SetData::build(
                 $lvl,
@@ -218,6 +272,9 @@ macro_rules! define_set {
                 lc_cells!(cells, d, "libcrux-avx2", $m, avx2, $LSK, $LVK, $LSIG, $pk, $sk);
             }
 
+            // ---- aws-lc-rs 1.18.2 (C, runtime CPU dispatch) -----------------------------------
+            aws_cells!(cells, d, $kg, $AV, $AS, $sig);
+
             // ---- mldsa-native v2.0.0 (C) ------------------------------------------------------
             mld_cells!(
                 cells, d, "mldsa-native-portable",
@@ -237,11 +294,14 @@ macro_rules! define_set {
 }
 
 define_set!(build_44, cells_44, 44, ml_dsa::MlDsa44, keygen_44, sign_44, verify_44, verifying_key_44, verify_prepared_44, signing_key_44, sign_prepared_44, 1312, 2560, 2420,
-    ml_dsa_44, MLDSA44SigningKey, MLDSA44VerificationKey, MLDSA44Signature);
+    ml_dsa_44, MLDSA44SigningKey, MLDSA44VerificationKey, MLDSA44Signature,
+    aws_lc_rs::signature::ML_DSA_44, aws_lc_rs::signature::ML_DSA_44_SIGNING);
 define_set!(build_65, cells_65, 65, ml_dsa::MlDsa65, keygen_65, sign_65, verify_65, verifying_key_65, verify_prepared_65, signing_key_65, sign_prepared_65, 1952, 4032, 3309,
-    ml_dsa_65, MLDSA65SigningKey, MLDSA65VerificationKey, MLDSA65Signature);
+    ml_dsa_65, MLDSA65SigningKey, MLDSA65VerificationKey, MLDSA65Signature,
+    aws_lc_rs::signature::ML_DSA_65, aws_lc_rs::signature::ML_DSA_65_SIGNING);
 define_set!(build_87, cells_87, 87, ml_dsa::MlDsa87, keygen_87, sign_87, verify_87, verifying_key_87, verify_prepared_87, signing_key_87, sign_prepared_87, 2592, 4896, 4627,
-    ml_dsa_87, MLDSA87SigningKey, MLDSA87VerificationKey, MLDSA87Signature);
+    ml_dsa_87, MLDSA87SigningKey, MLDSA87VerificationKey, MLDSA87Signature,
+    aws_lc_rs::signature::ML_DSA_87, aws_lc_rs::signature::ML_DSA_87_SIGNING);
 
 
 /// Inputs for ML-DSA-`set`.

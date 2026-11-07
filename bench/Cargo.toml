@@ -3,7 +3,7 @@ name = "ml-dsa-bench"
 version = "0.0.0"
 edition = "2024"
 publish = false
-description = "Timing and profiling harness: ml-dsa-lean vs RustCrypto ml-dsa, libcrux-ml-dsa (portable, AVX2) and mldsa-native (C portable, AVX2)"
+description = "Timing and profiling harness: ml-dsa-lean vs RustCrypto ml-dsa, libcrux-ml-dsa (portable, AVX2), mldsa-native (C portable, AVX2) and aws-lc-rs"
 
 [[bin]]
 name = "bench"
@@ -40,6 +40,10 @@ ml-dsa-crosscheck = { path = "../crosscheck" }
 # Same pins as crosscheck/Cargo.toml (the lockfile is a copy of crosscheck's, so there is one copy of each).
 libcrux-ml-dsa = { version = "=0.0.11", default-features = false, features = ["std", "mldsa44", "mldsa65", "mldsa87"] }
 ml-dsa = { git = "https://github.com/RustCrypto/signatures", rev = "a3690c4a0bd861fcf2bde0e38b3609e86c3fe89e", default-features = false, features = ["alloc"] }
+
+# aws-lc-rs at the version the main crate's tests/awslc_diff.rs and nearcore pin (default features; aws-lc-sys 0.46.0 in
+# the lockfile). Its ML-DSA API has no context parameter and its signing is hedged (fresh randomness every call).
+aws-lc-rs = "=1.18.2"
 
 # Keccak references for the micro benchmark: libcrux's SHA-3 (portable and 4-way AVX2) and the keccak crate's
 # portable permutation. Versions as in the lockfile.

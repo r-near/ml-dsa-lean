@@ -1,6 +1,6 @@
 //! Timing of keygen, sign (deterministic and hedged) and verify for ML-DSA-44/65/87:
 //! this crate (public `api` only), RustCrypto `ml-dsa`, libcrux-ml-dsa (portable, AVX2) and mldsa-native
-//! (C portable, AVX2). Run it pinned (`taskset -c N`) on an otherwise idle machine; see bench/compare.sh and the benchmark table in docs/assurance.md.
+//! (C portable, AVX2) and aws-lc-rs (hedged sign only). Run it pinned (`taskset -c N`) on an otherwise idle machine; see bench/compare.sh and the benchmark table in docs/assurance.md.
 //!
 //! Every implementation gets the same inputs. The crosscheck harness has shown that all of them produce
 //! byte-identical keys and signatures, so the rejection loop runs the same number of attempts everywhere and
@@ -43,6 +43,9 @@ fn main() {
                 }
             }
             let (st, out) = measure(c.n, rounds, lat, 0.3, 0.12, &mut *c.f);
+            if skips_agreement_check(&c.imp, c.group) {
+                // aws-lc-rs: see skips_agreement_check (cells.rs checks its keys and signatures against ours once)
+            } else {
             match expect.get(c.group) {
                 None => {
                     expect.insert(c.group, (c.imp.clone(), out));
@@ -51,6 +54,7 @@ fn main() {
                     // rustcrypto's keygen returns the same bytes; every group must agree entry for entry
                     assert!(*e == out, "ML-DSA-{set} {}: {} disagrees with {first}", c.group, c.imp);
                 }
+            }
             }
             println!(
                 "ROW\t{label}\t{set}\t{}\t{}\t{:.1}\t{:.1}\t{:.1}\t{:.1}\t{:.1}\t{:.1}\t{:.1}\t{:.1}\t{}\t{}\t{}",

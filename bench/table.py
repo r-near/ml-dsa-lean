@@ -10,7 +10,7 @@ import collections
 import sys
 
 ORDER = ["ours", "ours+prepared-vk", "ours+prepared-sk", "rustcrypto", "rustcrypto+cached-sk", "rustcrypto+cached-vk", "libcrux-portable", "libcrux-avx2",
-         "mldsa-native-portable", "mldsa-native-avx2"]
+         "mldsa-native-portable", "mldsa-native-avx2", "aws-lc-rs", "aws-lc-rs+cached-sk", "aws-lc-rs+sk-export"]
 OPS = ["keygen", "sign-det", "sign-hedged", "verify"]
 
 
