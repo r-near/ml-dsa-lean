@@ -6317,7 +6317,7 @@ def api.verifying_key_44
   ok { inner := pv }
 
 /-- [ml_dsa_lean::verify::verify_prepared_internal]:
-    Source: 'src/verify.rs', lines 324:0-341:1
+    Source: 'src/verify.rs', lines 325:0-342:1
     Visibility: public -/
 def verify.verify_prepared_internal
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)

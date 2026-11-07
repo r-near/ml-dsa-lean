@@ -45,10 +45,17 @@ fn api_functions_take_the_avx2_path_exactly_when_the_cpu_has_it() {
             total += step;
             assert_eq!(calls(), total, concat!(stringify!($vk), ": one dispatched call"));
 
-            // The prepared verify has no ExpandA to speed up; it is not dispatched.
+            // The prepared verify has its own AVX2 wrapper (`verify_prepared_avx2`): one dispatched call each.
             assert!(api::$vp(&vk, b"msg", b"ctx", &sig));
+            total += step;
+            assert_eq!(calls(), total, concat!(stringify!($vp), ": one dispatched call"));
             assert!(api::$vip(&vk, &mp, &sig));
-            assert_eq!(calls(), total, "prepared verify is the scalar path");
+            total += step;
+            assert_eq!(calls(), total, concat!(stringify!($vip), ": one dispatched call"));
+
+            // A context longer than 255 bytes returns false before any work, prepared or not.
+            assert!(!api::$vp(&vk, b"msg", &[0u8; 256], &sig));
+            assert_eq!(calls(), total, "context too long: no dispatch");
         }};
     }
     per_set!(keygen_44, sign_44, verify_44, verify_internal_44, verifying_key_44, verify_prepared_44, verify_internal_prepared_44);

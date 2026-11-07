@@ -82,7 +82,7 @@ use crate::encode::sk_is_well_formed;
 use crate::keygen::{keygen_internal, pk_from_sk};
 use crate::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
 use crate::sign::{prepare_sk_into, sign_internal, sign_prepared_internal, PreparedSk};
-use crate::{fast_verify::{prepare_vk, verify_internal}, verify::{verify_prepared_internal, PreparedVk}}; // fast_verify.rs: the dispatchers with `avx2`, else the verify.rs functions
+use crate::{fast_verify::{prepare_vk, verify_internal, verify_prepared_internal}, verify::PreparedVk}; // fast_verify.rs: the dispatchers with `avx2`, else the verify.rs functions
 
 /// Builds the prefix 0 ‖ |ctx| ‖ ctx of M′ = IntegerToBytes(0, 1) ‖ IntegerToBytes(|ctx|, 1) ‖ ctx ‖ M.
 /// Returns the buffer (bytes `..2 + ctx.len()` are the prefix), or `None` if |ctx| > 255

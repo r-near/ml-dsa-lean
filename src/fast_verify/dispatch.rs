@@ -37,6 +37,21 @@ fn verify_internal_avx2<const K: usize, const L: usize>(
     verify_internal_x4::<K, L, Avx2>(p, pk, m_prefix, m, sig)
 }
 
+/// The prepared-key verify body with AVX2: `verify::verify_prepared_internal` is `#[inline(always)]` (and so are the
+/// decoders and the verify-only arithmetic below it), so the NTTs, the multiply-accumulate rows, UseHint and the packing are
+/// compiled inside this function with AVX2 enabled. There is no ExpandA to speed up, so this is the scalar proved function
+/// itself, not an `X4` variant.
+#[target_feature(enable = "avx2")]
+fn verify_prepared_avx2<const K: usize, const L: usize>(
+    p: &Params,
+    vk: &PreparedVk<K, L>,
+    m_prefix: &[u8],
+    m: &[u8],
+    sig: &[u8],
+) -> bool {
+    verify::verify_prepared_internal::<K, L>(p, vk, m_prefix, m, sig)
+}
+
 #[target_feature(enable = "avx2")]
 fn prepare_vk_avx2<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
     prepare_vk_x4::<K, L, Avx2>(pk)
@@ -57,6 +72,24 @@ pub fn verify_internal<const K: usize, const L: usize>(
         unsafe { verify_internal_avx2::<K, L>(p, pk, m_prefix, m, sig) }
     } else {
         verify::verify_internal::<K, L>(p, pk, m_prefix, m, sig)
+    }
+}
+
+/// `verify::verify_prepared_internal` (`api::verify_prepared_*`), compiled with AVX2 when this CPU has it. Same signature,
+/// preconditions and results (`tests/fast_verify.rs`); it is the same proved function, so no 4-way variant is involved.
+pub fn verify_prepared_internal<const K: usize, const L: usize>(
+    p: &Params,
+    vk: &PreparedVk<K, L>,
+    m_prefix: &[u8],
+    m: &[u8],
+    sig: &[u8],
+) -> bool {
+    if has_avx2() {
+        count_avx2_call();
+        // SAFETY: as above.
+        unsafe { verify_prepared_avx2::<K, L>(p, vk, m_prefix, m, sig) }
+    } else {
+        verify::verify_prepared_internal::<K, L>(p, vk, m_prefix, m, sig)
     }
 }
 

@@ -65,7 +65,7 @@
   "ml_dsa_lean::verify::prepare_vk_x4",
   "ml_dsa_lean::verify::verify_internal_x4"
  ],
- "extract_inputs_sha256": "72e874bf74dde751be5dd960279212b7f6b428ba2de3c48105a2f447c17c3fe7",
+ "extract_inputs_sha256": "52571a1f7c49096884c80c4a8ab1aecbff020f595aee363b2f2c9a0e9062eb39",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -107,7 +107,7 @@
  "aeneas_name_clashes": 0,
  "impl_sha256": {
   "Types.lean": "946e0b79684bbaf403b483ffb33c8007ec7b41c1f7c491dafa4445e142d84696",
-  "Funs.lean": "835b7d64ca5bb3d8a93c391ece6a05b2bb13c4d05e71af1ba69aecefeba3825b",
+  "Funs.lean": "60119f7e60bb7d2efda0e550a38da13329130638c12df07981e338e238668432",
   "FunsExternal_Template.lean": "29f2586ab7a71fdd5f3b29b17623b1ac567b3649c116d6107d0f26c5bc55b4d6",
   "FunsExternal.lean": "29f2586ab7a71fdd5f3b29b17623b1ac567b3649c116d6107d0f26c5bc55b4d6"
  },

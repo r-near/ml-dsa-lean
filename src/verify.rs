@@ -321,6 +321,7 @@ pub fn verify_internal_x4<const K: usize, const L: usize, X: Lanes4>(
 /// A `sig` whose length is not `sig_len(p)` returns false.
 ///
 /// Precondition: `p` matches `K` and `L`, as for `verify_internal`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn verify_prepared_internal<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,

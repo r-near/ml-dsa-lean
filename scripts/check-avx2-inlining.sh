@@ -2,7 +2,8 @@
 # Checks that the AVX2 4-way verify body is compiled with AVX2, i.e. that every AVX2 intrinsic is inlined into a
 # `#[target_feature(enable = "avx2")]` function. Usage: bash scripts/check-avx2-inlining.sh   (x86_64 Linux)
 #
-# Why: the 4-way verify body (src/fast_verify/dispatch.rs, `verify_internal_avx2`) calls generic code over
+# Why: the 4-way verify body (src/fast_verify/dispatch.rs, `verify_internal_avx2`; likewise `prepare_vk_avx2` and
+# `verify_prepared_avx2`) calls generic code over
 # `keccak4::Lanes4`, instantiated with `keccak4::avx2::Avx2`. If any link of that chain is not `#[inline(always)]`, the
 # callee is compiled WITHOUT AVX2 and calls the `_mm256_*` intrinsics out of line. The result is still correct, but
 # several times slower than the scalar code, and nothing else would notice. The check builds the library in release with
@@ -33,11 +34,13 @@ if [ -n "$out_of_line" ]; then
   echo "$out_of_line"
   exit 1
 fi
-# The verify-only arithmetic (src/verify_arith.rs, rounding::vec_norm_lt_pub, encode::bit_pack_pub / w1_encode_pub) is plain
-# integer code that only gets AVX2 code generation by being inlined into the `#[target_feature]` wrapper. A function of
-# any of these names defined in the assembly was not inlined, so the dispatched verify would run it with the baseline
-# target features (correct, but slower): fail on it.
-not_inlined="$(grep -E '^[^ .#][^:]*(verify_arith|vec_norm_lt_pub|bit_pack_pub|w1_encode_pub|poly_use_hint_pub|bit_unpack_pub)[^:]*:' "$ASM" | head -n 20)"
+# The verify-only arithmetic (src/verify_arith.rs, rounding::vec_norm_lt_pub / poly_use_hint_pub, encode::bit_pack_pub /
+# w1_encode_pub / bit_unpack_pub) and the prepared-key verify body (verify::verify_prepared_internal, whose wrapper is
+# `verify_prepared_avx2`) are plain integer
+# code that only gets AVX2 code generation by being inlined into a `#[target_feature]` wrapper. A function of any of these
+# names defined in the assembly was not inlined, so the dispatched verify would run it with the baseline target features
+# (correct, but slower): fail on it. (`6verify24...` is the `verify` module's function, not the dispatcher of the same name.)
+not_inlined="$(grep -E '^[^ .#][^:]*(verify_arith|vec_norm_lt_pub|bit_pack_pub|w1_encode_pub|poly_use_hint_pub|bit_unpack_pub|6verify24verify_prepared_internal)[^:]*:' "$ASM" | head -n 20)"
 if [ -n "$not_inlined" ]; then
   echo "FAIL: verify-only arithmetic is defined out of line (it is not #[inline(always)] into the AVX2 wrapper):"
   echo "$not_inlined"
