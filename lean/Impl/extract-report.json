@@ -65,7 +65,7 @@
   "ml_dsa_lean::verify::prepare_vk_x4",
   "ml_dsa_lean::verify::verify_internal_x4"
  ],
- "extract_inputs_sha256": "96ae85a5ce6947d3f5a82b8dc95592a713de59885f57d0396b3458771f829a04",
+ "extract_inputs_sha256": "81c5511501da1ef892d8c1142ee25796b6be27c8b330267097e3504da7de2fb7",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
