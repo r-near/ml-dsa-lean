@@ -68,7 +68,7 @@ structure encode.SecretKey (K : Std.Usize) (L : Std.Usize) where
   t0 : Array (Array Std.U32 256#usize) K
 
 /-- [ml_dsa_lean::verify::PreparedVk]
-    Source: 'src/verify.rs', lines 50:0-57:1
+    Source: 'src/verify.rs', lines 51:0-58:1
     Visibility: public -/
 structure verify.PreparedVk (K : Std.Usize) (L : Std.Usize) where
   a_hat : Array (Array (Array Std.U32 256#usize) L) K

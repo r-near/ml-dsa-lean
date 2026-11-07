@@ -5,7 +5,8 @@ use crate::keccak::Shake;
 use crate::ntt::{matrix_vector_ntt, multiply_ntt, ntt, ntt_inverse, ntt_vec, sub_poly};
 use crate::params::{pk_len, sig_len, Params};
 use crate::rounding::{poly_use_hint, vec_infinity_norm};
-use crate::sampling::{expand_a, rej_ntt_poly, sample_in_ball};
+use crate::keccak4::Lanes4;
+use crate::sampling::{expand_a, expand_a_into_x4, expand_a_x4, rej_ntt_poly, sample_in_ball};
 
 /// t1 · 2^d with d = 13, coefficient-wise. Every t1 coefficient is a 10-bit value (pkDecode), so
 /// t1 ≤ 2^10 − 1 and t1 · 2^13 ≤ 8380416 = q − 1: no u32 overflow and the result is canonical.
@@ -139,6 +140,41 @@ pub(crate) fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedV
     PreparedVk { a_hat, t1_2d_hat, tr }
 }
 
+/// `prepare_vk_into` with the 4-way ExpandA (`sampling::expand_a_into_x4`): everything else is the same code. Proved
+/// equal to `prepare_vk_into` for the `Shim4` instantiation (`Proofs/FastVerify.lean`).
+///
+/// The `X4` functions below are the "fast verify" body: a build with the `avx2` feature calls them from a
+/// `#[target_feature(enable = "avx2")]` wrapper with `X = keccak4::avx2::Avx2`. `inline(always)` (in builds that have the
+/// second compilation) lets the whole chain down to `keccak_f1600_x4` compile with AVX2 inside that wrapper.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+#[cfg_attr(not(feature = "internals"), allow(dead_code))]
+pub fn prepare_vk_into_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8], out: &mut PreparedVk<K, L>) {
+    // 1: (ρ, t1) ← pkDecode(pk)
+    let (rho, t1) = pk_decode::<K>(pk);
+    // 6: Â ← ExpandA(ρ), four entries per Keccak call
+    expand_a_into_x4::<K, L, X>(&rho, &mut out.a_hat);
+    // 7: tr ← H(pk, 64)
+    out.tr = hash_pk(pk);
+    // 10 (key half): NTT(t1 · 2^d)
+    out.t1_2d_hat = ntt_vec(&scale_vec_by_2d(&t1));
+}
+
+/// `prepare_vk` with the 4-way ExpandA, returned by value (the prepared-key constructor of the fast path). Proved
+/// equal to `prepare_vk` for the `Shim4` instantiation (`Proofs/FastVerify.lean`).
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+#[cfg_attr(not(feature = "internals"), allow(dead_code))]
+pub fn prepare_vk_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8]) -> PreparedVk<K, L> {
+    // 1: (ρ, t1) ← pkDecode(pk)
+    let (rho, t1) = pk_decode::<K>(pk);
+    // 6: Â ← ExpandA(ρ), four entries per Keccak call
+    let a_hat = expand_a_x4::<K, L, X>(&rho);
+    // 7: tr ← H(pk, 64)
+    let tr = hash_pk(pk);
+    // 10 (key half): NTT(t1 · 2^d)
+    let t1_2d_hat = ntt_vec(&scale_vec_by_2d(&t1));
+    PreparedVk { a_hat, t1_2d_hat, tr }
+}
+
 /// Step 8: μ ← H(BytesToBits(tr) ‖ M′, 64) with M′ = `m_prefix` ‖ `m`.
 fn hash_mu(tr: &[u8; 64], m_prefix: &[u8], m: &[u8]) -> [u8; 64] {
     let mut mu = [0u8; 64];
@@ -244,6 +280,38 @@ pub fn verify_internal<const K: usize, const L: usize>(
     // 1, 6, 7, 10 (key half), built in place: `vk` is the only copy of Â
     let mut vk = PreparedVk::<K, L>::zeroed();
     prepare_vk_into::<K, L>(pk, &mut vk);
+    // 8–13
+    verify_decoded::<K, L>(p, &vk, m_prefix, m, &c_tilde, &z, &h)
+}
+
+/// `verify_internal` with the 4-way ExpandA: the same code with `prepare_vk_into_x4::<K, L, X>` in place of
+/// `prepare_vk_into::<K, L>`. For `X = Shim4` it is proved equal to `verify_internal` on every input, divergence
+/// included (`Proofs/FastVerify.lean`); the AVX2 build runs it with `X = keccak4::avx2::Avx2`, which is tested (not proved)
+/// to compute the same lane operations as `Shim4`.
+///
+/// Precondition: as for `verify_internal`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+#[cfg_attr(not(feature = "internals"), allow(dead_code))]
+pub fn verify_internal_x4<const K: usize, const L: usize, X: Lanes4>(
+    p: &Params,
+    pk: &[u8],
+    m_prefix: &[u8],
+    m: &[u8],
+    sig: &[u8],
+) -> bool {
+    // Length guard: wrong-length pk/sig return false before any decoding.
+    if pk.len() != pk_len(p) || sig.len() != sig_len(p) {
+        return false;
+    }
+    // 2: (c̃, z, h) ← sigDecode(σ)
+    // 3–5: if h = ⊥ then return false
+    let (c_tilde, z, h) = match sig_decode::<K, L>(p, sig) {
+        Some(parts) => parts,
+        None => return false,
+    };
+    // 1, 6, 7, 10 (key half), built in place: `vk` is the only copy of Â
+    let mut vk = PreparedVk::<K, L>::zeroed();
+    prepare_vk_into_x4::<K, L, X>(pk, &mut vk);
     // 8–13
     verify_decoded::<K, L>(p, &vk, m_prefix, m, &c_tilde, &z, &h)
 }

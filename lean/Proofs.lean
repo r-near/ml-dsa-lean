@@ -8,6 +8,8 @@ import Proofs.Coeff
 import Proofs.Rounding
 import Proofs.Keccak
 import Proofs.Keccak4
+import Proofs.Sample4
+import Proofs.ExpandA4
 import Proofs.Hint
 import Proofs.EncodeKeys
 import Proofs.SigCodec
@@ -43,3 +45,4 @@ import Proofs.PkFromSk
 import Proofs.Divergence
 import Proofs.PreparedVerify
 import Proofs.PreparedSign
+import Proofs.FastVerify

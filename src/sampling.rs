@@ -4,7 +4,8 @@
 
 use crate::encode::bit_unpack;
 use crate::field::{Q, sub};
-use crate::keccak::Shake;
+use crate::keccak::{Shake, load_lane};
+use crate::keccak4::{Lanes4, keccak_f1600_x4};
 use crate::params::Params;
 
 /// Algorithm 14 CoeffFromThreeBytes(b0, b1, b2).
@@ -82,6 +83,136 @@ pub fn expand_a<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256];
         }
         r += 1;
     }
+    a
+}
+
+/// Byte `p` (`p < 168`) of the rate part of state `i` of a 4-way Keccak state, as the scalar sponge reads it
+/// (`squeeze`): lane `p / 8`, shifted right by `8 * (p % 8)` bits.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn lane_byte_x4(st: &[[u64; 4]; 25], i: usize, p: usize) -> u8 {
+    (st[p / 8][i] >> (8 * (p % 8))) as u8
+}
+
+/// Algorithm 30's loop on one 168-byte SHAKE128 block of state `i` of a 4-way state: the block is 56 whole
+/// three-byte candidates (168 = 56 · 3), so none straddles a block boundary. Every candidate is one step of the
+/// byte-wise sampler `rej_ntt_poly`: once `j = 256` coefficients are accepted the remaining candidates are ignored.
+/// Returns the new number of accepted coefficients. Requires nothing: `j ≤ 256` on entry and exit.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn rej_ntt_block_x4(st: &[[u64; 4]; 25], i: usize, a: &mut [u32; 256], j: usize) -> usize {
+    let mut j = j;
+    let mut t = 0;
+    while t < 56 {
+        if j < 256 {
+            let b0 = lane_byte_x4(st, i, 3 * t);
+            let b1 = lane_byte_x4(st, i, 3 * t + 1);
+            let b2 = lane_byte_x4(st, i, 3 * t + 2);
+            if let Some(x) = coeff_from_three_bytes(b0, b1, b2) {
+                a[j] = x;
+                j += 1;
+            }
+        }
+        t += 1;
+    }
+    j
+}
+
+/// The four SHAKE128 states `SHAKE128.Init(); Absorb(ρ ‖ s[i] ‖ r[i])` just before their first permutation, i.e.
+/// with the SHAKE padding in place (`0x1F` after the 34-byte message, `0x80` as the last byte of the 168-byte
+/// block), as one interleaved 4-way state. Lane `k` of state `i` is `s[k][i]`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn init_state_x4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u64; 4]; 25] {
+    let mut st = [[0u64; 4]; 25];
+    // Bytes 0..32 of the message are ρ, the same in all four states.
+    let x0 = load_lane(rho, 0);
+    let x1 = load_lane(rho, 8);
+    let x2 = load_lane(rho, 16);
+    let x3 = load_lane(rho, 24);
+    st[0] = [x0, x0, x0, x0];
+    st[1] = [x1, x1, x1, x1];
+    st[2] = [x2, x2, x2, x2];
+    st[3] = [x3, x3, x3, x3];
+    // Bytes 32, 33 of the message are s and r, byte 34 is the SHAKE domain/padding byte 0x1F (bits 16..24 of the lane).
+    st[4] = [
+        (s[0] as u64) | ((r[0] as u64) << 8usize) | 0x1F_0000u64,
+        (s[1] as u64) | ((r[1] as u64) << 8usize) | 0x1F_0000u64,
+        (s[2] as u64) | ((r[2] as u64) << 8usize) | 0x1F_0000u64,
+        (s[3] as u64) | ((r[3] as u64) << 8usize) | 0x1F_0000u64,
+    ];
+    // Byte 167 = 0x80 is the top byte of lane 20.
+    let last = 0x8000_0000_0000_0000u64;
+    st[20] = [last, last, last, last];
+    st
+}
+
+/// Algorithm 30 RejNTTPoly on four seeds at once: the polynomial for the seeds `ρ ‖ s[i] ‖ r[i]`, `i < 4`.
+/// The four SHAKE128 streams are permuted together (`keccak_f1600_x4`); candidates are parsed per state in plain
+/// Rust, block by block. State `i` stops contributing once it has accepted 256 coefficients and the loop ends when
+/// all four have. Diverges exactly when one of the four unbounded samplers does (as `rej_ntt_poly` does).
+///
+/// The result for seed `i` is `rej_ntt_poly(ρ ‖ s[i] ‖ r[i])` (proved equal for the `Shim4` instantiation,
+/// `Proofs/Sample4.lean`).
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn rej_ntt_poly_x4<X: Lanes4>(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
+    let mut st = init_state_x4(rho, s, r);
+    let mut p0 = [0u32; 256];
+    let mut p1 = [0u32; 256];
+    let mut p2 = [0u32; 256];
+    let mut p3 = [0u32; 256];
+    let mut j0 = 0;
+    let mut j1 = 0;
+    let mut j2 = 0;
+    let mut j3 = 0;
+    // `more`: some state still needs coefficients. The first pass is always needed (all four counts are 0).
+    let mut more = true;
+    while more {
+        keccak_f1600_x4::<X>(&mut st);
+        j0 = rej_ntt_block_x4(&st, 0, &mut p0, j0);
+        j1 = rej_ntt_block_x4(&st, 1, &mut p1, j1);
+        j2 = rej_ntt_block_x4(&st, 2, &mut p2, j2);
+        j3 = rej_ntt_block_x4(&st, 3, &mut p3, j3);
+        more = j0 < 256 || j1 < 256 || j2 < 256 || j3 < 256;
+    }
+    [p0, p1, p2, p3]
+}
+
+/// The matrix entry (flattened `r * L + s`) that lane `l` of the group starting at `first` computes: `first + l`,
+/// or the last entry `n - 1` for a lane past the end (its polynomial is the last entry's again, written twice).
+/// Requires `first < n`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn entry_x4(first: usize, l: usize, n: usize) -> usize {
+    if first + l < n { first + l } else { n - 1 }
+}
+
+/// Algorithm 32 ExpandA(ρ) written into `a` (every entry is overwritten), four entries per call of the 4-way
+/// sampler: the entries are taken in the flattened order `e = r * L + s`, in groups of four; a last group with fewer
+/// than four real entries repeats the last entry.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn expand_a_into_x4<const K: usize, const L: usize, X: Lanes4>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
+    let n = K * L;
+    let mut first = 0;
+    while first < n {
+        let e0 = entry_x4(first, 0, n);
+        let e1 = entry_x4(first, 1, n);
+        let e2 = entry_x4(first, 2, n);
+        let e3 = entry_x4(first, 3, n);
+        let polys = rej_ntt_poly_x4::<X>(
+            rho,
+            [(e0 % L) as u8, (e1 % L) as u8, (e2 % L) as u8, (e3 % L) as u8],
+            [(e0 / L) as u8, (e1 / L) as u8, (e2 / L) as u8, (e3 / L) as u8],
+        );
+        a[e0 / L][e0 % L] = polys[0];
+        a[e1 / L][e1 % L] = polys[1];
+        a[e2 / L][e2 % L] = polys[2];
+        a[e3 / L][e3 % L] = polys[3];
+        first += 4;
+    }
+}
+
+/// Algorithm 32 ExpandA(ρ) with the 4-way sampler, returned by value (`expand_a_into_x4` on a zero matrix).
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn expand_a_x4<const K: usize, const L: usize, X: Lanes4>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
+    let mut a = [[[0u32; 256]; L]; K];
+    expand_a_into_x4::<K, L, X>(rho, &mut a);
     a
 }
 
