@@ -143,8 +143,9 @@ step_test_zeroize_release() { cargo test --release --features zeroize; }
 # ACVP, Wycheproof and KAT suites through the dispatched API). ML_DSA_REQUIRE_AVX2=1 turns "this machine has no AVX2, so
 # the AVX2 path was not compared" from a printed note into a failure; GitHub-hosted x86_64 runners have AVX2.
 step_test_avx2() { ML_DSA_REQUIRE_AVX2=1 cargo test --features avx2; }
-# The AVX2 4-way verify body is compiled with AVX2 (no intrinsic is called out of line); see the script header.
-step_avx2_inlining() { bash scripts/check-avx2-inlining.sh; }
+# The generated part of src/keccak4.rs is current; the AVX2 4-way verify body is compiled with AVX2 and LLVM vectorized the
+# 4-way permutation in it (a scalar permutation is correct but 3x slower); see the script header.
+step_avx2_inlining() { python3 scripts/gen_keccak4_round.py --check && bash scripts/check-avx2-inlining.sh; }
 step_thumbv7em() {
   cargo_retry_target "$(rustup show active-toolchain | awk '{print $1}')" thumbv7em-none-eabihf \
     cargo build --release --target thumbv7em-none-eabihf
