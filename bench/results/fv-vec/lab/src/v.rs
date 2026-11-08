@@ -376,3 +376,20 @@ pub fn passes(s: &mut St) {
         r += 2;
     }
 }
+
+mod qq {
+    include!("q.rs");
+}
+#[target_feature(enable = "avx2")]
+#[inline(never)]
+pub fn lq2(s: &mut St) {
+    let mut r = 0;
+    while r < 24 {
+        let mut i = 0;
+        while i < 4 {
+            qq::lane_rounds2_q(s, i, RC[r], RC[r + 1]);
+            i += 1;
+        }
+        r += 2;
+    }
+}

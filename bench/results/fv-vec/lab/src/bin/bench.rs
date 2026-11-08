@@ -13,7 +13,7 @@ macro_rules! w {
 fn main() {
     assert!(std::is_x86_feature_detected!("avx2"));
     let only: Vec<String> = std::env::args().skip(1).collect();
-    let mut all: Vec<(&str, F)> = w![shim, avx2, noinl, rotl_x, rotl_noinl, xor_x, xor_noinl, add_x, add_noinl, norot_x, norot_noinl, nod_x, nod_noinl, norho_x, norho_noinl, lv_copy, lv_for, lv2, lv4, lvl1, lvl2, lvl2b, ld1, ld2, ld4, passes];
+    let mut all: Vec<(&str, F)> = w![shim, avx2, noinl, rotl_x, rotl_noinl, xor_x, xor_noinl, add_x, add_noinl, norot_x, norot_noinl, nod_x, nod_noinl, norho_x, norho_noinl, lv_copy, lv_for, lv2, lv4, lvl1, lvl2, lvl2b, ld1, ld2, ld4, passes, lq2];
     all.push(("scalar4", v::scalar4 as F));
     // reference state
     let mut init = [[0u64; 4]; 25];

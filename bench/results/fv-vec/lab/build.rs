@@ -1,7 +1,7 @@
-// Copies the crate's src/keccak4.rs (the code under test) with `round` made public and the inner docs stripped.
+// Copies ref_keccak4.rs (the fast-verify branch's src/keccak4.rs: Lanes4, Shim4, Avx2) with `round` made public and the inner docs stripped.
 use std::{env, fs, path::PathBuf};
 fn main() {
-    let src = PathBuf::from("../../../../src/keccak4.rs");
+    let src = PathBuf::from("ref_keccak4.rs");
     println!("cargo:rerun-if-changed={}", src.display());
     let t = fs::read_to_string(&src).unwrap();
     let t: String = t

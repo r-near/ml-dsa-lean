@@ -25,10 +25,27 @@ for line in open(sys.argv[1]):
     if op.startswith('vpand') : s['vpand'] += 1
     if 'gather' in op: s['gather'] += 1
     if op.startswith(('vpshuf', 'vperm', 'vpunpck', 'vpblend', 'vinserti', 'vextracti')): s['shuf'] += 1
-want = sys.argv[2:] 
+want = sys.argv[2:]
+
+def idents(sym):
+    """Path components of a legacy (_ZN...E) or v0 (_R...) symbol, by their length prefixes."""
+    out, i = [], 0
+    while i < len(sym):
+        if sym[i].isdigit():
+            j = i
+            while j < len(sym) and sym[j].isdigit():
+                j += 1
+            n = int(sym[i:j])
+            if j + n <= len(sym) and (sym[j].isalpha() or sym[j] == '_'):
+                out.append(sym[j:j + n]); i = j + n; continue
+            i = j
+        else:
+            i += 1
+    return out
+
 print(f"{'function':<44}{'ins':>6}{'ymm':>6}{'xmm':>5}{'rol':>5}{'rorx':>5}{'vxor':>6}{'vsll':>6}{'vsrl':>6}{'shuf':>6}")
 for k, s in stats.items():
-    if 'fvlab' in k and ('1v' in k or '1t' in k or '4rows' in k or '1v' in k) or (want and any(w in k for w in want)):
-        name = re.sub(r'^_ZN\d+fvlab1v(\d+)', lambda m: '', k)
-        short = re.search(r'(?:1[vt]|4rows)\d+(\w+?)17h', k)
-        print(f"{(short.group(1) if short else k):<44}{s['ins']:>6}{s['ymm']:>6}{s['xmm']:>5}{s['rol']:>5}{s['rorx']:>5}{s['vxor']:>6}{s['vpsll']:>6}{s['vpsrl']:>6}{s['shuf']:>6}")
+    ids = idents(k)
+    if 'fvlab' in ids:
+        name = '::'.join(x for x in ids if not (x.startswith('h') and len(x) == 17))
+        print(f"{name.replace('fvlab::', ''):<44}{s['ins']:>6}{s['ymm']:>6}{s['xmm']:>5}{s['rol']:>5}{s['rorx']:>5}{s['vxor']:>6}{s['vpsll']:>6}{s['vpsrl']:>6}{s['shuf']:>6}")
