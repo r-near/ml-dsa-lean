@@ -6,7 +6,7 @@ use crate::verify_arith::{mac_row_pub, ntt_inverse_pub, ntt_pub, ntt_vec_pub};
 use crate::params::{pk_len, sig_len, Params};
 use crate::rounding::{poly_use_hint_pub, vec_norm_lt_pub};
 use crate::keccak4::Lanes4;
-use crate::sampling::{expand_a, expand_a_into_x4, expand_a_x4, rej_ntt_poly, sample_in_ball};
+use crate::sampling::{expand_a, expand_a_tr_into_x4, rej_ntt_poly, sample_in_ball};
 
 /// t1 · 2^d with d = 13, coefficient-wise. Every t1 coefficient is a 10-bit value (pkDecode), so
 /// t1 ≤ 2^10 − 1 and t1 · 2^13 ≤ 8380416 = q − 1: no u32 overflow and the result is canonical.
@@ -151,10 +151,8 @@ pub(crate) fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedV
 pub fn prepare_vk_into_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8], out: &mut PreparedVk<K, L>) {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
-    // 6: Â ← ExpandA(ρ), four entries per Keccak call
-    expand_a_into_x4::<K, L, X>(&rho, &mut out.a_hat);
-    // 7: tr ← H(pk, 64)
-    out.tr = hash_pk(pk);
+    // 6: Â ← ExpandA(ρ), four entries per Keccak call; 7: tr ← H(pk, 64), in the fourth lane of the first groups
+    out.tr = expand_a_tr_into_x4::<K, L, X>(&rho, pk, &mut out.a_hat);
     // 10 (key half): NTT(t1 · 2^d)
     out.t1_2d_hat = ntt_vec_pub(&scale_vec_by_2d(&t1));
 }
@@ -166,10 +164,9 @@ pub fn prepare_vk_into_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8], 
 pub fn prepare_vk_x4<const K: usize, const L: usize, X: Lanes4>(pk: &[u8]) -> PreparedVk<K, L> {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
-    // 6: Â ← ExpandA(ρ), four entries per Keccak call
-    let a_hat = expand_a_x4::<K, L, X>(&rho);
-    // 7: tr ← H(pk, 64)
-    let tr = hash_pk(pk);
+    // 6: Â ← ExpandA(ρ), four entries per Keccak call; 7: tr ← H(pk, 64), in the fourth lane of the first groups
+    let mut a_hat = [[[0u32; 256]; L]; K];
+    let tr = expand_a_tr_into_x4::<K, L, X>(&rho, pk, &mut a_hat);
     // 10 (key half): NTT(t1 · 2^d)
     let t1_2d_hat = ntt_vec_pub(&scale_vec_by_2d(&t1));
     PreparedVk { a_hat, t1_2d_hat, tr }

@@ -4,7 +4,7 @@
 
 use crate::encode::bit_unpack;
 use crate::field::{Q, sub};
-use crate::keccak::{Shake, load_lane};
+use crate::keccak::{Shake, keccak_f1600, load_lane};
 use crate::keccak4::{Lanes4, keccak_f1600_x4};
 use crate::params::Params;
 
@@ -221,9 +221,21 @@ fn entry_x4(first: usize, l: usize, n: usize) -> usize {
 /// sampler: the entries are taken in the flattened order `e = r * L + s`, in groups of four; a last group with fewer
 /// than four real entries repeats the last entry.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+#[cfg_attr(not(feature = "internals"), allow(dead_code))]
 pub fn expand_a_into_x4<const K: usize, const L: usize, X: Lanes4>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
+    expand_a_from_x4::<K, L, X>(rho, a, 0)
+}
+
+/// The group loop of `expand_a_into_x4`, starting at entry `first0`: entries `first0, first0 + 1, ...` (flattened as
+/// there) in groups of four until all `K * L` are done. Entries before `first0` are not touched.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn expand_a_from_x4<const K: usize, const L: usize, X: Lanes4>(
+    rho: &[u8; 32],
+    a: &mut [[[u32; 256]; L]; K],
+    first0: usize,
+) {
     let n = K * L;
-    let mut first = 0;
+    let mut first = first0;
     while first < n {
         let e0 = entry_x4(first, 0, n);
         let e1 = entry_x4(first, 1, n);
@@ -244,10 +256,209 @@ pub fn expand_a_into_x4<const K: usize, const L: usize, X: Lanes4>(rho: &[u8; 32
 
 /// Algorithm 32 ExpandA(ρ) with the 4-way sampler, returned by value (`expand_a_into_x4` on a zero matrix).
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+#[cfg_attr(not(feature = "internals"), allow(dead_code))]
 pub fn expand_a_x4<const K: usize, const L: usize, X: Lanes4>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
     let mut a = [[[0u32; 256]; L]; K];
     expand_a_into_x4::<K, L, X>(rho, &mut a);
     a
+}
+
+/// The SHAKE256 rate in bytes.
+const RATE256: usize = 136;
+
+/// The last block of `SHAKE256.Absorb(pk)` with the padding in place, as 17 little-endian lanes: the `pk.len() % 136`
+/// bytes of `pk` after its last whole block, then the domain byte `0x1F` and the final padding bit `0x80` (`pad10*1`
+/// of FIPS 202; they share a byte, as XOR, only when a single byte is left).
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn tr_tail_lanes(pk: &[u8]) -> [u64; 17] {
+    let base = RATE256 * (pk.len() / RATE256);
+    let rem = pk.len() - base;
+    let mut w = [0u64; 17];
+    let mut i = 0;
+    while i < rem {
+        w[i / 8] ^= (pk[base + i] as u64) << (8 * (i % 8));
+        i += 1;
+    }
+    w[rem / 8] ^= 0x1Fu64 << (8 * (rem % 8));
+    w[16] ^= 0x8000_0000_0000_0000u64;
+    w
+}
+
+/// XORs block `t` of the padded `pk` (17 lanes: whole block `t` of `pk` when `t < q`, else the padded `tail`) into
+/// lane 3 of the 4-way state. Requires `q = pk.len() / 136`; lanes 0 to 2 and rate-external words are untouched.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn absorb_block_lane3<X: Lanes4>(st: &mut [[u64; 4]; 25], pk: &[u8], tail: &[u64; 17], q: usize, t: usize) {
+    let mut k = 0;
+    while k < 17 {
+        let w = if t < q { load_lane(pk, RATE256 * t + 8 * k) } else { tail[k] };
+        st[k] = X::xor(st[k], [0, 0, 0, w]);
+        k += 1;
+    }
+}
+
+/// Lane 3 of the 4-way state, as a scalar Keccak state.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn lane3_state(st: &[[u64; 4]; 25]) -> [u64; 25] {
+    let mut s = [0u64; 25];
+    let mut k = 0;
+    while k < 25 {
+        s[k] = st[k][3];
+        k += 1;
+    }
+    s
+}
+
+/// Replaces lane 3 of the 4-way state by the scalar state `s`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn set_lane3(st: &mut [[u64; 4]; 25], s: &[u64; 25]) {
+    let mut k = 0;
+    while k < 25 {
+        st[k][3] = s[k];
+        k += 1;
+    }
+}
+
+/// Algorithm 30 RejNTTPoly on three seeds, with a SHAKE256 absorb of `pk` running in the fourth lane of the same
+/// permutations. Lanes 0 to 2 are exactly `rej_ntt_poly_x4`'s lanes 0 to 2 (the seeds `ρ ‖ s[i] ‖ r[i]`; `s[3]` and `r[3]`
+/// are unused but must be given and are what lane 3 would sample); lane 3 holds the SHAKE256 sponge whose state before this call
+/// is `trs` after `t` permutations, i.e. with the first `t` blocks of the padded `pk` absorbed (`t <= q + 1`, where
+/// `q + 1 = ⌈(pk.len() + 1) / 136⌉` is the number of blocks). Each permutation of the sampler loop first XORs block `t` into lane 3 (while
+/// `t <= q`) and so advances the sponge by one block. Returns the three polynomials and the sponge's `(trs, t)` after the call (`t`
+/// grows by one per permutation until it reaches `q + 1`, where `trs` is the sponge state after its last permutation
+/// and later permutations of the group no longer matter). Requires `q = pk.len() / 136` and `tail = tr_tail_lanes(pk)`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn rej_ntt_poly_x3_tr<X: Lanes4>(
+    rho: &[u8; 32],
+    s: [u8; 4],
+    r: [u8; 4],
+    pk: &[u8],
+    tail: &[u64; 17],
+    q: usize,
+    trs0: [u64; 25],
+    t0: usize,
+) -> ([[u32; 256]; 3], [u64; 25], usize) {
+    let mut st = init_state_x4(rho, s, r);
+    set_lane3(&mut st, &trs0);
+    let mut trs = trs0;
+    let mut t = t0;
+    let mut p0 = [0u32; 312];
+    let mut p1 = [0u32; 312];
+    let mut p2 = [0u32; 312];
+    let mut j0 = 0;
+    let mut j1 = 0;
+    let mut j2 = 0;
+    let mut more = true;
+    while more {
+        if t <= q {
+            absorb_block_lane3::<X>(&mut st, pk, tail, q, t);
+        }
+        keccak_f1600_x4::<X>(&mut st);
+        j0 = rej_ntt_lane_x4(&st, 0, &mut p0, j0);
+        j1 = rej_ntt_lane_x4(&st, 1, &mut p1, j1);
+        j2 = rej_ntt_lane_x4(&st, 2, &mut p2, j2);
+        if t <= q {
+            t += 1;
+            if t == q + 1 {
+                trs = lane3_state(&st);
+            }
+        }
+        more = j0 < 256 || j1 < 256 || j2 < 256;
+    }
+    if t <= q {
+        trs = lane3_state(&st);
+    }
+    ([first_256(&p0), first_256(&p1), first_256(&p2)], trs, t)
+}
+
+/// The first 64 bytes of the sponge state, little-endian: `SHAKE256.Squeeze(ctx, 64)` right after the last permutation.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn squeeze64(s: &[u64; 25]) -> [u8; 64] {
+    let mut out = [0u8; 64];
+    let mut j = 0;
+    while j < 64 {
+        out[j] = (s[j / 8] >> (8 * (j % 8))) as u8;
+        j += 1;
+    }
+    out
+}
+
+/// The scalar rest of the SHAKE256 absorb of `pk`: from the sponge state `trs` after `t` permutations (`t <= q + 1`), absorbs
+/// the remaining blocks of the padded `pk` (block `t` and on) with the scalar permutation and returns the first 64 bytes of the
+/// final state, `H(pk, 64)`. Requires `q = pk.len() / 136` and `tail = tr_tail_lanes(pk)`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn tr_finish_scalar(pk: &[u8], tail: &[u64; 17], q: usize, trs: [u64; 25], t0: usize) -> [u8; 64] {
+    let mut s = trs;
+    let mut t = t0;
+    while t <= q {
+        let mut k = 0;
+        while k < 17 {
+            s[k] ^= if t < q { load_lane(pk, RATE256 * t + 8 * k) } else { tail[k] };
+            k += 1;
+        }
+        keccak_f1600(&mut s);
+        t += 1;
+    }
+    squeeze64(&s)
+}
+
+/// How many of the first groups of ExpandA take three entries and run the SHAKE256 absorb of `pk` in the fourth lane, for
+/// `n` entries and a pk of `q * 136 + rem` bytes. The hash is correct for any value (`expand_a_tr_into_x4` finishes what the
+/// lane did not reach with the scalar permutation); this only picks the faster schedule. A group takes at least 5
+/// permutations (256 coefficients need at least 5 blocks of 56 candidates), so `want = ⌈(q + 1) / 5⌉` groups (2, 3, 4 for the
+/// three parameter sets) hash the whole pk. The groups of four leave `spare = 4 * ⌈n / 4⌉ - n` lanes empty (2 for
+/// ML-DSA-65, none for -44 and -87), and a 3-wide group in a spare lane costs nothing; with no spare lane left, one extra group
+/// (about 2.7 µs) hosts up to four hashing groups and pays when it hosts at least two (5 scalar permutations, about 1.85 µs,
+/// each). So: `spare` groups when `want` is just one more (ML-DSA-65: the third hashing group would cost an extra group
+/// for 1.85 µs), else all `want`.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+fn tr_groups(n: usize, q: usize) -> usize {
+    let want = (q + 5) / 5;
+    let spare = 4 * ((n + 3) / 4) - n;
+    if want == spare + 1 { spare } else { want }
+}
+
+/// Algorithm 32 ExpandA(ρ) written into `a`, and `H(pk, 64)` (FIPS 204's `tr`), in the same permutations: the first
+/// `tr_groups` groups take three entries each and run the SHAKE256 absorb of `pk` in the fourth lane
+/// (`rej_ntt_poly_x3_tr`), the rest are groups of four as in `expand_a_into_x4`, and whatever of the hash the lane did
+/// not reach (for ML-DSA-65 the last five permutations) is finished with the scalar permutation.
+#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+pub fn expand_a_tr_into_x4<const K: usize, const L: usize, X: Lanes4>(
+    rho: &[u8; 32],
+    pk: &[u8],
+    a: &mut [[[u32; 256]; L]; K],
+) -> [u8; 64] {
+    let n = K * L;
+    let q = pk.len() / RATE256;
+    let g3 = tr_groups(n, q);
+    let tail = tr_tail_lanes(pk);
+    let mut trs = [0u64; 25];
+    let mut t = 0;
+    let mut first = 0;
+    let mut g = 0;
+    while first < n && g < g3 {
+        let e0 = entry_x4(first, 0, n);
+        let e1 = entry_x4(first, 1, n);
+        let e2 = entry_x4(first, 2, n);
+        let (polys, trs2, t2) = rej_ntt_poly_x3_tr::<X>(
+            rho,
+            [(e0 % L) as u8, (e1 % L) as u8, (e2 % L) as u8, (e2 % L) as u8],
+            [(e0 / L) as u8, (e1 / L) as u8, (e2 / L) as u8, (e2 / L) as u8],
+            pk,
+            &tail,
+            q,
+            trs,
+            t,
+        );
+        trs = trs2;
+        t = t2;
+        a[e0 / L][e0 % L] = polys[0];
+        a[e1 / L][e1 % L] = polys[1];
+        a[e2 / L][e2 % L] = polys[2];
+        first += 3;
+        g += 1;
+    }
+    expand_a_from_x4::<K, L, X>(rho, a, first);
+    tr_finish_scalar(pk, &tail, q, trs, t)
 }
 
 /// Algorithm 34 ExpandMask(ρ, μ). Requires μ + L − 1 < 2^16.
