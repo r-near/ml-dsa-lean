@@ -109,6 +109,14 @@ the Linux build box on 2026-11-08, on the tree of commit b1f47e0; the commit tha
 | checkct driver | builds (release, `-p driver`) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`, in the default release profile (nightly-2026-10-06) and with nearcore's flags (nightly-2026-10-06 and 1.95.0): 18 of 18 cells built. The BINSEC sweep was not rerun: no source Sign or KeyGen calls changed (section 4) | b1f47e0 |
 | `bench/stackscan.sh check` (also run by `bench/fast-verify.sh`) | `STACK SCAN OK` at 257 paddings on rustc 1.99.1 and 1.95.0 (largest padding over the median 1.02 and 1.03 for one-shot verify and `verifying_key_NN`; none above 1.1), and at 65 paddings inside `bench/fast-verify.sh` on both | a503937 (same `src/`) |
 
+After review, two commits (1190159, 2c3e126) added the AVX2 run of `tests/fast_verify_tr.rs` (through a checked `internals`-only wrapper in
+`src/fast_verify/dispatch.rs`), input validation in the `bench` stack-scan tool, and a measurement-count check in
+`bench/stackscan.sh`. Their extracted `lean/Impl/*.lean` files are byte-identical to b1f47e0's (only the extraction-input digest in
+`extract-report.json` moves, to b041a215…), so the Lean gates above still apply. On the tree of 2c3e126, on the box:
+`extract hash OK` (b041a215c1ac1de358c645238c4197e503768281352a837d80da282d5998e1f7), `ML_DSA_REQUIRE_AVX2=1 cargo test --release
+--features avx2,internals` 28 result lines, 129 passed, 0 failed, 1 ignored, and `scripts/check-avx2-inlining.sh` OK (57800 lines of
+ymm code).
+
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
 
@@ -342,7 +350,8 @@ state, finishes the groups of four as before (`expand_a_from_x4`), and finishes 
 reach with the scalar permutation (`tr_finish_scalar`; for ML-DSA-65 the last five). `g3` is 2, 2 and 4 for 44, 65 and 87
 (`bench/results/2026-11-07-p7.md`: the schedule and why). The proof does not depend on `g3`: `expand_a_tr_into_x4_eq` holds for the
 function as written, so the schedule is a speed choice, outside the correctness argument. Everything is plain Rust inside the
-existing `Lanes4` surface: no new method, trait or intrinsic, no `unsafe`, and the dispatch wrappers are unchanged. The one thing
+existing `Lanes4` surface: no new method, trait or intrinsic, no `unsafe`, and the shipped dispatch wrappers are unchanged (the tests reach the AVX2 instance through an `internals`-only
+checked wrapper, `fast_verify::expand_a_tr_into_x4_avx2_or_none`). The one thing
 that is only tested is, as for the rest of the 4-way body, that the AVX2 instance computes what `Shim4` does
 (`tests/fast_verify_tr.rs` compares `expand_a_tr_into_x4` over `Shim4` and over `Avx2` with `expand_a` and the scalar SHAKE256 for the
 three parameter-set shapes and for key lengths on both sides of every 136-byte block edge). Intermediate lemma statements: the
