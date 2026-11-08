@@ -61,4 +61,23 @@ if echo "$prep" | awk '$1 < 100 { bad=1 } END { exit !bad }'; then
   echo "FAIL: a verify_prepared_avx2 instantiation has (almost) no ymm code: the proved verify was not inlined into it"
   exit 1
 fi
-echo "OK: no out-of-line intrinsic wrappers; verify-only arithmetic fully inlined; $ymm lines of ymm code"
+# Every verify wrapper must realign its stack frame (`align_frame` in src/fast_verify/dispatch.rs): with the frame 32-byte
+# aligned, no 32-byte spill slot or array can straddle a 4 KiB page (a page-split access costs about 30 cycles, and a call at
+# the wrong stack offset used to take up to 12 us longer; bench/results/2026-11-07-p6.md). The realignment is an effect of an
+# over-aligned local that LLVM has to honor, so this is the regression guard across compiler versions. The prologue of each
+# instantiation (K = 4, 6, 8 of verify_internal_avx2, verify_prepared_avx2 and prepare_vk_avx2) must hold `andq $-32` (or a
+# stronger mask) on %rsp before its first `subq`.
+realign="$(awk '
+  /^[^ .#][^:]*(verify_internal_avx2|verify_prepared_avx2|prepare_vk_avx2)[^:]*:/ { name=$0; inbody=1; seen[name]=0; line=0; next }
+  inbody && /\.cfi_endproc/ { inbody=0 }
+  inbody { line++ }
+  inbody && line <= 20 && /andq[ \t]+\$-(32|64|128),[ \t]*%rsp/ { seen[name]=1 }
+  END { for (k in seen) print seen[k], k }' "$ASM")"
+echo "stack-realigning wrappers (1 = realigned, symbol):"
+echo "$realign"
+if [ "$(echo "$realign" | grep -c .)" -lt 9 ]; then echo "FAIL: expected nine wrapper instantiations (verify_internal_avx2, verify_prepared_avx2, prepare_vk_avx2 for K = 4, 6, 8)"; exit 1; fi
+if echo "$realign" | grep -q '^0 '; then
+  echo "FAIL: a verify wrapper does not realign its stack frame to 32 bytes (align_frame was dropped or optimized away)"
+  exit 1
+fi
+echo "OK: no out-of-line intrinsic wrappers; verify-only arithmetic fully inlined; verify wrappers realign their frames; $ymm lines of ymm code"

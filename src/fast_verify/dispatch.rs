@@ -17,6 +17,29 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 #[cfg(feature = "internals")]
 pub static AVX2_CALLS: AtomicUsize = AtomicUsize::new(0);
 
+/// A 32-byte aligned object, for `align_frame`.
+#[repr(align(32))]
+struct Align32([u8; 32]);
+
+/// Makes the calling function realign its stack frame to 32 bytes. Call it first in every `#[target_feature(enable =
+/// "avx2")]` wrapper below.
+///
+/// Why: the proved code inlined into a wrapper spills 256-bit vectors (the 25 Keccak lane vectors, the polynomials in the
+/// NTT) to stack slots that LLVM places at the frame's 16-byte alignment, and loads and stores them with unaligned
+/// instructions. When a slot starts at an address that is 16 mod 32, one access in the frame straddles a 4 KiB page
+/// boundary if the frame happens to cover one, and a page-split access costs about 30 cycles on Zen 4 (measured:
+/// `bench/results/2026-11-07-p6.md`). The permutation does several such accesses per round, so a call that starts at
+/// the wrong stack offset (about one offset in seven) took up to 12 µs longer. A 32-byte aligned local makes LLVM
+/// realign the frame (`and rsp, -32`), after which every 32-byte slot and array is 32-byte aligned and no vector access
+/// can cross a page or a cache line. `black_box` keeps the local from being optimized away. This is plain safe Rust in
+/// code outside the proof; it changes no value and no extracted function (`scripts/check-avx2-inlining.sh` checks that
+/// every wrapper instantiation does realign its frame).
+#[inline(always)]
+fn align_frame() {
+    let anchor = Align32([0; 32]);
+    core::hint::black_box(&anchor);
+}
+
 #[inline(always)]
 fn count_avx2_call() {
     #[cfg(feature = "internals")]
@@ -34,6 +57,7 @@ fn verify_internal_avx2<const K: usize, const L: usize>(
     m: &[u8],
     sig: &[u8],
 ) -> bool {
+    align_frame();
     verify_internal_x4::<K, L, Avx2>(p, pk, m_prefix, m, sig)
 }
 
@@ -49,11 +73,13 @@ fn verify_prepared_avx2<const K: usize, const L: usize>(
     m: &[u8],
     sig: &[u8],
 ) -> bool {
+    align_frame();
     verify::verify_prepared_internal::<K, L>(p, vk, m_prefix, m, sig)
 }
 
 #[target_feature(enable = "avx2")]
 fn prepare_vk_avx2<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
+    align_frame();
     prepare_vk_x4::<K, L, Avx2>(pk)
 }
 
@@ -140,18 +166,21 @@ pub fn prepare_vk_avx2_matches_scalar<const K: usize, const L: usize>(pk: &[u8])
 #[cfg(feature = "internals")]
 #[target_feature(enable = "avx2")]
 fn rej_ntt_poly_x4_avx2(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
+    align_frame();
     rej_ntt_poly_x4::<Avx2>(rho, s, r)
 }
 
 #[cfg(feature = "internals")]
 #[target_feature(enable = "avx2")]
 fn expand_a_x4_avx2<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
+    align_frame();
     expand_a_x4::<K, L, Avx2>(rho)
 }
 
 #[cfg(feature = "internals")]
 #[target_feature(enable = "avx2")]
 fn expand_a_into_x4_avx2<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
+    align_frame();
     expand_a_into_x4::<K, L, Avx2>(rho, a)
 }
 
