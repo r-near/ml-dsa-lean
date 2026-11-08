@@ -2,8 +2,8 @@
 
 Port of the RustCrypto `ml-dsa/checkct` harness (signatures repo, rev a3690c4) to this crate. The driver
 `#[path]`-includes the crate sources unchanged (`params`, `field`, `rounding`, `ntt`, `keccak`, `keccak4`, `cpu` (with the
-`avx2` feature, x86_64), `encode`, `sampling`, `keygen`, `sign`, `verify`, `api`; `fast_verify` is included through a
-module that repeats its two cfg-gated items and includes `src/fast_verify/dispatch.rs`, see `driver/src/main.rs`; the
+`avx2` feature, x86_64), `encode`, `sampling`, `keygen`, `sign`, `verify`, `fast_verify` (whose `mod dispatch` carries an explicit
+`#[path]`, so `src/fast_verify.rs` is included whole and nothing of it is repeated in `driver/src/main.rs`), `api`; the
 crate is `no_std` with no dependencies, so no shims are needed), marks every probe input secret through the `__checkct_private_rand` hook, and lets BINSEC (via `cargo-checkct`) symbolically
 execute the compiled release binary, flagging any secret-dependent branch, memory access, or division operand.
 

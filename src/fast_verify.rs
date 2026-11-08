@@ -32,6 +32,9 @@ pub(crate) use crate::verify::{prepare_vk, verify_internal, verify_prepared_inte
 // The dispatch (src/fast_verify/dispatch.rs).
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 #[allow(unsafe_code)]
+// The explicit path (relative to this file's directory) gives the same file when `checkct/driver` includes this file by
+// `#[path]` from another directory.
+#[path = "fast_verify/dispatch.rs"]
 mod dispatch;
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 pub use dispatch::*;
