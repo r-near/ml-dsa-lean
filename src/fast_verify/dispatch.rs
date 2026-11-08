@@ -17,7 +17,8 @@ use core::sync::atomic::{AtomicUsize, Ordering};
 #[cfg(feature = "internals")]
 pub static AVX2_CALLS: AtomicUsize = AtomicUsize::new(0);
 
-/// A 32-byte aligned object, for `align_frame`.
+/// A 32-byte aligned object, for `align_frame` (its contents are never read).
+#[allow(dead_code)]
 #[repr(align(32))]
 struct Align32([u8; 32]);
 
