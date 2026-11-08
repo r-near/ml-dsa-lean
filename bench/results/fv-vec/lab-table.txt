@@ -1,0 +1,175 @@
+== 1.86.0 rustc 1.86.0
+function                                       ins   ymm  xmm  rol rorx  vxor  vsll  vsrl  shuf
+v::shim                                       2091     0    0    0  232     0     0     0     0
+v::avx2                                        528   519    0    0    0   152    42    54     4
+v::scalar4                                     433     0    0    0    0     0     0     0     0
+v::lv_for                                      324   315    0    0    0    76    21    27     2
+v::lv2                                         529   520    0    0    0   152    42    54     4
+v::lv4                                         960   951    0    0    0   304    84   108     8
+v::lvl2b                                       632   623    0    0    0   152    42    54     4
+v::passes                                      676   206  138    0    0    65     2    12    80
+v::lq2                                         528   519    0    0    0   152    42    54     4
+v::noinl                                       120     0    0    0    0     0     0     0     0
+v::noinl::rd                                   396   291  127    0    0    92    26    32    62
+v::rotl_noinl                                  120     0    0    0    0     0     0     0     0
+v::rotl_noinl::rd                              396   291  127    0    0    92    26    32    62
+v::add_x                                      2091     0    0    0  232     0     0     0     0
+v::norot_x                                     454   392   69    0    0     0     0     0     0
+v::norot_noinl                                 120     0    0    0    0     0     0     0     0
+v::norot_noinl::rd                             317   234  100    0    0    96     0     0    67
+v::nod_x                                      2044     0    0    0  184     0     0     0     0
+v::nod_noinl                                   120     0    0    0    0     0     0     0     0
+v::nod_noinl::rd                               435   256  190    0    0   100    32    32    52
+v::norho_x                                    1928     0    0    0   48     0     0     0     0
+v::norho_noinl                                 120     0    0    0    0     0     0     0     0
+v::norho_noinl::rd                             374   277  120    0    0    93     0     8    73
+v::lvl1                                        354   345    0    0    0    76    21    27     2
+v::lvl2                                        295     0    0    0   29     0     0     0     0
+v::ld1                                         326   317    0    0    0    76    21    27     2
+v::ld2                                         528   519    0    0    0   152    42    54     4
+v::ld4                                         959   950    0    0    0   304    84   108     8
+shim           OK     1255.8 ns/perm
+avx2           OK      393.9 ns/perm
+noinl          OK      738.2 ns/perm
+rotl_x         OK     1255.3 ns/perm
+rotl_noinl     OK      737.5 ns/perm
+xor_x          OK     1255.4 ns/perm
+xor_noinl      OK      737.8 ns/perm
+add_x          OK     1255.1 ns/perm
+add_noinl      OK      737.5 ns/perm
+norot_x        OK      411.5 ns/perm
+norot_noinl    OK      543.5 ns/perm
+nod_x          OK     1250.9 ns/perm
+nod_noinl      OK      712.0 ns/perm
+norho_x        OK     1165.2 ns/perm
+norho_noinl    OK      703.3 ns/perm
+lv_copy        OK      446.0 ns/perm
+lv_for         OK      446.0 ns/perm
+lv2            OK      395.7 ns/perm
+lv4            OK      397.8 ns/perm
+lvl1           OK      609.3 ns/perm
+lvl2           OK     1505.5 ns/perm
+lvl2b          OK      683.5 ns/perm
+ld1            OK      467.4 ns/perm
+ld2            OK      395.0 ns/perm
+ld4            OK      392.6 ns/perm
+passes         OK     2838.6 ns/perm
+lq2            OK      395.0 ns/perm
+scalar4        OK     1266.7 ns/perm
+== 1.95.0 rustc 1.95.0
+function                                       ins   ymm  xmm  rol rorx  vxor  vsll  vsrl  shuf
+v::rotl_noinl                                  115     0    0    0    0     0     0     0     0
+v::rotl_noinl::rd                             1060     0    0    0  116     0     0     0     0
+v::norho_noinl                                 115     0    0    0    0     0     0     0     0
+v::norho_noinl::rd                             997     0    0    0   24     0     0     0     0
+v::norot_noinl                                 115     0    0    0    0     0     0     0     0
+v::norot_noinl::rd                             974     0    0    0    0     0     0     0     0
+v::ld1                                         326   317    0    0    0    76    21    27     2
+v::ld2                                         528   519    0    0    0   152    42    54     4
+v::ld4                                         959   950    0    0    0   304    84   108     8
+v::lq2                                         528   519    0    0    0   152    42    54     4
+v::lv2                                         529   520    0    0    0   152    42    54     4
+v::lv4                                         961   952    0    0    0   304    84   108     8
+v::avx2                                        528   519    0    0    0   152    42    54     4
+v::lvl1                                        352   343    0    0    0    76    21    27     2
+v::lvl2                                        299     0    0    0   29     0     0     0     0
+v::shim                                       2091     0    0    0  232     0     0     0     0
+v::add_x                                      2091     0    0    0  232     0     0     0     0
+v::lvl2b                                       631   622    0    0    0   152    42    54     4
+v::nod_x                                      2044     0    0    0  184     0     0     0     0
+v::noinl                                       115     0    0    0    0     0     0     0     0
+v::noinl::rd                                  1060     0    0    0  116     0     0     0     0
+v::lv_for                                      326   317    0    0    0    76    21    27     2
+v::passes                                      606   206  138    0    0    65     2    12    80
+v::norho_x                                    1928     0    0    0   48     0     0     0     0
+v::norot_x                                     618   397  178    0    0   165     0     0    73
+v::scalar4                                     433     0    0    0    0     0     0     0     0
+v::nod_noinl                                   115     0    0    0    0     0     0     0     0
+v::nod_noinl::rd                              1047     0    0    0   92     0     0     0     0
+shim           OK     1254.4 ns/perm
+avx2           OK      388.4 ns/perm
+noinl          OK     1747.6 ns/perm
+rotl_x         OK     1255.2 ns/perm
+rotl_noinl     OK     1749.2 ns/perm
+xor_x          OK     1254.8 ns/perm
+xor_noinl      OK     1749.3 ns/perm
+add_x          OK     1253.9 ns/perm
+add_noinl      OK     1748.8 ns/perm
+norot_x        OK      496.2 ns/perm
+norot_noinl    OK     1643.9 ns/perm
+nod_x          OK     1249.6 ns/perm
+nod_noinl      OK     1704.8 ns/perm
+norho_x        OK     1165.4 ns/perm
+norho_noinl    OK     1673.8 ns/perm
+lv_copy        OK      413.4 ns/perm
+lv_for         OK      413.3 ns/perm
+lv2            OK      388.1 ns/perm
+lv4            OK      390.4 ns/perm
+lvl1           OK      465.2 ns/perm
+lvl2           OK     1510.6 ns/perm
+lvl2b          OK      474.9 ns/perm
+ld1            OK      413.2 ns/perm
+ld2            OK      387.9 ns/perm
+ld4            OK      387.9 ns/perm
+passes         OK     2924.5 ns/perm
+lq2            OK      387.8 ns/perm
+scalar4        OK     1280.4 ns/perm
+== stable rustc 1.99.1
+function                                       ins   ymm  xmm  rol rorx  vxor  vsll  vsrl  shuf
+Y::v::rotl_noinl                               115     0    0    0    0     0     0     0     0
+Y::v::norho_noinl                              115     0    0    0    0     0     0     0     0
+Y::v::norot_noinl                              115     0    0    0    0     0     0     0     0
+Y::v::ld1                                      326   317    0    0    0    76    21    27     2
+Y::v::ld2                                      528   519    0    0    0   152    42    54     4
+Y::v::ld4                                      959   950    0    0    0   304    84   108     8
+Y::v::lq2                                      528   519    0    0    0   152    42    54     4
+Y::v::lv2                                      529   520    0    0    0   152    42    54     4
+Y::v::lv4                                      961   952    0    0    0   304    84   108     8
+Y::v::avx2                                     528   519    0    0    0   152    42    54     4
+Y::v::lvl1                                     352   343    0    0    0    76    21    27     2
+Y::v::lvl2                                     299     0    0    0   29     0     0     0     0
+Y::v::shim                                    2091     0    0    0  232     0     0     0     0
+Y::v::add_x                                   2091     0    0    0  232     0     0     0     0
+Y::v::lvl2b                                    631   622    0    0    0   152    42    54     4
+Y::v::nod_x                                   2044     0    0    0  184     0     0     0     0
+Y::v::noinl                                    115     0    0    0    0     0     0     0     0
+Y::v::lv_for                                   326   317    0    0    0    76    21    27     2
+Y::v::passes                                   603   206  142    0    0    65     2    12    80
+Y::v::norho_x                                 1928     0    0    0   48     0     0     0     0
+Y::v::norot_x                                  486   401   82    0    0   159     0     0    37
+Y::v::scalar4                                  433     0    0    0    0     0     0     0     0
+Y::v::nod_noinl                                115     0    0    0    0     0     0     0     0
+Y::v::rotl_noinl::rd                          1060     0    0    0  116     0     0     0     0
+Y::v::norho_noinl::rd                          997     0    0    0   24     0     0     0     0
+Y::v::norot_noinl::rd                          974     0    0    0    0     0     0     0     0
+Y::v::noinl::rd                               1060     0    0    0  116     0     0     0     0
+Y::v::nod_noinl::rd                           1047     0    0    0   92     0     0     0     0
+shim           OK     1254.8 ns/perm
+avx2           OK      387.7 ns/perm
+noinl          OK     1747.9 ns/perm
+rotl_x         OK     1255.4 ns/perm
+rotl_noinl     OK     1747.7 ns/perm
+xor_x          OK     1254.7 ns/perm
+xor_noinl      OK     1748.3 ns/perm
+add_x          OK     1255.0 ns/perm
+add_noinl      OK     1748.1 ns/perm
+norot_x        OK      340.1 ns/perm
+norot_noinl    OK     1645.3 ns/perm
+nod_x          OK     1249.5 ns/perm
+nod_noinl      OK     1703.3 ns/perm
+norho_x        OK     1165.6 ns/perm
+norho_noinl    OK     1673.0 ns/perm
+lv_copy        OK      412.9 ns/perm
+lv_for         OK      412.8 ns/perm
+lv2            OK      387.4 ns/perm
+lv4            OK      389.8 ns/perm
+lvl1           OK      464.6 ns/perm
+lvl2           OK     1513.0 ns/perm
+lvl2b          OK      474.5 ns/perm
+ld1            OK      413.1 ns/perm
+ld2            OK      387.4 ns/perm
+ld4            OK      387.3 ns/perm
+passes         OK     2930.8 ns/perm
+lq2            OK      387.3 ns/perm
+scalar4        OK     1284.3 ns/perm
+

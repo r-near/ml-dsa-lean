@@ -3,7 +3,7 @@
 set -o pipefail
 TC=$1; shift
 cd "$(dirname "$0")/.." || exit 1
-NC="-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq"
+NC="-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq ${RUSTFLAGS_EXTRA:-}"
 echo "== toolchain $TC: $(rustc +$TC -V)"
 bash tools/asm.sh "$TC" "${TMPDIR:-/tmp}/fvlab-asm-$TC" || exit 1
 RUSTFLAGS="$NC" cargo +"$TC" build --release --features avx2 --bin bench --message-format=json-render-diagnostics >"${TMPDIR:-/tmp}/fvlab-$TC.json" || exit 1

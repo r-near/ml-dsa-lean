@@ -1,0 +1,89 @@
+### pad 0
+base-pad0            ML-DSA-44 verify         ours                 median   26.03  min   26.00  max   26.23  (n=5)
+base-pad0            ML-DSA-44 verify         ours+prepared-vk     median    9.81  min    9.78  max    9.81  (n=5)
+base-pad0            ML-DSA-44 verifying-key  ours+verifying-key   median   16.96  min   16.92  max   16.97  (n=5)
+base-pad0            ML-DSA-65 verify         ours                 median   38.46  min   38.39  max   38.49  (n=5)
+base-pad0            ML-DSA-65 verify         ours+prepared-vk     median   11.25  min   11.22  max   11.30  (n=5)
+base-pad0            ML-DSA-65 verifying-key  ours+verifying-key   median   28.51  min   28.49  max   28.57  (n=5)
+base-pad0            ML-DSA-87 verify         ours                 median   60.87  min   60.76  max   60.90  (n=5)
+base-pad0            ML-DSA-87 verify         ours+prepared-vk     median   15.07  min   14.99  max   15.29  (n=5)
+base-pad0            ML-DSA-87 verifying-key  ours+verifying-key   median   48.13  min   48.06  max   48.20  (n=5)
+vec-pad0             ML-DSA-44 verify         ours                 median   26.02  min   25.99  max   26.06  (n=5)
+vec-pad0             ML-DSA-44 verify         ours+prepared-vk     median    9.80  min    9.78  max    9.83  (n=5)
+vec-pad0             ML-DSA-44 verifying-key  ours+verifying-key   median   16.92  min   16.91  max   16.95  (n=5)
+vec-pad0             ML-DSA-65 verify         ours                 median   38.55  min   38.46  max   38.69  (n=5)
+vec-pad0             ML-DSA-65 verify         ours+prepared-vk     median   11.17  min   11.15  max   11.27  (n=5)
+vec-pad0             ML-DSA-65 verifying-key  ours+verifying-key   median   28.73  min   28.69  max   28.76  (n=5)
+vec-pad0             ML-DSA-87 verify         ours                 median   60.70  min   60.61  max   61.56  (n=5)
+vec-pad0             ML-DSA-87 verify         ours+prepared-vk     median   15.08  min   14.97  max   15.23  (n=5)
+vec-pad0             ML-DSA-87 verifying-key  ours+verifying-key   median   48.50  min   48.46  max   48.58  (n=5)
+### pad 672
+base-pad672          ML-DSA-44 verify         ours                 median   26.24  min   26.02  max   26.29  (n=5)
+base-pad672          ML-DSA-44 verify         ours+prepared-vk     median    9.71  min    9.71  max    9.79  (n=5)
+base-pad672          ML-DSA-44 verifying-key  ours+verifying-key   median   17.05  min   17.03  max   17.06  (n=5)
+base-pad672          ML-DSA-65 verify         ours                 median   38.47  min   38.38  max   38.62  (n=5)
+base-pad672          ML-DSA-65 verify         ours+prepared-vk     median   11.29  min   11.23  max   11.32  (n=5)
+base-pad672          ML-DSA-65 verifying-key  ours+verifying-key   median   28.53  min   28.50  max   28.64  (n=5)
+base-pad672          ML-DSA-87 verify         ours                 median   60.86  min   60.79  max   60.93  (n=5)
+base-pad672          ML-DSA-87 verify         ours+prepared-vk     median   15.22  min   15.13  max   15.24  (n=5)
+base-pad672          ML-DSA-87 verifying-key  ours+verifying-key   median   47.96  min   47.90  max   48.13  (n=5)
+vec-pad672           ML-DSA-44 verify         ours                 median   25.94  min   25.94  max   26.01  (n=5)
+vec-pad672           ML-DSA-44 verify         ours+prepared-vk     median    9.72  min    9.72  max    9.80  (n=5)
+vec-pad672           ML-DSA-44 verifying-key  ours+verifying-key   median   16.98  min   16.96  max   17.02  (n=5)
+vec-pad672           ML-DSA-65 verify         ours                 median   38.55  min   38.52  max   38.73  (n=5)
+vec-pad672           ML-DSA-65 verify         ours+prepared-vk     median   11.24  min   11.16  max   11.26  (n=5)
+vec-pad672           ML-DSA-65 verifying-key  ours+verifying-key   median   28.70  min   28.69  max   28.72  (n=5)
+vec-pad672           ML-DSA-87 verify         ours                 median   60.79  min   60.75  max   60.97  (n=5)
+vec-pad672           ML-DSA-87 verify         ours+prepared-vk     median   15.21  min   15.10  max   15.25  (n=5)
+vec-pad672           ML-DSA-87 verifying-key  ours+verifying-key   median   48.36  min   48.27  max   48.66  (n=5)
+### pad 2752
+base-pad2752         ML-DSA-44 verify         ours                 median   26.11  min   26.09  max   26.24  (n=5)
+base-pad2752         ML-DSA-44 verify         ours+prepared-vk     median    9.68  min    9.67  max    9.72  (n=5)
+base-pad2752         ML-DSA-44 verifying-key  ours+verifying-key   median   16.99  min   16.96  max   17.24  (n=5)
+base-pad2752         ML-DSA-65 verify         ours                 median   38.46  min   38.41  max   38.48  (n=5)
+base-pad2752         ML-DSA-65 verify         ours+prepared-vk     median   11.29  min   11.24  max   11.32  (n=5)
+base-pad2752         ML-DSA-65 verifying-key  ours+verifying-key   median   28.54  min   28.48  max   28.57  (n=5)
+base-pad2752         ML-DSA-87 verify         ours                 median   60.78  min   60.67  max   60.87  (n=5)
+base-pad2752         ML-DSA-87 verify         ours+prepared-vk     median   15.16  min   15.15  max   15.22  (n=5)
+base-pad2752         ML-DSA-87 verifying-key  ours+verifying-key   median   48.21  min   48.00  max   48.43  (n=5)
+vec-pad2752          ML-DSA-44 verify         ours                 median   26.20  min   26.14  max   26.27  (n=5)
+vec-pad2752          ML-DSA-44 verify         ours+prepared-vk     median    9.71  min    9.69  max    9.75  (n=5)
+vec-pad2752          ML-DSA-44 verifying-key  ours+verifying-key   median   17.13  min   17.07  max   17.34  (n=5)
+vec-pad2752          ML-DSA-65 verify         ours                 median   38.43  min   38.42  max   38.59  (n=5)
+vec-pad2752          ML-DSA-65 verify         ours+prepared-vk     median   11.20  min   11.17  max   11.31  (n=5)
+vec-pad2752          ML-DSA-65 verifying-key  ours+verifying-key   median   28.73  min   28.63  max   28.87  (n=5)
+vec-pad2752          ML-DSA-87 verify         ours                 median   60.77  min   60.76  max   60.80  (n=5)
+vec-pad2752          ML-DSA-87 verify         ours+prepared-vk     median   15.20  min   15.11  max   15.20  (n=5)
+vec-pad2752          ML-DSA-87 verifying-key  ours+verifying-key   median   48.56  min   48.47  max   49.36  (n=5)
+### 1.95.0 pad 0
+base195-pad0         ML-DSA-44 verify         ours                 median   26.26  min   26.23  max   26.33  (n=5)
+base195-pad0         ML-DSA-44 verify         ours+prepared-vk     median    9.65  min    9.62  max    9.68  (n=5)
+base195-pad0         ML-DSA-44 verifying-key  ours+verifying-key   median   16.88  min   16.85  max   17.04  (n=5)
+base195-pad0         ML-DSA-65 verify         ours                 median   38.62  min   38.56  max   38.71  (n=5)
+base195-pad0         ML-DSA-65 verify         ours+prepared-vk     median   11.37  min   11.28  max   11.39  (n=5)
+base195-pad0         ML-DSA-65 verifying-key  ours+verifying-key   median   28.61  min   28.56  max   28.76  (n=5)
+base195-pad0         ML-DSA-87 verify         ours                 median   60.99  min   60.86  max   61.00  (n=5)
+base195-pad0         ML-DSA-87 verify         ours+prepared-vk     median   15.31  min   15.25  max   15.42  (n=5)
+base195-pad0         ML-DSA-87 verifying-key  ours+verifying-key   median   48.44  min   48.26  max   49.56  (n=5)
+vec195-pad0          ML-DSA-44 verify         ours                 median   26.21  min   26.17  max   26.86  (n=5)
+vec195-pad0          ML-DSA-44 verify         ours+prepared-vk     median    9.64  min    9.63  max    9.76  (n=5)
+vec195-pad0          ML-DSA-44 verifying-key  ours+verifying-key   median   17.00  min   16.96  max   17.08  (n=5)
+vec195-pad0          ML-DSA-65 verify         ours                 median   38.52  min   38.49  max   38.84  (n=5)
+vec195-pad0          ML-DSA-65 verify         ours+prepared-vk     median   11.37  min   11.28  max   11.41  (n=5)
+vec195-pad0          ML-DSA-65 verifying-key  ours+verifying-key   median   28.75  min   28.70  max   28.84  (n=5)
+vec195-pad0          ML-DSA-87 verify         ours                 median   61.13  min   61.06  max   63.10  (n=5)
+vec195-pad0          ML-DSA-87 verify         ours+prepared-vk     median   15.34  min   15.18  max   15.38  (n=5)
+vec195-pad0          ML-DSA-87 verifying-key  ours+verifying-key   median   48.40  min   48.25  max   49.52  (n=5)
+### scan
+stack-offset scan of vec: microseconds per call, median of rounds, one run per padding
+ set op        pads     min  median     max  max-min  >1.1xmed     p90
+  44 prepared   129    9.59    9.64    9.78     0.19     0/129    9.72
+  44 verify     129   25.70   25.84   26.03     0.34     0/129   25.94
+  44 vk         129   16.75   16.85   17.18     0.43     0/129   16.92
+  65 prepared   129   11.03   11.13   11.39     0.36     0/129   11.22
+  65 verify     129   38.13   38.27   38.48     0.35     0/129   38.37
+  65 vk         129   28.47   28.57   29.32     0.86     0/129   28.70
+  87 prepared   129   14.95   15.10   15.83     0.89     0/129   15.23
+  87 verify     129   60.31   60.49   61.62     1.31     0/129   60.66
+  87 vk         129   48.17   48.34   49.52     1.35     0/129   48.91
+STACK SCAN OK

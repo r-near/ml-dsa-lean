@@ -2,7 +2,7 @@
 # usage: asm.sh TOOLCHAIN OUTDIR   -- emits asm for the lab lib (nearcore feature flags) and summarizes per-variant functions
 set -o pipefail
 TC=$1; OUT=$2; mkdir -p "$OUT"
-NC="-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq"
+NC="-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq ${RUSTFLAGS_EXTRA:-}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE/.." || exit 1
 RUSTFLAGS="$NC" cargo +"$TC" rustc --release --lib --features avx2 -- --emit=asm -Cdebuginfo=0 ${EXTRA:+$EXTRA} 2>&1 | grep -E '^error' | head
