@@ -60,7 +60,7 @@ mod verify;
 #[path = "../../../src/fast_verify"]
 mod fast_verify {
     #[cfg(not(all(feature = "avx2", target_arch = "x86_64")))]
-    pub(crate) use crate::verify::{prepare_vk, verify_internal};
+    pub(crate) use crate::verify::{prepare_vk, verify_internal, verify_prepared_internal};
 
     #[cfg(all(feature = "avx2", target_arch = "x86_64"))]
     #[allow(dead_code, unexpected_cfgs)]
