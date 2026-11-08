@@ -1,0 +1,260 @@
+
+ 00:05:44 up 21:15,  1 user,  load average: 1.13, 1.54, 1.26
+processes above 5% CPU: 1
+pinned cpu 46 (sibling 76)
+== scalar 00:05:44 load 1.13 1.54 1.26
+# bench label: p5-195-scalar-cpu46
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -Cforce-unwind-tables=y]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 46
+# running on cpu: 46
+# loadavg: 1.13 1.54 1.26 2/837 1493518
+# steal jiffies: 0 of 458853729
+# measured core clock: 3.40 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ML-DSA-44 ours verify: 52.8 us
+ROW	p5-195-scalar-cpu46	44	verify	ours	52800.5	52791.4	52726.0	52849.3	51940.0	52020.0	55314.0	63499.8	15	9	256
+ML-DSA-44 ours+prepared-vk verify: 12.3 us
+ROW	p5-195-scalar-cpu46	44	verify	ours+prepared-vk	12250.4	12250.6	12241.0	12259.6	12050.0	12100.0	12173.0	19849.7	15	39	256
+ML-DSA-44 rustcrypto verify: 111.3 us
+ROW	p5-195-scalar-cpu46	44	verify	rustcrypto	111317.9	111313.2	111174.0	111443.3	109390.0	109715.0	117240.0	122145.1	15	5	256
+ML-DSA-44 rustcrypto+cached-vk verify: 62.4 us
+ROW	p5-195-scalar-cpu46	44	verify	rustcrypto+cached-vk	62424.3	62425.9	62375.6	62479.2	61360.0	61530.0	65155.0	72786.3	15	8	256
+ML-DSA-44 libcrux-portable verify: 75.6 us
+ROW	p5-195-scalar-cpu46	44	verify	libcrux-portable	75611.6	75618.0	75511.8	75674.3	74300.0	74520.0	78979.0	84383.3	15	7	256
+ML-DSA-44 libcrux-avx2 verify: 26.8 us
+ROW	p5-195-scalar-cpu46	44	verify	libcrux-avx2	26818.2	26814.6	26776.8	26846.5	26367.0	26440.0	26970.0	35559.8	15	18	256
+ML-DSA-44 aws-lc-rs verify: 22.4 us
+ROW	p5-195-scalar-cpu46	44	verify	aws-lc-rs	22397.3	22400.6	22373.6	22435.7	21980.0	22030.0	22240.0	30966.6	15	21	256
+ML-DSA-44 mldsa-native-portable verify: 55.5 us
+ROW	p5-195-scalar-cpu46	44	verify	mldsa-native-portable	55485.1	55489.1	55409.5	55549.8	54530.0	54680.0	58172.0	71822.3	15	9	256
+ML-DSA-44 mldsa-native-avx2 verify: 20.9 us
+ROW	p5-195-scalar-cpu46	44	verify	mldsa-native-avx2	20897.3	20897.0	20883.4	20915.0	20560.0	20620.0	20740.0	28735.9	15	23	256
+ML-DSA-44 ours+verifying-key verifying-key: 40.8 us
+ROW	p5-195-scalar-cpu46	44	verifying-key	ours+verifying-key	40803.6	40801.1	40777.8	40819.4	40190.0	40240.0	43067.0	49392.5	15	12	256
+ML-DSA-65 ours verify: 88.7 us
+ROW	p5-195-scalar-cpu46	65	verify	ours	88681.3	88691.9	88569.0	88875.2	87300.0	87440.0	92249.0	98633.0	15	6	256
+ML-DSA-65 ours+prepared-vk verify: 14.9 us
+ROW	p5-195-scalar-cpu46	65	verify	ours+prepared-vk	14859.3	14859.9	14849.4	14873.6	14630.0	14670.0	14750.0	22526.6	15	32	256
+ML-DSA-65 rustcrypto verify: 170.8 us
+ROW	p5-195-scalar-cpu46	65	verify	rustcrypto	170837.0	170841.5	170563.7	171032.1	168100.0	168870.0	176462.0	186491.2	15	3	256
+ML-DSA-65 rustcrypto+cached-vk verify: 85.8 us
+ROW	p5-195-scalar-cpu46	65	verify	rustcrypto+cached-vk	85766.4	85744.4	85626.6	85825.0	84360.0	84550.0	89396.0	94696.6	15	6	256
+ML-DSA-65 libcrux-portable verify: 126.4 us
+ROW	p5-195-scalar-cpu46	65	verify	libcrux-portable	126384.3	126379.8	126265.0	126526.3	124360.0	124660.0	132748.0	139946.1	15	4	256
+ML-DSA-65 libcrux-avx2 verify: 43.3 us
+ROW	p5-195-scalar-cpu46	65	verify	libcrux-avx2	43260.1	43259.6	43229.4	43330.3	42540.0	42635.0	43673.0	51436.5	15	11	256
+ML-DSA-65 aws-lc-rs verify: 36.4 us
+ROW	p5-195-scalar-cpu46	65	verify	aws-lc-rs	36399.1	36399.6	36370.1	36424.0	35780.0	35860.0	36562.0	44923.3	15	13	256
+ML-DSA-65 mldsa-native-portable verify: 87.8 us
+ROW	p5-195-scalar-cpu46	65	verify	mldsa-native-portable	87798.1	87803.8	87739.8	87916.7	86450.0	86645.0	91331.0	96938.8	15	6	256
+ML-DSA-65 mldsa-native-avx2 verify: 34.3 us
+ROW	p5-195-scalar-cpu46	65	verify	mldsa-native-avx2	34277.1	34278.4	34231.7	34343.4	33740.0	33820.0	34198.0	42802.8	15	14	256
+ML-DSA-65 ours+verifying-key verifying-key: 74.2 us
+ROW	p5-195-scalar-cpu46	65	verifying-key	ours+verifying-key	74235.6	74241.8	74177.8	74325.2	73120.0	73210.0	77812.0	82649.6	15	7	256
+ML-DSA-87 ours verify: 153.1 us
+ROW	p5-195-scalar-cpu46	87	verify	ours	153085.0	153101.4	152914.6	153216.6	150760.0	151040.0	159062.7	164685.4	15	4	256
+ML-DSA-87 ours+prepared-vk verify: 20.3 us
+ROW	p5-195-scalar-cpu46	87	verify	ours+prepared-vk	20337.1	20339.0	20322.0	20357.8	20027.0	20080.0	20223.0	28383.3	15	24	256
+ML-DSA-87 rustcrypto verify: 270.1 us
+ROW	p5-195-scalar-cpu46	87	verify	rustcrypto	270058.2	270056.9	269798.4	270439.5	265877.0	267505.0	277726.0	283286.6	15	2	256
+ML-DSA-87 rustcrypto+cached-vk verify: 124.6 us
+ROW	p5-195-scalar-cpu46	87	verify	rustcrypto+cached-vk	124633.4	124665.2	124559.7	124801.0	122570.0	122930.0	130553.0	135666.0	15	4	256
+ML-DSA-87 libcrux-portable verify: 202.5 us
+ROW	p5-195-scalar-cpu46	87	verify	libcrux-portable	202528.5	202486.9	202234.0	202667.4	199130.0	199975.0	209280.0	215900.0	15	3	256
+ML-DSA-87 libcrux-avx2 verify: 67.8 us
+ROW	p5-195-scalar-cpu46	87	verify	libcrux-avx2	67755.9	67747.9	67687.6	67813.9	66610.0	66770.0	70965.0	76481.7	15	7	256
+ML-DSA-87 aws-lc-rs verify: 56.7 us
+ROW	p5-195-scalar-cpu46	87	verify	aws-lc-rs	56704.3	56706.4	56644.0	56769.4	55650.0	55820.0	59352.0	67971.6	15	9	256
+ML-DSA-87 mldsa-native-portable verify: 144.7 us
+ROW	p5-195-scalar-cpu46	87	verify	mldsa-native-portable	144659.9	144671.3	144555.1	144800.1	142320.0	142650.0	150510.0	154976.4	15	4	256
+ML-DSA-87 mldsa-native-avx2 verify: 53.3 us
+ROW	p5-195-scalar-cpu46	87	verify	mldsa-native-avx2	53311.7	53324.9	53261.2	53401.8	52440.0	52560.0	55843.0	61996.5	15	9	256
+ML-DSA-87 ours+verifying-key verifying-key: 133.7 us
+ROW	p5-195-scalar-cpu46	87	verifying-key	ours+verifying-key	133729.2	133736.8	133638.8	133804.2	131700.0	131930.0	139673.0	143956.4	15	4	256
+# steal jiffies during run: 0 of 425719
+# loadavg at end: 1.04 1.43 1.24 2/826 1494099
+# measured core clock at end: 3.41 GHz
+== avx2 00:07:01 load 1.03 1.42 1.24
+# bench label: p5-195-avx2-cpu46
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -Cforce-unwind-tables=y]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 46
+# running on cpu: 46
+# loadavg: 1.03 1.42 1.24 1/826 1494127
+# steal jiffies: 0 of 459314736
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ML-DSA-44 ours verify: 26.7 us
+ROW	p5-195-avx2-cpu46	44	verify	ours	26671.7	26673.0	26652.2	26706.5	26240.0	26300.0	26410.0	34822.0	15	18	256
+ML-DSA-44 ours+prepared-vk verify: 9.6 us
+ROW	p5-195-avx2-cpu46	44	verify	ours+prepared-vk	9628.8	9631.8	9626.4	9644.9	9460.0	9510.0	9590.0	16095.3	15	49	256
+ML-DSA-44 rustcrypto verify: 111.4 us
+ROW	p5-195-avx2-cpu46	44	verify	rustcrypto	111422.0	111443.6	111295.6	111760.1	109540.0	109840.0	117293.0	120411.2	15	5	256
+ML-DSA-44 rustcrypto+cached-vk verify: 62.4 us
+ROW	p5-195-avx2-cpu46	44	verify	rustcrypto+cached-vk	62445.0	62447.1	62400.9	62507.3	61440.0	61590.0	65166.0	71093.2	15	8	256
+ML-DSA-44 libcrux-portable verify: 75.5 us
+ROW	p5-195-avx2-cpu46	44	verify	libcrux-portable	75470.3	75478.1	75415.4	75531.2	74260.0	74425.0	78862.0	85879.6	15	7	256
+ML-DSA-44 libcrux-avx2 verify: 26.8 us
+ROW	p5-195-avx2-cpu46	44	verify	libcrux-avx2	26752.4	26751.0	26731.7	26768.2	26340.0	26390.0	26616.0	34913.3	15	18	256
+ML-DSA-44 aws-lc-rs verify: 22.4 us
+ROW	p5-195-avx2-cpu46	44	verify	aws-lc-rs	22366.5	22380.2	22356.1	22423.7	21970.0	22050.0	22233.0	30449.9	15	21	256
+ML-DSA-44 mldsa-native-portable verify: 55.4 us
+ROW	p5-195-avx2-cpu46	44	verify	mldsa-native-portable	55355.0	55350.5	55310.7	55385.8	54437.0	54560.0	57957.0	64846.6	15	9	256
+ML-DSA-44 mldsa-native-avx2 verify: 20.9 us
+ROW	p5-195-avx2-cpu46	44	verify	mldsa-native-avx2	20947.3	20947.7	20925.1	20963.6	20610.0	20660.0	20790.0	29259.6	15	23	256
+ML-DSA-44 ours+verifying-key verifying-key: 17.7 us
+ROW	p5-195-avx2-cpu46	44	verifying-key	ours+verifying-key	17696.7	17699.5	17681.4	17722.9	17430.0	17460.0	17510.0	25362.9	15	27	256
+ML-DSA-65 ours verify: 42.1 us
+ROW	p5-195-avx2-cpu46	65	verify	ours	42103.3	42110.6	42079.4	42161.4	41430.0	41510.0	42611.0	50552.9	15	12	256
+ML-DSA-65 ours+prepared-vk verify: 11.3 us
+ROW	p5-195-avx2-cpu46	65	verify	ours+prepared-vk	11335.6	11336.1	11327.1	11345.3	11130.0	11170.0	11240.0	19115.6	15	42	256
+ML-DSA-65 rustcrypto verify: 171.7 us
+ROW	p5-195-avx2-cpu46	65	verify	rustcrypto	171720.4	171746.8	171599.5	171963.6	169000.0	169590.0	177521.0	187823.5	15	3	256
+ML-DSA-65 rustcrypto+cached-vk verify: 86.3 us
+ROW	p5-195-avx2-cpu46	65	verify	rustcrypto+cached-vk	86324.6	86326.7	86247.8	86413.9	84907.0	85135.0	90361.0	98511.7	15	6	256
+ML-DSA-65 libcrux-portable verify: 126.5 us
+ROW	p5-195-avx2-cpu46	65	verify	libcrux-portable	126468.7	126494.8	126322.7	126723.9	124420.0	124650.0	132406.7	136553.0	15	4	256
+ML-DSA-65 libcrux-avx2 verify: 43.0 us
+ROW	p5-195-avx2-cpu46	65	verify	libcrux-avx2	43048.6	43053.8	43010.8	43104.8	42310.0	42420.0	43450.0	51580.0	15	11	256
+ML-DSA-65 aws-lc-rs verify: 36.5 us
+ROW	p5-195-avx2-cpu46	65	verify	aws-lc-rs	36462.2	36470.6	36428.7	36534.4	35810.0	35900.0	36603.0	44536.3	15	13	256
+ML-DSA-65 mldsa-native-portable verify: 87.7 us
+ROW	p5-195-avx2-cpu46	65	verify	mldsa-native-portable	87744.2	87742.3	87654.7	87825.3	86380.0	86585.0	92119.0	98072.3	15	6	256
+ML-DSA-65 mldsa-native-avx2 verify: 34.3 us
+ROW	p5-195-avx2-cpu46	65	verify	mldsa-native-avx2	34326.5	34334.5	34307.3	34379.0	33770.0	33840.0	34410.0	42542.6	15	14	256
+ML-DSA-65 ours+verifying-key verifying-key: 32.4 us
+ROW	p5-195-avx2-cpu46	65	verifying-key	ours+verifying-key	32432.7	32431.5	32405.8	32458.1	31950.0	32010.0	32416.0	40039.9	15	15	256
+ML-DSA-87 ours verify: 65.2 us
+ROW	p5-195-avx2-cpu46	87	verify	ours	65248.1	65239.6	65168.8	65286.1	64200.0	64310.0	68113.0	73781.5	15	8	256
+ML-DSA-87 ours+prepared-vk verify: 15.3 us
+ROW	p5-195-avx2-cpu46	87	verify	ours+prepared-vk	15336.4	15338.2	15327.7	15353.9	15060.0	15110.0	15180.0	23016.3	15	31	256
+ML-DSA-87 rustcrypto verify: 270.6 us
+ROW	p5-195-avx2-cpu46	87	verify	rustcrypto	270588.7	270598.7	270294.6	270847.7	265847.0	267480.0	277937.0	285558.5	15	2	256
+ML-DSA-87 rustcrypto+cached-vk verify: 124.7 us
+ROW	p5-195-avx2-cpu46	87	verify	rustcrypto+cached-vk	124724.0	124732.1	124609.7	124865.6	122590.0	122980.0	130640.0	133246.6	15	4	256
+ML-DSA-87 libcrux-portable verify: 203.0 us
+ROW	p5-195-avx2-cpu46	87	verify	libcrux-portable	203028.6	203043.1	202852.5	203176.7	199770.0	200695.0	209183.0	220097.0	15	3	256
+ML-DSA-87 libcrux-avx2 verify: 67.8 us
+ROW	p5-195-avx2-cpu46	87	verify	libcrux-avx2	67792.2	67794.7	67739.6	67867.1	66690.0	66880.0	70759.0	76777.6	15	7	256
+ML-DSA-87 aws-lc-rs verify: 56.5 us
+ROW	p5-195-avx2-cpu46	87	verify	aws-lc-rs	56523.4	56522.9	56474.4	56552.4	55510.0	55670.0	59255.0	65313.2	15	9	256
+ML-DSA-87 mldsa-native-portable verify: 144.5 us
+ROW	p5-195-avx2-cpu46	87	verify	mldsa-native-portable	144495.0	144500.3	144366.6	144624.9	142260.0	142570.0	150350.0	155410.8	15	4	256
+ML-DSA-87 mldsa-native-avx2 verify: 53.3 us
+ROW	p5-195-avx2-cpu46	87	verify	mldsa-native-avx2	53304.4	53314.8	53259.7	53371.9	52417.0	52520.0	55740.0	62959.9	15	9	256
+ML-DSA-87 ours+verifying-key verifying-key: 53.7 us
+ROW	p5-195-avx2-cpu46	87	verifying-key	ours+verifying-key	53734.2	53738.9	53687.2	53779.8	52900.0	52990.0	56546.0	62653.3	15	9	256
+# steal jiffies during run: 0 of 418212
+# loadavg at end: 1.01 1.33 1.22 1/828 1494765
+# measured core clock at end: 3.41 GHz
+== v3 00:08:17 load 1.01 1.32 1.21
+# bench label: p5-195-v3-cpu46
+# build: opt-level=3 debug_assertions=false target_cpu_native_flag=[-C target-cpu=x86-64-v3]
+# cpu: AMD EPYC 9B14 (reported 2599.998 MHz)
+# cpus_allowed: 46
+# running on cpu: 46
+# loadavg: 1.01 1.32 1.21 1/828 1494793
+# steal jiffies: 0 of 459768222
+# measured core clock: 3.41 GHz (dependent add chain)
+# avx2: true
+# inputs: 256 messages of 64 bytes, empty ctx, 64 keygen seeds, one key pair per set; rounds=15 lat_passes=3
+ROW	label	set	op	impl	median_ns	mean_ns	min_ns	max_ns	call_p10	call_p50	call_p90	call_p99	rounds	reps	n
+ML-DSA-44 ours verify: 27.6 us
+ROW	p5-195-v3-cpu46	44	verify	ours	27643.4	27641.5	27616.1	27657.8	27160.0	27250.0	27699.0	36056.3	15	17	256
+ML-DSA-44 ours+prepared-vk verify: 9.4 us
+ROW	p5-195-v3-cpu46	44	verify	ours+prepared-vk	9440.5	9420.5	9371.3	9455.0	9300.0	9330.0	9390.0	14379.1	15	50	256
+ML-DSA-44 rustcrypto verify: 109.9 us
+ROW	p5-195-v3-cpu46	44	verify	rustcrypto	109861.1	109850.0	109734.8	109923.1	108020.0	108300.0	115940.0	121203.4	15	5	256
+ML-DSA-44 rustcrypto+cached-vk verify: 61.9 us
+ROW	p5-195-v3-cpu46	44	verify	rustcrypto+cached-vk	61859.2	61850.8	61758.1	61949.4	60840.0	61000.0	64850.0	71246.6	15	8	256
+ML-DSA-44 libcrux-portable verify: 68.0 us
+ROW	p5-195-v3-cpu46	44	verify	libcrux-portable	68030.3	68035.1	67956.5	68112.9	66860.0	67030.0	70983.0	77075.2	15	7	256
+ML-DSA-44 libcrux-avx2 verify: 23.8 us
+ROW	p5-195-v3-cpu46	44	verify	libcrux-avx2	23792.3	23792.2	23769.4	23813.7	23410.0	23470.0	23646.0	31543.3	15	20	256
+ML-DSA-44 aws-lc-rs verify: 23.8 us
+ROW	p5-195-v3-cpu46	44	verify	aws-lc-rs	23814.2	23813.8	23797.4	23838.5	23330.0	23460.0	23670.0	32083.1	15	20	256
+ML-DSA-44 mldsa-native-portable verify: 74.7 us
+ROW	p5-195-v3-cpu46	44	verify	mldsa-native-portable	74713.8	74713.3	74657.3	74788.1	73430.0	73670.0	78106.0	84113.1	15	7	256
+ML-DSA-44 mldsa-native-avx2 verify: 21.8 us
+ROW	p5-195-v3-cpu46	44	verify	mldsa-native-avx2	21841.1	21842.6	21822.4	21869.6	21490.0	21540.0	21673.0	29629.7	15	22	256
+ML-DSA-44 ours+verifying-key verifying-key: 17.8 us
+ROW	p5-195-v3-cpu46	44	verifying-key	ours+verifying-key	17808.0	17808.1	17794.0	17828.6	17530.0	17570.0	17630.0	25816.5	15	27	256
+ML-DSA-65 ours verify: 42.1 us
+ROW	p5-195-v3-cpu46	65	verify	ours	42069.4	42081.1	42047.7	42135.7	41400.0	41470.0	42213.0	50089.8	15	12	256
+ML-DSA-65 ours+prepared-vk verify: 11.2 us
+ROW	p5-195-v3-cpu46	65	verify	ours+prepared-vk	11177.6	11180.5	11171.5	11192.1	10990.0	11050.0	11130.0	16904.4	15	42	256
+ML-DSA-65 rustcrypto verify: 169.4 us
+ROW	p5-195-v3-cpu46	65	verify	rustcrypto	169449.3	169458.5	169288.7	169697.5	166580.0	167330.0	175102.0	183999.8	15	3	256
+ML-DSA-65 rustcrypto+cached-vk verify: 86.8 us
+ROW	p5-195-v3-cpu46	65	verify	rustcrypto+cached-vk	86795.2	86786.2	86709.1	86845.3	85400.0	85610.0	90740.0	95396.2	15	6	256
+ML-DSA-65 libcrux-portable verify: 113.8 us
+ROW	p5-195-v3-cpu46	65	verify	libcrux-portable	113838.2	113843.9	113786.5	113930.1	111987.0	112190.0	119933.0	123373.2	15	5	256
+ML-DSA-65 libcrux-avx2 verify: 38.9 us
+ROW	p5-195-v3-cpu46	65	verify	libcrux-avx2	38911.0	38914.0	38879.4	38946.2	38270.0	38370.0	38849.0	47465.9	15	13	256
+ML-DSA-65 aws-lc-rs verify: 38.0 us
+ROW	p5-195-v3-cpu46	65	verify	aws-lc-rs	38008.2	38006.8	37978.2	38044.3	37310.0	37390.0	38145.0	46926.2	15	13	256
+ML-DSA-65 mldsa-native-portable verify: 116.4 us
+ROW	p5-195-v3-cpu46	65	verify	mldsa-native-portable	116447.3	116437.0	116341.4	116519.6	114600.0	114894.5	122553.0	126122.8	15	5	256
+ML-DSA-65 mldsa-native-avx2 verify: 36.0 us
+ROW	p5-195-v3-cpu46	65	verify	mldsa-native-avx2	36009.2	36005.5	35983.8	36026.3	35430.0	35500.0	36021.0	45285.7	15	13	256
+ML-DSA-65 ours+verifying-key verifying-key: 32.9 us
+ROW	p5-195-v3-cpu46	65	verifying-key	ours+verifying-key	32891.0	32896.9	32880.5	32942.7	32390.0	32470.0	32920.0	41019.5	15	15	256
+ML-DSA-87 ours verify: 65.3 us
+ROW	p5-195-v3-cpu46	87	verify	ours	65299.5	65297.3	65210.6	65415.3	64217.0	64350.0	68293.0	73399.4	15	8	256
+ML-DSA-87 ours+prepared-vk verify: 15.1 us
+ROW	p5-195-v3-cpu46	87	verify	ours+prepared-vk	15082.3	15085.5	15071.2	15137.1	14830.0	14890.0	14980.0	22666.5	15	32	256
+ML-DSA-87 rustcrypto verify: 265.9 us
+ROW	p5-195-v3-cpu46	87	verify	rustcrypto	265903.8	265898.7	265222.6	266401.9	261567.0	263015.0	273210.0	281043.1	15	2	256
+ML-DSA-87 rustcrypto+cached-vk verify: 124.8 us
+ROW	p5-195-v3-cpu46	87	verify	rustcrypto+cached-vk	124830.7	124811.4	124695.3	124904.4	122717.0	123055.0	130683.0	135456.3	15	4	256
+ML-DSA-87 libcrux-portable verify: 181.6 us
+ROW	p5-195-v3-cpu46	87	verify	libcrux-portable	181570.8	181693.0	181395.6	182584.9	178530.0	179280.0	187743.0	201494.9	15	3	256
+ML-DSA-87 libcrux-avx2 verify: 59.9 us
+ROW	p5-195-v3-cpu46	87	verify	libcrux-avx2	59918.8	59933.6	59856.9	60081.8	58930.0	59070.0	62753.0	69517.8	15	8	256
+ML-DSA-87 aws-lc-rs verify: 59.1 us
+ROW	p5-195-v3-cpu46	87	verify	aws-lc-rs	59085.8	59091.0	59049.5	59172.4	58000.0	58150.0	61830.0	68190.3	15	8	256
+ML-DSA-87 mldsa-native-portable verify: 186.8 us
+ROW	p5-195-v3-cpu46	87	verify	mldsa-native-portable	186843.3	186853.3	186617.6	187050.6	183780.0	184300.0	192316.0	200287.8	15	3	256
+ML-DSA-87 mldsa-native-avx2 verify: 54.9 us
+ROW	p5-195-v3-cpu46	87	verify	mldsa-native-avx2	54887.3	54917.0	54820.4	55193.5	53920.0	54040.0	57819.0	63902.2	15	9	256
+ML-DSA-87 ours+verifying-key verifying-key: 54.0 us
+ROW	p5-195-v3-cpu46	87	verifying-key	ours+verifying-key	53952.5	53957.3	53895.9	54032.4	52980.0	53210.0	56619.0	62926.6	15	9	256
+# steal jiffies during run: 0 of 418585
+# loadavg at end: 1.00 1.25 1.19 1/827 1495365
+# measured core clock at end: 3.41 GHz
+== done; load 1.00 1.25 1.19
+ML-DSA-44 verify, microseconds (median of rounds), nearcore profile
+implementation                 scalar     avx2       v3
+ours                             52.8     26.7     27.6
+ours+verifying-key               40.8     17.7     17.8
+ours+prepared-vk                 12.3      9.6      9.4
+aws-lc-rs                        22.4     22.4     23.8
+mldsa-native-avx2                20.9     20.9     21.8
+libcrux-avx2                     26.8     26.8     23.8
+rustcrypto                      111.3    111.4    109.9
+ours: dispatched / scalar = 0.51
+ML-DSA-65 verify, microseconds (median of rounds), nearcore profile
+implementation                 scalar     avx2       v3
+ours                             88.7     42.1     42.1
+ours+verifying-key               74.2     32.4     32.9
+ours+prepared-vk                 14.9     11.3     11.2
+aws-lc-rs                        36.4     36.5     38.0
+mldsa-native-avx2                34.3     34.3     36.0
+libcrux-avx2                     43.3     43.0     38.9
+rustcrypto                      170.8    171.7    169.4
+ours: dispatched / scalar = 0.47
+ML-DSA-87 verify, microseconds (median of rounds), nearcore profile
+implementation                 scalar     avx2       v3
+ours                            153.1     65.2     65.3
+ours+verifying-key              133.7     53.7     54.0
+ours+prepared-vk                 20.3     15.3     15.1
+aws-lc-rs                        56.7     56.5     59.1
+mldsa-native-avx2                53.3     53.3     54.9
+libcrux-avx2                     67.8     67.8     59.9
+rustcrypto                      270.1    270.6    265.9
+ours: dispatched / scalar = 0.43

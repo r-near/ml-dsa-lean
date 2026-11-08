@@ -30,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ML-DSA-65 verify with the `avx2` feature takes 43.1 µs (was 54.0) and 88.2 µs without it (was 103.8), under nearcore's flags
   with rustc 1.99.1; ML-DSA-44 26.7 (was 35.5) and ML-DSA-87 64.9 µs (was 84.0). `tests/verify_arith.rs` compares each new function with
   its shared counterpart.
+- With the `avx2` feature on x86_64, the prepared-key verify (`verify_prepared_NN`, `verify_internal_prepared_NN`) is also
+  compiled with AVX2: a second `#[target_feature(enable = "avx2")]` wrapper (`verify_prepared_avx2`) around the same proved
+  scalar function, reached after the same CPU check. No intrinsic, no new `unsafe` beyond the call into the wrapper, and no
+  Lean statement or proof changed. ML-DSA-65 prepared-key verify takes 11.3 µs (was 14.9; ML-DSA-44 9.7, was 12.3;
+  ML-DSA-87 15.3, was 20.3); one-shot verify and `verifying_key_NN` are unchanged (`bench/results/2026-11-07-p5.md`).
+  `scripts/check-avx2-inlining.sh` now also requires ymm code inside each `verify_prepared_avx2` instantiation.
 
 ## [0.1.0] - 2026-11-06
 

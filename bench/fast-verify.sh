@@ -14,8 +14,9 @@
 #   v3      `--features avx2` and -C target-cpu=x86-64-v3: AVX2 is static, no detection.   RUSTFLAGS = target-cpu=x86-64-v3
 # The `avx2` rows are the shipping configuration: the proved 4-way body (verify::verify_internal_x4) with the AVX2 lane ops.
 #
-# `ours+prepared-vk verify` is the prepared-key verify: not dispatched (it runs no ExpandA), so it is the same code in all
-# three variants up to the NTT dispatch. `ours verify` includes building the key's matrix every call.
+# `ours+prepared-vk verify` is the prepared-key verify: it runs no ExpandA, so it has no 4-way body; with the `avx2` feature it is
+# the same proved scalar function inside a second AVX2 wrapper (`verify_prepared_avx2`). `ours verify` includes building the
+# key's matrix every call.
 set -o pipefail
 L=${1:?usage: fast-verify.sh LABEL [CPU]}
 SETS=${SETS:-65}
