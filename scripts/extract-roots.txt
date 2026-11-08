@@ -56,9 +56,8 @@ ml_dsa_lean::field::mul
 # By-value forms that no api function reaches any more (the secret paths use the `_into` forms, which write into a caller-owned buffer); kept because the proofs state the by-value forms (Proofs.sk_decode_spec, Proofs.scalar_vector_ntt_inverse_spec).
 ml_dsa_lean::encode::sk_decode
 ml_dsa_lean::ntt::scalar_vector_ntt_inverse
-ml_dsa_lean::keccak4::keccak_f1600_x4_portable
 ml_dsa_lean::keccak4::keccak_f1600_x4
-# Fast verify (docs/assurance.md section 1.9, lean/Proofs/Sample4.lean, lean/Proofs/FastVerify.lean): the 4-way ExpandA and verify body, generic over keccak4::Lanes4.
+# Fast verify (docs/assurance.md section 1.9, lean/Proofs/Sample4.lean, lean/Proofs/FastVerify.lean): the 4-way ExpandA and verify body over keccak4::keccak_f1600_x4.
 ml_dsa_lean::sampling::rej_ntt_poly_x4
 ml_dsa_lean::sampling::expand_a_into_x4
 ml_dsa_lean::sampling::expand_a_x4

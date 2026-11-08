@@ -5,7 +5,7 @@
 use crate::encode::bit_unpack;
 use crate::field::{Q, sub};
 use crate::keccak::{Shake, keccak_f1600, load_lane};
-use crate::keccak4::{Lanes4, keccak_f1600_x4};
+use crate::keccak4::keccak_f1600_x4;
 use crate::params::Params;
 
 /// Algorithm 14 CoeffFromThreeBytes(b0, b1, b2).
@@ -183,10 +183,9 @@ fn first_256(a: &[u32; 312]) -> [u32; 256] {
 /// coefficients and the loop ends when all four have. Diverges exactly when one of the four unbounded samplers does (as
 /// `rej_ntt_poly` does).
 ///
-/// The result for seed `i` is `rej_ntt_poly(ρ ‖ s[i] ‖ r[i])` (proved equal for the `Shim4` instantiation,
-/// `Proofs/Sample4.lean`).
+/// The result for seed `i` is `rej_ntt_poly(ρ ‖ s[i] ‖ r[i])` (proved equal, `Proofs/Sample4.lean`).
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-pub fn rej_ntt_poly_x4<X: Lanes4>(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
+pub fn rej_ntt_poly_x4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
     let mut st = init_state_x4(rho, s, r);
     let mut p0 = [0u32; 312];
     let mut p1 = [0u32; 312];
@@ -199,7 +198,7 @@ pub fn rej_ntt_poly_x4<X: Lanes4>(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u
     // `more`: some state still needs coefficients. The first pass is always needed (all four counts are 0).
     let mut more = true;
     while more {
-        keccak_f1600_x4::<X>(&mut st);
+        keccak_f1600_x4(&mut st);
         j0 = rej_ntt_lane_x4(&st, 0, &mut p0, j0);
         j1 = rej_ntt_lane_x4(&st, 1, &mut p1, j1);
         j2 = rej_ntt_lane_x4(&st, 2, &mut p2, j2);
@@ -222,14 +221,14 @@ fn entry_x4(first: usize, l: usize, n: usize) -> usize {
 /// than four real entries repeats the last entry.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]
-pub fn expand_a_into_x4<const K: usize, const L: usize, X: Lanes4>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-    expand_a_from_x4::<K, L, X>(rho, a, 0)
+pub fn expand_a_into_x4<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
+    expand_a_from_x4::<K, L>(rho, a, 0)
 }
 
 /// The group loop of `expand_a_into_x4`, starting at entry `first0`: entries `first0, first0 + 1, ...` (flattened as
 /// there) in groups of four until all `K * L` are done. Entries before `first0` are not touched.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-pub fn expand_a_from_x4<const K: usize, const L: usize, X: Lanes4>(
+pub fn expand_a_from_x4<const K: usize, const L: usize>(
     rho: &[u8; 32],
     a: &mut [[[u32; 256]; L]; K],
     first0: usize,
@@ -241,7 +240,7 @@ pub fn expand_a_from_x4<const K: usize, const L: usize, X: Lanes4>(
         let e1 = entry_x4(first, 1, n);
         let e2 = entry_x4(first, 2, n);
         let e3 = entry_x4(first, 3, n);
-        let polys = rej_ntt_poly_x4::<X>(
+        let polys = rej_ntt_poly_x4(
             rho,
             [(e0 % L) as u8, (e1 % L) as u8, (e2 % L) as u8, (e3 % L) as u8],
             [(e0 / L) as u8, (e1 / L) as u8, (e2 / L) as u8, (e3 / L) as u8],
@@ -257,9 +256,9 @@ pub fn expand_a_from_x4<const K: usize, const L: usize, X: Lanes4>(
 /// Algorithm 32 ExpandA(ρ) with the 4-way sampler, returned by value (`expand_a_into_x4` on a zero matrix).
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]
-pub fn expand_a_x4<const K: usize, const L: usize, X: Lanes4>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
+pub fn expand_a_x4<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
     let mut a = [[[0u32; 256]; L]; K];
-    expand_a_into_x4::<K, L, X>(rho, &mut a);
+    expand_a_into_x4::<K, L>(rho, &mut a);
     a
 }
 
@@ -287,11 +286,11 @@ fn tr_tail_lanes(pk: &[u8]) -> [u64; 17] {
 /// XORs block `t` of the padded `pk` (17 lanes: whole block `t` of `pk` when `t < q`, else the padded `tail`) into
 /// lane 3 of the 4-way state. Requires `q = pk.len() / 136`; lanes 0 to 2 and rate-external words are untouched.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-fn absorb_block_lane3<X: Lanes4>(st: &mut [[u64; 4]; 25], pk: &[u8], tail: &[u64; 17], q: usize, t: usize) {
+fn absorb_block_lane3(st: &mut [[u64; 4]; 25], pk: &[u8], tail: &[u64; 17], q: usize, t: usize) {
     let mut k = 0;
     while k < 17 {
         let w = if t < q { load_lane(pk, RATE256 * t + 8 * k) } else { tail[k] };
-        st[k] = X::xor(st[k], [0, 0, 0, w]);
+        st[k][3] ^= w;
         k += 1;
     }
 }
@@ -327,7 +326,7 @@ fn set_lane3(st: &mut [[u64; 4]; 25], s: &[u64; 25]) {
 /// grows by one per permutation until it reaches `q + 1`, where `trs` is the sponge state after its last permutation
 /// and later permutations of the group no longer matter). Requires `q = pk.len() / 136` and `tail = tr_tail_lanes(pk)`.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-pub fn rej_ntt_poly_x3_tr<X: Lanes4>(
+pub fn rej_ntt_poly_x3_tr(
     rho: &[u8; 32],
     s: [u8; 4],
     r: [u8; 4],
@@ -350,9 +349,9 @@ pub fn rej_ntt_poly_x3_tr<X: Lanes4>(
     let mut more = true;
     while more {
         if t <= q {
-            absorb_block_lane3::<X>(&mut st, pk, tail, q, t);
+            absorb_block_lane3(&mut st, pk, tail, q, t);
         }
-        keccak_f1600_x4::<X>(&mut st);
+        keccak_f1600_x4(&mut st);
         j0 = rej_ntt_lane_x4(&st, 0, &mut p0, j0);
         j1 = rej_ntt_lane_x4(&st, 1, &mut p1, j1);
         j2 = rej_ntt_lane_x4(&st, 2, &mut p2, j2);
@@ -422,7 +421,7 @@ fn tr_groups(n: usize, q: usize) -> usize {
 /// (`rej_ntt_poly_x3_tr`), the rest are groups of four as in `expand_a_into_x4`, and whatever of the hash the lane did
 /// not reach (for ML-DSA-65 the last five permutations) is finished with the scalar permutation.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-pub fn expand_a_tr_into_x4<const K: usize, const L: usize, X: Lanes4>(
+pub fn expand_a_tr_into_x4<const K: usize, const L: usize>(
     rho: &[u8; 32],
     pk: &[u8],
     a: &mut [[[u32; 256]; L]; K],
@@ -439,7 +438,7 @@ pub fn expand_a_tr_into_x4<const K: usize, const L: usize, X: Lanes4>(
         let e0 = entry_x4(first, 0, n);
         let e1 = entry_x4(first, 1, n);
         let e2 = entry_x4(first, 2, n);
-        let (polys, trs2, t2) = rej_ntt_poly_x3_tr::<X>(
+        let (polys, trs2, t2) = rej_ntt_poly_x3_tr(
             rho,
             [(e0 % L) as u8, (e1 % L) as u8, (e2 % L) as u8, (e2 % L) as u8],
             [(e0 / L) as u8, (e1 / L) as u8, (e2 / L) as u8, (e2 / L) as u8],
@@ -457,7 +456,7 @@ pub fn expand_a_tr_into_x4<const K: usize, const L: usize, X: Lanes4>(
         first += 3;
         g += 1;
     }
-    expand_a_from_x4::<K, L, X>(rho, a, first);
+    expand_a_from_x4::<K, L>(rho, a, first);
     tr_finish_scalar(pk, &tail, q, trs, t)
 }
 
@@ -597,8 +596,8 @@ mod boundary_tests {
     //! steered, so these build the interleaved state from chosen bytes and call the parse on it, and compare every case
     //! with the scalar `coeff_from_three_bytes`. They pin down, for example, the mutants `z < Q` → `z <= Q`,
     //! `& M23` → `& 0xFF_FFFF`, a wrong shift in `rej_ntt_cands8`, `j < 256` → `j <= 256` in `rej_ntt_lane_x4`, and an
-    //! off-by-one in `first_256`. The parse does not involve the Keccak lane operations (`Shim4` or AVX2); their agreement
-    //! is tested on whole permutations in `tests/keccak4_avx2.rs` and on whole samplers in `tests/fast_verify.rs`.
+    //! off-by-one in `first_256`. The parse does not involve the permutation; the AVX2 compilation of the permutation is tested
+    //! against the scalar one in `tests/keccak4_avx2.rs` and on whole samplers in `tests/fast_verify.rs`.
     extern crate std;
     use super::*;
     use std::vec::Vec;

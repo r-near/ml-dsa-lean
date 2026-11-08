@@ -1,4 +1,4 @@
-//! Nanoseconds per 4-way Keccak-f[1600] permutation with the AVX2 lane operations (`keccak4::avx2_checked`), next to
+//! Nanoseconds per 4-way Keccak-f[1600] permutation compiled with AVX2 (`keccak4::avx2_checked`), next to
 //! four scalar permutations. Needs `--features internals,avx2`. Run pinned on an idle machine.
 use ml_dsa_lean::keccak::keccak_f1600;
 use ml_dsa_lean::keccak4::avx2_checked;

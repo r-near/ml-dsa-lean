@@ -1,277 +1,285 @@
-//! 4-way Keccak-f[1600]: four independent states permuted at once, written once against a trait of lane-wise
-//! operations (`Lanes4`) and instantiated twice.
+//! 4-way Keccak-f[1600]: four independent states permuted together, in plain safe Rust.
 //!
-//! * `Shim4`: plain Rust over `[u64; 4]`, the proved instance (Charon/Aeneas see it); portable builds use the scalar path.
-//! * `avx2::Avx2` (feature `avx2`, x86_64, not Miri): the same operations as AVX2 intrinsics. Outside the Lean proof.
-//!   Crate-private on purpose: its `Lanes4` methods are safe to call and execute AVX2 instructions, so a public
-//!   `Avx2` would let safe code reach them on a CPU without AVX2 (SIGILL, i.e. undefined behavior). Outside code can
-//!   only reach it through `fast_verify`'s dispatch (which checks `cpu::has_avx2`) and, with `internals`, through
-//!   `avx2_checked` and the `*_avx2_or_none` wrappers in `fast_verify`, which check it too and return `None` without
-//!   AVX2.
+//! There are no lane operations, no intrinsics and no trait: `keccak_f1600_x4` is a loop over the 24 rounds (two per
+//! iteration) around a loop over the four states, whose body (`lane_rounds2`) is straight-line scalar code on one state.
+//! The state layout makes the loop over states a unit-stride loop: `s[k]` is lane `k = x + 5y` of all four states,
+//! `s[k][i]` is lane `k` of state `i`, so iteration `i` loads and stores `s[0][i], s[1][i], ...`. LLVM's loop vectorizer
+//! turns that loop into 256-bit code (one state per vector lane, `vpxor`, `vpandn`, `vpsllq`/`vpsrlq`/`vpor`) when the
+//! function is compiled with AVX2, which is what `fast_verify::dispatch` does: it calls the proved code from
+//! `#[target_feature(enable = "avx2")]` wrappers after a CPU check. The same source compiled without AVX2 is the
+//! portable path (scalar, or SSE2 if LLVM finds it worthwhile). Whether LLVM vectorizes is a compiler heuristic that no
+//! proof can pin down: the result is always correct, and `scripts/check-avx2-inlining.sh` fails if the permutation stops
+//! being vector code.
 //!
-//! State layout: `s[k]` is lane `k = x + 5y` of all four states, `s[k][i]` is lane `k` of state `i`.
-//! Every operation works on whole `[u64; 4]` values (lane `i` of the result depends on lane `i` of the arguments
-//! only), so the kernel is data independent and has no control flow beyond the 24-round loop.
+//! Why not `[u64; 4]` values with lane-wise helpers (the previous shape): LLVM's SLP vectorizer rejects that code as
+//! "not beneficial" because it first rewrites each 64-bit rotate into a scalar funnel shift, which it prices above the
+//! four-lane vector rotate, and the all-or-nothing tree that results never pays off (`bench/results/fv-vec/README.md`).
+//! The loop vectorizer prices the whole loop body instead and widens it.
+//!
+//! The output of a round is produced row by row (see `scripts/gen_keccak4_round.py`, which generates `lane_rounds2`), so
+//! that few values are live at a time.
 
 use crate::keccak::RC;
 
-/// Lane-wise operations on four `u64` lanes. Lane `i` of every result is a function of lane `i` of the arguments.
-pub trait Lanes4 {
-    /// `a ^ b`.
-    fn xor(a: [u64; 4], b: [u64; 4]) -> [u64; 4];
-    /// `!a & b` (the operand order of `_mm256_andnot_si256`).
-    fn andnot(a: [u64; 4], b: [u64; 4]) -> [u64; 4];
-    /// Rotate each lane left by `L`; `R` must be `64 - L` and `0 < L < 64`.
-    fn rotl<const L: u32, const R: u32>(a: [u64; 4]) -> [u64; 4];
-    /// `[x; 4]`.
-    fn splat(x: u64) -> [u64; 4];
-}
-
-/// The plain-Rust model of the operations: what extraction sees, and what portable builds run.
-// Dead only in a build that has neither `internals` nor the Lean extraction: nothing in the public API instantiates the
-// 4-way body with it, only the proofs, the tests and the extraction roots do.
-#[cfg_attr(not(feature = "internals"), allow(dead_code))]
-pub struct Shim4;
-
-impl Lanes4 for Shim4 {
-    #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-    fn xor(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-        [a[0] ^ b[0], a[1] ^ b[1], a[2] ^ b[2], a[3] ^ b[3]]
-    }
-    #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-    fn andnot(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-        [!a[0] & b[0], !a[1] & b[1], !a[2] & b[2], !a[3] & b[3]]
-    }
-    #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-    fn rotl<const L: u32, const R: u32>(a: [u64; 4]) -> [u64; 4] {
-        [
-            (a[0] << L) | (a[0] >> R),
-            (a[1] << L) | (a[1] >> R),
-            (a[2] << L) | (a[2] >> R),
-            (a[3] << L) | (a[3] >> R),
-        ]
-    }
-    #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-    fn splat(x: u64) -> [u64; 4] {
-        [x, x, x, x]
-    }
-}
-
-/// One Keccak-f[1600] round (θ, ρ, π, χ, ι with round constant `rc`) on the four states of `src`, written to `dst`
-/// (every entry of `dst` is overwritten), unrolled. Generated by `scripts/gen_keccak4_round.py`; the operations and their
-/// association order are those of `keccak::keccak_f1600` (ρ is fused with the θ xor: `rotl(a ^ d)` is the scalar's
-/// `a ^= d` followed by the ρ rotation). The output is produced row by row, so that few vectors are live at a time.
+/// Two Keccak-f[1600] rounds (θ, ρ, π, χ, ι; `rc0` then `rc1`) on state `i` of the 4-way state `s`: lane `k` of state `i`
+/// is `s[k][i]`, and the other three states are untouched. Requires `i < 4`. Generated by `scripts/gen_keccak4_round.py`; the
+/// operations and their association order are those of `keccak::keccak_f1600` (ρ is fused with the θ xor).
+// `inline(always)` only where the kernel is compiled inside a `#[target_feature(enable = "avx2")]` wrapper: the loop below
+// must see this body to vectorize it, and the wrapper's AVX2 only reaches code inlined into it.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-fn round<L: Lanes4>(src: &[[u64; 4]; 25], dst: &mut [[u64; 4]; 25], rc: u64) {
-    let c0 = L::xor(L::xor(L::xor(L::xor(src[0], src[5]), src[10]), src[15]), src[20]);
-    let c1 = L::xor(L::xor(L::xor(L::xor(src[1], src[6]), src[11]), src[16]), src[21]);
-    let c2 = L::xor(L::xor(L::xor(L::xor(src[2], src[7]), src[12]), src[17]), src[22]);
-    let c3 = L::xor(L::xor(L::xor(L::xor(src[3], src[8]), src[13]), src[18]), src[23]);
-    let c4 = L::xor(L::xor(L::xor(L::xor(src[4], src[9]), src[14]), src[19]), src[24]);
-    let d0 = L::xor(c4, L::rotl::<1, 63>(c1));
-    let d1 = L::xor(c0, L::rotl::<1, 63>(c2));
-    let d2 = L::xor(c1, L::rotl::<1, 63>(c3));
-    let d3 = L::xor(c2, L::rotl::<1, 63>(c4));
-    let d4 = L::xor(c3, L::rotl::<1, 63>(c0));
-    let b0_0 = L::xor(src[0], d0);
-    let b0_1 = L::rotl::<44, 20>(L::xor(src[6], d1));
-    let b0_2 = L::rotl::<43, 21>(L::xor(src[12], d2));
-    let b0_3 = L::rotl::<21, 43>(L::xor(src[18], d3));
-    let b0_4 = L::rotl::<14, 50>(L::xor(src[24], d4));
-    dst[0] = L::xor(L::xor(b0_0, L::andnot(b0_1, b0_2)), L::splat(rc));
-    dst[1] = L::xor(b0_1, L::andnot(b0_2, b0_3));
-    dst[2] = L::xor(b0_2, L::andnot(b0_3, b0_4));
-    dst[3] = L::xor(b0_3, L::andnot(b0_4, b0_0));
-    dst[4] = L::xor(b0_4, L::andnot(b0_0, b0_1));
-    let b1_0 = L::rotl::<28, 36>(L::xor(src[3], d3));
-    let b1_1 = L::rotl::<20, 44>(L::xor(src[9], d4));
-    let b1_2 = L::rotl::<3, 61>(L::xor(src[10], d0));
-    let b1_3 = L::rotl::<45, 19>(L::xor(src[16], d1));
-    let b1_4 = L::rotl::<61, 3>(L::xor(src[22], d2));
-    dst[5] = L::xor(b1_0, L::andnot(b1_1, b1_2));
-    dst[6] = L::xor(b1_1, L::andnot(b1_2, b1_3));
-    dst[7] = L::xor(b1_2, L::andnot(b1_3, b1_4));
-    dst[8] = L::xor(b1_3, L::andnot(b1_4, b1_0));
-    dst[9] = L::xor(b1_4, L::andnot(b1_0, b1_1));
-    let b2_0 = L::rotl::<1, 63>(L::xor(src[1], d1));
-    let b2_1 = L::rotl::<6, 58>(L::xor(src[7], d2));
-    let b2_2 = L::rotl::<25, 39>(L::xor(src[13], d3));
-    let b2_3 = L::rotl::<8, 56>(L::xor(src[19], d4));
-    let b2_4 = L::rotl::<18, 46>(L::xor(src[20], d0));
-    dst[10] = L::xor(b2_0, L::andnot(b2_1, b2_2));
-    dst[11] = L::xor(b2_1, L::andnot(b2_2, b2_3));
-    dst[12] = L::xor(b2_2, L::andnot(b2_3, b2_4));
-    dst[13] = L::xor(b2_3, L::andnot(b2_4, b2_0));
-    dst[14] = L::xor(b2_4, L::andnot(b2_0, b2_1));
-    let b3_0 = L::rotl::<27, 37>(L::xor(src[4], d4));
-    let b3_1 = L::rotl::<36, 28>(L::xor(src[5], d0));
-    let b3_2 = L::rotl::<10, 54>(L::xor(src[11], d1));
-    let b3_3 = L::rotl::<15, 49>(L::xor(src[17], d2));
-    let b3_4 = L::rotl::<56, 8>(L::xor(src[23], d3));
-    dst[15] = L::xor(b3_0, L::andnot(b3_1, b3_2));
-    dst[16] = L::xor(b3_1, L::andnot(b3_2, b3_3));
-    dst[17] = L::xor(b3_2, L::andnot(b3_3, b3_4));
-    dst[18] = L::xor(b3_3, L::andnot(b3_4, b3_0));
-    dst[19] = L::xor(b3_4, L::andnot(b3_0, b3_1));
-    let b4_0 = L::rotl::<62, 2>(L::xor(src[2], d2));
-    let b4_1 = L::rotl::<55, 9>(L::xor(src[8], d3));
-    let b4_2 = L::rotl::<39, 25>(L::xor(src[14], d4));
-    let b4_3 = L::rotl::<41, 23>(L::xor(src[15], d0));
-    let b4_4 = L::rotl::<2, 62>(L::xor(src[21], d1));
-    dst[20] = L::xor(b4_0, L::andnot(b4_1, b4_2));
-    dst[21] = L::xor(b4_1, L::andnot(b4_2, b4_3));
-    dst[22] = L::xor(b4_2, L::andnot(b4_3, b4_4));
-    dst[23] = L::xor(b4_3, L::andnot(b4_4, b4_0));
-    dst[24] = L::xor(b4_4, L::andnot(b4_0, b4_1));
+fn lane_rounds2(s: &mut [[u64; 4]; 25], i: usize, rc0: u64, rc1: u64) {
+    let a0 = s[0][i];
+    let a1 = s[1][i];
+    let a2 = s[2][i];
+    let a3 = s[3][i];
+    let a4 = s[4][i];
+    let a5 = s[5][i];
+    let a6 = s[6][i];
+    let a7 = s[7][i];
+    let a8 = s[8][i];
+    let a9 = s[9][i];
+    let a10 = s[10][i];
+    let a11 = s[11][i];
+    let a12 = s[12][i];
+    let a13 = s[13][i];
+    let a14 = s[14][i];
+    let a15 = s[15][i];
+    let a16 = s[16][i];
+    let a17 = s[17][i];
+    let a18 = s[18][i];
+    let a19 = s[19][i];
+    let a20 = s[20][i];
+    let a21 = s[21][i];
+    let a22 = s[22][i];
+    let a23 = s[23][i];
+    let a24 = s[24][i];
+    let pc0 = a0 ^ a5 ^ a10 ^ a15 ^ a20;
+    let pc1 = a1 ^ a6 ^ a11 ^ a16 ^ a21;
+    let pc2 = a2 ^ a7 ^ a12 ^ a17 ^ a22;
+    let pc3 = a3 ^ a8 ^ a13 ^ a18 ^ a23;
+    let pc4 = a4 ^ a9 ^ a14 ^ a19 ^ a24;
+    let pd0 = pc4 ^ (pc1 << 1u32 | pc1 >> 63u32);
+    let pd1 = pc0 ^ (pc2 << 1u32 | pc2 >> 63u32);
+    let pd2 = pc1 ^ (pc3 << 1u32 | pc3 >> 63u32);
+    let pd3 = pc2 ^ (pc4 << 1u32 | pc4 >> 63u32);
+    let pd4 = pc3 ^ (pc0 << 1u32 | pc0 >> 63u32);
+    let pb0_0 = a0 ^ pd0;
+    let pt0_1 = a6 ^ pd1;
+    let pb0_1 = pt0_1 << 44u32 | pt0_1 >> 20u32;
+    let pt0_2 = a12 ^ pd2;
+    let pb0_2 = pt0_2 << 43u32 | pt0_2 >> 21u32;
+    let pt0_3 = a18 ^ pd3;
+    let pb0_3 = pt0_3 << 21u32 | pt0_3 >> 43u32;
+    let pt0_4 = a24 ^ pd4;
+    let pb0_4 = pt0_4 << 14u32 | pt0_4 >> 50u32;
+    let m0 = pb0_0 ^ (!pb0_1 & pb0_2) ^ rc0;
+    let m1 = pb0_1 ^ (!pb0_2 & pb0_3);
+    let m2 = pb0_2 ^ (!pb0_3 & pb0_4);
+    let m3 = pb0_3 ^ (!pb0_4 & pb0_0);
+    let m4 = pb0_4 ^ (!pb0_0 & pb0_1);
+    let pt1_0 = a3 ^ pd3;
+    let pb1_0 = pt1_0 << 28u32 | pt1_0 >> 36u32;
+    let pt1_1 = a9 ^ pd4;
+    let pb1_1 = pt1_1 << 20u32 | pt1_1 >> 44u32;
+    let pt1_2 = a10 ^ pd0;
+    let pb1_2 = pt1_2 << 3u32 | pt1_2 >> 61u32;
+    let pt1_3 = a16 ^ pd1;
+    let pb1_3 = pt1_3 << 45u32 | pt1_3 >> 19u32;
+    let pt1_4 = a22 ^ pd2;
+    let pb1_4 = pt1_4 << 61u32 | pt1_4 >> 3u32;
+    let m5 = pb1_0 ^ (!pb1_1 & pb1_2);
+    let m6 = pb1_1 ^ (!pb1_2 & pb1_3);
+    let m7 = pb1_2 ^ (!pb1_3 & pb1_4);
+    let m8 = pb1_3 ^ (!pb1_4 & pb1_0);
+    let m9 = pb1_4 ^ (!pb1_0 & pb1_1);
+    let pt2_0 = a1 ^ pd1;
+    let pb2_0 = pt2_0 << 1u32 | pt2_0 >> 63u32;
+    let pt2_1 = a7 ^ pd2;
+    let pb2_1 = pt2_1 << 6u32 | pt2_1 >> 58u32;
+    let pt2_2 = a13 ^ pd3;
+    let pb2_2 = pt2_2 << 25u32 | pt2_2 >> 39u32;
+    let pt2_3 = a19 ^ pd4;
+    let pb2_3 = pt2_3 << 8u32 | pt2_3 >> 56u32;
+    let pt2_4 = a20 ^ pd0;
+    let pb2_4 = pt2_4 << 18u32 | pt2_4 >> 46u32;
+    let m10 = pb2_0 ^ (!pb2_1 & pb2_2);
+    let m11 = pb2_1 ^ (!pb2_2 & pb2_3);
+    let m12 = pb2_2 ^ (!pb2_3 & pb2_4);
+    let m13 = pb2_3 ^ (!pb2_4 & pb2_0);
+    let m14 = pb2_4 ^ (!pb2_0 & pb2_1);
+    let pt3_0 = a4 ^ pd4;
+    let pb3_0 = pt3_0 << 27u32 | pt3_0 >> 37u32;
+    let pt3_1 = a5 ^ pd0;
+    let pb3_1 = pt3_1 << 36u32 | pt3_1 >> 28u32;
+    let pt3_2 = a11 ^ pd1;
+    let pb3_2 = pt3_2 << 10u32 | pt3_2 >> 54u32;
+    let pt3_3 = a17 ^ pd2;
+    let pb3_3 = pt3_3 << 15u32 | pt3_3 >> 49u32;
+    let pt3_4 = a23 ^ pd3;
+    let pb3_4 = pt3_4 << 56u32 | pt3_4 >> 8u32;
+    let m15 = pb3_0 ^ (!pb3_1 & pb3_2);
+    let m16 = pb3_1 ^ (!pb3_2 & pb3_3);
+    let m17 = pb3_2 ^ (!pb3_3 & pb3_4);
+    let m18 = pb3_3 ^ (!pb3_4 & pb3_0);
+    let m19 = pb3_4 ^ (!pb3_0 & pb3_1);
+    let pt4_0 = a2 ^ pd2;
+    let pb4_0 = pt4_0 << 62u32 | pt4_0 >> 2u32;
+    let pt4_1 = a8 ^ pd3;
+    let pb4_1 = pt4_1 << 55u32 | pt4_1 >> 9u32;
+    let pt4_2 = a14 ^ pd4;
+    let pb4_2 = pt4_2 << 39u32 | pt4_2 >> 25u32;
+    let pt4_3 = a15 ^ pd0;
+    let pb4_3 = pt4_3 << 41u32 | pt4_3 >> 23u32;
+    let pt4_4 = a21 ^ pd1;
+    let pb4_4 = pt4_4 << 2u32 | pt4_4 >> 62u32;
+    let m20 = pb4_0 ^ (!pb4_1 & pb4_2);
+    let m21 = pb4_1 ^ (!pb4_2 & pb4_3);
+    let m22 = pb4_2 ^ (!pb4_3 & pb4_4);
+    let m23 = pb4_3 ^ (!pb4_4 & pb4_0);
+    let m24 = pb4_4 ^ (!pb4_0 & pb4_1);
+    let qc0 = m0 ^ m5 ^ m10 ^ m15 ^ m20;
+    let qc1 = m1 ^ m6 ^ m11 ^ m16 ^ m21;
+    let qc2 = m2 ^ m7 ^ m12 ^ m17 ^ m22;
+    let qc3 = m3 ^ m8 ^ m13 ^ m18 ^ m23;
+    let qc4 = m4 ^ m9 ^ m14 ^ m19 ^ m24;
+    let qd0 = qc4 ^ (qc1 << 1u32 | qc1 >> 63u32);
+    let qd1 = qc0 ^ (qc2 << 1u32 | qc2 >> 63u32);
+    let qd2 = qc1 ^ (qc3 << 1u32 | qc3 >> 63u32);
+    let qd3 = qc2 ^ (qc4 << 1u32 | qc4 >> 63u32);
+    let qd4 = qc3 ^ (qc0 << 1u32 | qc0 >> 63u32);
+    let qb0_0 = m0 ^ qd0;
+    let qt0_1 = m6 ^ qd1;
+    let qb0_1 = qt0_1 << 44u32 | qt0_1 >> 20u32;
+    let qt0_2 = m12 ^ qd2;
+    let qb0_2 = qt0_2 << 43u32 | qt0_2 >> 21u32;
+    let qt0_3 = m18 ^ qd3;
+    let qb0_3 = qt0_3 << 21u32 | qt0_3 >> 43u32;
+    let qt0_4 = m24 ^ qd4;
+    let qb0_4 = qt0_4 << 14u32 | qt0_4 >> 50u32;
+    let z0 = qb0_0 ^ (!qb0_1 & qb0_2) ^ rc1;
+    let z1 = qb0_1 ^ (!qb0_2 & qb0_3);
+    let z2 = qb0_2 ^ (!qb0_3 & qb0_4);
+    let z3 = qb0_3 ^ (!qb0_4 & qb0_0);
+    let z4 = qb0_4 ^ (!qb0_0 & qb0_1);
+    let qt1_0 = m3 ^ qd3;
+    let qb1_0 = qt1_0 << 28u32 | qt1_0 >> 36u32;
+    let qt1_1 = m9 ^ qd4;
+    let qb1_1 = qt1_1 << 20u32 | qt1_1 >> 44u32;
+    let qt1_2 = m10 ^ qd0;
+    let qb1_2 = qt1_2 << 3u32 | qt1_2 >> 61u32;
+    let qt1_3 = m16 ^ qd1;
+    let qb1_3 = qt1_3 << 45u32 | qt1_3 >> 19u32;
+    let qt1_4 = m22 ^ qd2;
+    let qb1_4 = qt1_4 << 61u32 | qt1_4 >> 3u32;
+    let z5 = qb1_0 ^ (!qb1_1 & qb1_2);
+    let z6 = qb1_1 ^ (!qb1_2 & qb1_3);
+    let z7 = qb1_2 ^ (!qb1_3 & qb1_4);
+    let z8 = qb1_3 ^ (!qb1_4 & qb1_0);
+    let z9 = qb1_4 ^ (!qb1_0 & qb1_1);
+    let qt2_0 = m1 ^ qd1;
+    let qb2_0 = qt2_0 << 1u32 | qt2_0 >> 63u32;
+    let qt2_1 = m7 ^ qd2;
+    let qb2_1 = qt2_1 << 6u32 | qt2_1 >> 58u32;
+    let qt2_2 = m13 ^ qd3;
+    let qb2_2 = qt2_2 << 25u32 | qt2_2 >> 39u32;
+    let qt2_3 = m19 ^ qd4;
+    let qb2_3 = qt2_3 << 8u32 | qt2_3 >> 56u32;
+    let qt2_4 = m20 ^ qd0;
+    let qb2_4 = qt2_4 << 18u32 | qt2_4 >> 46u32;
+    let z10 = qb2_0 ^ (!qb2_1 & qb2_2);
+    let z11 = qb2_1 ^ (!qb2_2 & qb2_3);
+    let z12 = qb2_2 ^ (!qb2_3 & qb2_4);
+    let z13 = qb2_3 ^ (!qb2_4 & qb2_0);
+    let z14 = qb2_4 ^ (!qb2_0 & qb2_1);
+    let qt3_0 = m4 ^ qd4;
+    let qb3_0 = qt3_0 << 27u32 | qt3_0 >> 37u32;
+    let qt3_1 = m5 ^ qd0;
+    let qb3_1 = qt3_1 << 36u32 | qt3_1 >> 28u32;
+    let qt3_2 = m11 ^ qd1;
+    let qb3_2 = qt3_2 << 10u32 | qt3_2 >> 54u32;
+    let qt3_3 = m17 ^ qd2;
+    let qb3_3 = qt3_3 << 15u32 | qt3_3 >> 49u32;
+    let qt3_4 = m23 ^ qd3;
+    let qb3_4 = qt3_4 << 56u32 | qt3_4 >> 8u32;
+    let z15 = qb3_0 ^ (!qb3_1 & qb3_2);
+    let z16 = qb3_1 ^ (!qb3_2 & qb3_3);
+    let z17 = qb3_2 ^ (!qb3_3 & qb3_4);
+    let z18 = qb3_3 ^ (!qb3_4 & qb3_0);
+    let z19 = qb3_4 ^ (!qb3_0 & qb3_1);
+    let qt4_0 = m2 ^ qd2;
+    let qb4_0 = qt4_0 << 62u32 | qt4_0 >> 2u32;
+    let qt4_1 = m8 ^ qd3;
+    let qb4_1 = qt4_1 << 55u32 | qt4_1 >> 9u32;
+    let qt4_2 = m14 ^ qd4;
+    let qb4_2 = qt4_2 << 39u32 | qt4_2 >> 25u32;
+    let qt4_3 = m15 ^ qd0;
+    let qb4_3 = qt4_3 << 41u32 | qt4_3 >> 23u32;
+    let qt4_4 = m21 ^ qd1;
+    let qb4_4 = qt4_4 << 2u32 | qt4_4 >> 62u32;
+    let z20 = qb4_0 ^ (!qb4_1 & qb4_2);
+    let z21 = qb4_1 ^ (!qb4_2 & qb4_3);
+    let z22 = qb4_2 ^ (!qb4_3 & qb4_4);
+    let z23 = qb4_3 ^ (!qb4_4 & qb4_0);
+    let z24 = qb4_4 ^ (!qb4_0 & qb4_1);
+    s[0][i] = z0;
+    s[1][i] = z1;
+    s[2][i] = z2;
+    s[3][i] = z3;
+    s[4][i] = z4;
+    s[5][i] = z5;
+    s[6][i] = z6;
+    s[7][i] = z7;
+    s[8][i] = z8;
+    s[9][i] = z9;
+    s[10][i] = z10;
+    s[11][i] = z11;
+    s[12][i] = z12;
+    s[13][i] = z13;
+    s[14][i] = z14;
+    s[15][i] = z15;
+    s[16][i] = z16;
+    s[17][i] = z17;
+    s[18][i] = z18;
+    s[19][i] = z19;
+    s[20][i] = z20;
+    s[21][i] = z21;
+    s[22][i] = z22;
+    s[23][i] = z23;
+    s[24][i] = z24;
 }
 
-/// Keccak-f[1600] on four states at once, lane `i` of every `s[k]` being state `i`.
+/// Keccak-f[1600] on four states at once, lane `i` of every `s[k]` being state `i`: state `i` of the result is the
+/// permutation of state `i` of the input.
 #[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-pub fn keccak_f1600_x4<L: Lanes4>(s: &mut [[u64; 4]; 25]) {
-    // Two rounds per iteration, ping-ponging between `s` and a scratch copy `t` (whose initial contents are overwritten
-    // by the first round), so that no round copies its result back.
-    let mut t = *s;
+pub fn keccak_f1600_x4(s: &mut [[u64; 4]; 25]) {
     let mut r = 0;
     while r < 24 {
-        round::<L>(s, &mut t, RC[r]);
-        round::<L>(&t, s, RC[r + 1]);
+        let mut i = 0;
+        while i < 4 {
+            lane_rounds2(s, i, RC[r], RC[r + 1]);
+            i += 1;
+        }
         r += 2;
     }
 }
 
-/// The portable instantiation: `keccak_f1600_x4` over `Shim4`.
-#[cfg_attr(not(feature = "internals"), allow(dead_code))] // tests and benches only, as for `Shim4`
-pub fn keccak_f1600_x4_portable(s: &mut [[u64; 4]; 25]) {
-    keccak_f1600_x4::<Shim4>(s)
-}
-
-/// The AVX2 instantiation. Outside the Lean proof; see the module docs.
-#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
-#[allow(unsafe_code)]
-pub(crate) mod avx2 {
-    use super::{Lanes4, keccak_f1600_x4};
-    use core::arch::x86_64::{
-        __m256i, _mm_cvtsi32_si128, _mm256_andnot_si256, _mm256_loadu_si256, _mm256_or_si256, _mm256_set1_epi64x,
-        _mm256_sll_epi64, _mm256_srl_epi64, _mm256_storeu_si256, _mm256_xor_si256,
-    };
-
-    /// The AVX2 operations. Only sound to call from code compiled with AVX2 enabled and run on a CPU that has it,
-    /// which is why the type is crate-private: every use is inside a `#[target_feature(enable = "avx2")]` function
-    /// reached only after `cpu::has_avx2()` (`fast_verify/dispatch.rs`, `avx2_checked`).
-    pub struct Avx2;
-
-    // SAFETY (all of `ld`, `st` and the trait methods): every use is inlined into a function compiled with
-    // `#[target_feature(enable = "avx2")]`; the loads and stores are of exactly 32 bytes from/to a `[u64; 4]`.
-    #[inline(always)]
-    fn ld(a: &[u64; 4]) -> __m256i {
-        unsafe { _mm256_loadu_si256(a.as_ptr().cast()) }
-    }
-    #[inline(always)]
-    fn st(v: __m256i) -> [u64; 4] {
-        let mut r = [0u64; 4];
-        unsafe { _mm256_storeu_si256(r.as_mut_ptr().cast(), v) };
-        r
-    }
-
-    impl Lanes4 for Avx2 {
-        #[inline(always)]
-        fn xor(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-            st(unsafe { _mm256_xor_si256(ld(&a), ld(&b)) })
-        }
-        #[inline(always)]
-        fn andnot(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-            st(unsafe { _mm256_andnot_si256(ld(&a), ld(&b)) })
-        }
-        #[inline(always)]
-        fn rotl<const L: u32, const R: u32>(a: [u64; 4]) -> [u64; 4] {
-            // The variable-count shifts take the count in an xmm register; with L and R constants after inlining
-            // LLVM emits the immediate forms.
-            let v = ld(&a);
-            st(unsafe {
-                _mm256_or_si256(
-                    _mm256_sll_epi64(v, _mm_cvtsi32_si128(L as i32)),
-                    _mm256_srl_epi64(v, _mm_cvtsi32_si128(R as i32)),
-                )
-            })
-        }
-        #[inline(always)]
-        fn splat(x: u64) -> [u64; 4] {
-            st(unsafe { _mm256_set1_epi64x(x as i64) })
-        }
-    }
-
-    /// Keccak-f[1600] on four states with AVX2.
-    ///
-    /// # Safety
-    ///
-    /// The CPU must support AVX2 (a safe `#[target_feature]` function on Rust 1.86; callers outside AVX2 code need
-    /// `unsafe`).
-    #[target_feature(enable = "avx2")]
-    #[cfg_attr(not(feature = "internals"), allow(dead_code))] // the verify dispatch inlines the kernel itself; tests and benches call this
-    pub(crate) fn keccak_f1600_x4_avx2(s: &mut [[u64; 4]; 25]) {
-        keccak_f1600_x4::<Avx2>(s)
-    }
-}
-
-/// Safe entry points to the AVX2 lane operations, for the tests and benches (feature `internals`). Each one runs
-/// `cpu::has_avx2()` and returns `None` (or `false`) without running any AVX2 instruction when this CPU or OS lacks
-/// AVX2, so none of them can raise SIGILL; with AVX2 the result is exactly what `Avx2` computes.
-///
-/// `Avx2` itself is not nameable outside the crate, because its safe `Lanes4` methods execute AVX2 instructions. This
-/// must stay true with every feature combination:
-///
-/// ```compile_fail,E0603
-/// use ml_dsa_lean::keccak4::avx2::Avx2; // `avx2` is a private module
-/// ```
-///
-/// ```compile_fail
-/// // Neither can it be reached through a re-export or a public alias.
-/// use ml_dsa_lean::keccak4::Avx2;
-/// ```
+/// The kernel compiled with AVX2, for the tests and benches (feature `internals`). It runs `cpu::has_avx2()` first and
+/// returns `false` (leaving `s` alone) without AVX2, so it cannot raise SIGILL; with AVX2 the result is exactly
+/// `keccak_f1600_x4`'s, computed by the code the dispatch wrappers run.
 #[cfg(all(feature = "avx2", feature = "internals", not(miri), target_arch = "x86_64"))]
 #[allow(unsafe_code)]
 pub mod avx2_checked {
-    use super::Lanes4;
-    use super::avx2::{Avx2, keccak_f1600_x4_avx2};
     use crate::cpu::has_avx2;
 
     #[target_feature(enable = "avx2")]
-    fn xor_avx2(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-        Avx2::xor(a, b)
-    }
-    #[target_feature(enable = "avx2")]
-    fn andnot_avx2(a: [u64; 4], b: [u64; 4]) -> [u64; 4] {
-        Avx2::andnot(a, b)
-    }
-    #[target_feature(enable = "avx2")]
-    fn splat_avx2(x: u64) -> [u64; 4] {
-        Avx2::splat(x)
-    }
-    #[target_feature(enable = "avx2")]
-    fn rotl_avx2<const L: u32, const R: u32>(a: [u64; 4]) -> [u64; 4] {
-        Avx2::rotl::<L, R>(a)
+    fn keccak_f1600_x4_avx2(s: &mut [[u64; 4]; 25]) {
+        super::keccak_f1600_x4(s)
     }
 
-    /// `Avx2::xor`, or `None` without AVX2.
-    pub fn xor(a: [u64; 4], b: [u64; 4]) -> Option<[u64; 4]> {
-        // SAFETY (all `unsafe` blocks below): `has_avx2` just reported CPU and OS support for AVX2.
-        if has_avx2() { Some(unsafe { xor_avx2(a, b) }) } else { None }
-    }
-    /// `Avx2::andnot`, or `None` without AVX2.
-    pub fn andnot(a: [u64; 4], b: [u64; 4]) -> Option<[u64; 4]> {
-        if has_avx2() { Some(unsafe { andnot_avx2(a, b) }) } else { None }
-    }
-    /// `Avx2::splat`, or `None` without AVX2.
-    pub fn splat(x: u64) -> Option<[u64; 4]> {
-        if has_avx2() { Some(unsafe { splat_avx2(x) }) } else { None }
-    }
-    /// `Avx2::rotl::<L, R>`, or `None` without AVX2. As for the trait method, `R` must be `64 - L` and `0 < L < 64`.
-    pub fn rotl<const L: u32, const R: u32>(a: [u64; 4]) -> Option<[u64; 4]> {
-        if has_avx2() { Some(unsafe { rotl_avx2::<L, R>(a) }) } else { None }
-    }
-    /// `keccak_f1600_x4::<Avx2>` on `s`; returns `false` (and leaves `s` alone) without AVX2.
+    /// `keccak_f1600_x4` compiled with AVX2 on `s`; returns `false` (and leaves `s` alone) without AVX2.
     pub fn keccak_f1600_x4(s: &mut [[u64; 4]; 25]) -> bool {
         if has_avx2() {
+            // SAFETY: `has_avx2` just reported CPU and OS support for AVX2.
             unsafe { keccak_f1600_x4_avx2(s) };
             true
         } else {

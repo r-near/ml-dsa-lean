@@ -5,13 +5,16 @@
 //!
 //! * `verify::verify_internal` and `verify::prepare_vk` are the proved scalar functions. Every `api` function equals the
 //!   FIPS 204 transcription in Lean.
-//! * The 4-way versions (`verify::verify_internal_x4::<K, L, X>` and `verify::prepare_vk_x4::<K, L, X>`, with
-//!   `X: keccak4::Lanes4`) are extracted and proved equal to the scalar functions on every input for `X = Shim4`
-//!   (`Proofs/FastVerify.lean`; theorem names in `lean/fast-verify-theorems.txt`).
-//! * This module instantiates them with `keccak4::avx2::Avx2` inside a `#[target_feature(enable = "avx2")]` wrapper and
-//!   chooses between them and the scalar functions with a cached CPU check. The `Avx2` lane operations are tested equal
-//!   to the proved `Shim4` operations (`tests/keccak4_avx2.rs`: every operation, every rotation immediate the kernel
-//!   uses, and whole permutations), not proved. The wrapper, the dispatch and the CPU check are outside the proof.
+//! * The 4-way versions (`verify::verify_internal_x4::<K, L>` and `verify::prepare_vk_x4::<K, L>`) are extracted and
+//!   proved equal to the scalar functions on every input (`Proofs/FastVerify.lean`; theorem names in
+//!   `lean/fast-verify-theorems.txt`). Their Keccak kernel (`keccak4::keccak_f1600_x4`) is plain Rust: there are no
+//!   intrinsics anywhere in the crate.
+//! * This module calls those same functions inside a `#[target_feature(enable = "avx2")]` wrapper and chooses between
+//!   them and the scalar functions with a cached CPU check. Compiled with AVX2, LLVM's loop vectorizer turns the
+//!   kernel's loop over the four states into 256-bit code (`scripts/check-avx2-inlining.sh` fails if it stops); the
+//!   proof is about the source, so what is not proved is the compiler's translation (as for every Rust function), plus
+//!   the wrapper, the dispatch and the CPU check. `tests/keccak4_avx2.rs` compares the AVX2 compilation with the scalar
+//!   permutation.
 //!
 //! `api.rs` imports `verify_internal`, `prepare_vk` and `verify_prepared_internal` from this module (one line, so that the source line numbers the
 //! extracted Lean quotes do not move). Without the `avx2` feature, on other targets and under Miri (which includes the

@@ -1,9 +1,9 @@
 //! The 4-way ExpandA and the 4-way verify body (`sampling::rej_ntt_poly_x4`, `expand_a_into_x4`, `expand_a_x4`,
 //! `verify::prepare_vk_x4`, `verify::verify_internal_x4`) against the scalar functions they must equal.
 //!
-//! * `Shim4` (portable, the instantiation proved equal to the scalar code in `lean/Proofs/Sample4.lean` and
+//! * Portable (the plain-Rust code proved equal to the scalar code in `lean/Proofs/Sample4.lean` and
 //!   `lean/Proofs/FastVerify.lean`): always run.
-//! * `Avx2` (feature `avx2`, x86_64, CPU with AVX2): the same checks with the intrinsic instantiation, run from a
+//! * AVX2 (feature `avx2`, x86_64, CPU with AVX2): the same checks on the same source compiled inside a
 //!   `#[target_feature(enable = "avx2")]` wrapper like the shipped fast path.
 //!
 //! Coverage per parameter set (K·L = 16, 30, 56 entries; ML-DSA-65's 30 is a multiple of 4 plus 2, so its last group
@@ -12,7 +12,6 @@
 //! * `expand_a_x4` / `expand_a_into_x4` (on a garbage matrix) against `expand_a` for random and edge-case ρ;
 //! * `verify_internal_x4` and `verify_prepared_internal` over `prepare_vk_x4` against `verify_internal` on valid
 //!   signatures, bit-flipped signatures, wrong messages, wrong public keys, random signatures and wrong lengths.
-use ml_dsa_lean::keccak4::{Lanes4, Shim4};
 use ml_dsa_lean::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
 use ml_dsa_lean::sampling::{expand_a, expand_a_into_x4, expand_a_x4, rej_ntt_poly, rej_ntt_poly_x4};
 use ml_dsa_lean::verify::{PreparedVk, prepare_vk_x4, verify_internal, verify_internal_x4, verify_prepared_internal};
@@ -44,7 +43,7 @@ impl Rng {
     }
 }
 
-/// The instantiation under test, as run code: `Shim4` directly, `Avx2` through a `target_feature` wrapper.
+/// The compilation under test, as run code: portable directly, AVX2 through a `target_feature` wrapper.
 trait Backend {
     const NAME: &'static str;
     fn available() -> bool;
@@ -55,26 +54,26 @@ trait Backend {
     fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool;
 }
 
-struct ShimB;
-impl Backend for ShimB {
-    const NAME: &'static str = "Shim4";
+struct PortableB;
+impl Backend for PortableB {
+    const NAME: &'static str = "portable";
     fn available() -> bool {
         true
     }
     fn rej4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
-        rej_ntt_poly_x4::<Shim4>(rho, s, r)
+        rej_ntt_poly_x4(rho, s, r)
     }
     fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
-        expand_a_x4::<K, L, Shim4>(rho)
+        expand_a_x4::<K, L>(rho)
     }
     fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-        expand_a_into_x4::<K, L, Shim4>(rho, a)
+        expand_a_into_x4::<K, L>(rho, a)
     }
     fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
-        prepare_vk_x4::<K, L, Shim4>(pk)
+        prepare_vk_x4::<K, L>(pk)
     }
     fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
-        verify_internal_x4::<K, L, Shim4>(p, pk, pre, m, sig)
+        verify_internal_x4::<K, L>(p, pk, pre, m, sig)
     }
 }
 
@@ -86,12 +85,12 @@ mod avx2_backend {
         verify_internal_avx2_or_none,
     };
 
-    // The AVX2 instantiation is crate-private (its safe trait methods execute AVX2 instructions); these crate entry
-    // points run it inside a `#[target_feature(enable = "avx2")]` function after a `has_avx2` check. Every test checks
+    // These crate entry points run the AVX2 compilation inside a `#[target_feature(enable = "avx2")]` function after a
+    // `has_avx2` check. Every test checks
     // `available()` first, so `None` here is a bug.
     pub struct Avx2B;
     impl Backend for Avx2B {
-        const NAME: &'static str = "Avx2";
+        const NAME: &'static str = "avx2";
         fn available() -> bool {
             std::arch::is_x86_feature_detected!("avx2")
         }
@@ -278,8 +277,8 @@ fn run_all<B: Backend>() {
 }
 
 #[test]
-fn shim_x4_matches_scalar() {
-    run_all::<ShimB>();
+fn portable_x4_matches_scalar() {
+    run_all::<PortableB>();
 }
 
 #[cfg(all(feature = "avx2", target_arch = "x86_64", not(miri)))]
@@ -287,7 +286,3 @@ fn shim_x4_matches_scalar() {
 fn avx2_x4_matches_scalar() {
     run_all::<avx2_backend::Avx2B>();
 }
-
-/// Documentation of the trait bound the tests rely on.
-#[allow(dead_code)]
-fn _lanes4_is_the_bound<X: Lanes4>() {}

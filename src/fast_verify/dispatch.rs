@@ -2,7 +2,6 @@
 //! x86_64, never under Miri.
 
 use crate::cpu::has_avx2;
-use crate::keccak4::avx2::Avx2;
 use crate::params::Params;
 use crate::verify::{self, PreparedVk};
 use crate::verify::{prepare_vk_into_x4, verify_internal_x4};
@@ -47,9 +46,8 @@ fn count_avx2_call() {
     AVX2_CALLS.fetch_add(1, Ordering::Relaxed);
 }
 
-/// The 4-way verify body with the AVX2 lane operations. `verify_internal_x4` is `#[inline(always)]` (and so are the
-/// kernel and the trait methods below it), so everything that touches an intrinsic is compiled inside this function,
-/// with AVX2 enabled.
+/// The 4-way verify body. `verify_internal_x4` is `#[inline(always)]` (and so are the kernel and the functions below it), so
+/// the whole chain down to `keccak4::keccak_f1600_x4` is compiled inside this function, with AVX2 enabled.
 #[target_feature(enable = "avx2")]
 fn verify_internal_avx2<const K: usize, const L: usize>(
     p: &Params,
@@ -59,7 +57,7 @@ fn verify_internal_avx2<const K: usize, const L: usize>(
     sig: &[u8],
 ) -> bool {
     align_frame();
-    verify_internal_x4::<K, L, Avx2>(p, pk, m_prefix, m, sig)
+    verify_internal_x4::<K, L>(p, pk, m_prefix, m, sig)
 }
 
 /// The prepared-key verify body with AVX2: `verify::verify_prepared_internal` is `#[inline(always)]` (and so are the
@@ -87,7 +85,7 @@ fn verify_prepared_avx2<const K: usize, const L: usize>(
 fn prepare_vk_avx2<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
     align_frame();
     let mut vk = PreparedVk::<K, L>::zeroed();
-    prepare_vk_into_x4::<K, L, Avx2>(pk, &mut vk);
+    prepare_vk_into_x4::<K, L>(pk, &mut vk);
     vk
 }
 
@@ -167,45 +165,45 @@ pub fn prepare_vk_avx2_matches_scalar<const K: usize, const L: usize>(pk: &[u8])
     Some(fast.a_hat == slow.a_hat && fast.t1_2d_hat == slow.t1_2d_hat && fast.tr == slow.tr)
 }
 
-// Test and bench entry points (feature `internals`). The lane-operation type `keccak4::avx2::Avx2` is crate-private
-// (its safe trait methods execute AVX2 instructions), so outside code reaches the AVX2 instantiation of the 4-way
-// pieces only through these functions, each of which checks `has_avx2` and returns `None` without AVX2.
+// Test and bench entry points (feature `internals`): the AVX2 compilations of the 4-way pieces. They are `#[target_feature]`
+// functions, so outside code reaches them only through these functions, each of which checks `has_avx2` and returns `None`
+// without AVX2.
 
 #[cfg(feature = "internals")]
 #[target_feature(enable = "avx2")]
 fn rej_ntt_poly_x4_avx2(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
     align_frame();
-    rej_ntt_poly_x4::<Avx2>(rho, s, r)
+    rej_ntt_poly_x4(rho, s, r)
 }
 
 #[cfg(feature = "internals")]
 #[target_feature(enable = "avx2")]
 fn expand_a_x4_avx2<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
     align_frame();
-    expand_a_x4::<K, L, Avx2>(rho)
+    expand_a_x4::<K, L>(rho)
 }
 
 #[cfg(feature = "internals")]
 #[target_feature(enable = "avx2")]
 fn expand_a_into_x4_avx2<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
     align_frame();
-    expand_a_into_x4::<K, L, Avx2>(rho, a)
+    expand_a_into_x4::<K, L>(rho, a)
 }
 
-/// `sampling::rej_ntt_poly_x4::<Avx2>`, or `None` without AVX2.
+/// `sampling::rej_ntt_poly_x4` compiled with AVX2, or `None` without AVX2.
 #[cfg(feature = "internals")]
 pub fn rej_ntt_poly_x4_avx2_or_none(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> Option<[[u32; 256]; 4]> {
     // SAFETY: `has_avx2` checked CPU and OS support for AVX2 (here and in the four functions below).
     if has_avx2() { Some(unsafe { rej_ntt_poly_x4_avx2(rho, s, r) }) } else { None }
 }
 
-/// `sampling::expand_a_x4::<K, L, Avx2>`, or `None` without AVX2.
+/// `sampling::expand_a_x4` compiled with AVX2, or `None` without AVX2.
 #[cfg(feature = "internals")]
 pub fn expand_a_x4_avx2_or_none<const K: usize, const L: usize>(rho: &[u8; 32]) -> Option<[[[u32; 256]; L]; K]> {
     if has_avx2() { Some(unsafe { expand_a_x4_avx2::<K, L>(rho) }) } else { None }
 }
 
-/// `sampling::expand_a_into_x4::<K, L, Avx2>`; returns `false` (and leaves `a` alone) without AVX2.
+/// `sampling::expand_a_into_x4` compiled with AVX2; returns `false` (and leaves `a` alone) without AVX2.
 #[cfg(feature = "internals")]
 pub fn expand_a_into_x4_avx2_or_false<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) -> bool {
     if has_avx2() {
@@ -224,10 +222,10 @@ fn expand_a_tr_into_x4_avx2<const K: usize, const L: usize>(
     a: &mut [[[u32; 256]; L]; K],
 ) -> [u8; 64] {
     align_frame();
-    expand_a_tr_into_x4::<K, L, Avx2>(rho, pk, a)
+    expand_a_tr_into_x4::<K, L>(rho, pk, a)
 }
 
-/// `sampling::expand_a_tr_into_x4::<K, L, Avx2>` (ExpandA with `tr = H(pk, 64)` in the fourth lane), or `None` (and `a`
+/// `sampling::expand_a_tr_into_x4` compiled with AVX2 (ExpandA with `tr = H(pk, 64)` in the fourth lane), or `None` (and `a`
 /// left alone) without AVX2.
 #[cfg(feature = "internals")]
 pub fn expand_a_tr_into_x4_avx2_or_none<const K: usize, const L: usize>(
@@ -238,7 +236,7 @@ pub fn expand_a_tr_into_x4_avx2_or_none<const K: usize, const L: usize>(
     if has_avx2() { Some(unsafe { expand_a_tr_into_x4_avx2::<K, L>(rho, pk, a) }) } else { None }
 }
 
-/// `verify::prepare_vk_x4::<K, L, Avx2>`, or `None` without AVX2.
+/// `verify::prepare_vk_x4` compiled with AVX2, or `None` without AVX2.
 #[cfg(feature = "internals")]
 pub fn prepare_vk_x4_avx2_or_none<const K: usize, const L: usize>(pk: &[u8]) -> Option<PreparedVk<K, L>> {
     if has_avx2() { Some(unsafe { prepare_vk_avx2::<K, L>(pk) }) } else { None }

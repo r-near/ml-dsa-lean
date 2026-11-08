@@ -24,7 +24,7 @@ mod ntt;
 #[allow(dead_code)]
 #[path = "../../../src/keccak.rs"]
 mod keccak;
-// The 4-way Keccak of the fast verify (`Lanes4`, `Shim4`, and with the `avx2` feature on x86_64 the AVX2 lane operations).
+// The 4-way Keccak of the fast verify (plain Rust; with the `avx2` feature on x86_64 also its checked AVX2 compilation).
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/keccak4.rs"]
 mod keccak4;
