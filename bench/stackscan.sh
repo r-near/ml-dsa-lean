@@ -37,13 +37,17 @@ run | check)
   BIN="$AB_DIR/stackscan-$NAME"
   OUT="$AB_DIR/scan-$NAME.tsv"
   STEP=${STEP:-16}; MAX=${MAX:-4096}
+  case "$STEP$MAX" in *[!0-9]*) echo "STEP and MAX must be non-negative integers" >&2; exit 2 ;; esac
+  [ "$STEP" -gt 0 ] || { echo "STEP must be positive" >&2; exit 2; }
+  PADS=$(seq 0 "$STEP" "$MAX") || exit 2
+  NPADS=$(echo "$PADS" | wc -l | tr -d ' ')
   NORAND=""
   command -v setarch >/dev/null && NORAND="setarch -R"
   uptime
   : >"$OUT"
   for set in $(echo "${SETS:-44,65,87}" | tr , ' '); do
     for op in $(echo "${OPS:-verify}" | tr , ' '); do
-      for pad in $(seq 0 "$STEP" "$MAX"); do
+      for pad in $PADS; do
         P=$(head -c "$pad" /dev/zero | tr '\0' x)
         echo -n "$pad	" >>"$OUT"
         env -i PATH="$PATH" PAD="$P" $NORAND taskset -c "$CPU" "$BIN" --set "$set" --op "$op" --rounds "${ROUNDS:-9}" --calls "${CALLS:-200}" >>"$OUT" || exit 1
@@ -51,9 +55,10 @@ run | check)
     done
   done
   echo "load at end: $(cut -d' ' -f1-3 /proc/loadavg)"
-  python3 - "$OUT" "${LIMIT:-1.15}" "$1" "$NAME" <<'PY'
+  python3 - "$OUT" "${LIMIT:-1.15}" "$1" "$NAME" "$NPADS" "${SETS:-44,65,87}" "${OPS:-verify}" <<'PY'
 import statistics, sys
 rows, limit, mode = {}, float(sys.argv[2]), sys.argv[3]
+npads, want_sets, want_ops = int(sys.argv[5]), sys.argv[6].split(","), sys.argv[7].split(",")
 for line in open(sys.argv[1]):
     f = line.split()
     if f[1] == "SCAN":
@@ -70,6 +75,13 @@ for (st, op), v in sorted(rows.items()):
         bad = True
         worst = sorted(v, key=lambda x: -x[1])[:5]
         print("     slowest pads:", ", ".join(f"{p}:{x:.1f}" for p, x, _ in worst))
+# Every requested set and operation must have one measurement per padding; an empty or short scan is a failure.
+for st in want_sets:
+    for op in want_ops:
+        n = len(rows.get((int(st), op), []))
+        if n != npads:
+            print(f"STACK SCAN FAIL: {st} {op} has {n} measurements, expected {npads}")
+            sys.exit(1)
 if mode == "check" and bad:
     print(f"STACK SCAN FAIL: some pad is above {limit} x the median")
     sys.exit(1)

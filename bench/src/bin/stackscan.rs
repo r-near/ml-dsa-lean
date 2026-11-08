@@ -46,8 +46,21 @@ fn diag(op: &str, set: u32, off: usize, rounds: usize, calls: usize) -> Vec<f64>
     use ml_dsa_lean::keccak4::avx2_checked;
     // 8 KiB-aligned heap buffer, allocated directly (a `Box<Buf>` with `repr(align(8192))` is built on the stack first, which
     // realigns main's frame and freezes the stack offset this scan is varying).
+    const STATE_BYTES: usize = core::mem::size_of::<[[u64; 4]; 25]>();
+    if op == "k4" {
+        // The state reference below must be aligned for `u64` and lie inside the buffer.
+        assert!(
+            off % core::mem::align_of::<[[u64; 4]; 25]>() == 0 && off.checked_add(STATE_BYTES).is_some_and(|end| end <= 8192),
+            "--off must be a multiple of 8 and at most {}",
+            8192 - STATE_BYTES
+        );
+    }
     let layout = std::alloc::Layout::from_size_align(8192, 8192).unwrap();
+    // SAFETY: `layout` has a nonzero size.
     let base = unsafe { std::alloc::alloc(layout) };
+    if base.is_null() {
+        std::alloc::handle_alloc_error(layout);
+    }
     for i in 0..8192 {
         unsafe { base.add(i).write((i * 31) as u8) };
     }
@@ -68,6 +81,8 @@ fn diag(op: &str, set: u32, off: usize, rounds: usize, calls: usize) -> Vec<f64>
                     std::hint::black_box(tr);
                 }
                 "k4" => {
+                    // SAFETY: `base` is a live 8192-byte allocation, fully initialized above; `off` was checked to be
+                    // 8-byte aligned with the state inside the buffer, and no other reference to it exists.
                     let s: &mut [[u64; 4]; 25] = unsafe { &mut *(base.add(off) as *mut [[u64; 4]; 25]) };
                     for _ in 0..100 {
                         assert!(avx2_checked::keccak_f1600_x4(s));
@@ -85,6 +100,8 @@ fn diag(op: &str, set: u32, off: usize, rounds: usize, calls: usize) -> Vec<f64>
             times.push(ns);
         }
     }
+    // SAFETY: allocated above with this layout and not freed elsewhere.
+    unsafe { std::alloc::dealloc(base, layout) };
     times
 }
 
