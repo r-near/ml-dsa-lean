@@ -136,23 +136,48 @@ theorem verifyInternalPreparedAPI_eq {ip : Impl.params.Params} {K L : Usize} {sp
 
 /-! ## `verifying_key_NN` -/
 
+/-- `api.verifying_key_44` is `prepare_vk` then the wrapper: `cpu.avx2` is the stub `ok none` in the extraction, and the
+`none` arm of `prepare_vk_with` is the scalar `prepare_vk`. (`Proofs/Dispatch.lean` shows the `some _` arm agrees.) -/
+theorem verifying_key_44_def (pk : Array U8 1312#usize) :
+    api.verifying_key_44 pk = (do
+      let s ← lift (Array.to_slice pk)
+      let pv ← verify.prepare_vk 4#usize 4#usize s
+      ok ({ inner := pv } : api.VerifyingKey44)) := rfl
+
+/-- `api.verifying_key_65` is `prepare_vk` then the wrapper: `cpu.avx2` is the stub `ok none` in the extraction, and the
+`none` arm of `prepare_vk_with` is the scalar `prepare_vk`. (`Proofs/Dispatch.lean` shows the `some _` arm agrees.) -/
+theorem verifying_key_65_def (pk : Array U8 1952#usize) :
+    api.verifying_key_65 pk = (do
+      let s ← lift (Array.to_slice pk)
+      let pv ← verify.prepare_vk 6#usize 5#usize s
+      ok ({ inner := pv } : api.VerifyingKey65)) := rfl
+
+/-- `api.verifying_key_87` is `prepare_vk` then the wrapper: `cpu.avx2` is the stub `ok none` in the extraction, and the
+`none` arm of `prepare_vk_with` is the scalar `prepare_vk`. (`Proofs/Dispatch.lean` shows the `some _` arm agrees.) -/
+theorem verifying_key_87_def (pk : Array U8 2592#usize) :
+    api.verifying_key_87 pk = (do
+      let s ← lift (Array.to_slice pk)
+      let pv ← verify.prepare_vk 8#usize 7#usize s
+      ok ({ inner := pv } : api.VerifyingKey87)) := rfl
+
+
 theorem verifying_key_44_prepare (pk : Array U8 1312#usize) (vk : api.VerifyingKey44)
     (h : api.verifying_key_44 pk = ok vk) : verify.prepare_vk 4#usize 4#usize (Array.to_slice pk) = ok vk.inner := by
-  unfold api.verifying_key_44 at h
+  rw [verifying_key_44_def] at h
   rcases hv : verify.prepare_vk 4#usize 4#usize (Array.to_slice pk) with e | pv | _ <;> simp [lift, hv] at h
   subst h
   rfl
 
 theorem verifying_key_65_prepare (pk : Array U8 1952#usize) (vk : api.VerifyingKey65)
     (h : api.verifying_key_65 pk = ok vk) : verify.prepare_vk 6#usize 5#usize (Array.to_slice pk) = ok vk.inner := by
-  unfold api.verifying_key_65 at h
+  rw [verifying_key_65_def] at h
   rcases hv : verify.prepare_vk 6#usize 5#usize (Array.to_slice pk) with e | pv | _ <;> simp [lift, hv] at h
   subst h
   rfl
 
 theorem verifying_key_87_prepare (pk : Array U8 2592#usize) (vk : api.VerifyingKey87)
     (h : api.verifying_key_87 pk = ok vk) : verify.prepare_vk 8#usize 7#usize (Array.to_slice pk) = ok vk.inner := by
-  unfold api.verifying_key_87 at h
+  rw [verifying_key_87_def] at h
   rcases hv : verify.prepare_vk 8#usize 7#usize (Array.to_slice pk) with e | pv | _ <;> simp [lift, hv] at h
   subst h
   rfl
@@ -185,7 +210,7 @@ returns `vk` then `vk` holds Â = ExpandA(ρ) (at some fuel), NTT(t₁ · 2^d) a
 theorem verifying_key_44_partial (pk : Array U8 1312#usize) :
     api.verifying_key_44 pk ⦃ vk => PreparedOf Spec.ML_DSA_44 (bytesA pk) vk.inner ⦄div := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_44_std
-  unfold api.verifying_key_44
+  rw [verifying_key_44_def]
   simp only [lift, Std.bind_tc_ok]
   refine WP.dspec_bind' (prepare_vk_partial' hp 1312#usize (by decide) pk) ?_
   intro pv hpv
@@ -195,7 +220,7 @@ theorem verifying_key_44_partial (pk : Array U8 1312#usize) :
 theorem verifying_key_65_partial (pk : Array U8 1952#usize) :
     api.verifying_key_65 pk ⦃ vk => PreparedOf Spec.ML_DSA_65 (bytesA pk) vk.inner ⦄div := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_65_std
-  unfold api.verifying_key_65
+  rw [verifying_key_65_def]
   simp only [lift, Std.bind_tc_ok]
   refine WP.dspec_bind' (prepare_vk_partial' hp 1952#usize (by decide) pk) ?_
   intro pv hpv
@@ -205,7 +230,7 @@ theorem verifying_key_65_partial (pk : Array U8 1952#usize) :
 theorem verifying_key_87_partial (pk : Array U8 2592#usize) :
     api.verifying_key_87 pk ⦃ vk => PreparedOf Spec.ML_DSA_87 (bytesA pk) vk.inner ⦄div := by
   obtain ⟨ip, hip, hp⟩ := ML_DSA_87_std
-  unfold api.verifying_key_87
+  rw [verifying_key_87_def]
   simp only [lift, Std.bind_tc_ok]
   refine WP.dspec_bind' (prepare_vk_partial' hp 2592#usize (by decide) pk) ?_
   intro pv hpv

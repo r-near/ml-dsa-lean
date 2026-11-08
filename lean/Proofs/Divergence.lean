@@ -444,7 +444,7 @@ theorem prepSk_div_iff {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params
 theorem verifying_key_44_eq_bind (pk : Array U8 1312#usize) :
     api.verifying_key_44 pk = (verify.prepare_vk 4#usize 4#usize (Array.to_slice pk) >>= fun ps =>
       ok ({ inner := ps } : api.VerifyingKey44)) := by
-  unfold api.verifying_key_44
+  rw [verifying_key_44_def]
   simp only [lift, Std.bind_tc_ok]
 
 /-- **`verifying_key_44` diverges iff `ExpandA` of the ρ in `pk` returns `none` at every fuel** (the SHAKE output
@@ -513,7 +513,7 @@ theorem sign_internal_prepared_44_div_iff (sk : Array U8 2560#usize) (ssk : api.
 theorem verifying_key_65_eq_bind (pk : Array U8 1952#usize) :
     api.verifying_key_65 pk = (verify.prepare_vk 6#usize 5#usize (Array.to_slice pk) >>= fun ps =>
       ok ({ inner := ps } : api.VerifyingKey65)) := by
-  unfold api.verifying_key_65
+  rw [verifying_key_65_def]
   simp only [lift, Std.bind_tc_ok]
 
 /-- **`verifying_key_65` diverges iff `ExpandA` of the ρ in `pk` returns `none` at every fuel** (the SHAKE output
@@ -582,7 +582,7 @@ theorem sign_internal_prepared_65_div_iff (sk : Array U8 4032#usize) (ssk : api.
 theorem verifying_key_87_eq_bind (pk : Array U8 2592#usize) :
     api.verifying_key_87 pk = (verify.prepare_vk 8#usize 7#usize (Array.to_slice pk) >>= fun ps =>
       ok ({ inner := ps } : api.VerifyingKey87)) := by
-  unfold api.verifying_key_87
+  rw [verifying_key_87_def]
   simp only [lift, Std.bind_tc_ok]
 
 /-- **`verifying_key_87` diverges iff `ExpandA` of the ρ in `pk` returns `none` at every fuel** (the SHAKE output
