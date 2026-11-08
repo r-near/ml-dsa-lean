@@ -320,3 +320,59 @@ macro_rules! lv_direct {
 lv_direct!(ld1, lane_rounds_1, 1);
 lv_direct!(ld2, lane_rounds_2, 2);
 lv_direct!(ld4, lane_rounds_4, 4);
+
+// ---- hypothesis 3: separate elementwise passes over memory-resident arrays (loop / SLP shape) ----
+const PI_DST: [usize; 25] = {
+    // b[y + 5*((2x+3y)%5)] = rot(a[x+5y]) : destination of source lane k = x + 5y
+    let mut t = [0usize; 25];
+    let mut x = 0;
+    while x < 5 {
+        let mut y = 0;
+        while y < 5 {
+            t[x + 5 * y] = y + 5 * ((2 * x + 3 * y) % 5);
+            y += 1;
+        }
+        x += 1;
+    }
+    t
+};
+#[inline(always)]
+fn round_pass(src: &St, dst: &mut St, rc: u64) {
+    let mut c = [[0u64; 4]; 5];
+    for x in 0..5 {
+        for i in 0..4 {
+            c[x][i] = src[x][i] ^ src[x + 5][i] ^ src[x + 10][i] ^ src[x + 15][i] ^ src[x + 20][i];
+        }
+    }
+    let mut d = [[0u64; 4]; 5];
+    for x in 0..5 {
+        for i in 0..4 {
+            d[x][i] = c[(x + 4) % 5][i] ^ c[(x + 1) % 5][i].rotate_left(1);
+        }
+    }
+    let mut b = [[0u64; 4]; 25];
+    for k in 0..25 {
+        for i in 0..4 {
+            b[PI_DST[k]][i] = (src[k][i] ^ d[k % 5][i]).rotate_left(crate::keccak::RHO[k]);
+        }
+    }
+    for k in 0..25 {
+        for i in 0..4 {
+            dst[k][i] = b[k][i] ^ (!b[(k % 5 + 1) % 5 + 5 * (k / 5)][i] & b[(k % 5 + 2) % 5 + 5 * (k / 5)][i]);
+        }
+    }
+    for i in 0..4 {
+        dst[0][i] ^= rc;
+    }
+}
+#[target_feature(enable = "avx2")]
+#[inline(never)]
+pub fn passes(s: &mut St) {
+    let mut t = *s;
+    let mut r = 0;
+    while r < 24 {
+        round_pass(s, &mut t, RC[r]);
+        round_pass(&t, s, RC[r + 1]);
+        r += 2;
+    }
+}
