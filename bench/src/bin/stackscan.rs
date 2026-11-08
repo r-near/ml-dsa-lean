@@ -38,7 +38,8 @@ macro_rules! run {
 }
 
 /// Part of the diagnosis (needs `internals` and `avx2`): the 4-way permutation alone, 100 per call, on a state at byte
-/// offset `off` of an 8 KiB-aligned heap buffer; and the 4-way ExpandA of ML-DSA-65.
+/// offset `off` of an 8 KiB-aligned heap buffer (`k4`); the 4-way ExpandA of the set (`expanda`); and `tr = H(pk, 64)`
+/// as `verify::hash_pk` computes it, with the set's public key length (`hashpk`; it needs no AVX2).
 #[cfg(all(feature = "internals", feature = "avx2"))]
 fn diag(op: &str, set: u32, off: usize, rounds: usize, calls: usize) -> Vec<f64> {
     use ml_dsa_lean::fast_verify::expand_a_x4_avx2_or_none;
@@ -56,6 +57,16 @@ fn diag(op: &str, set: u32, off: usize, rounds: usize, calls: usize) -> Vec<f64>
         let t = Instant::now();
         for _ in 0..calls {
             match op {
+                "hashpk" => {
+                    let n = match set { 44 => 1312, 65 => 1952, _ => 2592 };
+                    let pkb = [0x5au8; 2592];
+                    let mut tr = [0u8; 64];
+                    let mut h = ml_dsa_lean::keccak::Shake::shake256();
+                    h.absorb(std::hint::black_box(&pkb[..n]));
+                    h.finalize();
+                    h.squeeze(&mut tr);
+                    std::hint::black_box(tr);
+                }
                 "k4" => {
                     let s: &mut [[u64; 4]; 25] = unsafe { &mut *(base.add(off) as *mut [[u64; 4]; 25]) };
                     for _ in 0..100 {
@@ -89,7 +100,7 @@ fn main() {
     let sp = (std::hint::black_box(&marker) as *const u8 as usize) & 0xfff;
     let op_s: &str = &op;
     #[cfg(all(feature = "internals", feature = "avx2"))]
-    if op == "k4" || op == "expanda" {
+    if op == "k4" || op == "expanda" || op == "hashpk" {
         let mut times = diag(&op, set, off, rounds, calls);
         times.sort_by(|a, b| a.partial_cmp(b).unwrap());
         println!("SCAN {set} {op} {:.0} {:.0} {:.0} {sp}", times[times.len() / 2], times[0], times[times.len() - 1]);
