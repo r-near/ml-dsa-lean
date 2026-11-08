@@ -12,10 +12,10 @@
 //! proof can pin down: the result is always correct, and `scripts/check-avx2-inlining.sh` fails if the permutation stops
 //! being vector code.
 //!
-//! Why not `[u64; 4]` values with lane-wise helpers (the previous shape): LLVM's SLP vectorizer rejects that code as
-//! "not beneficial" because it first rewrites each 64-bit rotate into a scalar funnel shift, which it prices above the
-//! four-lane vector rotate, and the all-or-nothing tree that results never pays off (`bench/results/fv-vec/README.md`).
-//! The loop vectorizer prices the whole loop body instead and widens it.
+//! Why not `[u64; 4]` values with lane-wise helpers (the previous shape): LLVM's SLP vectorizer judges that code "not
+//! beneficial" and leaves it scalar. What stops it is the 64-bit rotates, which LLVM turns into funnel shifts before SLP
+//! prices them (the same code with the rotations removed is vectorized); no way of writing the rotate avoided that
+//! (`bench/results/fv-vec/README.md`). The loop vectorizer prices the whole loop body instead and widens it.
 //!
 //! The output of a round is produced row by row (`scripts/gen_keccak4_round.py` generates `round25` and `lane_rounds2`), so
 //! that few values are live at a time.
