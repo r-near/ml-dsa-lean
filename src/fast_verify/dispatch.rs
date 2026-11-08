@@ -7,7 +7,7 @@ use crate::params::Params;
 use crate::verify::{self, PreparedVk};
 use crate::verify::{prepare_vk_into_x4, verify_internal_x4};
 #[cfg(feature = "internals")]
-use crate::sampling::{expand_a_into_x4, expand_a_x4, rej_ntt_poly_x4};
+use crate::sampling::{expand_a_into_x4, expand_a_tr_into_x4, expand_a_x4, rej_ntt_poly_x4};
 
 #[cfg(feature = "internals")]
 use core::sync::atomic::{AtomicUsize, Ordering};
@@ -214,6 +214,28 @@ pub fn expand_a_into_x4_avx2_or_false<const K: usize, const L: usize>(rho: &[u8;
     } else {
         false
     }
+}
+
+#[cfg(feature = "internals")]
+#[target_feature(enable = "avx2")]
+fn expand_a_tr_into_x4_avx2<const K: usize, const L: usize>(
+    rho: &[u8; 32],
+    pk: &[u8],
+    a: &mut [[[u32; 256]; L]; K],
+) -> [u8; 64] {
+    align_frame();
+    expand_a_tr_into_x4::<K, L, Avx2>(rho, pk, a)
+}
+
+/// `sampling::expand_a_tr_into_x4::<K, L, Avx2>` (ExpandA with `tr = H(pk, 64)` in the fourth lane), or `None` (and `a`
+/// left alone) without AVX2.
+#[cfg(feature = "internals")]
+pub fn expand_a_tr_into_x4_avx2_or_none<const K: usize, const L: usize>(
+    rho: &[u8; 32],
+    pk: &[u8],
+    a: &mut [[[u32; 256]; L]; K],
+) -> Option<[u8; 64]> {
+    if has_avx2() { Some(unsafe { expand_a_tr_into_x4_avx2::<K, L>(rho, pk, a) }) } else { None }
 }
 
 /// `verify::prepare_vk_x4::<K, L, Avx2>`, or `None` without AVX2.
