@@ -68,7 +68,7 @@ structure encode.SecretKey (K : Std.Usize) (L : Std.Usize) where
   t0 : Array (Array Std.U32 256#usize) K
 
 /-- [ml_dsa_lean::verify::PreparedVk]
-    Source: 'src/verify.rs', lines 51:0-58:1
+    Source: 'src/verify.rs', lines 50:0-57:1
     Visibility: public -/
 structure verify.PreparedVk (K : Std.Usize) (L : Std.Usize) where
   a_hat : Array (Array (Array Std.U32 256#usize) L) K
@@ -110,23 +110,5 @@ structure api.VerifyingKey87 where
     Visibility: public -/
 structure api.SigningKey87 where
   inner : sign.PreparedSk 8#usize 7#usize
-
-/-- Trait declaration: [ml_dsa_lean::keccak4::Lanes4]
-    Source: 'src/keccak4.rs', lines 19:0-28:1
-    Visibility: public -/
-structure keccak4.Lanes4 (Self : Type) where
-  xor : Array Std.U64 4#usize → Array Std.U64 4#usize → RustM (Array
-    Std.U64 4#usize)
-  andnot : Array Std.U64 4#usize → Array Std.U64 4#usize → RustM (Array
-    Std.U64 4#usize)
-  rotl : forall (L : Std.U32) (R : Std.U32), Array Std.U64 4#usize → RustM
-    (Array Std.U64 4#usize)
-  splat : Std.U64 → RustM (Array Std.U64 4#usize)
-
-/-- [ml_dsa_lean::keccak4::Shim4]
-    Source: 'src/keccak4.rs', lines 34:0-34:17
-    Visibility: public -/
-@[reducible]
-def keccak4.Shim4 := Unit
 
 end Impl

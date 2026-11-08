@@ -115,7 +115,7 @@ def field.sub (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   field.small_reduce i1
 
 /-- [ml_dsa_lean::sampling::coeff_from_half_byte]:
-    Source: 'src/sampling.rs', lines 502:0-510:1
+    Source: 'src/sampling.rs', lines 501:0-509:1
     Visibility: public -/
 def sampling.coeff_from_half_byte
   (p : params.Params) (b : Std.U8) : RustM (Option Std.U32) := do
@@ -726,7 +726,7 @@ def keccak.Shake.shake256 : RustM keccak.Shake := do
   ok { state := a, pos := 0#usize, rate := 136#usize }
 
 /-- [ml_dsa_lean::sampling::rej_bounded_poly]: loop body 0:
-    Source: 'src/sampling.rs', lines 522:4-541:5
+    Source: 'src/sampling.rs', lines 521:4-540:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.rej_bounded_poly_loop.body
@@ -766,7 +766,7 @@ def sampling.rej_bounded_poly_loop.body
   else ok (done a)
 
 /-- [ml_dsa_lean::sampling::rej_bounded_poly]: loop 0:
-    Source: 'src/sampling.rs', lines 522:4-541:5
+    Source: 'src/sampling.rs', lines 521:4-540:5
     Visibility: public -/
 @[rust_loop]
 def sampling.rej_bounded_poly_loop
@@ -779,7 +779,7 @@ def sampling.rej_bounded_poly_loop
     (a, ctx, j)
 
 /-- [ml_dsa_lean::sampling::rej_bounded_poly]:
-    Source: 'src/sampling.rs', lines 513:0-547:1
+    Source: 'src/sampling.rs', lines 512:0-546:1
     Visibility: public -/
 def sampling.rej_bounded_poly
   (p : params.Params) (rho : Array Std.U8 66#usize) :
@@ -793,7 +793,7 @@ def sampling.rej_bounded_poly
   sampling.rej_bounded_poly_loop p a ctx2 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop body 0:
-    Source: 'src/sampling.rs', lines 559:4-562:5
+    Source: 'src/sampling.rs', lines 558:4-561:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_s_loop0.body
@@ -811,7 +811,7 @@ def sampling.expand_s_loop0.body
   else ok (done seed)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop 0:
-    Source: 'src/sampling.rs', lines 559:4-562:5
+    Source: 'src/sampling.rs', lines 558:4-561:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_s_loop0
@@ -824,7 +824,7 @@ def sampling.expand_s_loop0
     (seed, b)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop body 1:
-    Source: 'src/sampling.rs', lines 565:4-570:5
+    Source: 'src/sampling.rs', lines 564:4-569:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_s_loop1.body
@@ -846,7 +846,7 @@ def sampling.expand_s_loop1.body
   else ok (done (s1, seed))
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop 1:
-    Source: 'src/sampling.rs', lines 565:4-570:5
+    Source: 'src/sampling.rs', lines 564:4-569:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_s_loop1
@@ -859,7 +859,7 @@ def sampling.expand_s_loop1
     (s1, seed, r)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop body 2:
-    Source: 'src/sampling.rs', lines 573:4-578:5
+    Source: 'src/sampling.rs', lines 572:4-577:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_s_loop2.body
@@ -882,7 +882,7 @@ def sampling.expand_s_loop2.body
   else ok (done s2)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop 2:
-    Source: 'src/sampling.rs', lines 573:4-578:5
+    Source: 'src/sampling.rs', lines 572:4-577:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_s_loop2
@@ -896,7 +896,7 @@ def sampling.expand_s_loop2
     (s2, seed, r)
 
 /-- [ml_dsa_lean::sampling::expand_s]:
-    Source: 'src/sampling.rs', lines 551:0-590:1
+    Source: 'src/sampling.rs', lines 550:0-589:1
     Visibility: public -/
 def sampling.expand_s
   (K : Std.Usize) (L : Std.Usize) (p : params.Params)
@@ -3181,7 +3181,7 @@ def encode.bit_unpack
   encode.bit_unpack_loop0 v c w 0#u64 0#usize 0#usize mask 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop body 1:
-    Source: 'src/sampling.rs', lines 480:8-483:9
+    Source: 'src/sampling.rs', lines 479:8-482:9
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_mask_loop0_loop0.body
@@ -3202,7 +3202,7 @@ def sampling.expand_mask_loop0_loop0.body
   else ok (done y)
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop 1:
-    Source: 'src/sampling.rs', lines 480:8-483:9
+    Source: 'src/sampling.rs', lines 479:8-482:9
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_mask_loop0_loop0
@@ -3215,7 +3215,7 @@ def sampling.expand_mask_loop0_loop0
     (y, i1)
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop body 0:
-    Source: 'src/sampling.rs', lines 470:4-492:5
+    Source: 'src/sampling.rs', lines 469:4-491:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_mask_loop0.body
@@ -3257,7 +3257,7 @@ def sampling.expand_mask_loop0.body
   else ok (done y)
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop 0:
-    Source: 'src/sampling.rs', lines 470:4-492:5
+    Source: 'src/sampling.rs', lines 469:4-491:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_mask_loop0
@@ -3272,7 +3272,7 @@ def sampling.expand_mask_loop0
     (y, v, r)
 
 /-- [ml_dsa_lean::sampling::expand_mask]:
-    Source: 'src/sampling.rs', lines 465:0-499:1
+    Source: 'src/sampling.rs', lines 464:0-498:1
     Visibility: public -/
 def sampling.expand_mask
   (L : Std.Usize) (p : params.Params) (rho : Array Std.U8 64#usize)
@@ -4840,7 +4840,7 @@ def verify_arith.mac_row_pub
   verify_arith.mac_row_pub_loop0 a z c t out 0#usize
 
 /-- [ml_dsa_lean::verify::prefix_eq]: loop body 0:
-    Source: 'src/verify.rs', lines 38:4-41:5 -/
+    Source: 'src/verify.rs', lines 37:4-40:5 -/
 @[rust_loop_body]
 def verify.prefix_eq_loop.body
   (a : Array Std.U8 64#usize) (b : Array Std.U8 64#usize) (len : Std.Usize)
@@ -4858,7 +4858,7 @@ def verify.prefix_eq_loop.body
   else ok (done diff)
 
 /-- [ml_dsa_lean::verify::prefix_eq]: loop 0:
-    Source: 'src/verify.rs', lines 38:4-41:5 -/
+    Source: 'src/verify.rs', lines 37:4-40:5 -/
 @[rust_loop]
 def verify.prefix_eq_loop
   (a : Array Std.U8 64#usize) (b : Array Std.U8 64#usize) (len : Std.Usize)
@@ -4870,7 +4870,7 @@ def verify.prefix_eq_loop
     (diff, i)
 
 /-- [ml_dsa_lean::verify::prefix_eq]:
-    Source: 'src/verify.rs', lines 35:0-43:1 -/
+    Source: 'src/verify.rs', lines 34:0-42:1 -/
 def verify.prefix_eq
   (a : Array Std.U8 64#usize) (b : Array Std.U8 64#usize) (len : Std.Usize) :
   RustM Bool
@@ -5249,7 +5249,7 @@ def encode.w1_encode_pub
   encode.w1_encode_pub_loop p.w1_bits w1 out n 0#usize
 
 /-- [ml_dsa_lean::verify::verify_core]: loop body 0:
-    Source: 'src/verify.rs', lines 205:4-211:5 -/
+    Source: 'src/verify.rs', lines 204:4-210:5 -/
 @[rust_loop_body]
 def verify.verify_core_loop.body
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -5273,7 +5273,7 @@ def verify.verify_core_loop.body
   else ok (done w1)
 
 /-- [ml_dsa_lean::verify::verify_core]: loop 0:
-    Source: 'src/verify.rs', lines 205:4-211:5 -/
+    Source: 'src/verify.rs', lines 204:4-210:5 -/
 @[rust_loop]
 def verify.verify_core_loop
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -5287,7 +5287,7 @@ def verify.verify_core_loop
     (w1, i)
 
 /-- [ml_dsa_lean::verify::verify_core]:
-    Source: 'src/verify.rs', lines 191:0-225:1 -/
+    Source: 'src/verify.rs', lines 190:0-224:1 -/
 def verify.verify_core
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (mu : Array Std.U8 64#usize)
@@ -5331,7 +5331,7 @@ def verify.verify_core
   else ok false
 
 /-- [ml_dsa_lean::verify::hash_mu]:
-    Source: 'src/verify.rs', lines 176:0-185:1 -/
+    Source: 'src/verify.rs', lines 175:0-184:1 -/
 def verify.hash_mu
   (tr : Array Std.U8 64#usize) (m_prefix : Slice Std.U8) (m : Slice Std.U8) :
   RustM (Array Std.U8 64#usize)
@@ -5348,7 +5348,7 @@ def verify.hash_mu
   ok (to_slice_mut_back s2)
 
 /-- [ml_dsa_lean::verify::verify_decoded]:
-    Source: 'src/verify.rs', lines 233:0-248:1 -/
+    Source: 'src/verify.rs', lines 232:0-247:1 -/
 def verify.verify_decoded
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
@@ -5365,7 +5365,7 @@ def verify.verify_decoded
   verify.verify_core p vk mu c_tilde c z h
 
 /-- [ml_dsa_lean::verify::expand_a_into]: loop body 2:
-    Source: 'src/verify.rs', lines 87:12-90:13 -/
+    Source: 'src/verify.rs', lines 86:12-89:13 -/
 @[rust_loop_body]
 def verify.expand_a_into_loop0_loop0_loop0.body
   (rho : Array Std.U8 32#usize) (seed : Array Std.U8 34#usize) (b : Std.Usize)
@@ -5382,7 +5382,7 @@ def verify.expand_a_into_loop0_loop0_loop0.body
   else ok (done seed)
 
 /-- [ml_dsa_lean::verify::expand_a_into]: loop 2:
-    Source: 'src/verify.rs', lines 87:12-90:13 -/
+    Source: 'src/verify.rs', lines 86:12-89:13 -/
 @[rust_loop]
 def verify.expand_a_into_loop0_loop0_loop0
   (rho : Array Std.U8 32#usize) (seed : Array Std.U8 34#usize) (b : Std.Usize)
@@ -5395,7 +5395,7 @@ def verify.expand_a_into_loop0_loop0_loop0
     (seed, b)
 
 /-- [ml_dsa_lean::verify::expand_a_into]: loop body 1:
-    Source: 'src/verify.rs', lines 84:8-95:9 -/
+    Source: 'src/verify.rs', lines 83:8-94:9 -/
 @[rust_loop_body]
 def verify.expand_a_into_loop0_loop0.body
   {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize) (r : Std.Usize)
@@ -5420,7 +5420,7 @@ def verify.expand_a_into_loop0_loop0.body
   else ok (done a)
 
 /-- [ml_dsa_lean::verify::expand_a_into]: loop 1:
-    Source: 'src/verify.rs', lines 84:8-95:9 -/
+    Source: 'src/verify.rs', lines 83:8-94:9 -/
 @[rust_loop]
 def verify.expand_a_into_loop0_loop0
   {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
@@ -5433,7 +5433,7 @@ def verify.expand_a_into_loop0_loop0
     (a, s)
 
 /-- [ml_dsa_lean::verify::expand_a_into]: loop body 0:
-    Source: 'src/verify.rs', lines 82:4-97:5 -/
+    Source: 'src/verify.rs', lines 81:4-96:5 -/
 @[rust_loop_body]
 def verify.expand_a_into_loop0.body
   {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
@@ -5449,7 +5449,7 @@ def verify.expand_a_into_loop0.body
   else ok (done a)
 
 /-- [ml_dsa_lean::verify::expand_a_into]: loop 0:
-    Source: 'src/verify.rs', lines 82:4-97:5 -/
+    Source: 'src/verify.rs', lines 81:4-96:5 -/
 @[rust_loop]
 def verify.expand_a_into_loop0
   {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
@@ -5461,7 +5461,7 @@ def verify.expand_a_into_loop0
     (a, r)
 
 /-- [ml_dsa_lean::verify::expand_a_into]:
-    Source: 'src/verify.rs', lines 80:0-98:1 -/
+    Source: 'src/verify.rs', lines 79:0-97:1 -/
 @[reducible]
 def verify.expand_a_into
   {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
@@ -5471,7 +5471,7 @@ def verify.expand_a_into
   verify.expand_a_into_loop0 rho a 0#usize
 
 /-- [ml_dsa_lean::verify::hash_pk]:
-    Source: 'src/verify.rs', lines 68:0-75:1 -/
+    Source: 'src/verify.rs', lines 67:0-74:1 -/
 def verify.hash_pk (pk : Slice Std.U8) : RustM (Array Std.U8 64#usize) := do
   let tr := Array.repeat 64#usize 0#u8
   let hash ← keccak.Shake.shake256
@@ -5482,7 +5482,7 @@ def verify.hash_pk (pk : Slice Std.U8) : RustM (Array Std.U8 64#usize) := do
   ok (to_slice_mut_back s1)
 
 /-- [ml_dsa_lean::verify::scale_by_2d]: loop body 0:
-    Source: 'src/verify.rs', lines 16:4-19:5 -/
+    Source: 'src/verify.rs', lines 15:4-18:5 -/
 @[rust_loop_body]
 def verify.scale_by_2d_loop.body
   (t1 : Array Std.U32 256#usize) (out : Array Std.U32 256#usize)
@@ -5500,7 +5500,7 @@ def verify.scale_by_2d_loop.body
   else ok (done out)
 
 /-- [ml_dsa_lean::verify::scale_by_2d]: loop 0:
-    Source: 'src/verify.rs', lines 16:4-19:5 -/
+    Source: 'src/verify.rs', lines 15:4-18:5 -/
 @[rust_loop]
 def verify.scale_by_2d_loop
   (t1 : Array Std.U32 256#usize) (out : Array Std.U32 256#usize)
@@ -5512,14 +5512,14 @@ def verify.scale_by_2d_loop
     (out, j)
 
 /-- [ml_dsa_lean::verify::scale_by_2d]:
-    Source: 'src/verify.rs', lines 13:0-21:1 -/
+    Source: 'src/verify.rs', lines 12:0-20:1 -/
 def verify.scale_by_2d
   (t1 : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
   let out := Array.repeat 256#usize 0#u32
   verify.scale_by_2d_loop t1 out 0#usize
 
 /-- [ml_dsa_lean::verify::scale_vec_by_2d]: loop body 0:
-    Source: 'src/verify.rs', lines 27:4-30:5 -/
+    Source: 'src/verify.rs', lines 26:4-29:5 -/
 @[rust_loop_body]
 def verify.scale_vec_by_2d_loop.body
   {N : Std.Usize} (t1 : Array (Array Std.U32 256#usize) N)
@@ -5537,7 +5537,7 @@ def verify.scale_vec_by_2d_loop.body
   else ok (done out)
 
 /-- [ml_dsa_lean::verify::scale_vec_by_2d]: loop 0:
-    Source: 'src/verify.rs', lines 27:4-30:5 -/
+    Source: 'src/verify.rs', lines 26:4-29:5 -/
 @[rust_loop]
 def verify.scale_vec_by_2d_loop
   {N : Std.Usize} (t1 : Array (Array Std.U32 256#usize) N)
@@ -5549,7 +5549,7 @@ def verify.scale_vec_by_2d_loop
     (out, i)
 
 /-- [ml_dsa_lean::verify::scale_vec_by_2d]:
-    Source: 'src/verify.rs', lines 24:0-32:1 -/
+    Source: 'src/verify.rs', lines 23:0-31:1 -/
 def verify.scale_vec_by_2d
   {N : Std.Usize} (t1 : Array (Array Std.U32 256#usize) N) :
   RustM (Array (Array Std.U32 256#usize) N)
@@ -5875,7 +5875,7 @@ def encode.pk_decode
   ok (rho1, t11)
 
 /-- [ml_dsa_lean::verify::prepare_vk_into]:
-    Source: 'src/verify.rs', lines 107:0-116:1 -/
+    Source: 'src/verify.rs', lines 106:0-115:1 -/
 def verify.prepare_vk_into
   {K : Std.Usize} {L : Std.Usize} (pk : Slice Std.U8)
   (out : verify.PreparedVk K L) :
@@ -5889,7 +5889,7 @@ def verify.prepare_vk_into
   ok { a_hat := a, t1_2d_hat := a3, tr := a1 }
 
 /-- [ml_dsa_lean::verify::{ml_dsa_lean::verify::PreparedVk<K, L>}::zeroed]:
-    Source: 'src/verify.rs', lines 62:4-64:5 -/
+    Source: 'src/verify.rs', lines 61:4-63:5 -/
 def verify.PreparedVk.zeroed
   (K : Std.Usize) (L : Std.Usize) : RustM (verify.PreparedVk K L) := do
   let a := Array.repeat 256#usize 0#u32
@@ -6212,7 +6212,7 @@ def encode.sig_decode
   | some h => ok (some (c_tilde1, z1, h))
 
 /-- [ml_dsa_lean::verify::verify_internal]:
-    Source: 'src/verify.rs', lines 261:0-283:1
+    Source: 'src/verify.rs', lines 260:0-282:1
     Visibility: public -/
 def verify.verify_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
@@ -6295,7 +6295,7 @@ def api.verify_internal_44
   verify.verify_internal 4#usize 4#usize p s s1 m_prime s2
 
 /-- [ml_dsa_lean::verify::prepare_vk]:
-    Source: 'src/verify.rs', lines 131:0-141:1 -/
+    Source: 'src/verify.rs', lines 130:0-140:1 -/
 def verify.prepare_vk
   (K : Std.Usize) (L : Std.Usize) (pk : Slice Std.U8) :
   RustM (verify.PreparedVk K L)
@@ -6317,7 +6317,7 @@ def api.verifying_key_44
   ok { inner := pv }
 
 /-- [ml_dsa_lean::verify::verify_prepared_internal]:
-    Source: 'src/verify.rs', lines 322:0-339:1
+    Source: 'src/verify.rs', lines 320:0-337:1
     Visibility: public -/
 def verify.verify_prepared_internal
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -7279,342 +7279,491 @@ def field.mul (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   let i2 ← i * i1
   field.barrett_reduce i2
 
-/-- [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}::splat]:
-    Source: 'src/keccak4.rs', lines 55:4-57:5
-    Visibility: public -/
-def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.splat
-  (x : Std.U64) : RustM (Array Std.U64 4#usize) := do
-  ok (Array.make 4#usize [ x, x, x, x ])
-
-/-- [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}::rotl]:
-    Source: 'src/keccak4.rs', lines 46:4-53:5
-    Visibility: public -/
-def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.rotl
-  (L : Std.U32) (R : Std.U32) (a : Array Std.U64 4#usize) :
-  RustM (Array Std.U64 4#usize)
+/-- [ml_dsa_lean::keccak4::round25]:
+    Source: 'src/keccak4.rs', lines 34:0-120:1 -/
+def keccak4.round25
+  (a : Array Std.U64 25#usize) (rc : Std.U64) :
+  RustM (Array Std.U64 25#usize)
   := do
   let i ← Array.index_usize a 0#usize
-  let i1 ← i <<< L
-  let i2 ← i >>> R
-  let i3 ← lift (i1 ||| i2)
-  let i4 ← Array.index_usize a 1#usize
-  let i5 ← i4 <<< L
-  let i6 ← i4 >>> R
-  let i7 ← lift (i5 ||| i6)
-  let i8 ← Array.index_usize a 2#usize
-  let i9 ← i8 <<< L
-  let i10 ← i8 >>> R
-  let i11 ← lift (i9 ||| i10)
-  let i12 ← Array.index_usize a 3#usize
-  let i13 ← i12 <<< L
-  let i14 ← i12 >>> R
-  let i15 ← lift (i13 ||| i14)
-  ok (Array.make 4#usize [ i3, i7, i11, i15 ])
-
-/-- [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}::andnot]:
-    Source: 'src/keccak4.rs', lines 42:4-44:5
-    Visibility: public -/
-def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.andnot
-  (a : Array Std.U64 4#usize) (b : Array Std.U64 4#usize) :
-  RustM (Array Std.U64 4#usize)
-  := do
-  let i ← Array.index_usize a 0#usize
-  let i1 ← lift (~~~ i)
-  let i2 ← Array.index_usize b 0#usize
-  let i3 ← lift (i1 &&& i2)
-  let i4 ← Array.index_usize a 1#usize
-  let i5 ← lift (~~~ i4)
-  let i6 ← Array.index_usize b 1#usize
-  let i7 ← lift (i5 &&& i6)
-  let i8 ← Array.index_usize a 2#usize
-  let i9 ← lift (~~~ i8)
-  let i10 ← Array.index_usize b 2#usize
-  let i11 ← lift (i9 &&& i10)
-  let i12 ← Array.index_usize a 3#usize
-  let i13 ← lift (~~~ i12)
-  let i14 ← Array.index_usize b 3#usize
-  let i15 ← lift (i13 &&& i14)
-  ok (Array.make 4#usize [ i3, i7, i11, i15 ])
-
-/-- [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}::xor]:
-    Source: 'src/keccak4.rs', lines 38:4-40:5
-    Visibility: public -/
-def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.xor
-  (a : Array Std.U64 4#usize) (b : Array Std.U64 4#usize) :
-  RustM (Array Std.U64 4#usize)
-  := do
-  let i ← Array.index_usize a 0#usize
-  let i1 ← Array.index_usize b 0#usize
+  let i1 ← Array.index_usize a 5#usize
   let i2 ← lift (i ^^^ i1)
-  let i3 ← Array.index_usize a 1#usize
-  let i4 ← Array.index_usize b 1#usize
-  let i5 ← lift (i3 ^^^ i4)
-  let i6 ← Array.index_usize a 2#usize
-  let i7 ← Array.index_usize b 2#usize
-  let i8 ← lift (i6 ^^^ i7)
-  let i9 ← Array.index_usize a 3#usize
-  let i10 ← Array.index_usize b 3#usize
-  let i11 ← lift (i9 ^^^ i10)
-  ok (Array.make 4#usize [ i2, i5, i8, i11 ])
+  let i3 ← Array.index_usize a 10#usize
+  let i4 ← lift (i2 ^^^ i3)
+  let i5 ← Array.index_usize a 15#usize
+  let i6 ← lift (i4 ^^^ i5)
+  let i7 ← Array.index_usize a 20#usize
+  let c0 ← lift (i6 ^^^ i7)
+  let i8 ← Array.index_usize a 1#usize
+  let i9 ← Array.index_usize a 6#usize
+  let i10 ← lift (i8 ^^^ i9)
+  let i11 ← Array.index_usize a 11#usize
+  let i12 ← lift (i10 ^^^ i11)
+  let i13 ← Array.index_usize a 16#usize
+  let i14 ← lift (i12 ^^^ i13)
+  let i15 ← Array.index_usize a 21#usize
+  let c1 ← lift (i14 ^^^ i15)
+  let i16 ← Array.index_usize a 2#usize
+  let i17 ← Array.index_usize a 7#usize
+  let i18 ← lift (i16 ^^^ i17)
+  let i19 ← Array.index_usize a 12#usize
+  let i20 ← lift (i18 ^^^ i19)
+  let i21 ← Array.index_usize a 17#usize
+  let i22 ← lift (i20 ^^^ i21)
+  let i23 ← Array.index_usize a 22#usize
+  let c2 ← lift (i22 ^^^ i23)
+  let i24 ← Array.index_usize a 3#usize
+  let i25 ← Array.index_usize a 8#usize
+  let i26 ← lift (i24 ^^^ i25)
+  let i27 ← Array.index_usize a 13#usize
+  let i28 ← lift (i26 ^^^ i27)
+  let i29 ← Array.index_usize a 18#usize
+  let i30 ← lift (i28 ^^^ i29)
+  let i31 ← Array.index_usize a 23#usize
+  let c3 ← lift (i30 ^^^ i31)
+  let i32 ← Array.index_usize a 4#usize
+  let i33 ← Array.index_usize a 9#usize
+  let i34 ← lift (i32 ^^^ i33)
+  let i35 ← Array.index_usize a 14#usize
+  let i36 ← lift (i34 ^^^ i35)
+  let i37 ← Array.index_usize a 19#usize
+  let i38 ← lift (i36 ^^^ i37)
+  let i39 ← Array.index_usize a 24#usize
+  let c4 ← lift (i38 ^^^ i39)
+  let i40 ← c1 <<< 1#u32
+  let i41 ← c1 >>> 63#u32
+  let i42 ← lift (i40 ||| i41)
+  let d0 ← lift (c4 ^^^ i42)
+  let i43 ← c2 <<< 1#u32
+  let i44 ← c2 >>> 63#u32
+  let i45 ← lift (i43 ||| i44)
+  let d1 ← lift (c0 ^^^ i45)
+  let i46 ← c3 <<< 1#u32
+  let i47 ← c3 >>> 63#u32
+  let i48 ← lift (i46 ||| i47)
+  let d2 ← lift (c1 ^^^ i48)
+  let i49 ← c4 <<< 1#u32
+  let i50 ← c4 >>> 63#u32
+  let i51 ← lift (i49 ||| i50)
+  let d3 ← lift (c2 ^^^ i51)
+  let i52 ← c0 <<< 1#u32
+  let i53 ← c0 >>> 63#u32
+  let i54 ← lift (i52 ||| i53)
+  let d4 ← lift (c3 ^^^ i54)
+  let b0_0 ← lift (i ^^^ d0)
+  let t0_1 ← lift (i9 ^^^ d1)
+  let i55 ← t0_1 <<< 44#u32
+  let i56 ← t0_1 >>> 20#u32
+  let b0_1 ← lift (i55 ||| i56)
+  let t0_2 ← lift (i19 ^^^ d2)
+  let i57 ← t0_2 <<< 43#u32
+  let i58 ← t0_2 >>> 21#u32
+  let b0_2 ← lift (i57 ||| i58)
+  let t0_3 ← lift (i29 ^^^ d3)
+  let i59 ← t0_3 <<< 21#u32
+  let i60 ← t0_3 >>> 43#u32
+  let b0_3 ← lift (i59 ||| i60)
+  let t0_4 ← lift (i39 ^^^ d4)
+  let i61 ← t0_4 <<< 14#u32
+  let i62 ← t0_4 >>> 50#u32
+  let b0_4 ← lift (i61 ||| i62)
+  let i63 ← lift (~~~ b0_1)
+  let i64 ← lift (i63 &&& b0_2)
+  let i65 ← lift (b0_0 ^^^ i64)
+  let o0 ← lift (i65 ^^^ rc)
+  let i66 ← lift (~~~ b0_2)
+  let i67 ← lift (i66 &&& b0_3)
+  let o1 ← lift (b0_1 ^^^ i67)
+  let i68 ← lift (~~~ b0_3)
+  let i69 ← lift (i68 &&& b0_4)
+  let o2 ← lift (b0_2 ^^^ i69)
+  let i70 ← lift (~~~ b0_4)
+  let i71 ← lift (i70 &&& b0_0)
+  let o3 ← lift (b0_3 ^^^ i71)
+  let i72 ← lift (~~~ b0_0)
+  let i73 ← lift (i72 &&& b0_1)
+  let o4 ← lift (b0_4 ^^^ i73)
+  let t1_0 ← lift (i24 ^^^ d3)
+  let i74 ← t1_0 <<< 28#u32
+  let i75 ← t1_0 >>> 36#u32
+  let b1_0 ← lift (i74 ||| i75)
+  let t1_1 ← lift (i33 ^^^ d4)
+  let i76 ← t1_1 <<< 20#u32
+  let i77 ← t1_1 >>> 44#u32
+  let b1_1 ← lift (i76 ||| i77)
+  let t1_2 ← lift (i3 ^^^ d0)
+  let i78 ← t1_2 <<< 3#u32
+  let i79 ← t1_2 >>> 61#u32
+  let b1_2 ← lift (i78 ||| i79)
+  let t1_3 ← lift (i13 ^^^ d1)
+  let i80 ← t1_3 <<< 45#u32
+  let i81 ← t1_3 >>> 19#u32
+  let b1_3 ← lift (i80 ||| i81)
+  let t1_4 ← lift (i23 ^^^ d2)
+  let i82 ← t1_4 <<< 61#u32
+  let i83 ← t1_4 >>> 3#u32
+  let b1_4 ← lift (i82 ||| i83)
+  let i84 ← lift (~~~ b1_1)
+  let i85 ← lift (i84 &&& b1_2)
+  let o5 ← lift (b1_0 ^^^ i85)
+  let i86 ← lift (~~~ b1_2)
+  let i87 ← lift (i86 &&& b1_3)
+  let o6 ← lift (b1_1 ^^^ i87)
+  let i88 ← lift (~~~ b1_3)
+  let i89 ← lift (i88 &&& b1_4)
+  let o7 ← lift (b1_2 ^^^ i89)
+  let i90 ← lift (~~~ b1_4)
+  let i91 ← lift (i90 &&& b1_0)
+  let o8 ← lift (b1_3 ^^^ i91)
+  let i92 ← lift (~~~ b1_0)
+  let i93 ← lift (i92 &&& b1_1)
+  let o9 ← lift (b1_4 ^^^ i93)
+  let t2_0 ← lift (i8 ^^^ d1)
+  let i94 ← t2_0 <<< 1#u32
+  let i95 ← t2_0 >>> 63#u32
+  let b2_0 ← lift (i94 ||| i95)
+  let t2_1 ← lift (i17 ^^^ d2)
+  let i96 ← t2_1 <<< 6#u32
+  let i97 ← t2_1 >>> 58#u32
+  let b2_1 ← lift (i96 ||| i97)
+  let t2_2 ← lift (i27 ^^^ d3)
+  let i98 ← t2_2 <<< 25#u32
+  let i99 ← t2_2 >>> 39#u32
+  let b2_2 ← lift (i98 ||| i99)
+  let t2_3 ← lift (i37 ^^^ d4)
+  let i100 ← t2_3 <<< 8#u32
+  let i101 ← t2_3 >>> 56#u32
+  let b2_3 ← lift (i100 ||| i101)
+  let t2_4 ← lift (i7 ^^^ d0)
+  let i102 ← t2_4 <<< 18#u32
+  let i103 ← t2_4 >>> 46#u32
+  let b2_4 ← lift (i102 ||| i103)
+  let i104 ← lift (~~~ b2_1)
+  let i105 ← lift (i104 &&& b2_2)
+  let o10 ← lift (b2_0 ^^^ i105)
+  let i106 ← lift (~~~ b2_2)
+  let i107 ← lift (i106 &&& b2_3)
+  let o11 ← lift (b2_1 ^^^ i107)
+  let i108 ← lift (~~~ b2_3)
+  let i109 ← lift (i108 &&& b2_4)
+  let o12 ← lift (b2_2 ^^^ i109)
+  let i110 ← lift (~~~ b2_4)
+  let i111 ← lift (i110 &&& b2_0)
+  let o13 ← lift (b2_3 ^^^ i111)
+  let i112 ← lift (~~~ b2_0)
+  let i113 ← lift (i112 &&& b2_1)
+  let o14 ← lift (b2_4 ^^^ i113)
+  let t3_0 ← lift (i32 ^^^ d4)
+  let i114 ← t3_0 <<< 27#u32
+  let i115 ← t3_0 >>> 37#u32
+  let b3_0 ← lift (i114 ||| i115)
+  let t3_1 ← lift (i1 ^^^ d0)
+  let i116 ← t3_1 <<< 36#u32
+  let i117 ← t3_1 >>> 28#u32
+  let b3_1 ← lift (i116 ||| i117)
+  let t3_2 ← lift (i11 ^^^ d1)
+  let i118 ← t3_2 <<< 10#u32
+  let i119 ← t3_2 >>> 54#u32
+  let b3_2 ← lift (i118 ||| i119)
+  let t3_3 ← lift (i21 ^^^ d2)
+  let i120 ← t3_3 <<< 15#u32
+  let i121 ← t3_3 >>> 49#u32
+  let b3_3 ← lift (i120 ||| i121)
+  let t3_4 ← lift (i31 ^^^ d3)
+  let i122 ← t3_4 <<< 56#u32
+  let i123 ← t3_4 >>> 8#u32
+  let b3_4 ← lift (i122 ||| i123)
+  let i124 ← lift (~~~ b3_1)
+  let i125 ← lift (i124 &&& b3_2)
+  let o15 ← lift (b3_0 ^^^ i125)
+  let i126 ← lift (~~~ b3_2)
+  let i127 ← lift (i126 &&& b3_3)
+  let o16 ← lift (b3_1 ^^^ i127)
+  let i128 ← lift (~~~ b3_3)
+  let i129 ← lift (i128 &&& b3_4)
+  let o17 ← lift (b3_2 ^^^ i129)
+  let i130 ← lift (~~~ b3_4)
+  let i131 ← lift (i130 &&& b3_0)
+  let o18 ← lift (b3_3 ^^^ i131)
+  let i132 ← lift (~~~ b3_0)
+  let i133 ← lift (i132 &&& b3_1)
+  let o19 ← lift (b3_4 ^^^ i133)
+  let t4_0 ← lift (i16 ^^^ d2)
+  let i134 ← t4_0 <<< 62#u32
+  let i135 ← t4_0 >>> 2#u32
+  let b4_0 ← lift (i134 ||| i135)
+  let t4_1 ← lift (i25 ^^^ d3)
+  let i136 ← t4_1 <<< 55#u32
+  let i137 ← t4_1 >>> 9#u32
+  let b4_1 ← lift (i136 ||| i137)
+  let t4_2 ← lift (i35 ^^^ d4)
+  let i138 ← t4_2 <<< 39#u32
+  let i139 ← t4_2 >>> 25#u32
+  let b4_2 ← lift (i138 ||| i139)
+  let t4_3 ← lift (i5 ^^^ d0)
+  let i140 ← t4_3 <<< 41#u32
+  let i141 ← t4_3 >>> 23#u32
+  let b4_3 ← lift (i140 ||| i141)
+  let t4_4 ← lift (i15 ^^^ d1)
+  let i142 ← t4_4 <<< 2#u32
+  let i143 ← t4_4 >>> 62#u32
+  let b4_4 ← lift (i142 ||| i143)
+  let i144 ← lift (~~~ b4_1)
+  let i145 ← lift (i144 &&& b4_2)
+  let o20 ← lift (b4_0 ^^^ i145)
+  let i146 ← lift (~~~ b4_2)
+  let i147 ← lift (i146 &&& b4_3)
+  let o21 ← lift (b4_1 ^^^ i147)
+  let i148 ← lift (~~~ b4_3)
+  let i149 ← lift (i148 &&& b4_4)
+  let o22 ← lift (b4_2 ^^^ i149)
+  let i150 ← lift (~~~ b4_4)
+  let i151 ← lift (i150 &&& b4_0)
+  let o23 ← lift (b4_3 ^^^ i151)
+  let i152 ← lift (~~~ b4_0)
+  let i153 ← lift (i152 &&& b4_1)
+  let o24 ← lift (b4_4 ^^^ i153)
+  ok
+    (Array.make 25#usize [
+      o0, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13, o14, o15,
+      o16, o17, o18, o19, o20, o21, o22, o23, o24
+      ])
 
-/-- Trait implementation: [ml_dsa_lean::keccak4::{impl ml_dsa_lean::keccak4::Lanes4 for ml_dsa_lean::keccak4::Shim4}]
-    Source: 'src/keccak4.rs', lines 36:0-58:1 -/
-@[reducible]
-def keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4 : keccak4.Lanes4 keccak4.Shim4
-  := {
-  xor := keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.xor
-  andnot := keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.andnot
-  rotl := fun (L : Std.U32) (R : Std.U32) =>
-    keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.rotl L R
-  splat := keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4.splat
-}
-
-/-- [ml_dsa_lean::keccak4::round]:
-    Source: 'src/keccak4.rs', lines 65:0-126:1 -/
-def keccak4.round
-  {L : Type} (Lanes4Inst : keccak4.Lanes4 L)
-  (src : Array (Array Std.U64 4#usize) 25#usize)
-  (dst : Array (Array Std.U64 4#usize) 25#usize) (rc : Std.U64) :
+/-- [ml_dsa_lean::keccak4::lane_rounds2]:
+    Source: 'src/keccak4.rs', lines 125:0-154:1 -/
+def keccak4.lane_rounds2
+  (s : Array (Array Std.U64 4#usize) 25#usize) (i : Std.Usize) (rc0 : Std.U64)
+  (rc1 : Std.U64) :
   RustM (Array (Array Std.U64 4#usize) 25#usize)
   := do
-  let a ← Array.index_usize src 0#usize
-  let a1 ← Array.index_usize src 5#usize
-  let a2 ← Lanes4Inst.xor a a1
-  let a3 ← Array.index_usize src 10#usize
-  let a4 ← Lanes4Inst.xor a2 a3
-  let a5 ← Array.index_usize src 15#usize
-  let a6 ← Lanes4Inst.xor a4 a5
-  let a7 ← Array.index_usize src 20#usize
-  let c0 ← Lanes4Inst.xor a6 a7
-  let a8 ← Array.index_usize src 1#usize
-  let a9 ← Array.index_usize src 6#usize
-  let a10 ← Lanes4Inst.xor a8 a9
-  let a11 ← Array.index_usize src 11#usize
-  let a12 ← Lanes4Inst.xor a10 a11
-  let a13 ← Array.index_usize src 16#usize
-  let a14 ← Lanes4Inst.xor a12 a13
-  let a15 ← Array.index_usize src 21#usize
-  let c1 ← Lanes4Inst.xor a14 a15
-  let a16 ← Array.index_usize src 2#usize
-  let a17 ← Array.index_usize src 7#usize
-  let a18 ← Lanes4Inst.xor a16 a17
-  let a19 ← Array.index_usize src 12#usize
-  let a20 ← Lanes4Inst.xor a18 a19
-  let a21 ← Array.index_usize src 17#usize
-  let a22 ← Lanes4Inst.xor a20 a21
-  let a23 ← Array.index_usize src 22#usize
-  let c2 ← Lanes4Inst.xor a22 a23
-  let a24 ← Array.index_usize src 3#usize
-  let a25 ← Array.index_usize src 8#usize
-  let a26 ← Lanes4Inst.xor a24 a25
-  let a27 ← Array.index_usize src 13#usize
-  let a28 ← Lanes4Inst.xor a26 a27
-  let a29 ← Array.index_usize src 18#usize
-  let a30 ← Lanes4Inst.xor a28 a29
-  let a31 ← Array.index_usize src 23#usize
-  let c3 ← Lanes4Inst.xor a30 a31
-  let a32 ← Array.index_usize src 4#usize
-  let a33 ← Array.index_usize src 9#usize
-  let a34 ← Lanes4Inst.xor a32 a33
-  let a35 ← Array.index_usize src 14#usize
-  let a36 ← Lanes4Inst.xor a34 a35
-  let a37 ← Array.index_usize src 19#usize
-  let a38 ← Lanes4Inst.xor a36 a37
-  let a39 ← Array.index_usize src 24#usize
-  let c4 ← Lanes4Inst.xor a38 a39
-  let a40 ← Lanes4Inst.rotl 1#u32 63#u32 c1
-  let d0 ← Lanes4Inst.xor c4 a40
-  let a41 ← Lanes4Inst.rotl 1#u32 63#u32 c2
-  let d1 ← Lanes4Inst.xor c0 a41
-  let a42 ← Lanes4Inst.rotl 1#u32 63#u32 c3
-  let d2 ← Lanes4Inst.xor c1 a42
-  let a43 ← Lanes4Inst.rotl 1#u32 63#u32 c4
-  let d3 ← Lanes4Inst.xor c2 a43
-  let a44 ← Lanes4Inst.rotl 1#u32 63#u32 c0
-  let d4 ← Lanes4Inst.xor c3 a44
-  let b0_0 ← Lanes4Inst.xor a d0
-  let a45 ← Lanes4Inst.xor a9 d1
-  let b0_1 ← Lanes4Inst.rotl 44#u32 20#u32 a45
-  let a46 ← Lanes4Inst.xor a19 d2
-  let b0_2 ← Lanes4Inst.rotl 43#u32 21#u32 a46
-  let a47 ← Lanes4Inst.xor a29 d3
-  let b0_3 ← Lanes4Inst.rotl 21#u32 43#u32 a47
-  let a48 ← Lanes4Inst.xor a39 d4
-  let b0_4 ← Lanes4Inst.rotl 14#u32 50#u32 a48
-  let a49 ← Lanes4Inst.andnot b0_1 b0_2
-  let a50 ← Lanes4Inst.xor b0_0 a49
-  let a51 ← Lanes4Inst.splat rc
-  let a52 ← Lanes4Inst.xor a50 a51
-  let dst1 ← Array.update dst 0#usize a52
-  let a53 ← Lanes4Inst.andnot b0_2 b0_3
-  let a54 ← Lanes4Inst.xor b0_1 a53
-  let dst2 ← Array.update dst1 1#usize a54
-  let a55 ← Lanes4Inst.andnot b0_3 b0_4
-  let a56 ← Lanes4Inst.xor b0_2 a55
-  let dst3 ← Array.update dst2 2#usize a56
-  let a57 ← Lanes4Inst.andnot b0_4 b0_0
-  let a58 ← Lanes4Inst.xor b0_3 a57
-  let dst4 ← Array.update dst3 3#usize a58
-  let a59 ← Lanes4Inst.andnot b0_0 b0_1
-  let a60 ← Lanes4Inst.xor b0_4 a59
-  let dst5 ← Array.update dst4 4#usize a60
-  let a61 ← Lanes4Inst.xor a24 d3
-  let b1_0 ← Lanes4Inst.rotl 28#u32 36#u32 a61
-  let a62 ← Lanes4Inst.xor a33 d4
-  let b1_1 ← Lanes4Inst.rotl 20#u32 44#u32 a62
-  let a63 ← Lanes4Inst.xor a3 d0
-  let b1_2 ← Lanes4Inst.rotl 3#u32 61#u32 a63
-  let a64 ← Lanes4Inst.xor a13 d1
-  let b1_3 ← Lanes4Inst.rotl 45#u32 19#u32 a64
-  let a65 ← Lanes4Inst.xor a23 d2
-  let b1_4 ← Lanes4Inst.rotl 61#u32 3#u32 a65
-  let a66 ← Lanes4Inst.andnot b1_1 b1_2
-  let a67 ← Lanes4Inst.xor b1_0 a66
-  let dst6 ← Array.update dst5 5#usize a67
-  let a68 ← Lanes4Inst.andnot b1_2 b1_3
-  let a69 ← Lanes4Inst.xor b1_1 a68
-  let dst7 ← Array.update dst6 6#usize a69
-  let a70 ← Lanes4Inst.andnot b1_3 b1_4
-  let a71 ← Lanes4Inst.xor b1_2 a70
-  let dst8 ← Array.update dst7 7#usize a71
-  let a72 ← Lanes4Inst.andnot b1_4 b1_0
-  let a73 ← Lanes4Inst.xor b1_3 a72
-  let dst9 ← Array.update dst8 8#usize a73
-  let a74 ← Lanes4Inst.andnot b1_0 b1_1
-  let a75 ← Lanes4Inst.xor b1_4 a74
-  let dst10 ← Array.update dst9 9#usize a75
-  let a76 ← Lanes4Inst.xor a8 d1
-  let b2_0 ← Lanes4Inst.rotl 1#u32 63#u32 a76
-  let a77 ← Lanes4Inst.xor a17 d2
-  let b2_1 ← Lanes4Inst.rotl 6#u32 58#u32 a77
-  let a78 ← Lanes4Inst.xor a27 d3
-  let b2_2 ← Lanes4Inst.rotl 25#u32 39#u32 a78
-  let a79 ← Lanes4Inst.xor a37 d4
-  let b2_3 ← Lanes4Inst.rotl 8#u32 56#u32 a79
-  let a80 ← Lanes4Inst.xor a7 d0
-  let b2_4 ← Lanes4Inst.rotl 18#u32 46#u32 a80
-  let a81 ← Lanes4Inst.andnot b2_1 b2_2
-  let a82 ← Lanes4Inst.xor b2_0 a81
-  let dst11 ← Array.update dst10 10#usize a82
-  let a83 ← Lanes4Inst.andnot b2_2 b2_3
-  let a84 ← Lanes4Inst.xor b2_1 a83
-  let dst12 ← Array.update dst11 11#usize a84
-  let a85 ← Lanes4Inst.andnot b2_3 b2_4
-  let a86 ← Lanes4Inst.xor b2_2 a85
-  let dst13 ← Array.update dst12 12#usize a86
-  let a87 ← Lanes4Inst.andnot b2_4 b2_0
-  let a88 ← Lanes4Inst.xor b2_3 a87
-  let dst14 ← Array.update dst13 13#usize a88
-  let a89 ← Lanes4Inst.andnot b2_0 b2_1
-  let a90 ← Lanes4Inst.xor b2_4 a89
-  let dst15 ← Array.update dst14 14#usize a90
-  let a91 ← Lanes4Inst.xor a32 d4
-  let b3_0 ← Lanes4Inst.rotl 27#u32 37#u32 a91
-  let a92 ← Lanes4Inst.xor a1 d0
-  let b3_1 ← Lanes4Inst.rotl 36#u32 28#u32 a92
-  let a93 ← Lanes4Inst.xor a11 d1
-  let b3_2 ← Lanes4Inst.rotl 10#u32 54#u32 a93
-  let a94 ← Lanes4Inst.xor a21 d2
-  let b3_3 ← Lanes4Inst.rotl 15#u32 49#u32 a94
-  let a95 ← Lanes4Inst.xor a31 d3
-  let b3_4 ← Lanes4Inst.rotl 56#u32 8#u32 a95
-  let a96 ← Lanes4Inst.andnot b3_1 b3_2
-  let a97 ← Lanes4Inst.xor b3_0 a96
-  let dst16 ← Array.update dst15 15#usize a97
-  let a98 ← Lanes4Inst.andnot b3_2 b3_3
-  let a99 ← Lanes4Inst.xor b3_1 a98
-  let dst17 ← Array.update dst16 16#usize a99
-  let a100 ← Lanes4Inst.andnot b3_3 b3_4
-  let a101 ← Lanes4Inst.xor b3_2 a100
-  let dst18 ← Array.update dst17 17#usize a101
-  let a102 ← Lanes4Inst.andnot b3_4 b3_0
-  let a103 ← Lanes4Inst.xor b3_3 a102
-  let dst19 ← Array.update dst18 18#usize a103
-  let a104 ← Lanes4Inst.andnot b3_0 b3_1
-  let a105 ← Lanes4Inst.xor b3_4 a104
-  let dst20 ← Array.update dst19 19#usize a105
-  let a106 ← Lanes4Inst.xor a16 d2
-  let b4_0 ← Lanes4Inst.rotl 62#u32 2#u32 a106
-  let a107 ← Lanes4Inst.xor a25 d3
-  let b4_1 ← Lanes4Inst.rotl 55#u32 9#u32 a107
-  let a108 ← Lanes4Inst.xor a35 d4
-  let b4_2 ← Lanes4Inst.rotl 39#u32 25#u32 a108
-  let a109 ← Lanes4Inst.xor a5 d0
-  let b4_3 ← Lanes4Inst.rotl 41#u32 23#u32 a109
-  let a110 ← Lanes4Inst.xor a15 d1
-  let b4_4 ← Lanes4Inst.rotl 2#u32 62#u32 a110
-  let a111 ← Lanes4Inst.andnot b4_1 b4_2
-  let a112 ← Lanes4Inst.xor b4_0 a111
-  let dst21 ← Array.update dst20 20#usize a112
-  let a113 ← Lanes4Inst.andnot b4_2 b4_3
-  let a114 ← Lanes4Inst.xor b4_1 a113
-  let dst22 ← Array.update dst21 21#usize a114
-  let a115 ← Lanes4Inst.andnot b4_3 b4_4
-  let a116 ← Lanes4Inst.xor b4_2 a115
-  let dst23 ← Array.update dst22 22#usize a116
-  let a117 ← Lanes4Inst.andnot b4_4 b4_0
-  let a118 ← Lanes4Inst.xor b4_3 a117
-  let dst24 ← Array.update dst23 23#usize a118
-  let a119 ← Lanes4Inst.andnot b4_0 b4_1
-  let a120 ← Lanes4Inst.xor b4_4 a119
-  Array.update dst24 24#usize a120
+  let a ← Array.index_usize s 0#usize
+  let i1 ← Array.index_usize a i
+  let a1 ← Array.index_usize s 1#usize
+  let i2 ← Array.index_usize a1 i
+  let a2 ← Array.index_usize s 2#usize
+  let i3 ← Array.index_usize a2 i
+  let a3 ← Array.index_usize s 3#usize
+  let i4 ← Array.index_usize a3 i
+  let a4 ← Array.index_usize s 4#usize
+  let i5 ← Array.index_usize a4 i
+  let a5 ← Array.index_usize s 5#usize
+  let i6 ← Array.index_usize a5 i
+  let a6 ← Array.index_usize s 6#usize
+  let i7 ← Array.index_usize a6 i
+  let a7 ← Array.index_usize s 7#usize
+  let i8 ← Array.index_usize a7 i
+  let a8 ← Array.index_usize s 8#usize
+  let i9 ← Array.index_usize a8 i
+  let a9 ← Array.index_usize s 9#usize
+  let i10 ← Array.index_usize a9 i
+  let a10 ← Array.index_usize s 10#usize
+  let i11 ← Array.index_usize a10 i
+  let a11 ← Array.index_usize s 11#usize
+  let i12 ← Array.index_usize a11 i
+  let a12 ← Array.index_usize s 12#usize
+  let i13 ← Array.index_usize a12 i
+  let a13 ← Array.index_usize s 13#usize
+  let i14 ← Array.index_usize a13 i
+  let a14 ← Array.index_usize s 14#usize
+  let i15 ← Array.index_usize a14 i
+  let a15 ← Array.index_usize s 15#usize
+  let i16 ← Array.index_usize a15 i
+  let a16 ← Array.index_usize s 16#usize
+  let i17 ← Array.index_usize a16 i
+  let a17 ← Array.index_usize s 17#usize
+  let i18 ← Array.index_usize a17 i
+  let a18 ← Array.index_usize s 18#usize
+  let i19 ← Array.index_usize a18 i
+  let a19 ← Array.index_usize s 19#usize
+  let i20 ← Array.index_usize a19 i
+  let a20 ← Array.index_usize s 20#usize
+  let i21 ← Array.index_usize a20 i
+  let a21 ← Array.index_usize s 21#usize
+  let i22 ← Array.index_usize a21 i
+  let a22 ← Array.index_usize s 22#usize
+  let i23 ← Array.index_usize a22 i
+  let a23 ← Array.index_usize s 23#usize
+  let i24 ← Array.index_usize a23 i
+  let a24 ← Array.index_usize s 24#usize
+  let i25 ← Array.index_usize a24 i
+  let m ←
+    keccak4.round25
+      (Array.make 25#usize [
+        i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16,
+        i17, i18, i19, i20, i21, i22, i23, i24, i25
+        ]) rc0
+  let z ← keccak4.round25 m rc1
+  let i26 ← Array.index_usize z 0#usize
+  let (a25, index_mut_back) ← Array.index_mut_usize s 0#usize
+  let a26 ← Array.update a25 i i26
+  let i27 ← Array.index_usize z 1#usize
+  let s1 := index_mut_back a26
+  let (a27, index_mut_back1) ← Array.index_mut_usize s1 1#usize
+  let a28 ← Array.update a27 i i27
+  let i28 ← Array.index_usize z 2#usize
+  let s2 := index_mut_back1 a28
+  let (a29, index_mut_back2) ← Array.index_mut_usize s2 2#usize
+  let a30 ← Array.update a29 i i28
+  let i29 ← Array.index_usize z 3#usize
+  let s3 := index_mut_back2 a30
+  let (a31, index_mut_back3) ← Array.index_mut_usize s3 3#usize
+  let a32 ← Array.update a31 i i29
+  let i30 ← Array.index_usize z 4#usize
+  let s4 := index_mut_back3 a32
+  let (a33, index_mut_back4) ← Array.index_mut_usize s4 4#usize
+  let a34 ← Array.update a33 i i30
+  let i31 ← Array.index_usize z 5#usize
+  let s5 := index_mut_back4 a34
+  let (a35, index_mut_back5) ← Array.index_mut_usize s5 5#usize
+  let a36 ← Array.update a35 i i31
+  let i32 ← Array.index_usize z 6#usize
+  let s6 := index_mut_back5 a36
+  let (a37, index_mut_back6) ← Array.index_mut_usize s6 6#usize
+  let a38 ← Array.update a37 i i32
+  let i33 ← Array.index_usize z 7#usize
+  let s7 := index_mut_back6 a38
+  let (a39, index_mut_back7) ← Array.index_mut_usize s7 7#usize
+  let a40 ← Array.update a39 i i33
+  let i34 ← Array.index_usize z 8#usize
+  let s8 := index_mut_back7 a40
+  let (a41, index_mut_back8) ← Array.index_mut_usize s8 8#usize
+  let a42 ← Array.update a41 i i34
+  let i35 ← Array.index_usize z 9#usize
+  let s9 := index_mut_back8 a42
+  let (a43, index_mut_back9) ← Array.index_mut_usize s9 9#usize
+  let a44 ← Array.update a43 i i35
+  let i36 ← Array.index_usize z 10#usize
+  let s10 := index_mut_back9 a44
+  let (a45, index_mut_back10) ← Array.index_mut_usize s10 10#usize
+  let a46 ← Array.update a45 i i36
+  let i37 ← Array.index_usize z 11#usize
+  let s11 := index_mut_back10 a46
+  let (a47, index_mut_back11) ← Array.index_mut_usize s11 11#usize
+  let a48 ← Array.update a47 i i37
+  let i38 ← Array.index_usize z 12#usize
+  let s12 := index_mut_back11 a48
+  let (a49, index_mut_back12) ← Array.index_mut_usize s12 12#usize
+  let a50 ← Array.update a49 i i38
+  let i39 ← Array.index_usize z 13#usize
+  let s13 := index_mut_back12 a50
+  let (a51, index_mut_back13) ← Array.index_mut_usize s13 13#usize
+  let a52 ← Array.update a51 i i39
+  let i40 ← Array.index_usize z 14#usize
+  let s14 := index_mut_back13 a52
+  let (a53, index_mut_back14) ← Array.index_mut_usize s14 14#usize
+  let a54 ← Array.update a53 i i40
+  let i41 ← Array.index_usize z 15#usize
+  let s15 := index_mut_back14 a54
+  let (a55, index_mut_back15) ← Array.index_mut_usize s15 15#usize
+  let a56 ← Array.update a55 i i41
+  let i42 ← Array.index_usize z 16#usize
+  let s16 := index_mut_back15 a56
+  let (a57, index_mut_back16) ← Array.index_mut_usize s16 16#usize
+  let a58 ← Array.update a57 i i42
+  let i43 ← Array.index_usize z 17#usize
+  let s17 := index_mut_back16 a58
+  let (a59, index_mut_back17) ← Array.index_mut_usize s17 17#usize
+  let a60 ← Array.update a59 i i43
+  let i44 ← Array.index_usize z 18#usize
+  let s18 := index_mut_back17 a60
+  let (a61, index_mut_back18) ← Array.index_mut_usize s18 18#usize
+  let a62 ← Array.update a61 i i44
+  let i45 ← Array.index_usize z 19#usize
+  let s19 := index_mut_back18 a62
+  let (a63, index_mut_back19) ← Array.index_mut_usize s19 19#usize
+  let a64 ← Array.update a63 i i45
+  let i46 ← Array.index_usize z 20#usize
+  let s20 := index_mut_back19 a64
+  let (a65, index_mut_back20) ← Array.index_mut_usize s20 20#usize
+  let a66 ← Array.update a65 i i46
+  let i47 ← Array.index_usize z 21#usize
+  let s21 := index_mut_back20 a66
+  let (a67, index_mut_back21) ← Array.index_mut_usize s21 21#usize
+  let a68 ← Array.update a67 i i47
+  let i48 ← Array.index_usize z 22#usize
+  let s22 := index_mut_back21 a68
+  let (a69, index_mut_back22) ← Array.index_mut_usize s22 22#usize
+  let a70 ← Array.update a69 i i48
+  let i49 ← Array.index_usize z 23#usize
+  let s23 := index_mut_back22 a70
+  let (a71, index_mut_back23) ← Array.index_mut_usize s23 23#usize
+  let a72 ← Array.update a71 i i49
+  let i50 ← Array.index_usize z 24#usize
+  let s24 := index_mut_back23 a72
+  let (a73, index_mut_back24) ← Array.index_mut_usize s24 24#usize
+  let a74 ← Array.update a73 i i50
+  ok (index_mut_back24 a74)
 
-/-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop body 0:
-    Source: 'src/keccak4.rs', lines 135:4-139:5
+/-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop body 1:
+    Source: 'src/keccak4.rs', lines 164:8-167:9
     Visibility: public -/
 @[rust_loop_body]
-def keccak4.keccak_f1600_x4_loop.body
-  {L : Type} (Lanes4Inst : keccak4.Lanes4 L)
-  (s : Array (Array Std.U64 4#usize) 25#usize)
-  (t : Array (Array Std.U64 4#usize) 25#usize) (r : Std.Usize) :
-  RustM (ControlFlow ((Array (Array Std.U64 4#usize) 25#usize) × (Array (Array
-    Std.U64 4#usize) 25#usize) × Std.Usize) (Array (Array Std.U64 4#usize)
-    25#usize))
+def keccak4.keccak_f1600_x4_loop0_loop0.body
+  (r : Std.Usize) (s : Array (Array Std.U64 4#usize) 25#usize) (i : Std.Usize)
+  :
+  RustM (ControlFlow ((Array (Array Std.U64 4#usize) 25#usize) × Std.Usize)
+    (Array (Array Std.U64 4#usize) 25#usize))
   := do
-  if r < 24#usize
+  if i < 4#usize
   then
-    let i ← Array.index_usize keccak.RC r
-    let t1 ← keccak4.round Lanes4Inst s t i
-    let i1 ← r + 1#usize
-    let i2 ← Array.index_usize keccak.RC i1
-    let s1 ← keccak4.round Lanes4Inst t1 s i2
-    let r1 ← r + 2#usize
-    ok (cont (s1, t1, r1))
+    let i1 ← Array.index_usize keccak.RC r
+    let i2 ← r + 1#usize
+    let i3 ← Array.index_usize keccak.RC i2
+    let s1 ← keccak4.lane_rounds2 s i i1 i3
+    let i4 ← i + 1#usize
+    ok (cont (s1, i4))
   else ok (done s)
 
-/-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop 0:
-    Source: 'src/keccak4.rs', lines 135:4-139:5
+/-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop 1:
+    Source: 'src/keccak4.rs', lines 164:8-167:9
     Visibility: public -/
 @[rust_loop]
-def keccak4.keccak_f1600_x4_loop
-  {L : Type} (Lanes4Inst : keccak4.Lanes4 L)
-  (s : Array (Array Std.U64 4#usize) 25#usize)
-  (t : Array (Array Std.U64 4#usize) 25#usize) (r : Std.Usize) :
+def keccak4.keccak_f1600_x4_loop0_loop0
+  (s : Array (Array Std.U64 4#usize) 25#usize) (r : Std.Usize) (i : Std.Usize)
+  :
   RustM (Array (Array Std.U64 4#usize) 25#usize)
   := do
   loop
-    (fun (s1, t1, r1) => keccak4.keccak_f1600_x4_loop.body Lanes4Inst s1 t1 r1)
-    (s, t, r)
+    (fun (s1, i1) => keccak4.keccak_f1600_x4_loop0_loop0.body r s1 i1)
+    (s, i)
+
+/-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop body 0:
+    Source: 'src/keccak4.rs', lines 162:4-169:5
+    Visibility: public -/
+@[rust_loop_body]
+def keccak4.keccak_f1600_x4_loop0.body
+  (s : Array (Array Std.U64 4#usize) 25#usize) (r : Std.Usize) :
+  RustM (ControlFlow ((Array (Array Std.U64 4#usize) 25#usize) × Std.Usize)
+    (Array (Array Std.U64 4#usize) 25#usize))
+  := do
+  if r < 24#usize
+  then
+    let s1 ← keccak4.keccak_f1600_x4_loop0_loop0 s r 0#usize
+    let r1 ← r + 2#usize
+    ok (cont (s1, r1))
+  else ok (done s)
+
+/-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop 0:
+    Source: 'src/keccak4.rs', lines 162:4-169:5
+    Visibility: public -/
+@[rust_loop]
+def keccak4.keccak_f1600_x4_loop0
+  (s : Array (Array Std.U64 4#usize) 25#usize) (r : Std.Usize) :
+  RustM (Array (Array Std.U64 4#usize) 25#usize)
+  := do
+  loop
+    (fun (s1, r1) => keccak4.keccak_f1600_x4_loop0.body s1 r1)
+    (s, r)
 
 /-- [ml_dsa_lean::keccak4::keccak_f1600_x4]:
-    Source: 'src/keccak4.rs', lines 130:0-140:1
+    Source: 'src/keccak4.rs', lines 160:0-170:1
     Visibility: public -/
 @[reducible]
 def keccak4.keccak_f1600_x4
-  {L : Type} (Lanes4Inst : keccak4.Lanes4 L)
   (s : Array (Array Std.U64 4#usize) 25#usize) :
   RustM (Array (Array Std.U64 4#usize) 25#usize)
   := do
-  keccak4.keccak_f1600_x4_loop Lanes4Inst s s 0#usize
-
-/-- [ml_dsa_lean::keccak4::keccak_f1600_x4_portable]:
-    Source: 'src/keccak4.rs', lines 144:0-146:1
-    Visibility: public -/
-def keccak4.keccak_f1600_x4_portable
-  (s : Array (Array Std.U64 4#usize) 25#usize) :
-  RustM (Array (Array Std.U64 4#usize) 25#usize)
-  := do
-  keccak4.keccak_f1600_x4 keccak4.Shim4.Insts.Ml_dsa_leanKeccak4Lanes4 s
+  keccak4.keccak_f1600_x4_loop0 s 0#usize
 
 /-- [ml_dsa_lean::ntt::scalar_vector_ntt_inverse]:
     Source: 'src/ntt.rs', lines 432:0-436:1
@@ -7914,11 +8063,10 @@ def sampling.first_256
   sampling.first_256_loop a r 0#usize
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x4]: loop body 0:
-    Source: 'src/sampling.rs', lines 201:4-208:5
+    Source: 'src/sampling.rs', lines 200:4-207:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.rej_ntt_poly_x4_loop.body
-  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X)
   (st : Array (Array Std.U64 4#usize) 25#usize) (p0 : Array Std.U32 312#usize)
   (p1 : Array Std.U32 312#usize) (p2 : Array Std.U32 312#usize)
   (p3 : Array Std.U32 312#usize) (j0 : Std.Usize) (j1 : Std.Usize)
@@ -7932,7 +8080,7 @@ def sampling.rej_ntt_poly_x4_loop.body
   := do
   if more
   then
-    let st1 ← keccak4.keccak_f1600_x4 keccak4Lanes4Inst st
+    let st1 ← keccak4.keccak_f1600_x4 st
     let (j01, p01) ← sampling.rej_ntt_lane_x4 st1 0#usize p0 j0
     let (j11, p11) ← sampling.rej_ntt_lane_x4 st1 1#usize p1 j1
     let (j21, p21) ← sampling.rej_ntt_lane_x4 st1 2#usize p2 j2
@@ -7951,11 +8099,10 @@ def sampling.rej_ntt_poly_x4_loop.body
   else ok (done (p0, p1, p2, p3))
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x4]: loop 0:
-    Source: 'src/sampling.rs', lines 201:4-208:5
+    Source: 'src/sampling.rs', lines 200:4-207:5
     Visibility: public -/
 @[rust_loop]
 def sampling.rej_ntt_poly_x4_loop
-  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X)
   (st : Array (Array Std.U64 4#usize) 25#usize) (p0 : Array Std.U32 312#usize)
   (p1 : Array Std.U32 312#usize) (p2 : Array Std.U32 312#usize)
   (p3 : Array Std.U32 312#usize) (j0 : Std.Usize) (j1 : Std.Usize)
@@ -7965,15 +8112,14 @@ def sampling.rej_ntt_poly_x4_loop
   := do
   loop
     (fun (st1, p01, p11, p21, p31, j01, j11, j21, j31, more1) =>
-      sampling.rej_ntt_poly_x4_loop.body keccak4Lanes4Inst st1 p01 p11 p21 p31
-      j01 j11 j21 j31 more1)
+      sampling.rej_ntt_poly_x4_loop.body st1 p01 p11 p21 p31 j01 j11 j21 j31
+      more1)
     (st, p0, p1, p2, p3, j0, j1, j2, j3, more)
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x4]:
-    Source: 'src/sampling.rs', lines 189:0-210:1
+    Source: 'src/sampling.rs', lines 188:0-209:1
     Visibility: public -/
 def sampling.rej_ntt_poly_x4
-  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X)
   (rho : Array Std.U8 32#usize) (s : Array Std.U8 4#usize)
   (r : Array Std.U8 4#usize) :
   RustM (Array (Array Std.U32 256#usize) 4#usize)
@@ -7984,8 +8130,8 @@ def sampling.rej_ntt_poly_x4
   let p2 := Array.repeat 312#usize 0#u32
   let p3 := Array.repeat 312#usize 0#u32
   let (p01, p11, p21, p31) ←
-    sampling.rej_ntt_poly_x4_loop keccak4Lanes4Inst st p0 p1 p2 p3 0#usize
-      0#usize 0#usize 0#usize true
+    sampling.rej_ntt_poly_x4_loop st p0 p1 p2 p3 0#usize 0#usize 0#usize
+      0#usize true
   let a ← sampling.first_256 p01
   let a1 ← sampling.first_256 p11
   let a2 ← sampling.first_256 p21
@@ -7993,7 +8139,7 @@ def sampling.rej_ntt_poly_x4
   ok (Array.make 4#usize [ a, a1, a2, a3 ])
 
 /-- [ml_dsa_lean::sampling::entry_x4]:
-    Source: 'src/sampling.rs', lines 216:0-218:1 -/
+    Source: 'src/sampling.rs', lines 215:0-217:1 -/
 def sampling.entry_x4
   (first : Std.Usize) (l : Std.Usize) (n : Std.Usize) : RustM Std.Usize := do
   let i ← first + l
@@ -8002,12 +8148,11 @@ def sampling.entry_x4
   else n - 1#usize
 
 /-- [ml_dsa_lean::sampling::expand_a_from_x4]: loop body 0:
-    Source: 'src/sampling.rs', lines 239:4-254:5
+    Source: 'src/sampling.rs', lines 238:4-253:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_a_from_x4_loop.body
-  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize) (n : Std.Usize)
+  {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize) (n : Std.Usize)
   (a : Array (Array (Array Std.U32 256#usize) L) K) (first : Std.Usize) :
   RustM (ControlFlow ((Array (Array (Array Std.U32 256#usize) L) K) ×
     Std.Usize) (Array (Array (Array Std.U32 256#usize) L) K))
@@ -8035,8 +8180,7 @@ def sampling.expand_a_from_x4_loop.body
     let i14 ← e3 / L
     let i15 ← lift (UScalar.cast .U8 i14)
     let polys ←
-      sampling.rej_ntt_poly_x4 keccak4Lanes4Inst rho
-        (Array.make 4#usize [ i1, i3, i5, i7 ])
+      sampling.rej_ntt_poly_x4 rho (Array.make 4#usize [ i1, i3, i5, i7 ])
         (Array.make 4#usize [ i9, i11, i13, i15 ])
     let a1 ← Array.index_usize polys 0#usize
     let (a2, index_mut_back) ← Array.index_mut_usize a i8
@@ -8059,63 +8203,58 @@ def sampling.expand_a_from_x4_loop.body
   else ok (done a)
 
 /-- [ml_dsa_lean::sampling::expand_a_from_x4]: loop 0:
-    Source: 'src/sampling.rs', lines 239:4-254:5
+    Source: 'src/sampling.rs', lines 238:4-253:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_a_from_x4_loop
-  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize)
+  {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
   (a : Array (Array (Array Std.U32 256#usize) L) K) (n : Std.Usize)
   (first : Std.Usize) :
   RustM (Array (Array (Array Std.U32 256#usize) L) K)
   := do
   loop
-    (fun (a1, first1) => sampling.expand_a_from_x4_loop.body keccak4Lanes4Inst
-      rho n a1 first1)
+    (fun (a1, first1) => sampling.expand_a_from_x4_loop.body rho n a1 first1)
     (a, first)
 
 /-- [ml_dsa_lean::sampling::expand_a_from_x4]:
-    Source: 'src/sampling.rs', lines 232:0-255:1
+    Source: 'src/sampling.rs', lines 231:0-254:1
     Visibility: public -/
 def sampling.expand_a_from_x4
-  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize)
+  {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
   (a : Array (Array (Array Std.U32 256#usize) L) K) (first0 : Std.Usize) :
   RustM (Array (Array (Array Std.U32 256#usize) L) K)
   := do
   let n ← K * L
-  sampling.expand_a_from_x4_loop keccak4Lanes4Inst rho a n first0
+  sampling.expand_a_from_x4_loop rho a n first0
 
 /-- [ml_dsa_lean::sampling::expand_a_into_x4]:
-    Source: 'src/sampling.rs', lines 225:0-227:1
+    Source: 'src/sampling.rs', lines 224:0-226:1
     Visibility: public -/
 def sampling.expand_a_into_x4
-  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize)
+  {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
   (a : Array (Array (Array Std.U32 256#usize) L) K) :
   RustM (Array (Array (Array Std.U32 256#usize) L) K)
   := do
-  sampling.expand_a_from_x4 keccak4Lanes4Inst rho a 0#usize
+  sampling.expand_a_from_x4 rho a 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_a_x4]:
-    Source: 'src/sampling.rs', lines 260:0-264:1
+    Source: 'src/sampling.rs', lines 259:0-263:1
     Visibility: public -/
 def sampling.expand_a_x4
-  {X : Type} (K : Std.Usize) (L : Std.Usize) (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize) :
+  (K : Std.Usize) (L : Std.Usize) (rho : Array Std.U8 32#usize) :
   RustM (Array (Array (Array Std.U32 256#usize) L) K)
   := do
   let a := Array.repeat 256#usize 0#u32
   let a1 := Array.repeat L a
   let a2 := Array.repeat K a1
-  sampling.expand_a_into_x4 keccak4Lanes4Inst rho a2
+  sampling.expand_a_into_x4 rho a2
 
 /-- [ml_dsa_lean::sampling::RATE256]
-    Source: 'src/sampling.rs', lines 267:0-267:27 -/
+    Source: 'src/sampling.rs', lines 266:0-266:27 -/
 @[global_simps, irreducible] def sampling.RATE256 : Std.Usize := 136#usize
 
 /-- [ml_dsa_lean::sampling::tr_tail_lanes]: loop body 0:
-    Source: 'src/sampling.rs', lines 278:4-281:5 -/
+    Source: 'src/sampling.rs', lines 277:4-280:5 -/
 @[rust_loop_body]
 def sampling.tr_tail_lanes_loop.body
   (pk : Slice Std.U8) (base : Std.Usize) (rem : Std.Usize)
@@ -8140,7 +8279,7 @@ def sampling.tr_tail_lanes_loop.body
   else ok (done w)
 
 /-- [ml_dsa_lean::sampling::tr_tail_lanes]: loop 0:
-    Source: 'src/sampling.rs', lines 278:4-281:5 -/
+    Source: 'src/sampling.rs', lines 277:4-280:5 -/
 @[rust_loop]
 def sampling.tr_tail_lanes_loop
   (pk : Slice Std.U8) (base : Std.Usize) (rem : Std.Usize)
@@ -8152,7 +8291,7 @@ def sampling.tr_tail_lanes_loop
     (w, i)
 
 /-- [ml_dsa_lean::sampling::tr_tail_lanes]:
-    Source: 'src/sampling.rs', lines 273:0-285:1 -/
+    Source: 'src/sampling.rs', lines 272:0-284:1 -/
 def sampling.tr_tail_lanes
   (pk : Slice Std.U8) : RustM (Array Std.U64 17#usize) := do
   let i := Slice.len pk
@@ -8174,12 +8313,12 @@ def sampling.tr_tail_lanes
   Array.update w2 16#usize i10
 
 /-- [ml_dsa_lean::sampling::absorb_block_lane3]: loop body 0:
-    Source: 'src/sampling.rs', lines 292:4-296:5 -/
+    Source: 'src/sampling.rs', lines 291:4-295:5 -/
 @[rust_loop_body]
 def sampling.absorb_block_lane3_loop.body
-  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X) (pk : Slice Std.U8)
-  (tail : Array Std.U64 17#usize) (q : Std.Usize) (t : Std.Usize)
-  (st : Array (Array Std.U64 4#usize) 25#usize) (k : Std.Usize) :
+  (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (t : Std.Usize) (st : Array (Array Std.U64 4#usize) 25#usize) (k : Std.Usize)
+  :
   RustM (ControlFlow ((Array (Array Std.U64 4#usize) 25#usize) × Std.Usize)
     (Array (Array Std.U64 4#usize) 25#usize))
   := do
@@ -8195,41 +8334,40 @@ def sampling.absorb_block_lane3_loop.body
         keccak.load_lane pk i2
       else Array.index_usize tail k
     let a ← Array.index_usize st k
-    let a1 ←
-      keccak4Lanes4Inst.xor a (Array.make 4#usize [ 0#u64, 0#u64, 0#u64, w ])
-    let a2 ← Array.update st k a1
+    let i ← Array.index_usize a 3#usize
+    let i1 ← lift (i ^^^ w)
+    let (a1, index_mut_back) ← Array.index_mut_usize st k
+    let a2 ← Array.update a1 3#usize i1
     let k1 ← k + 1#usize
-    ok (cont (a2, k1))
+    let a3 := index_mut_back a2
+    ok (cont (a3, k1))
   else ok (done st)
 
 /-- [ml_dsa_lean::sampling::absorb_block_lane3]: loop 0:
-    Source: 'src/sampling.rs', lines 292:4-296:5 -/
+    Source: 'src/sampling.rs', lines 291:4-295:5 -/
 @[rust_loop]
 def sampling.absorb_block_lane3_loop
-  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X)
   (st : Array (Array Std.U64 4#usize) 25#usize) (pk : Slice Std.U8)
   (tail : Array Std.U64 17#usize) (q : Std.Usize) (t : Std.Usize)
   (k : Std.Usize) :
   RustM (Array (Array Std.U64 4#usize) 25#usize)
   := do
   loop
-    (fun (st1, k1) => sampling.absorb_block_lane3_loop.body keccak4Lanes4Inst
-      pk tail q t st1 k1)
+    (fun (st1, k1) => sampling.absorb_block_lane3_loop.body pk tail q t st1 k1)
     (st, k)
 
 /-- [ml_dsa_lean::sampling::absorb_block_lane3]:
-    Source: 'src/sampling.rs', lines 290:0-297:1 -/
+    Source: 'src/sampling.rs', lines 289:0-296:1 -/
 @[reducible]
 def sampling.absorb_block_lane3
-  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X)
   (st : Array (Array Std.U64 4#usize) 25#usize) (pk : Slice Std.U8)
   (tail : Array Std.U64 17#usize) (q : Std.Usize) (t : Std.Usize) :
   RustM (Array (Array Std.U64 4#usize) 25#usize)
   := do
-  sampling.absorb_block_lane3_loop keccak4Lanes4Inst st pk tail q t 0#usize
+  sampling.absorb_block_lane3_loop st pk tail q t 0#usize
 
 /-- [ml_dsa_lean::sampling::lane3_state]: loop body 0:
-    Source: 'src/sampling.rs', lines 304:4-307:5 -/
+    Source: 'src/sampling.rs', lines 303:4-306:5 -/
 @[rust_loop_body]
 def sampling.lane3_state_loop.body
   (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize)
@@ -8247,7 +8385,7 @@ def sampling.lane3_state_loop.body
   else ok (done s)
 
 /-- [ml_dsa_lean::sampling::lane3_state]: loop 0:
-    Source: 'src/sampling.rs', lines 304:4-307:5 -/
+    Source: 'src/sampling.rs', lines 303:4-306:5 -/
 @[rust_loop]
 def sampling.lane3_state_loop
   (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize)
@@ -8259,7 +8397,7 @@ def sampling.lane3_state_loop
     (s, k)
 
 /-- [ml_dsa_lean::sampling::lane3_state]:
-    Source: 'src/sampling.rs', lines 301:0-309:1 -/
+    Source: 'src/sampling.rs', lines 300:0-308:1 -/
 def sampling.lane3_state
   (st : Array (Array Std.U64 4#usize) 25#usize) :
   RustM (Array Std.U64 25#usize)
@@ -8268,7 +8406,7 @@ def sampling.lane3_state
   sampling.lane3_state_loop st s 0#usize
 
 /-- [ml_dsa_lean::sampling::set_lane3]: loop body 0:
-    Source: 'src/sampling.rs', lines 315:4-318:5 -/
+    Source: 'src/sampling.rs', lines 314:4-317:5 -/
 @[rust_loop_body]
 def sampling.set_lane3_loop.body
   (s : Array Std.U64 25#usize) (st : Array (Array Std.U64 4#usize) 25#usize)
@@ -8287,7 +8425,7 @@ def sampling.set_lane3_loop.body
   else ok (done st)
 
 /-- [ml_dsa_lean::sampling::set_lane3]: loop 0:
-    Source: 'src/sampling.rs', lines 315:4-318:5 -/
+    Source: 'src/sampling.rs', lines 314:4-317:5 -/
 @[rust_loop]
 def sampling.set_lane3_loop
   (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize)
@@ -8299,7 +8437,7 @@ def sampling.set_lane3_loop
     (st, k)
 
 /-- [ml_dsa_lean::sampling::set_lane3]:
-    Source: 'src/sampling.rs', lines 313:0-319:1 -/
+    Source: 'src/sampling.rs', lines 312:0-318:1 -/
 @[reducible]
 def sampling.set_lane3
   (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize) :
@@ -8308,12 +8446,11 @@ def sampling.set_lane3
   sampling.set_lane3_loop st s 0#usize
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x3_tr]: loop body 0:
-    Source: 'src/sampling.rs', lines 351:4-366:5
+    Source: 'src/sampling.rs', lines 350:4-365:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.rej_ntt_poly_x3_tr_loop.body
-  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X) (pk : Slice Std.U8)
-  (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
   (st : Array (Array Std.U64 4#usize) 25#usize) (trs : Array Std.U64 25#usize)
   (t : Std.Usize) (p0 : Array Std.U32 312#usize) (p1 : Array Std.U32 312#usize)
   (p2 : Array Std.U32 312#usize) (j0 : Std.Usize) (j1 : Std.Usize)
@@ -8329,9 +8466,9 @@ def sampling.rej_ntt_poly_x3_tr_loop.body
   then
     let st1 ←
       if t <= q
-      then sampling.absorb_block_lane3 keccak4Lanes4Inst st pk tail q t
+      then sampling.absorb_block_lane3 st pk tail q t
       else ok st
-    let st2 ← keccak4.keccak_f1600_x4 keccak4Lanes4Inst st1
+    let st2 ← keccak4.keccak_f1600_x4 st1
     let (j01, p01) ← sampling.rej_ntt_lane_x4 st2 0#usize p0 j0
     let (j11, p11) ← sampling.rej_ntt_lane_x4 st2 1#usize p1 j1
     let (j21, p21) ← sampling.rej_ntt_lane_x4 st2 2#usize p2 j2
@@ -8357,12 +8494,11 @@ def sampling.rej_ntt_poly_x3_tr_loop.body
   else ok (done (st, trs, t, p0, p1, p2))
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x3_tr]: loop 0:
-    Source: 'src/sampling.rs', lines 351:4-366:5
+    Source: 'src/sampling.rs', lines 350:4-365:5
     Visibility: public -/
 @[rust_loop]
 def sampling.rej_ntt_poly_x3_tr_loop
-  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X) (pk : Slice Std.U8)
-  (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
   (st : Array (Array Std.U64 4#usize) 25#usize) (trs : Array Std.U64 25#usize)
   (t : Std.Usize) (p0 : Array Std.U32 312#usize) (p1 : Array Std.U32 312#usize)
   (p2 : Array Std.U32 312#usize) (j0 : Std.Usize) (j1 : Std.Usize)
@@ -8373,15 +8509,14 @@ def sampling.rej_ntt_poly_x3_tr_loop
   := do
   loop
     (fun (st1, trs1, t1, p01, p11, p21, j01, j11, j21, more1) =>
-      sampling.rej_ntt_poly_x3_tr_loop.body keccak4Lanes4Inst pk tail q st1
-      trs1 t1 p01 p11 p21 j01 j11 j21 more1)
+      sampling.rej_ntt_poly_x3_tr_loop.body pk tail q st1 trs1 t1 p01 p11 p21
+      j01 j11 j21 more1)
     (st, trs, t, p0, p1, p2, j0, j1, j2, more)
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x3_tr]:
-    Source: 'src/sampling.rs', lines 330:0-371:1
+    Source: 'src/sampling.rs', lines 329:0-370:1
     Visibility: public -/
 def sampling.rej_ntt_poly_x3_tr
-  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X)
   (rho : Array Std.U8 32#usize) (s : Array Std.U8 4#usize)
   (r : Array Std.U8 4#usize) (pk : Slice Std.U8)
   (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -8395,8 +8530,8 @@ def sampling.rej_ntt_poly_x3_tr
   let p1 := Array.repeat 312#usize 0#u32
   let p2 := Array.repeat 312#usize 0#u32
   let (st2, trs, t, p01, p11, p21) ←
-    sampling.rej_ntt_poly_x3_tr_loop keccak4Lanes4Inst pk tail q st1 trs0 t0 p0
-      p1 p2 0#usize 0#usize 0#usize true
+    sampling.rej_ntt_poly_x3_tr_loop pk tail q st1 trs0 t0 p0 p1 p2 0#usize
+      0#usize 0#usize true
   let trs1 ← if t <= q
                then sampling.lane3_state st2
                else ok trs
@@ -8406,7 +8541,7 @@ def sampling.rej_ntt_poly_x3_tr
   ok (Array.make 3#usize [ a, a1, a2 ], trs1, t)
 
 /-- [ml_dsa_lean::sampling::squeeze64]: loop body 0:
-    Source: 'src/sampling.rs', lines 378:4-381:5 -/
+    Source: 'src/sampling.rs', lines 377:4-380:5 -/
 @[rust_loop_body]
 def sampling.squeeze64_loop.body
   (s : Array Std.U64 25#usize) (out : Array Std.U8 64#usize) (j : Std.Usize) :
@@ -8427,7 +8562,7 @@ def sampling.squeeze64_loop.body
   else ok (done out)
 
 /-- [ml_dsa_lean::sampling::squeeze64]: loop 0:
-    Source: 'src/sampling.rs', lines 378:4-381:5 -/
+    Source: 'src/sampling.rs', lines 377:4-380:5 -/
 @[rust_loop]
 def sampling.squeeze64_loop
   (s : Array Std.U64 25#usize) (out : Array Std.U8 64#usize) (j : Std.Usize) :
@@ -8438,14 +8573,14 @@ def sampling.squeeze64_loop
     (out, j)
 
 /-- [ml_dsa_lean::sampling::squeeze64]:
-    Source: 'src/sampling.rs', lines 375:0-383:1 -/
+    Source: 'src/sampling.rs', lines 374:0-382:1 -/
 def sampling.squeeze64
   (s : Array Std.U64 25#usize) : RustM (Array Std.U8 64#usize) := do
   let out := Array.repeat 64#usize 0#u8
   sampling.squeeze64_loop s out 0#usize
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop body 1:
-    Source: 'src/sampling.rs', lines 394:8-397:9 -/
+    Source: 'src/sampling.rs', lines 393:8-396:9 -/
 @[rust_loop_body]
 def sampling.tr_finish_scalar_loop0_loop0.body
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -8472,7 +8607,7 @@ def sampling.tr_finish_scalar_loop0_loop0.body
   else ok (done s)
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop 1:
-    Source: 'src/sampling.rs', lines 394:8-397:9 -/
+    Source: 'src/sampling.rs', lines 393:8-396:9 -/
 @[rust_loop]
 def sampling.tr_finish_scalar_loop0_loop0
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -8485,7 +8620,7 @@ def sampling.tr_finish_scalar_loop0_loop0
     (s, k)
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop body 0:
-    Source: 'src/sampling.rs', lines 392:4-400:5 -/
+    Source: 'src/sampling.rs', lines 391:4-399:5 -/
 @[rust_loop_body]
 def sampling.tr_finish_scalar_loop0.body
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -8502,7 +8637,7 @@ def sampling.tr_finish_scalar_loop0.body
   else ok (done s)
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop 0:
-    Source: 'src/sampling.rs', lines 392:4-400:5 -/
+    Source: 'src/sampling.rs', lines 391:4-399:5 -/
 @[rust_loop]
 def sampling.tr_finish_scalar_loop0
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -8514,7 +8649,7 @@ def sampling.tr_finish_scalar_loop0
     (s, t)
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]:
-    Source: 'src/sampling.rs', lines 389:0-402:1 -/
+    Source: 'src/sampling.rs', lines 388:0-401:1 -/
 def sampling.tr_finish_scalar
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
   (trs : Array Std.U64 25#usize) (t0 : Std.Usize) :
@@ -8524,7 +8659,7 @@ def sampling.tr_finish_scalar
   sampling.squeeze64 s
 
 /-- [ml_dsa_lean::sampling::tr_groups]:
-    Source: 'src/sampling.rs', lines 414:0-418:1 -/
+    Source: 'src/sampling.rs', lines 413:0-417:1 -/
 def sampling.tr_groups (n : Std.Usize) (q : Std.Usize) : RustM Std.Usize := do
   let i ← q + 5#usize
   let want ← i / 5#usize
@@ -8538,13 +8673,12 @@ def sampling.tr_groups (n : Std.Usize) (q : Std.Usize) : RustM Std.Usize := do
   else ok want
 
 /-- [ml_dsa_lean::sampling::expand_a_tr_into_x4]: loop body 0:
-    Source: 'src/sampling.rs', lines 438:4-459:5
+    Source: 'src/sampling.rs', lines 437:4-458:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_a_tr_into_x4_loop.body
-  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize) (pk : Slice Std.U8)
-  (n : Std.Usize) (q : Std.Usize) (g3 : Std.Usize)
+  {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
+  (pk : Slice Std.U8) (n : Std.Usize) (q : Std.Usize) (g3 : Std.Usize)
   (tail : Array Std.U64 17#usize)
   (a : Array (Array (Array Std.U32 256#usize) L) K)
   (trs : Array Std.U64 25#usize) (t : Std.Usize) (first : Std.Usize)
@@ -8576,8 +8710,7 @@ def sampling.expand_a_tr_into_x4_loop.body
       let i12 ← lift (UScalar.cast .U8 i11)
       let i13 ← lift (UScalar.cast .U8 i11)
       let (polys, trs2, t2) ←
-        sampling.rej_ntt_poly_x3_tr keccak4Lanes4Inst rho
-          (Array.make 4#usize [ i1, i3, i5, i6 ])
+        sampling.rej_ntt_poly_x3_tr rho (Array.make 4#usize [ i1, i3, i5, i6 ])
           (Array.make 4#usize [ i8, i10, i12, i13 ]) pk tail q trs t
       let a1 ← Array.index_usize polys 0#usize
       let (a2, index_mut_back) ← Array.index_mut_usize a i7
@@ -8598,31 +8731,29 @@ def sampling.expand_a_tr_into_x4_loop.body
   else ok (done (a, trs, t, first))
 
 /-- [ml_dsa_lean::sampling::expand_a_tr_into_x4]: loop 0:
-    Source: 'src/sampling.rs', lines 438:4-459:5
+    Source: 'src/sampling.rs', lines 437:4-458:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_a_tr_into_x4_loop
-  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize) (pk : Slice Std.U8)
-  (a : Array (Array (Array Std.U32 256#usize) L) K) (n : Std.Usize)
-  (q : Std.Usize) (g3 : Std.Usize) (tail : Array Std.U64 17#usize)
-  (trs : Array Std.U64 25#usize) (t : Std.Usize) (first : Std.Usize)
-  (g : Std.Usize) :
+  {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
+  (pk : Slice Std.U8) (a : Array (Array (Array Std.U32 256#usize) L) K)
+  (n : Std.Usize) (q : Std.Usize) (g3 : Std.Usize)
+  (tail : Array Std.U64 17#usize) (trs : Array Std.U64 25#usize)
+  (t : Std.Usize) (first : Std.Usize) (g : Std.Usize) :
   RustM ((Array (Array (Array Std.U32 256#usize) L) K) × (Array Std.U64
     25#usize) × Std.Usize × Std.Usize)
   := do
   loop
     (fun (a1, trs1, t1, first1, g1) => sampling.expand_a_tr_into_x4_loop.body
-      keccak4Lanes4Inst rho pk n q g3 tail a1 trs1 t1 first1 g1)
+      rho pk n q g3 tail a1 trs1 t1 first1 g1)
     (a, trs, t, first, g)
 
 /-- [ml_dsa_lean::sampling::expand_a_tr_into_x4]:
-    Source: 'src/sampling.rs', lines 425:0-462:1
+    Source: 'src/sampling.rs', lines 424:0-461:1
     Visibility: public -/
 def sampling.expand_a_tr_into_x4
-  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize) (pk : Slice Std.U8)
-  (a : Array (Array (Array Std.U32 256#usize) L) K) :
+  {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
+  (pk : Slice Std.U8) (a : Array (Array (Array Std.U32 256#usize) L) K) :
   RustM ((Array Std.U8 64#usize) × (Array (Array (Array Std.U32 256#usize) L)
     K))
   := do
@@ -8633,51 +8764,47 @@ def sampling.expand_a_tr_into_x4
   let tail ← sampling.tr_tail_lanes pk
   let trs := Array.repeat 25#usize 0#u64
   let (a1, trs1, t, first) ←
-    sampling.expand_a_tr_into_x4_loop keccak4Lanes4Inst rho pk a n q g3 tail
-      trs 0#usize 0#usize 0#usize
-  let a2 ← sampling.expand_a_from_x4 keccak4Lanes4Inst rho a1 first
+    sampling.expand_a_tr_into_x4_loop rho pk a n q g3 tail trs 0#usize 0#usize
+      0#usize
+  let a2 ← sampling.expand_a_from_x4 rho a1 first
   let a3 ← sampling.tr_finish_scalar pk tail q trs1 t
   ok (a3, a2)
 
 /-- [ml_dsa_lean::verify::prepare_vk_into_x4]:
-    Source: 'src/verify.rs', lines 151:0-158:1
+    Source: 'src/verify.rs', lines 150:0-157:1
     Visibility: public -/
 def verify.prepare_vk_into_x4
-  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (pk : Slice Std.U8) (out : verify.PreparedVk K L) :
+  {K : Std.Usize} {L : Std.Usize} (pk : Slice Std.U8)
+  (out : verify.PreparedVk K L) :
   RustM (verify.PreparedVk K L)
   := do
   let (rho, t1) ← encode.pk_decode K pk
-  let (a, a1) ←
-    sampling.expand_a_tr_into_x4 keccak4Lanes4Inst rho pk out.a_hat
+  let (a, a1) ← sampling.expand_a_tr_into_x4 rho pk out.a_hat
   let a2 ← verify.scale_vec_by_2d t1
   let a3 ← verify_arith.ntt_vec_pub a2
   ok { a_hat := a1, t1_2d_hat := a3, tr := a }
 
 /-- [ml_dsa_lean::verify::prepare_vk_x4]:
-    Source: 'src/verify.rs', lines 164:0-173:1
+    Source: 'src/verify.rs', lines 163:0-172:1
     Visibility: public -/
 def verify.prepare_vk_x4
-  {X : Type} (K : Std.Usize) (L : Std.Usize) (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (pk : Slice Std.U8) :
+  (K : Std.Usize) (L : Std.Usize) (pk : Slice Std.U8) :
   RustM (verify.PreparedVk K L)
   := do
   let (rho, t1) ← encode.pk_decode K pk
   let a := Array.repeat 256#usize 0#u32
   let a1 := Array.repeat L a
   let a_hat := Array.repeat K a1
-  let (tr, a_hat1) ←
-    sampling.expand_a_tr_into_x4 keccak4Lanes4Inst rho pk a_hat
+  let (tr, a_hat1) ← sampling.expand_a_tr_into_x4 rho pk a_hat
   let a2 ← verify.scale_vec_by_2d t1
   let t1_2d_hat ← verify_arith.ntt_vec_pub a2
   ok { a_hat := a_hat1, t1_2d_hat, tr }
 
 /-- [ml_dsa_lean::verify::verify_internal_x4]:
-    Source: 'src/verify.rs', lines 293:0-315:1
+    Source: 'src/verify.rs', lines 291:0-313:1
     Visibility: public -/
 def verify.verify_internal_x4
-  {X : Type} (K : Std.Usize) (L : Std.Usize) (keccak4Lanes4Inst :
-  keccak4.Lanes4 X) (p : params.Params) (pk : Slice Std.U8)
+  (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
   (m_prefix : Slice Std.U8) (m : Slice Std.U8) (sig : Slice Std.U8) :
   RustM Bool
   := do
@@ -8697,7 +8824,7 @@ def verify.verify_internal_x4
       | some parts =>
         let (c_tilde, z, h) := parts
         let vk ← verify.PreparedVk.zeroed K L
-        let vk1 ← verify.prepare_vk_into_x4 keccak4Lanes4Inst pk vk
+        let vk1 ← verify.prepare_vk_into_x4 pk vk
         verify.verify_decoded p vk1 m_prefix m c_tilde z h
 
 end Impl
