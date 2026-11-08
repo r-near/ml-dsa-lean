@@ -5,7 +5,10 @@
 # Environment: SETS (default 65; e.g. 44,65,87), ROUNDS (default 15), ML_DSA_SCRATCH (output root, as in compare.sh),
 #              HT_OFFSET (distance to the hyper-thread sibling, default half the logical CPUs),
 #              TOOLCHAIN (a rustup toolchain such as 1.95.0, nearcore's; default: the toolchain in effect). The numbers in
-#              bench/results say which one they used.
+#              bench/results say which one they used. STACKSCAN (default 1; 0 skips it): after the timings, the stack-offset
+#              scan of the `avx2` build (bench/stackscan.sh check: the environment padded in steps of 64 bytes up to 4 KiB,
+#              ASLR off; fails when any padding makes verify, verifying_key or the prepared-key verify more than 1.15 times
+#              slower than the median, which is how a call at the wrong stack offset used to show up).
 #
 # Variants (all in the `nearcore` profile of bench/Cargo.toml: opt-level 3, fat LTO, one codegen unit, abort on panic, plus
 # overflow-checks, exactly as nearcore's [profile.release]; and nearcore's x86_64 target features, which do not include AVX2):
@@ -71,6 +74,12 @@ for v in scalar avx2 v3; do
   taskset -c "$CPU" "$OUT/bench-$v" --label "$L-$v-cpu$CPU" --sets "$SETS" --rounds "$ROUNDS" --only verify,verifying-key | tee "$OUT/$v.cpu$CPU.tsv"
 done
 echo "== done; load $(cut -d' ' -f1-3 /proc/loadavg)"
+SCAN_RC=0
+if [ "${STACKSCAN:-1}" != 0 ]; then
+  echo "== stack-offset scan (avx2 build)"
+  AB_DIR=$OUT bash bench/stackscan.sh build avx2 || exit 1
+  AB_DIR=$OUT STEP=${SCAN_STEP:-64} SETS=$SETS OPS=verify,vk,prepared bash bench/stackscan.sh check "$CPU" avx2 | tee "$OUT/stackscan.txt" || SCAN_RC=1
+fi
 python3 - "$OUT" "$CPU" "$SETS" <<'PY'
 import sys
 out, cpu, sets = sys.argv[1], sys.argv[2], [int(x) for x in sys.argv[3].split(",")]
@@ -92,3 +101,4 @@ for st in sets:
     if s and a:
         print(f"ours: dispatched / scalar = {a / s:.2f}")
 PY
+exit $SCAN_RC

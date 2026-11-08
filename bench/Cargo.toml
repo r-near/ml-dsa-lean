@@ -27,6 +27,11 @@ name = "keccak4"
 path = "src/bin/keccak4.rs"
 required-features = ["internals", "avx2"]
 
+# One cell of the stack-offset scan (bench/stackscan.sh).
+[[bin]]
+name = "stackscan"
+path = "src/bin/stackscan.rs"
+
 # Sampling profiler (SIGPROF) over the public APIs.
 [[bin]]
 name = "prof"
