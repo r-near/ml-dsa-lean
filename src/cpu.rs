@@ -1,13 +1,30 @@
-//! Run-time CPU feature detection for the opt-in `avx2` feature (x86_64, not Miri). One detector, shared by the NTT
-//! dispatch (`ntt.rs`) and the 4-way verify dispatch (`fast_verify.rs`).
+//! The CPU check of the opt-in `avx2` feature, and the token it hands out.
 //!
-//! Outside the Lean proof. The answer is a function of the CPU and OS only, never of secret data.
+//! `avx2()` is the only way to obtain an [`Avx2`] token. The verify dispatch (`fast_verify.rs`) takes an
+//! `Option<Avx2>` and runs its `#[target_feature(enable = "avx2")]` wrappers only for `Some`, so a wrapper cannot be
+//! reached without this check having found AVX2: the type, not a convention, carries the precondition of the
+//! `unsafe` call. Which of the two functions runs is the only thing the token changes. Both compute the same value
+//! (`Proofs/Dispatch.lean`: `verify_internal_with` and its two siblings are equal to the scalar functions for every
+//! token value, including `None`), so a wrong answer from this module can cause a crash on a CPU without AVX2 but
+//! never a wrong result.
+//!
+//! Outside the Lean proof, and not extracted. Under extraction (`--cfg miri`, scripts/extract.py) and in every build
+//! that has no dispatch (feature `avx2` off, or not x86_64) `avx2()` is the one-line stub `None`. The real detector
+//! is shared with the NTT dispatch (`ntt.rs`, which uses `has_avx2`). The answer is a function of the CPU and OS
+//! only, never of secret data.
 
+#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 use core::sync::atomic::{AtomicU8, Ordering};
+
+/// Permission to execute AVX2 code: its only constructor, [`avx2`], returns one when this CPU and OS can run it.
+/// The field is private, so no other module can make one.
+#[cfg_attr(not(all(feature = "avx2", not(miri), target_arch = "x86_64")), allow(dead_code))]
+pub(crate) struct Avx2(());
 
 /// CPUID leaf 7 EBX bit 5 (AVX2), plus leaf 1 XSAVE, OSXSAVE and AVX, and XCR0 bits 1 and 2 (the OS saves XMM and YMM
 /// state). Not for SGX enclaves, where CPUID faults; the `avx2` feature does not support them. CPUID traps to the
 /// hypervisor on virtual machines (microseconds), so `has_avx2` caches the answer.
+#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 fn detect_avx2() -> bool {
     use core::arch::x86_64::{__cpuid, __cpuid_count, _xgetbv};
     // SAFETY: CPUID exists on every x86_64 CPU; XGETBV is executed only after OSXSAVE is reported.
@@ -28,6 +45,7 @@ fn detect_avx2() -> bool {
 }
 
 /// 0 = not yet checked, 1 = no AVX2, 2 = AVX2. Relaxed is enough: racing threads compute the same value.
+#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 static AVX2: AtomicU8 = AtomicU8::new(0);
 
 /// Whether this CPU and OS can run AVX2 code. A build that already enables AVX2 statically
@@ -36,8 +54,9 @@ static AVX2: AtomicU8 = AtomicU8::new(0);
 /// guest).
 ///
 /// A wrong answer can only be "AVX2 reported but unusable" (SIGILL) or "AVX2 usable but not reported" (the scalar path,
-/// slower); it cannot change a result, because every AVX2 path computes the same function as the scalar path it
-/// replaces (`tests/fast_verify.rs`, `tests/keccak4_avx2.rs`, `tests/dispatch.rs`).
+/// slower); it cannot change a result, because the AVX2 path computes the same function as the scalar path it
+/// replaces (`Proofs/Dispatch.lean`; `tests/fast_verify.rs`, `tests/dispatch.rs` compare the compiled code).
+#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 #[inline]
 pub(crate) fn has_avx2() -> bool {
     if cfg!(target_feature = "avx2") {
@@ -54,14 +73,29 @@ pub(crate) fn has_avx2() -> bool {
     }
 }
 
+/// The CPU check: `Some(token)` when AVX2 can be executed, `None` otherwise.
+#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
+#[inline]
+pub(crate) fn avx2() -> Option<Avx2> {
+    if has_avx2() { Some(Avx2(())) } else { None }
+}
+
+/// The stub: never AVX2. This is what a build without the dispatch runs, and what extraction sees (the proofs quantify
+/// over every `Option<Avx2>` value, so they do not depend on what the real check returns).
+#[cfg(not(all(feature = "avx2", not(miri), target_arch = "x86_64")))]
+#[inline]
+pub(crate) fn avx2() -> Option<Avx2> {
+    None
+}
+
 /// The uncached detector, for the test that checks `has_avx2` against the standard library's detection.
-#[cfg(feature = "internals")]
+#[cfg(all(feature = "avx2", feature = "internals", not(miri), target_arch = "x86_64"))]
 pub fn detect_avx2_uncached() -> bool {
     detect_avx2()
 }
 
 /// `has_avx2`, public for tests.
-#[cfg(feature = "internals")]
+#[cfg(all(feature = "avx2", feature = "internals", not(miri), target_arch = "x86_64"))]
 pub fn has_avx2_cached() -> bool {
     has_avx2()
 }

@@ -6,7 +6,7 @@
 //! `module-lattice`. Parameter sets are a `Params` value plus `K`/`L` const generics.
 #![no_std]
 // The only `unsafe` is the optional AVX2 code (feature `avx2`): the NTT dispatch (`mod dispatch` in src/ntt.rs), the CPU
-// check (src/cpu.rs), and the verify dispatch (src/fast_verify.rs); each carries its own `allow`. There are no intrinsics: the
+// check (src/cpu.rs), and the verify dispatch (src/fast_verify.rs, src/fast_verify/dispatch.rs); each carries its own `allow`. There are no intrinsics: the
 // AVX2 code is the proved plain-Rust code, compiled inside `#[target_feature(enable = "avx2")]` wrappers. Without the feature the crate forbids it outright.
 #![cfg_attr(not(feature = "avx2"), forbid(unsafe_code))]
 #![cfg_attr(feature = "avx2", deny(unsafe_code))]
@@ -21,15 +21,16 @@ pub mod api;
 pub mod encode;
 #[cfg(not(feature = "internals"))]
 mod encode;
-// The `avx2` feature's CPU check: only where the dispatch exists (see `fast_verify.rs`).
-#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", feature = "internals"))]
-#[allow(unsafe_code)]
+// The CPU check and the `Avx2` token (see `cpu.rs`). It exists in every build: without the dispatch it is the stub
+// `avx2() -> None`.
+#[cfg(feature = "internals")]
+#[cfg_attr(feature = "avx2", allow(unsafe_code))]
 pub mod cpu;
-#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(feature = "internals")))]
-#[allow(unsafe_code)]
+#[cfg(not(feature = "internals"))]
+#[cfg_attr(feature = "avx2", allow(unsafe_code))]
 mod cpu;
-// `fast_verify` always exists: `api.rs` imports `verify_internal` and `prepare_vk` from it. Without the dispatch it only
-// re-exports the scalar functions.
+// `fast_verify` always exists: `api.rs` calls its `_with` functions, which choose between the scalar function and the
+// AVX2 wrapper by an `Option<cpu::Avx2>` argument. Without the dispatch they are the scalar functions.
 #[cfg(feature = "internals")]
 pub mod fast_verify;
 #[cfg(not(feature = "internals"))]

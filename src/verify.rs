@@ -46,7 +46,11 @@ pub(crate) fn prefix_eq(a: &[u8; 64], b: &[u8; 64], len: usize) -> bool {
 /// once. The fields are private to the crate; the `api` module wraps this type per parameter set.
 ///
 /// Size: (K·L + K) KiB + 64 bytes (20,544 / 36,928 / 65,600 bytes for ML-DSA-44 / 65 / 87).
+///
+/// `#[repr(align(32))]`: the AVX2 wrappers that own one (`fast_verify/dispatch.rs`) get a 32-byte aligned stack frame
+/// from it, which keeps 256-bit spill slots from straddling a page boundary. It changes no value (Aeneas ignores it).
 #[derive(Clone)]
+#[repr(align(32))]
 pub struct PreparedVk<const K: usize, const L: usize> {
     /// Â ← ExpandA(ρ), NTT domain.
     pub(crate) a_hat: [[[u32; 256]; L]; K],

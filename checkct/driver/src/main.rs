@@ -28,8 +28,8 @@ mod keccak;
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/keccak4.rs"]
 mod keccak4;
-// The CPU check of the `avx2` feature, with the cfg of the crate's `lib.rs` (the driver never sets `miri`).
-#[cfg(all(feature = "avx2", target_arch = "x86_64"))]
+// The CPU check and the `Avx2` token (in every build: without the `avx2` feature, or off x86_64, `cpu::avx2()` is the stub
+// `None`; the driver never sets `miri`).
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/cpu.rs"]
 mod cpu;
@@ -53,7 +53,7 @@ mod verify_arith;
 #[path = "../../../src/verify.rs"]
 mod verify;
 // The verify dispatch: the real src/fast_verify.rs (its `mod dispatch` has an explicit `#[path]`, so the file also resolves
-// when included from here). Without the `avx2` feature (or off x86_64) it only re-exports the scalar functions of
+// when included from here). Without the `avx2` feature (or off x86_64) its `_with` functions are the scalar functions of
 // `verify`, as in the crate. Nothing of it is repeated in this file, so a new dispatched name cannot drift.
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/fast_verify.rs"]

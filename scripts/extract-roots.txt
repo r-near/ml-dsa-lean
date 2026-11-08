@@ -67,3 +67,25 @@ ml_dsa_lean::sampling::rej_ntt_poly_x3_tr
 ml_dsa_lean::verify::prepare_vk_into_x4
 ml_dsa_lean::verify::prepare_vk_x4
 ml_dsa_lean::verify::verify_internal_x4
+# The verify dispatch (docs/assurance.md section 1.9, lean/Proofs/Dispatch.lean): the `_with` form of each dispatched function takes the
+# CPU check's answer (`Option<cpu::Avx2>`) as an argument, and the public API functions are one call of their `_with` form. The AVX2
+# wrappers (`fast_verify::dispatch::*_avx2`) are reached from them. Extraction runs with `--cfg miri` and feature `avx2`, where
+# `cpu::avx2()` is the stub `None`; the theorems quantify over every value of the argument.
+ml_dsa_lean::fast_verify::verify_internal_with
+ml_dsa_lean::fast_verify::prepare_vk_with
+ml_dsa_lean::fast_verify::verify_prepared_internal_with
+ml_dsa_lean::api::verify_44_with
+ml_dsa_lean::api::verify_internal_44_with
+ml_dsa_lean::api::verifying_key_44_with
+ml_dsa_lean::api::verify_prepared_44_with
+ml_dsa_lean::api::verify_internal_prepared_44_with
+ml_dsa_lean::api::verify_65_with
+ml_dsa_lean::api::verify_internal_65_with
+ml_dsa_lean::api::verifying_key_65_with
+ml_dsa_lean::api::verify_prepared_65_with
+ml_dsa_lean::api::verify_internal_prepared_65_with
+ml_dsa_lean::api::verify_87_with
+ml_dsa_lean::api::verify_internal_87_with
+ml_dsa_lean::api::verifying_key_87_with
+ml_dsa_lean::api::verify_prepared_87_with
+ml_dsa_lean::api::verify_internal_prepared_87_with

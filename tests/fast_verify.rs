@@ -2,7 +2,7 @@
 //!
 //! The reference is `verify::verify_internal`, the proved scalar function. Three things are compared with it on every
 //! input, for ML-DSA-44/65/87:
-//!   * `fast_verify::verify_internal`, the run-time dispatcher `api::verify_*` calls (AVX2 body on a CPU with AVX2);
+//!   * `fast_verify::verify_internal_dispatched`, `verify_internal_with(cpu::avx2(), ..)`, which `api::verify_*` call (AVX2 body on a CPU with AVX2);
 //!   * the AVX2 body itself (`verify_internal_avx2_or_none`), whatever the dispatcher decides;
 //!   * the public API: `verify_NN`, `verify_internal_NN`, and the prepared-key paths `verifying_key_NN` +
 //!     `verify_prepared_NN` / `verify_internal_prepared_NN`.
@@ -11,7 +11,8 @@
 //!
 //! These tests need a CPU with AVX2 to say anything about the AVX2 path. Without it they still run (everything is the
 //! scalar path) and say so; set `ML_DSA_REQUIRE_AVX2=1` (scripts/ci.sh does for its avx2 steps) to make that a failure.
-//! `tests/fast_verify_dispatch.rs` checks that the public API really reaches the AVX2 wrapper.
+//! That the public API chooses the AVX2 wrapper when the CPU has it is by construction (each `api::*` function is one
+//! call of its `_with` form with `cpu::avx2()`; `Proofs/Dispatch.lean`, `docs/assurance.md` section 1.9) and is not counted at run time.
 #![cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 #![allow(clippy::type_complexity)]
 use flate2::read::GzDecoder;
@@ -53,7 +54,7 @@ struct Set {
     /// api::verifying_key_NN then verify_prepared_NN / verify_internal_prepared_NN.
     prepared: fn(&[u8], &[u8], &[u8], &[u8]) -> bool,
     prepared_internal: fn(&[u8], &[u8], &[u8]) -> bool,
-    /// verify::verify_internal (scalar), fast_verify::verify_internal (dispatched), the AVX2 body.
+    /// verify::verify_internal (scalar), fast_verify::verify_internal_dispatched, the AVX2 body.
     scalar: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> bool,
     dispatched: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> bool,
     direct: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> Option<bool>,
@@ -83,7 +84,7 @@ macro_rules! set_of {
                 api::$vip(&vk, mp, sig.try_into().unwrap())
             },
             scalar: |p, pk, prefix, m, sig| verify::verify_internal::<$k, $l>(p, pk, prefix, m, sig),
-            dispatched: |p, pk, prefix, m, sig| fast_verify::verify_internal::<$k, $l>(p, pk, prefix, m, sig),
+            dispatched: |p, pk, prefix, m, sig| fast_verify::verify_internal_dispatched::<$k, $l>(p, pk, prefix, m, sig),
             direct: |p, pk, prefix, m, sig| fast_verify::verify_internal_avx2_or_none::<$k, $l>(p, pk, prefix, m, sig),
             prepare_matches: |pk| fast_verify::prepare_vk_avx2_matches_scalar::<$k, $l>(pk),
         }

@@ -150,6 +150,7 @@ hax-lean-lib = "{HAX_LEAN_LIB_PIN}"
 backend = "lean"
 include = [{include}]
 no-default-features = true
+features = ["avx2"]
 charon-args = []
 env = {{ RUSTFLAGS = "--cfg miri" }}
 '''
