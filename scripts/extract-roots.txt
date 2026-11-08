@@ -62,6 +62,9 @@ ml_dsa_lean::keccak4::keccak_f1600_x4
 ml_dsa_lean::sampling::rej_ntt_poly_x4
 ml_dsa_lean::sampling::expand_a_into_x4
 ml_dsa_lean::sampling::expand_a_x4
+ml_dsa_lean::sampling::expand_a_from_x4
+ml_dsa_lean::sampling::expand_a_tr_into_x4
+ml_dsa_lean::sampling::rej_ntt_poly_x3_tr
 ml_dsa_lean::verify::prepare_vk_into_x4
 ml_dsa_lean::verify::prepare_vk_x4
 ml_dsa_lean::verify::verify_internal_x4

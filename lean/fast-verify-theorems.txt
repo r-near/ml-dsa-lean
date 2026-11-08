@@ -30,6 +30,37 @@ Proofs.ReprMat.unique
 Proofs.rustM_eq_of_partial
 Proofs.expand_a_x4_eq
 Proofs.expand_a_x4_eq_std
+# tr = H(pk, 64) in the fourth lane of the first 4-way ExpandA groups (docs/assurance.md 1.9, "tr in the fourth lane"):
+# the sponge schedule of SHAKE256 by blocks (HS, blkT, Wb, xor17), the lane helpers of the extracted code, the four-lane
+# group sampler with the lane-3 absorb (total and partial), the group loop, the scalar finish and the whole function.
+Proofs.HS_succ
+Proofs.HS_final
+Proofs.shake256_byte
+Proofs.xorBlock_eq_xor17
+Proofs.blkT_last
+Proofs.blkT_getD_full
+Proofs.set_lane3_spec
+Proofs.lane3_state_spec
+Proofs.squeeze64_spec
+Proofs.absorb_block_lane3_spec
+Proofs.tr_tail_lanes_spec
+Proofs.tr_finish_scalar_spec
+Proofs.rej3_body_spec
+Proofs.rej3_loop_spec
+Proofs.rej3_loop_partial
+Proofs.rej_ntt_poly_x3_tr_spec
+Proofs.rej_ntt_poly_x3_tr_partial
+Proofs.tr_body_partial
+Proofs.tr_loop_partial
+Proofs.tr_body_term
+Proofs.tr_loop_term
+Proofs.expand_a_from_x4_partial
+Proofs.expand_a_from_x4_term
+Proofs.tr_groups_ok
+Proofs.bytesA_tr
+Proofs.expand_a_tr_into_x4_partial
+Proofs.expand_a_tr_into_x4_term
+Proofs.expand_a_tr_into_x4_eq
 # The 4-way verify body is the scalar one, as RustM values (divergence included), for every set.
 Proofs.prepare_vk_x4_eq
 Proofs.verify_internal_x4_eq

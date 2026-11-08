@@ -115,7 +115,7 @@ def field.sub (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   field.small_reduce i1
 
 /-- [ml_dsa_lean::sampling::coeff_from_half_byte]:
-    Source: 'src/sampling.rs', lines 291:0-299:1
+    Source: 'src/sampling.rs', lines 502:0-510:1
     Visibility: public -/
 def sampling.coeff_from_half_byte
   (p : params.Params) (b : Std.U8) : RustM (Option Std.U32) := do
@@ -726,7 +726,7 @@ def keccak.Shake.shake256 : RustM keccak.Shake := do
   ok { state := a, pos := 0#usize, rate := 136#usize }
 
 /-- [ml_dsa_lean::sampling::rej_bounded_poly]: loop body 0:
-    Source: 'src/sampling.rs', lines 311:4-330:5
+    Source: 'src/sampling.rs', lines 522:4-541:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.rej_bounded_poly_loop.body
@@ -766,7 +766,7 @@ def sampling.rej_bounded_poly_loop.body
   else ok (done a)
 
 /-- [ml_dsa_lean::sampling::rej_bounded_poly]: loop 0:
-    Source: 'src/sampling.rs', lines 311:4-330:5
+    Source: 'src/sampling.rs', lines 522:4-541:5
     Visibility: public -/
 @[rust_loop]
 def sampling.rej_bounded_poly_loop
@@ -779,7 +779,7 @@ def sampling.rej_bounded_poly_loop
     (a, ctx, j)
 
 /-- [ml_dsa_lean::sampling::rej_bounded_poly]:
-    Source: 'src/sampling.rs', lines 302:0-336:1
+    Source: 'src/sampling.rs', lines 513:0-547:1
     Visibility: public -/
 def sampling.rej_bounded_poly
   (p : params.Params) (rho : Array Std.U8 66#usize) :
@@ -793,7 +793,7 @@ def sampling.rej_bounded_poly
   sampling.rej_bounded_poly_loop p a ctx2 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop body 0:
-    Source: 'src/sampling.rs', lines 348:4-351:5
+    Source: 'src/sampling.rs', lines 559:4-562:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_s_loop0.body
@@ -811,7 +811,7 @@ def sampling.expand_s_loop0.body
   else ok (done seed)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop 0:
-    Source: 'src/sampling.rs', lines 348:4-351:5
+    Source: 'src/sampling.rs', lines 559:4-562:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_s_loop0
@@ -824,7 +824,7 @@ def sampling.expand_s_loop0
     (seed, b)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop body 1:
-    Source: 'src/sampling.rs', lines 354:4-359:5
+    Source: 'src/sampling.rs', lines 565:4-570:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_s_loop1.body
@@ -846,7 +846,7 @@ def sampling.expand_s_loop1.body
   else ok (done (s1, seed))
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop 1:
-    Source: 'src/sampling.rs', lines 354:4-359:5
+    Source: 'src/sampling.rs', lines 565:4-570:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_s_loop1
@@ -859,7 +859,7 @@ def sampling.expand_s_loop1
     (s1, seed, r)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop body 2:
-    Source: 'src/sampling.rs', lines 362:4-367:5
+    Source: 'src/sampling.rs', lines 573:4-578:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_s_loop2.body
@@ -882,7 +882,7 @@ def sampling.expand_s_loop2.body
   else ok (done s2)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop 2:
-    Source: 'src/sampling.rs', lines 362:4-367:5
+    Source: 'src/sampling.rs', lines 573:4-578:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_s_loop2
@@ -896,7 +896,7 @@ def sampling.expand_s_loop2
     (s2, seed, r)
 
 /-- [ml_dsa_lean::sampling::expand_s]:
-    Source: 'src/sampling.rs', lines 340:0-379:1
+    Source: 'src/sampling.rs', lines 551:0-590:1
     Visibility: public -/
 def sampling.expand_s
   (K : Std.Usize) (L : Std.Usize) (p : params.Params)
@@ -3181,7 +3181,7 @@ def encode.bit_unpack
   encode.bit_unpack_loop0 v c w 0#u64 0#usize 0#usize mask 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop body 1:
-    Source: 'src/sampling.rs', lines 269:8-272:9
+    Source: 'src/sampling.rs', lines 480:8-483:9
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_mask_loop0_loop0.body
@@ -3202,7 +3202,7 @@ def sampling.expand_mask_loop0_loop0.body
   else ok (done y)
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop 1:
-    Source: 'src/sampling.rs', lines 269:8-272:9
+    Source: 'src/sampling.rs', lines 480:8-483:9
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_mask_loop0_loop0
@@ -3215,7 +3215,7 @@ def sampling.expand_mask_loop0_loop0
     (y, i1)
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop body 0:
-    Source: 'src/sampling.rs', lines 259:4-281:5
+    Source: 'src/sampling.rs', lines 470:4-492:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_mask_loop0.body
@@ -3257,7 +3257,7 @@ def sampling.expand_mask_loop0.body
   else ok (done y)
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop 0:
-    Source: 'src/sampling.rs', lines 259:4-281:5
+    Source: 'src/sampling.rs', lines 470:4-492:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_mask_loop0
@@ -3272,7 +3272,7 @@ def sampling.expand_mask_loop0
     (y, v, r)
 
 /-- [ml_dsa_lean::sampling::expand_mask]:
-    Source: 'src/sampling.rs', lines 254:0-288:1
+    Source: 'src/sampling.rs', lines 465:0-499:1
     Visibility: public -/
 def sampling.expand_mask
   (L : Std.Usize) (p : params.Params) (rho : Array Std.U8 64#usize)
@@ -5249,7 +5249,7 @@ def encode.w1_encode_pub
   encode.w1_encode_pub_loop p.w1_bits w1 out n 0#usize
 
 /-- [ml_dsa_lean::verify::verify_core]: loop body 0:
-    Source: 'src/verify.rs', lines 208:4-214:5 -/
+    Source: 'src/verify.rs', lines 205:4-211:5 -/
 @[rust_loop_body]
 def verify.verify_core_loop.body
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -5273,7 +5273,7 @@ def verify.verify_core_loop.body
   else ok (done w1)
 
 /-- [ml_dsa_lean::verify::verify_core]: loop 0:
-    Source: 'src/verify.rs', lines 208:4-214:5 -/
+    Source: 'src/verify.rs', lines 205:4-211:5 -/
 @[rust_loop]
 def verify.verify_core_loop
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -5287,7 +5287,7 @@ def verify.verify_core_loop
     (w1, i)
 
 /-- [ml_dsa_lean::verify::verify_core]:
-    Source: 'src/verify.rs', lines 194:0-228:1 -/
+    Source: 'src/verify.rs', lines 191:0-225:1 -/
 def verify.verify_core
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (mu : Array Std.U8 64#usize)
@@ -5331,7 +5331,7 @@ def verify.verify_core
   else ok false
 
 /-- [ml_dsa_lean::verify::hash_mu]:
-    Source: 'src/verify.rs', lines 179:0-188:1 -/
+    Source: 'src/verify.rs', lines 176:0-185:1 -/
 def verify.hash_mu
   (tr : Array Std.U8 64#usize) (m_prefix : Slice Std.U8) (m : Slice Std.U8) :
   RustM (Array Std.U8 64#usize)
@@ -5348,7 +5348,7 @@ def verify.hash_mu
   ok (to_slice_mut_back s2)
 
 /-- [ml_dsa_lean::verify::verify_decoded]:
-    Source: 'src/verify.rs', lines 236:0-251:1 -/
+    Source: 'src/verify.rs', lines 233:0-248:1 -/
 def verify.verify_decoded
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
@@ -6212,7 +6212,7 @@ def encode.sig_decode
   | some h => ok (some (c_tilde1, z1, h))
 
 /-- [ml_dsa_lean::verify::verify_internal]:
-    Source: 'src/verify.rs', lines 264:0-286:1
+    Source: 'src/verify.rs', lines 261:0-283:1
     Visibility: public -/
 def verify.verify_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
@@ -6317,7 +6317,7 @@ def api.verifying_key_44
   ok { inner := pv }
 
 /-- [ml_dsa_lean::verify::verify_prepared_internal]:
-    Source: 'src/verify.rs', lines 325:0-342:1
+    Source: 'src/verify.rs', lines 322:0-339:1
     Visibility: public -/
 def verify.verify_prepared_internal
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -8001,11 +8001,11 @@ def sampling.entry_x4
   then ok i
   else n - 1#usize
 
-/-- [ml_dsa_lean::sampling::expand_a_into_x4]: loop body 0:
-    Source: 'src/sampling.rs', lines 227:4-242:5
+/-- [ml_dsa_lean::sampling::expand_a_from_x4]: loop body 0:
+    Source: 'src/sampling.rs', lines 239:4-254:5
     Visibility: public -/
 @[rust_loop_body]
-def sampling.expand_a_into_x4_loop.body
+def sampling.expand_a_from_x4_loop.body
   {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
   keccak4.Lanes4 X) (rho : Array Std.U8 32#usize) (n : Std.Usize)
   (a : Array (Array (Array Std.U32 256#usize) L) K) (first : Std.Usize) :
@@ -8058,11 +8058,11 @@ def sampling.expand_a_into_x4_loop.body
     ok (cont (a16, first1))
   else ok (done a)
 
-/-- [ml_dsa_lean::sampling::expand_a_into_x4]: loop 0:
-    Source: 'src/sampling.rs', lines 227:4-242:5
+/-- [ml_dsa_lean::sampling::expand_a_from_x4]: loop 0:
+    Source: 'src/sampling.rs', lines 239:4-254:5
     Visibility: public -/
 @[rust_loop]
-def sampling.expand_a_into_x4_loop
+def sampling.expand_a_from_x4_loop
   {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
   keccak4.Lanes4 X) (rho : Array Std.U8 32#usize)
   (a : Array (Array (Array Std.U32 256#usize) L) K) (n : Std.Usize)
@@ -8070,12 +8070,24 @@ def sampling.expand_a_into_x4_loop
   RustM (Array (Array (Array Std.U32 256#usize) L) K)
   := do
   loop
-    (fun (a1, first1) => sampling.expand_a_into_x4_loop.body keccak4Lanes4Inst
+    (fun (a1, first1) => sampling.expand_a_from_x4_loop.body keccak4Lanes4Inst
       rho n a1 first1)
     (a, first)
 
+/-- [ml_dsa_lean::sampling::expand_a_from_x4]:
+    Source: 'src/sampling.rs', lines 232:0-255:1
+    Visibility: public -/
+def sampling.expand_a_from_x4
+  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
+  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize)
+  (a : Array (Array (Array Std.U32 256#usize) L) K) (first0 : Std.Usize) :
+  RustM (Array (Array (Array Std.U32 256#usize) L) K)
+  := do
+  let n ← K * L
+  sampling.expand_a_from_x4_loop keccak4Lanes4Inst rho a n first0
+
 /-- [ml_dsa_lean::sampling::expand_a_into_x4]:
-    Source: 'src/sampling.rs', lines 224:0-243:1
+    Source: 'src/sampling.rs', lines 225:0-227:1
     Visibility: public -/
 def sampling.expand_a_into_x4
   {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
@@ -8083,11 +8095,10 @@ def sampling.expand_a_into_x4
   (a : Array (Array (Array Std.U32 256#usize) L) K) :
   RustM (Array (Array (Array Std.U32 256#usize) L) K)
   := do
-  let n ← K * L
-  sampling.expand_a_into_x4_loop keccak4Lanes4Inst rho a n 0#usize
+  sampling.expand_a_from_x4 keccak4Lanes4Inst rho a 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_a_x4]:
-    Source: 'src/sampling.rs', lines 247:0-251:1
+    Source: 'src/sampling.rs', lines 260:0-264:1
     Visibility: public -/
 def sampling.expand_a_x4
   {X : Type} (K : Std.Usize) (L : Std.Usize) (keccak4Lanes4Inst :
@@ -8099,8 +8110,537 @@ def sampling.expand_a_x4
   let a2 := Array.repeat K a1
   sampling.expand_a_into_x4 keccak4Lanes4Inst rho a2
 
+/-- [ml_dsa_lean::sampling::RATE256]
+    Source: 'src/sampling.rs', lines 267:0-267:27 -/
+@[global_simps, irreducible] def sampling.RATE256 : Std.Usize := 136#usize
+
+/-- [ml_dsa_lean::sampling::tr_tail_lanes]: loop body 0:
+    Source: 'src/sampling.rs', lines 278:4-281:5 -/
+@[rust_loop_body]
+def sampling.tr_tail_lanes_loop.body
+  (pk : Slice Std.U8) (base : Std.Usize) (rem : Std.Usize)
+  (w : Array Std.U64 17#usize) (i : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U64 17#usize) × Std.Usize) (Array Std.U64
+    17#usize))
+  := do
+  if i < rem
+  then
+    let i1 ← base + i
+    let i2 ← Slice.index_usize pk i1
+    let i3 ← lift (UScalar.cast .U64 i2)
+    let i4 ← i % 8#usize
+    let i5 ← 8#usize * i4
+    let i6 ← i3 <<< i5
+    let i7 ← i / 8#usize
+    let i8 ← Array.index_usize w i7
+    let i9 ← lift (i8 ^^^ i6)
+    let a ← Array.update w i7 i9
+    let i10 ← i + 1#usize
+    ok (cont (a, i10))
+  else ok (done w)
+
+/-- [ml_dsa_lean::sampling::tr_tail_lanes]: loop 0:
+    Source: 'src/sampling.rs', lines 278:4-281:5 -/
+@[rust_loop]
+def sampling.tr_tail_lanes_loop
+  (pk : Slice Std.U8) (base : Std.Usize) (rem : Std.Usize)
+  (w : Array Std.U64 17#usize) (i : Std.Usize) :
+  RustM (Array Std.U64 17#usize)
+  := do
+  loop
+    (fun (w1, i1) => sampling.tr_tail_lanes_loop.body pk base rem w1 i1)
+    (w, i)
+
+/-- [ml_dsa_lean::sampling::tr_tail_lanes]:
+    Source: 'src/sampling.rs', lines 273:0-285:1 -/
+def sampling.tr_tail_lanes
+  (pk : Slice Std.U8) : RustM (Array Std.U64 17#usize) := do
+  let i := Slice.len pk
+  let i1 ← i / sampling.RATE256
+  let base ← sampling.RATE256 * i1
+  let i2 := Slice.len pk
+  let rem ← i2 - base
+  let w := Array.repeat 17#usize 0#u64
+  let w1 ← sampling.tr_tail_lanes_loop pk base rem w 0#usize
+  let i3 ← rem % 8#usize
+  let i4 ← 8#usize * i3
+  let i5 ← 31#u64 <<< i4
+  let i6 ← rem / 8#usize
+  let i7 ← Array.index_usize w1 i6
+  let i8 ← lift (i7 ^^^ i5)
+  let w2 ← Array.update w1 i6 i8
+  let i9 ← Array.index_usize w2 16#usize
+  let i10 ← lift (i9 ^^^ 9223372036854775808#u64)
+  Array.update w2 16#usize i10
+
+/-- [ml_dsa_lean::sampling::absorb_block_lane3]: loop body 0:
+    Source: 'src/sampling.rs', lines 292:4-296:5 -/
+@[rust_loop_body]
+def sampling.absorb_block_lane3_loop.body
+  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X) (pk : Slice Std.U8)
+  (tail : Array Std.U64 17#usize) (q : Std.Usize) (t : Std.Usize)
+  (st : Array (Array Std.U64 4#usize) 25#usize) (k : Std.Usize) :
+  RustM (ControlFlow ((Array (Array Std.U64 4#usize) 25#usize) × Std.Usize)
+    (Array (Array Std.U64 4#usize) 25#usize))
+  := do
+  if k < 17#usize
+  then
+    let w ←
+      if t < q
+      then
+        do
+        let i ← sampling.RATE256 * t
+        let i1 ← 8#usize * k
+        let i2 ← i + i1
+        keccak.load_lane pk i2
+      else Array.index_usize tail k
+    let a ← Array.index_usize st k
+    let a1 ←
+      keccak4Lanes4Inst.xor a (Array.make 4#usize [ 0#u64, 0#u64, 0#u64, w ])
+    let a2 ← Array.update st k a1
+    let k1 ← k + 1#usize
+    ok (cont (a2, k1))
+  else ok (done st)
+
+/-- [ml_dsa_lean::sampling::absorb_block_lane3]: loop 0:
+    Source: 'src/sampling.rs', lines 292:4-296:5 -/
+@[rust_loop]
+def sampling.absorb_block_lane3_loop
+  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X)
+  (st : Array (Array Std.U64 4#usize) 25#usize) (pk : Slice Std.U8)
+  (tail : Array Std.U64 17#usize) (q : Std.Usize) (t : Std.Usize)
+  (k : Std.Usize) :
+  RustM (Array (Array Std.U64 4#usize) 25#usize)
+  := do
+  loop
+    (fun (st1, k1) => sampling.absorb_block_lane3_loop.body keccak4Lanes4Inst
+      pk tail q t st1 k1)
+    (st, k)
+
+/-- [ml_dsa_lean::sampling::absorb_block_lane3]:
+    Source: 'src/sampling.rs', lines 290:0-297:1 -/
+@[reducible]
+def sampling.absorb_block_lane3
+  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X)
+  (st : Array (Array Std.U64 4#usize) 25#usize) (pk : Slice Std.U8)
+  (tail : Array Std.U64 17#usize) (q : Std.Usize) (t : Std.Usize) :
+  RustM (Array (Array Std.U64 4#usize) 25#usize)
+  := do
+  sampling.absorb_block_lane3_loop keccak4Lanes4Inst st pk tail q t 0#usize
+
+/-- [ml_dsa_lean::sampling::lane3_state]: loop body 0:
+    Source: 'src/sampling.rs', lines 304:4-307:5 -/
+@[rust_loop_body]
+def sampling.lane3_state_loop.body
+  (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize)
+  (k : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U64 25#usize) × Std.Usize) (Array Std.U64
+    25#usize))
+  := do
+  if k < 25#usize
+  then
+    let a ← Array.index_usize st k
+    let i ← Array.index_usize a 3#usize
+    let a1 ← Array.update s k i
+    let k1 ← k + 1#usize
+    ok (cont (a1, k1))
+  else ok (done s)
+
+/-- [ml_dsa_lean::sampling::lane3_state]: loop 0:
+    Source: 'src/sampling.rs', lines 304:4-307:5 -/
+@[rust_loop]
+def sampling.lane3_state_loop
+  (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize)
+  (k : Std.Usize) :
+  RustM (Array Std.U64 25#usize)
+  := do
+  loop
+    (fun (s1, k1) => sampling.lane3_state_loop.body st s1 k1)
+    (s, k)
+
+/-- [ml_dsa_lean::sampling::lane3_state]:
+    Source: 'src/sampling.rs', lines 301:0-309:1 -/
+def sampling.lane3_state
+  (st : Array (Array Std.U64 4#usize) 25#usize) :
+  RustM (Array Std.U64 25#usize)
+  := do
+  let s := Array.repeat 25#usize 0#u64
+  sampling.lane3_state_loop st s 0#usize
+
+/-- [ml_dsa_lean::sampling::set_lane3]: loop body 0:
+    Source: 'src/sampling.rs', lines 315:4-318:5 -/
+@[rust_loop_body]
+def sampling.set_lane3_loop.body
+  (s : Array Std.U64 25#usize) (st : Array (Array Std.U64 4#usize) 25#usize)
+  (k : Std.Usize) :
+  RustM (ControlFlow ((Array (Array Std.U64 4#usize) 25#usize) × Std.Usize)
+    (Array (Array Std.U64 4#usize) 25#usize))
+  := do
+  if k < 25#usize
+  then
+    let i ← Array.index_usize s k
+    let (a, index_mut_back) ← Array.index_mut_usize st k
+    let a1 ← Array.update a 3#usize i
+    let k1 ← k + 1#usize
+    let a2 := index_mut_back a1
+    ok (cont (a2, k1))
+  else ok (done st)
+
+/-- [ml_dsa_lean::sampling::set_lane3]: loop 0:
+    Source: 'src/sampling.rs', lines 315:4-318:5 -/
+@[rust_loop]
+def sampling.set_lane3_loop
+  (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize)
+  (k : Std.Usize) :
+  RustM (Array (Array Std.U64 4#usize) 25#usize)
+  := do
+  loop
+    (fun (st1, k1) => sampling.set_lane3_loop.body s st1 k1)
+    (st, k)
+
+/-- [ml_dsa_lean::sampling::set_lane3]:
+    Source: 'src/sampling.rs', lines 313:0-319:1 -/
+@[reducible]
+def sampling.set_lane3
+  (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize) :
+  RustM (Array (Array Std.U64 4#usize) 25#usize)
+  := do
+  sampling.set_lane3_loop st s 0#usize
+
+/-- [ml_dsa_lean::sampling::rej_ntt_poly_x3_tr]: loop body 0:
+    Source: 'src/sampling.rs', lines 351:4-366:5
+    Visibility: public -/
+@[rust_loop_body]
+def sampling.rej_ntt_poly_x3_tr_loop.body
+  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X) (pk : Slice Std.U8)
+  (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (st : Array (Array Std.U64 4#usize) 25#usize) (trs : Array Std.U64 25#usize)
+  (t : Std.Usize) (p0 : Array Std.U32 312#usize) (p1 : Array Std.U32 312#usize)
+  (p2 : Array Std.U32 312#usize) (j0 : Std.Usize) (j1 : Std.Usize)
+  (j2 : Std.Usize) (more : Bool) :
+  RustM (ControlFlow ((Array (Array Std.U64 4#usize) 25#usize) × (Array
+    Std.U64 25#usize) × Std.Usize × (Array Std.U32 312#usize) × (Array
+    Std.U32 312#usize) × (Array Std.U32 312#usize) × Std.Usize × Std.Usize
+    × Std.Usize × Bool) ((Array (Array Std.U64 4#usize) 25#usize) × (Array
+    Std.U64 25#usize) × Std.Usize × (Array Std.U32 312#usize) × (Array
+    Std.U32 312#usize) × (Array Std.U32 312#usize)))
+  := do
+  if more
+  then
+    let st1 ←
+      if t <= q
+      then sampling.absorb_block_lane3 keccak4Lanes4Inst st pk tail q t
+      else ok st
+    let st2 ← keccak4.keccak_f1600_x4 keccak4Lanes4Inst st1
+    let (j01, p01) ← sampling.rej_ntt_lane_x4 st2 0#usize p0 j0
+    let (j11, p11) ← sampling.rej_ntt_lane_x4 st2 1#usize p1 j1
+    let (j21, p21) ← sampling.rej_ntt_lane_x4 st2 2#usize p2 j2
+    let (trs1, t1, p02, p12, p22) ←
+      if t <= q
+      then
+        do
+        let t2 ← t + 1#usize
+        let i ← q + 1#usize
+        let a ← if t2 = i
+                  then sampling.lane3_state st2
+                  else ok trs
+        ok (a, t2, p01, p11, p21)
+      else ok (trs, t, p01, p11, p21)
+    if j01 < 256#usize
+    then ok (cont (st2, trs1, t1, p02, p12, p22, j01, j11, j21, true))
+    else
+      if j11 < 256#usize
+      then ok (cont (st2, trs1, t1, p02, p12, p22, j01, j11, j21, true))
+      else
+        ok (cont (st2, trs1, t1, p02, p12, p22, j01, j11, j21, j21 <
+          256#usize))
+  else ok (done (st, trs, t, p0, p1, p2))
+
+/-- [ml_dsa_lean::sampling::rej_ntt_poly_x3_tr]: loop 0:
+    Source: 'src/sampling.rs', lines 351:4-366:5
+    Visibility: public -/
+@[rust_loop]
+def sampling.rej_ntt_poly_x3_tr_loop
+  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X) (pk : Slice Std.U8)
+  (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (st : Array (Array Std.U64 4#usize) 25#usize) (trs : Array Std.U64 25#usize)
+  (t : Std.Usize) (p0 : Array Std.U32 312#usize) (p1 : Array Std.U32 312#usize)
+  (p2 : Array Std.U32 312#usize) (j0 : Std.Usize) (j1 : Std.Usize)
+  (j2 : Std.Usize) (more : Bool) :
+  RustM ((Array (Array Std.U64 4#usize) 25#usize) × (Array Std.U64 25#usize)
+    × Std.Usize × (Array Std.U32 312#usize) × (Array Std.U32 312#usize) ×
+    (Array Std.U32 312#usize))
+  := do
+  loop
+    (fun (st1, trs1, t1, p01, p11, p21, j01, j11, j21, more1) =>
+      sampling.rej_ntt_poly_x3_tr_loop.body keccak4Lanes4Inst pk tail q st1
+      trs1 t1 p01 p11 p21 j01 j11 j21 more1)
+    (st, trs, t, p0, p1, p2, j0, j1, j2, more)
+
+/-- [ml_dsa_lean::sampling::rej_ntt_poly_x3_tr]:
+    Source: 'src/sampling.rs', lines 330:0-371:1
+    Visibility: public -/
+def sampling.rej_ntt_poly_x3_tr
+  {X : Type} (keccak4Lanes4Inst : keccak4.Lanes4 X)
+  (rho : Array Std.U8 32#usize) (s : Array Std.U8 4#usize)
+  (r : Array Std.U8 4#usize) (pk : Slice Std.U8)
+  (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (trs0 : Array Std.U64 25#usize) (t0 : Std.Usize) :
+  RustM ((Array (Array Std.U32 256#usize) 3#usize) × (Array Std.U64 25#usize)
+    × Std.Usize)
+  := do
+  let st ← sampling.init_state_x4 rho s r
+  let st1 ← sampling.set_lane3 st trs0
+  let p0 := Array.repeat 312#usize 0#u32
+  let p1 := Array.repeat 312#usize 0#u32
+  let p2 := Array.repeat 312#usize 0#u32
+  let (st2, trs, t, p01, p11, p21) ←
+    sampling.rej_ntt_poly_x3_tr_loop keccak4Lanes4Inst pk tail q st1 trs0 t0 p0
+      p1 p2 0#usize 0#usize 0#usize true
+  let trs1 ← if t <= q
+               then sampling.lane3_state st2
+               else ok trs
+  let a ← sampling.first_256 p01
+  let a1 ← sampling.first_256 p11
+  let a2 ← sampling.first_256 p21
+  ok (Array.make 3#usize [ a, a1, a2 ], trs1, t)
+
+/-- [ml_dsa_lean::sampling::squeeze64]: loop body 0:
+    Source: 'src/sampling.rs', lines 378:4-381:5 -/
+@[rust_loop_body]
+def sampling.squeeze64_loop.body
+  (s : Array Std.U64 25#usize) (out : Array Std.U8 64#usize) (j : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U8 64#usize) × Std.Usize) (Array Std.U8
+    64#usize))
+  := do
+  if j < 64#usize
+  then
+    let i ← j / 8#usize
+    let i1 ← Array.index_usize s i
+    let i2 ← j % 8#usize
+    let i3 ← 8#usize * i2
+    let i4 ← i1 >>> i3
+    let i5 ← lift (UScalar.cast .U8 i4)
+    let a ← Array.update out j i5
+    let j1 ← j + 1#usize
+    ok (cont (a, j1))
+  else ok (done out)
+
+/-- [ml_dsa_lean::sampling::squeeze64]: loop 0:
+    Source: 'src/sampling.rs', lines 378:4-381:5 -/
+@[rust_loop]
+def sampling.squeeze64_loop
+  (s : Array Std.U64 25#usize) (out : Array Std.U8 64#usize) (j : Std.Usize) :
+  RustM (Array Std.U8 64#usize)
+  := do
+  loop
+    (fun (out1, j1) => sampling.squeeze64_loop.body s out1 j1)
+    (out, j)
+
+/-- [ml_dsa_lean::sampling::squeeze64]:
+    Source: 'src/sampling.rs', lines 375:0-383:1 -/
+def sampling.squeeze64
+  (s : Array Std.U64 25#usize) : RustM (Array Std.U8 64#usize) := do
+  let out := Array.repeat 64#usize 0#u8
+  sampling.squeeze64_loop s out 0#usize
+
+/-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop body 1:
+    Source: 'src/sampling.rs', lines 394:8-397:9 -/
+@[rust_loop_body]
+def sampling.tr_finish_scalar_loop0_loop0.body
+  (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (t : Std.Usize) (s : Array Std.U64 25#usize) (k : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U64 25#usize) × Std.Usize) (Array Std.U64
+    25#usize))
+  := do
+  if k < 17#usize
+  then
+    let i ←
+      if t < q
+      then
+        do
+        let i1 ← sampling.RATE256 * t
+        let i2 ← 8#usize * k
+        let i3 ← i1 + i2
+        keccak.load_lane pk i3
+      else Array.index_usize tail k
+    let i1 ← Array.index_usize s k
+    let i2 ← lift (i1 ^^^ i)
+    let a ← Array.update s k i2
+    let k1 ← k + 1#usize
+    ok (cont (a, k1))
+  else ok (done s)
+
+/-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop 1:
+    Source: 'src/sampling.rs', lines 394:8-397:9 -/
+@[rust_loop]
+def sampling.tr_finish_scalar_loop0_loop0
+  (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (s : Array Std.U64 25#usize) (t : Std.Usize) (k : Std.Usize) :
+  RustM (Array Std.U64 25#usize)
+  := do
+  loop
+    (fun (s1, k1) => sampling.tr_finish_scalar_loop0_loop0.body pk tail q t s1
+      k1)
+    (s, k)
+
+/-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop body 0:
+    Source: 'src/sampling.rs', lines 392:4-400:5 -/
+@[rust_loop_body]
+def sampling.tr_finish_scalar_loop0.body
+  (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (s : Array Std.U64 25#usize) (t : Std.Usize) :
+  RustM (ControlFlow ((Array Std.U64 25#usize) × Std.Usize) (Array Std.U64
+    25#usize))
+  := do
+  if t <= q
+  then
+    let s1 ← sampling.tr_finish_scalar_loop0_loop0 pk tail q s t 0#usize
+    let s2 ← keccak.keccak_f1600 s1
+    let t1 ← t + 1#usize
+    ok (cont (s2, t1))
+  else ok (done s)
+
+/-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop 0:
+    Source: 'src/sampling.rs', lines 392:4-400:5 -/
+@[rust_loop]
+def sampling.tr_finish_scalar_loop0
+  (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (s : Array Std.U64 25#usize) (t : Std.Usize) :
+  RustM (Array Std.U64 25#usize)
+  := do
+  loop
+    (fun (s1, t1) => sampling.tr_finish_scalar_loop0.body pk tail q s1 t1)
+    (s, t)
+
+/-- [ml_dsa_lean::sampling::tr_finish_scalar]:
+    Source: 'src/sampling.rs', lines 389:0-402:1 -/
+def sampling.tr_finish_scalar
+  (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
+  (trs : Array Std.U64 25#usize) (t0 : Std.Usize) :
+  RustM (Array Std.U8 64#usize)
+  := do
+  let s ← sampling.tr_finish_scalar_loop0 pk tail q trs t0
+  sampling.squeeze64 s
+
+/-- [ml_dsa_lean::sampling::tr_groups]:
+    Source: 'src/sampling.rs', lines 414:0-418:1 -/
+def sampling.tr_groups (n : Std.Usize) (q : Std.Usize) : RustM Std.Usize := do
+  let i ← q + 5#usize
+  let want ← i / 5#usize
+  let i1 ← n + 3#usize
+  let i2 ← i1 / 4#usize
+  let i3 ← 4#usize * i2
+  let spare ← i3 - n
+  let i4 ← spare + 1#usize
+  if want = i4
+  then ok spare
+  else ok want
+
+/-- [ml_dsa_lean::sampling::expand_a_tr_into_x4]: loop body 0:
+    Source: 'src/sampling.rs', lines 438:4-459:5
+    Visibility: public -/
+@[rust_loop_body]
+def sampling.expand_a_tr_into_x4_loop.body
+  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
+  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize) (pk : Slice Std.U8)
+  (n : Std.Usize) (q : Std.Usize) (g3 : Std.Usize)
+  (tail : Array Std.U64 17#usize)
+  (a : Array (Array (Array Std.U32 256#usize) L) K)
+  (trs : Array Std.U64 25#usize) (t : Std.Usize) (first : Std.Usize)
+  (g : Std.Usize) :
+  RustM (ControlFlow ((Array (Array (Array Std.U32 256#usize) L) K) × (Array
+    Std.U64 25#usize) × Std.Usize × Std.Usize × Std.Usize) ((Array (Array
+    (Array Std.U32 256#usize) L) K) × (Array Std.U64 25#usize) × Std.Usize ×
+    Std.Usize))
+  := do
+  if first < n
+  then
+    if g < g3
+    then
+      let e0 ← sampling.entry_x4 first 0#usize n
+      let e1 ← sampling.entry_x4 first 1#usize n
+      let e2 ← sampling.entry_x4 first 2#usize n
+      let i ← e0 % L
+      let i1 ← lift (UScalar.cast .U8 i)
+      let i2 ← e1 % L
+      let i3 ← lift (UScalar.cast .U8 i2)
+      let i4 ← e2 % L
+      let i5 ← lift (UScalar.cast .U8 i4)
+      let i6 ← lift (UScalar.cast .U8 i4)
+      let i7 ← e0 / L
+      let i8 ← lift (UScalar.cast .U8 i7)
+      let i9 ← e1 / L
+      let i10 ← lift (UScalar.cast .U8 i9)
+      let i11 ← e2 / L
+      let i12 ← lift (UScalar.cast .U8 i11)
+      let i13 ← lift (UScalar.cast .U8 i11)
+      let (polys, trs2, t2) ←
+        sampling.rej_ntt_poly_x3_tr keccak4Lanes4Inst rho
+          (Array.make 4#usize [ i1, i3, i5, i6 ])
+          (Array.make 4#usize [ i8, i10, i12, i13 ]) pk tail q trs t
+      let a1 ← Array.index_usize polys 0#usize
+      let (a2, index_mut_back) ← Array.index_mut_usize a i7
+      let a3 ← Array.update a2 i a1
+      let a4 ← Array.index_usize polys 1#usize
+      let a5 := index_mut_back a3
+      let (a6, index_mut_back1) ← Array.index_mut_usize a5 i9
+      let a7 ← Array.update a6 i2 a4
+      let a8 ← Array.index_usize polys 2#usize
+      let a9 := index_mut_back1 a7
+      let (a10, index_mut_back2) ← Array.index_mut_usize a9 i11
+      let a11 ← Array.update a10 i4 a8
+      let first1 ← first + 3#usize
+      let g1 ← g + 1#usize
+      let a12 := index_mut_back2 a11
+      ok (cont (a12, trs2, t2, first1, g1))
+    else ok (done (a, trs, t, first))
+  else ok (done (a, trs, t, first))
+
+/-- [ml_dsa_lean::sampling::expand_a_tr_into_x4]: loop 0:
+    Source: 'src/sampling.rs', lines 438:4-459:5
+    Visibility: public -/
+@[rust_loop]
+def sampling.expand_a_tr_into_x4_loop
+  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
+  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize) (pk : Slice Std.U8)
+  (a : Array (Array (Array Std.U32 256#usize) L) K) (n : Std.Usize)
+  (q : Std.Usize) (g3 : Std.Usize) (tail : Array Std.U64 17#usize)
+  (trs : Array Std.U64 25#usize) (t : Std.Usize) (first : Std.Usize)
+  (g : Std.Usize) :
+  RustM ((Array (Array (Array Std.U32 256#usize) L) K) × (Array Std.U64
+    25#usize) × Std.Usize × Std.Usize)
+  := do
+  loop
+    (fun (a1, trs1, t1, first1, g1) => sampling.expand_a_tr_into_x4_loop.body
+      keccak4Lanes4Inst rho pk n q g3 tail a1 trs1 t1 first1 g1)
+    (a, trs, t, first, g)
+
+/-- [ml_dsa_lean::sampling::expand_a_tr_into_x4]:
+    Source: 'src/sampling.rs', lines 425:0-462:1
+    Visibility: public -/
+def sampling.expand_a_tr_into_x4
+  {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
+  keccak4.Lanes4 X) (rho : Array Std.U8 32#usize) (pk : Slice Std.U8)
+  (a : Array (Array (Array Std.U32 256#usize) L) K) :
+  RustM ((Array Std.U8 64#usize) × (Array (Array (Array Std.U32 256#usize) L)
+    K))
+  := do
+  let n ← K * L
+  let i := Slice.len pk
+  let q ← i / sampling.RATE256
+  let g3 ← sampling.tr_groups n q
+  let tail ← sampling.tr_tail_lanes pk
+  let trs := Array.repeat 25#usize 0#u64
+  let (a1, trs1, t, first) ←
+    sampling.expand_a_tr_into_x4_loop keccak4Lanes4Inst rho pk a n q g3 tail
+      trs 0#usize 0#usize 0#usize
+  let a2 ← sampling.expand_a_from_x4 keccak4Lanes4Inst rho a1 first
+  let a3 ← sampling.tr_finish_scalar pk tail q trs1 t
+  ok (a3, a2)
+
 /-- [ml_dsa_lean::verify::prepare_vk_into_x4]:
-    Source: 'src/verify.rs', lines 151:0-160:1
+    Source: 'src/verify.rs', lines 151:0-158:1
     Visibility: public -/
 def verify.prepare_vk_into_x4
   {X : Type} {K : Std.Usize} {L : Std.Usize} (keccak4Lanes4Inst :
@@ -8108,14 +8648,14 @@ def verify.prepare_vk_into_x4
   RustM (verify.PreparedVk K L)
   := do
   let (rho, t1) ← encode.pk_decode K pk
-  let a ← sampling.expand_a_into_x4 keccak4Lanes4Inst rho out.a_hat
-  let a1 ← verify.hash_pk pk
+  let (a, a1) ←
+    sampling.expand_a_tr_into_x4 keccak4Lanes4Inst rho pk out.a_hat
   let a2 ← verify.scale_vec_by_2d t1
   let a3 ← verify_arith.ntt_vec_pub a2
-  ok { a_hat := a, t1_2d_hat := a3, tr := a1 }
+  ok { a_hat := a1, t1_2d_hat := a3, tr := a }
 
 /-- [ml_dsa_lean::verify::prepare_vk_x4]:
-    Source: 'src/verify.rs', lines 166:0-176:1
+    Source: 'src/verify.rs', lines 164:0-173:1
     Visibility: public -/
 def verify.prepare_vk_x4
   {X : Type} (K : Std.Usize) (L : Std.Usize) (keccak4Lanes4Inst :
@@ -8123,14 +8663,17 @@ def verify.prepare_vk_x4
   RustM (verify.PreparedVk K L)
   := do
   let (rho, t1) ← encode.pk_decode K pk
-  let a_hat ← sampling.expand_a_x4 K L keccak4Lanes4Inst rho
-  let tr ← verify.hash_pk pk
-  let a ← verify.scale_vec_by_2d t1
-  let t1_2d_hat ← verify_arith.ntt_vec_pub a
-  ok { a_hat, t1_2d_hat, tr }
+  let a := Array.repeat 256#usize 0#u32
+  let a1 := Array.repeat L a
+  let a_hat := Array.repeat K a1
+  let (tr, a_hat1) ←
+    sampling.expand_a_tr_into_x4 keccak4Lanes4Inst rho pk a_hat
+  let a2 ← verify.scale_vec_by_2d t1
+  let t1_2d_hat ← verify_arith.ntt_vec_pub a2
+  ok { a_hat := a_hat1, t1_2d_hat, tr }
 
 /-- [ml_dsa_lean::verify::verify_internal_x4]:
-    Source: 'src/verify.rs', lines 296:0-318:1
+    Source: 'src/verify.rs', lines 293:0-315:1
     Visibility: public -/
 def verify.verify_internal_x4
   {X : Type} (K : Std.Usize) (L : Std.Usize) (keccak4Lanes4Inst :

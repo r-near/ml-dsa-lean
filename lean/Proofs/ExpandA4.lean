@@ -192,12 +192,12 @@ theorem x4_body_partial {K L : Usize} (rho : Array U8 32#usize) (n : Usize)
     (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) (hn : n.val ≤ 2048)
     (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
     (F : Nat) (Pf : Nat → Poly) (h : GoodA rho n.val F Pf a first.val) :
-    sampling.expand_a_into_x4_loop.body Sh4 rho n a first ⦃ c =>
+    sampling.expand_a_from_x4_loop.body Sh4 rho n a first ⦃ c =>
       match c with
       | .done y => ¬ first.val < n.val ∧ y = a
       | .cont (a', first') => first'.val = first.val + 4 ∧
           ∃ (F' : Nat) (Pf' : Nat → Poly), GoodA rho n.val F' Pf' a' first'.val ⦄div := by
-  unfold sampling.expand_a_into_x4_loop.body
+  unfold sampling.expand_a_from_x4_loop.body
   split
   · rename_i hlt
     have hf : first.val < n.val := by scalar_tac
@@ -365,9 +365,9 @@ theorem x4_loop_partial {K L : Usize} (rho : Array U8 32#usize) (n : Usize) (hn 
     (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
     (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) (F : Nat) (Pf : Nat → Poly)
     (h : GoodA rho n.val F Pf a first.val) :
-    sampling.expand_a_into_x4_loop Sh4 rho a n first ⦃ y => ∃ (F' : Nat) (Pf' : Nat → Poly),
+    sampling.expand_a_from_x4_loop Sh4 rho a n first ⦃ y => ∃ (F' : Nat) (Pf' : Nat → Poly),
       GoodA rho n.val F' Pf' y n.val ⦄div := by
-  unfold sampling.expand_a_into_x4_loop
+  unfold sampling.expand_a_from_x4_loop
   refine loop.dspec_inv _ (fun x : Array (Array (Array U32 256#usize) L) K × Usize =>
     ∃ (F : Nat) (Pf : Nat → Poly), GoodA rho n.val F Pf x.1 x.2.val) ?_ ?_ (a, first) ⟨F, Pf, h⟩
   rintro ⟨a', first'⟩ ⟨F', Pf', hI⟩
@@ -381,7 +381,7 @@ theorem expand_a_into_x4_partial {K L : Usize} (rho : Array U8 32#usize) (hL : 0
     (hK : K.val < 256) (hKL : K.val * L.val ≤ 2048) (a : Array (Array (Array U32 256#usize) L) K) :
     sampling.expand_a_into_x4 Sh4 rho a ⦃ y => ∃ (F : Nat) (Pf : Nat → Poly),
       GoodA rho (K.val * L.val) F Pf y (K.val * L.val) ⦄div := by
-  unfold sampling.expand_a_into_x4
+  unfold sampling.expand_a_into_x4 sampling.expand_a_from_x4
   step*
   have hn' : n.val = K.val * L.val := n_post
   have := x4_loop_partial rho n (by omega) hL hLs hK hn' a 0#usize 0 (fun _ => Poly.zero)
@@ -455,11 +455,11 @@ theorem x4_body_term {K L : Usize} (rho : Array U8 32#usize) (n : Usize)
     (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) (hn : n.val ≤ 2048)
     (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
     (F : Nat) (hF : ∀ e, e < n.val → ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P) :
-    sampling.expand_a_into_x4_loop.body Sh4 rho n a first ⦃ c =>
+    sampling.expand_a_from_x4_loop.body Sh4 rho n a first ⦃ c =>
       match c with
       | .done _ => ¬ first.val < n.val
       | .cont (_, first') => first.val < n.val ∧ first'.val = first.val + 4 ⦄ := by
-  unfold sampling.expand_a_into_x4_loop.body
+  unfold sampling.expand_a_from_x4_loop.body
   split
   · rename_i hlt
     have hf : first.val < n.val := by scalar_tac
@@ -525,8 +525,8 @@ theorem x4_loop_term {K L : Usize} (rho : Array U8 32#usize) (n : Usize) (hn : n
     (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
     (F : Nat) (hF : ∀ e, e < n.val → ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P)
     (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) :
-    sampling.expand_a_into_x4_loop Sh4 rho a n first ⦃ _ => True ⦄ := by
-  unfold sampling.expand_a_into_x4_loop
+    sampling.expand_a_from_x4_loop Sh4 rho a n first ⦃ _ => True ⦄ := by
+  unfold sampling.expand_a_from_x4_loop
   apply loop.spec_decr_nat
     (fun (p : Array (Array (Array U32 256#usize) L) K × Usize) => n.val - p.2.val)
     (fun _ => True)
@@ -544,7 +544,7 @@ theorem expand_a_into_x4_term {K L : Usize} (rho : Array U8 32#usize) (hL : 0 < 
       ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P)
     (a : Array (Array (Array U32 256#usize) L) K) :
     sampling.expand_a_into_x4 Sh4 rho a ⦃ _ => True ⦄ := by
-  unfold sampling.expand_a_into_x4
+  unfold sampling.expand_a_into_x4 sampling.expand_a_from_x4
   step*
   have hn' : n.val = K.val * L.val := n_post
   exact x4_loop_term rho n (by omega) hL hLs hK hn' F (by rw [hn']; exact hF) a 0#usize
