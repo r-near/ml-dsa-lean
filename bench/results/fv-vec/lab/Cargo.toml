@@ -1,0 +1,20 @@
+[package]
+name = "fvlab"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.86"
+publish = false
+
+[features]
+default = []
+avx2 = []
+internals = []
+
+[profile.release]
+debug = false
+opt-level = 3
+codegen-units = 1
+panic = "abort"
+lto = false
+
+[workspace]
