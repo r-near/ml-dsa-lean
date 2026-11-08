@@ -259,40 +259,52 @@ What would need to stabilize, as options rather than recommendations:
 **One-shot verify.** Measured with nearcore's `[profile.release]` settings and its x86_64 target features, on rustc 1.95.0
 (nearcore's pinned toolchain), median of 15 rounds, one pinned core of an otherwise idle AMD EPYC 9B14 (Zen 4) virtual machine,
 2026-11-07 (`bench/fast-verify.sh`; the setup, the rustc 1.99.1 numbers and the other implementations are in
-`docs/assurance.md` §5 and `bench/results/2026-11-07-p5.md`). "Without the feature" is the proved scalar verify, which is what
+`docs/assurance.md` §5 and `bench/results/2026-11-07-p6.md`). "Without the feature" is the proved scalar verify, which is what
 nearcore's flags give today; "with `avx2`" is the opt-in feature (section 4).
 
 | Verify, µs, rustc 1.95.0 | ML-DSA-44 | ML-DSA-65 | ML-DSA-87 |
 |---|---|---|---|
-| this crate, without the `avx2` feature | 52.8 | 88.7 | 153.1 |
-| this crate, with the `avx2` feature | 26.7 | 42.1 | 65.2 |
-| aws-lc-rs 1.18.2 (the backend nearcore ships) | 22.4 | 36.5 | 56.5 |
-| mldsa-native 2.0.0, AVX2 | 20.9 | 34.3 | 53.3 |
+| this crate, without the `avx2` feature | 52.9 | 88.7 | 153.4 |
+| this crate, with the `avx2` feature | 26.2 | 41.9 | 64.7 |
+| aws-lc-rs 1.18.2 (the backend nearcore ships) | 22.4 | 36.4 | 56.6 |
+| mldsa-native 2.0.0, AVX2 | 20.9 | 34.3 | 53.2 |
 
-For ML-DSA-65, the only set nearcore has: 88.7 µs without the feature (2.4 times aws-lc-rs on this machine), 42.1 µs with it
+For ML-DSA-65, the only set nearcore has: 88.7 µs without the feature (2.4 times aws-lc-rs on this machine), 41.9 µs with it
 (1.15 times). These were measured on one machine, not on the hardware behind nearcore's ≈ 80 µs aws-lc figure (§2), so they say
 which backend is faster on this machine, not what the gas calibration should be. aws-lc-rs verifies faster than this crate in
-every row. The same runs, in the columns used by the table in `docs/assurance.md` §5, give ML-DSA-65 verify of 88.6 and 42.4 µs
+every row. The same runs, in the columns used by the table in `docs/assurance.md` §5, give ML-DSA-65 verify of 89.0 and 41.8 µs
 on rustc 1.99.1. Both builds got faster in the last round (103.3 and 55.4 µs on 1.95.0 before it) from verify-only arithmetic
 that is proved equal to the specification (`docs/assurance.md` §1.9): a fused multiply-accumulate row, a lazy-reduction NTT, a
 mask-free norm check and a fixed-width w1 packing.
+
+**The cost no longer depends on where the caller's stack is.** Until the last round the `avx2` one-shot verify, and
+`verifying_key_NN`, took up to 7, 13 and 24 µs longer than the median (ML-DSA-44, 65, 87; for 65: 55.4 against 42.3) when the
+dispatched wrapper's frame landed at the wrong offset, which is about one stack offset in seven, and a real caller's stack offset is
+whatever the call chain above it makes it (a different one per thread, and per call depth). The cause was LLVM spilling the
+4-way Keccak's 256-bit vectors to slots that are only 16-byte aligned, so that a slot straddling a 4 KiB page made each access a
+page split. Each dispatch wrapper now realigns its own frame to 32 bytes (`align_frame` in `src/fast_verify/dispatch.rs`; safe
+Rust, no new `unsafe`, nothing in the proofs changed), and `bench/stackscan.sh` (run by `bench/fast-verify.sh`) scans 257 stack
+offsets: with the fix the largest value is 1.02 to 1.03 times the median for every set and operation on rustc 1.99.1, and no
+rustc 1.95.0 scan (65 offsets, every 64 bytes) has an offset above 1.1 times the median (ML-DSA-65 one-shot, median 41.5, maximum 42.5 µs;
+`bench/results/2026-11-07-p6.md`). For a gas calibration this means the figure above is the cost at every offset; before it was
+the cost at six offsets in seven. Not measured: the stack of a real nearcore thread.
 
 **Prepared key.** `verifying_key_NN(pk)` computes Â = ExpandA(ρ), NTT(t1·2^d) and tr once; `verify_prepared_NN` returns exactly what
 `verify_NN` returns for that key (proved: `verify_prepared_NN_eq`, `docs/assurance.md` §1.4). Same runs:
 
 | rustc 1.95.0, µs | ML-DSA-44 | ML-DSA-65 | ML-DSA-87 |
 |---|---|---|---|
-| `verifying_key_NN`, without / with `avx2` | 40.8 / 17.7 | 74.2 / 32.4 | 133.7 / 53.7 |
-| `verify_prepared_NN`, without / with `avx2` | 12.3 / 9.6 | 14.9 / 11.3 | 20.3 / 15.3 |
+| `verifying_key_NN`, without / with `avx2` | 40.9 / 17.5 | 74.4 / 32.2 | 133.6 / 51.8 |
+| `verify_prepared_NN`, without / with `avx2` | 12.4 / 9.7 | 15.4 / 11.4 | 20.3 / 15.2 |
 
 `verify_prepared_NN` runs no ExpandA, so it has no 4-way body. With the feature it is dispatched to a second
 `#[target_feature(enable = "avx2")]` wrapper around the same proved scalar function (`docs/assurance.md` §1.9; no new
 intrinsic, and the proofs of §1.4 apply to it as they are), which makes it 0.76 of the scalar time (ML-DSA-65: 14.9 µs without
-the feature, 11.3 µs with it; the `v3` build, where AVX2 is static, takes 11.2). A prepared-key verify is faster than aws-lc-rs's
-uncached verify (36.5 µs), which matters only if nearcore holds prepared keys: the aws-lc-rs figure is
+the feature, 11.4 µs with it; the `v3` build, where AVX2 is static, takes 11.1). A prepared-key verify is faster than aws-lc-rs's
+uncached verify (36.4 µs), which matters only if nearcore holds prepared keys: the aws-lc-rs figure is
 `UnparsedPublicKey::new(..).verify(..)` on every call, as nearcore calls it.
-Building the key and verifying costs about as much as one one-shot verify (ML-DSA-65 with `avx2`: 32.4 + 11.3 = 43.7 µs against
-42.1 µs), so a prepared key pays off from the second verify with the same key.
+Building the key and verifying costs about as much as one one-shot verify (ML-DSA-65 with `avx2`: 32.2 + 11.4 = 43.6 µs against
+41.9 µs), so a prepared key pays off from the second verify with the same key.
 
 Where a cache could apply in nearcore: any place the same public key verifies many signatures. Approval verification
 runs one message over many validators' keys each block (`approval_verification.rs:33`, `:71`), but those keys are ed25519 today;

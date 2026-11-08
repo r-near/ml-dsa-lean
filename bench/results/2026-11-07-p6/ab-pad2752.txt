@@ -1,0 +1,111 @@
+environment padding: 2752 bytes (ASLR off)
+ 03:21:46 up 1 day, 31 min,  1 user,  load average: 1.01, 0.98, 0.97
+ML-DSA-44 ours verify: 27.0 us
+ML-DSA-44 ours+prepared-vk verify: 9.7 us
+ML-DSA-44 ours+verifying-key verifying-key: 18.3 us
+ML-DSA-65 ours verify: 51.7 us
+ML-DSA-65 ours+prepared-vk verify: 11.3 us
+ML-DSA-65 ours+verifying-key verifying-key: 32.6 us
+ML-DSA-87 ours verify: 65.2 us
+ML-DSA-87 ours+prepared-vk verify: 15.2 us
+ML-DSA-87 ours+verifying-key verifying-key: 54.1 us
+ML-DSA-44 ours verify: 26.5 us
+ML-DSA-44 ours+prepared-vk verify: 9.7 us
+ML-DSA-44 ours+verifying-key verifying-key: 17.6 us
+ML-DSA-65 ours verify: 41.6 us
+ML-DSA-65 ours+prepared-vk verify: 11.2 us
+ML-DSA-65 ours+verifying-key verifying-key: 32.2 us
+ML-DSA-87 ours verify: 64.5 us
+ML-DSA-87 ours+prepared-vk verify: 15.1 us
+ML-DSA-87 ours+verifying-key verifying-key: 51.7 us
+ML-DSA-44 ours verify: 26.9 us
+ML-DSA-44 ours+prepared-vk verify: 9.6 us
+ML-DSA-44 ours+verifying-key verifying-key: 18.3 us
+ML-DSA-65 ours verify: 51.6 us
+ML-DSA-65 ours+prepared-vk verify: 11.1 us
+ML-DSA-65 ours+verifying-key verifying-key: 33.0 us
+ML-DSA-87 ours verify: 64.9 us
+ML-DSA-87 ours+prepared-vk verify: 15.2 us
+ML-DSA-87 ours+verifying-key verifying-key: 54.0 us
+ML-DSA-44 ours verify: 26.4 us
+ML-DSA-44 ours+prepared-vk verify: 9.7 us
+ML-DSA-44 ours+verifying-key verifying-key: 17.6 us
+ML-DSA-65 ours verify: 41.6 us
+ML-DSA-65 ours+prepared-vk verify: 11.3 us
+ML-DSA-65 ours+verifying-key verifying-key: 32.2 us
+ML-DSA-87 ours verify: 64.5 us
+ML-DSA-87 ours+prepared-vk verify: 15.1 us
+ML-DSA-87 ours+verifying-key verifying-key: 51.7 us
+ML-DSA-44 ours verify: 26.9 us
+ML-DSA-44 ours+prepared-vk verify: 9.7 us
+ML-DSA-44 ours+verifying-key verifying-key: 18.5 us
+ML-DSA-65 ours verify: 51.7 us
+ML-DSA-65 ours+prepared-vk verify: 11.2 us
+ML-DSA-65 ours+verifying-key verifying-key: 32.6 us
+ML-DSA-87 ours verify: 64.9 us
+ML-DSA-87 ours+prepared-vk verify: 15.1 us
+ML-DSA-87 ours+verifying-key verifying-key: 53.7 us
+ML-DSA-44 ours verify: 26.4 us
+ML-DSA-44 ours+prepared-vk verify: 9.6 us
+ML-DSA-44 ours+verifying-key verifying-key: 17.6 us
+ML-DSA-65 ours verify: 41.6 us
+ML-DSA-65 ours+prepared-vk verify: 11.3 us
+ML-DSA-65 ours+verifying-key verifying-key: 32.1 us
+ML-DSA-87 ours verify: 64.5 us
+ML-DSA-87 ours+prepared-vk verify: 15.1 us
+ML-DSA-87 ours+verifying-key verifying-key: 51.7 us
+ML-DSA-44 ours verify: 26.9 us
+ML-DSA-44 ours+prepared-vk verify: 9.7 us
+ML-DSA-44 ours+verifying-key verifying-key: 18.3 us
+ML-DSA-65 ours verify: 51.6 us
+ML-DSA-65 ours+prepared-vk verify: 11.2 us
+ML-DSA-65 ours+verifying-key verifying-key: 32.6 us
+ML-DSA-87 ours verify: 64.9 us
+ML-DSA-87 ours+prepared-vk verify: 15.1 us
+ML-DSA-87 ours+verifying-key verifying-key: 53.9 us
+ML-DSA-44 ours verify: 26.5 us
+ML-DSA-44 ours+prepared-vk verify: 9.7 us
+ML-DSA-44 ours+verifying-key verifying-key: 17.6 us
+ML-DSA-65 ours verify: 41.7 us
+ML-DSA-65 ours+prepared-vk verify: 11.2 us
+ML-DSA-65 ours+verifying-key verifying-key: 32.2 us
+ML-DSA-87 ours verify: 64.5 us
+ML-DSA-87 ours+prepared-vk verify: 15.1 us
+ML-DSA-87 ours+verifying-key verifying-key: 51.7 us
+ML-DSA-44 ours verify: 26.9 us
+ML-DSA-44 ours+prepared-vk verify: 9.7 us
+ML-DSA-44 ours+verifying-key verifying-key: 18.3 us
+ML-DSA-65 ours verify: 51.8 us
+ML-DSA-65 ours+prepared-vk verify: 11.2 us
+ML-DSA-65 ours+verifying-key verifying-key: 32.6 us
+ML-DSA-87 ours verify: 65.0 us
+ML-DSA-87 ours+prepared-vk verify: 15.2 us
+ML-DSA-87 ours+verifying-key verifying-key: 53.9 us
+ML-DSA-44 ours verify: 26.4 us
+ML-DSA-44 ours+prepared-vk verify: 9.7 us
+ML-DSA-44 ours+verifying-key verifying-key: 17.6 us
+ML-DSA-65 ours verify: 41.6 us
+ML-DSA-65 ours+prepared-vk verify: 11.2 us
+ML-DSA-65 ours+verifying-key verifying-key: 32.3 us
+ML-DSA-87 ours verify: 64.6 us
+ML-DSA-87 ours+prepared-vk verify: 15.2 us
+ML-DSA-87 ours+verifying-key verifying-key: 51.7 us
+load at end: 1.00 0.99 0.98
+base-pad2752         ML-DSA-44 verify         ours                 median   26.88  min   26.85  max   26.99  (n=5)
+base-pad2752         ML-DSA-44 verify         ours+prepared-vk     median    9.67  min    9.65  max    9.69  (n=5)
+base-pad2752         ML-DSA-44 verifying-key  ours+verifying-key   median   18.28  min   18.26  max   18.45  (n=5)
+base-pad2752         ML-DSA-65 verify         ours                 median   51.67  min   51.59  max   51.77  (n=5)
+base-pad2752         ML-DSA-65 verify         ours+prepared-vk     median   11.21  min   11.15  max   11.26  (n=5)
+base-pad2752         ML-DSA-65 verifying-key  ours+verifying-key   median   32.60  min   32.58  max   32.98  (n=5)
+base-pad2752         ML-DSA-87 verify         ours                 median   64.93  min   64.90  max   65.16  (n=5)
+base-pad2752         ML-DSA-87 verify         ours+prepared-vk     median   15.20  min   15.11  max   15.22  (n=5)
+base-pad2752         ML-DSA-87 verifying-key  ours+verifying-key   median   53.95  min   53.74  max   54.08  (n=5)
+fix2-pad2752         ML-DSA-44 verify         ours                 median   26.44  min   26.42  max   26.48  (n=5)
+fix2-pad2752         ML-DSA-44 verify         ours+prepared-vk     median    9.66  min    9.65  max    9.68  (n=5)
+fix2-pad2752         ML-DSA-44 verifying-key  ours+verifying-key   median   17.57  min   17.55  max   17.59  (n=5)
+fix2-pad2752         ML-DSA-65 verify         ours                 median   41.62  min   41.58  max   41.72  (n=5)
+fix2-pad2752         ML-DSA-65 verify         ours+prepared-vk     median   11.25  min   11.24  max   11.26  (n=5)
+fix2-pad2752         ML-DSA-65 verifying-key  ours+verifying-key   median   32.19  min   32.13  max   32.35  (n=5)
+fix2-pad2752         ML-DSA-87 verify         ours                 median   64.54  min   64.46  max   64.64  (n=5)
+fix2-pad2752         ML-DSA-87 verify         ours+prepared-vk     median   15.14  min   15.13  max   15.19  (n=5)
+fix2-pad2752         ML-DSA-87 verifying-key  ours+verifying-key   median   51.70  min   51.65  max   51.73  (n=5)

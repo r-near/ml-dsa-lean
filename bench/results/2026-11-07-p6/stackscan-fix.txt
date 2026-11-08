@@ -1,0 +1,13 @@
+ 03:14:28 up 1 day, 24 min,  1 user,  load average: 0.73, 0.66, 0.88
+load at end: 1.01 0.79 0.91
+stack-offset scan of fix2: microseconds per call, median of rounds, one run per padding
+ set op        pads     min  median     max  max-min  >1.1xmed     p90
+  44 prepared   257    9.60    9.68    9.83     0.23     0/257    9.76
+  44 verify     257   26.22   26.36   26.80     0.58     0/257   26.51
+  44 vk         257   17.60   17.68   18.05     0.45     0/257   17.79
+  65 prepared   257   11.04   11.14   11.27     0.23     0/257   11.22
+  65 verify     257   41.27   41.52   42.48     1.21     0/257   41.74
+  65 vk         257   32.10   32.26   33.08     0.98     0/257   32.40
+  87 prepared   257   14.81   15.00   15.31     0.51     0/257   15.10
+  87 verify     257   64.10   64.31   65.92     1.82     0/257   64.52
+  87 vk         257   51.67   51.86   52.20     0.54     0/257   51.97

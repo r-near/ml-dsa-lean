@@ -70,6 +70,10 @@ The longer differentials, fuzzing and benchmarks:
   features (`SETS=44,65,87` for all sets; `TOOLCHAIN=1.95.0` for nearcore's compiler; `ROUNDS`, `HT_OFFSET` and
   `ML_DSA_SCRATCH` as described in its header) and runs them next to aws-lc-rs and mldsa-native AVX2, pinned to an idle core.
   `bench/ab.sh` is the interleaved A/B runner behind the per-change savings in that results file.
+  `bench/stackscan.sh build|run|check` scans the process environment padding (every 64 bytes by default, 16 with `STEP=16`, up to
+  4 KiB, ASLR off) for verify, `verifying_key` and the prepared-key verify of the `avx2` build and fails when any padding is more
+  than `LIMIT` (1.15) times the median; `bench/fast-verify.sh` runs it at the end (`STACKSCAN=0` skips it), and `bench/ab.sh`
+  takes `PAD=<bytes>` and has `scan-build`/`scan` subcommands. `bench/results/2026-11-07-p6.md` is the stack-offset write-up.
 - `tools/stack/README.md`: measuring worst-case stack use.
 
 ## 2. The Lean proofs

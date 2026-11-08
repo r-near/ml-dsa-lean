@@ -36,6 +36,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Lean statement or proof changed. ML-DSA-65 prepared-key verify takes 11.3 µs (was 14.9; ML-DSA-44 9.7, was 12.3;
   ML-DSA-87 15.3, was 20.3); one-shot verify and `verifying_key_NN` are unchanged (`bench/results/2026-11-07-p5.md`).
   `scripts/check-avx2-inlining.sh` now also requires ymm code inside each `verify_prepared_avx2` instantiation.
+- With the `avx2` feature, the verify wrappers (`verify_internal_avx2`, `verify_prepared_avx2`, `prepare_vk_avx2`) realign their
+  stack frames to 32 bytes (`align_frame` in `src/fast_verify/dispatch.rs`: a `#[repr(align(32))]` local passed to `black_box`),
+  and `prepare_vk_avx2` builds the key in place instead of returning a 57 KB value. Before this, one-shot verify and
+  `verifying_key_NN` were up to 7, 13 and 24 µs slower than their median (ML-DSA-44, 65, 87) at about one stack offset in seven:
+  LLVM spilled the 4-way Keccak's vectors to 16-byte-aligned slots, and a slot straddling a 4 KiB page makes each access a page
+  split. After it, the largest of 257 stack offsets is 1.02 to 1.03 times the median in every set and operation (rustc 1.99.1).
+  ML-DSA-65 one-shot verify takes 41.8 µs (rustc 1.99.1) and 41.9 µs (1.95.0), at every offset (it was 42.4 at a fast offset),
+  and `verifying_key_87` 51.8 µs (was 53.5); the prepared-key verify is unchanged. No Lean statement or proof changed; the source
+  changes are in the dispatch glue only (`bench/results/2026-11-07-p6.md`, `docs/assurance.md` section 1.9).
+- The checkct driver includes the real `src/fast_verify.rs` instead of a hand-copied list of its re-exports.
+- `bench/fast-verify.sh` ends with a stack-offset scan (`bench/stackscan.sh`; `bench/ab.sh` has a `PAD` knob and `scan` subcommands)
+  that fails when any stack offset makes verify, `verifying_key` or the prepared-key verify more than 1.15 times slower than the
+  median. `scripts/check-avx2-inlining.sh` now also requires that each verify wrapper realigns its frame.
 
 ## [0.1.0] - 2026-11-06
 

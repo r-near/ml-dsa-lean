@@ -63,6 +63,28 @@ adds this table changes documentation only):
 | `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (extraction inputs sha256 52571a1f7c49096884c80c4a8ab1aecbff020f595aee363b2f2c9a0e9062eb39) | 5b5252e |
 | checkct driver | builds (release, `-p driver`) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`. The driver needed the third re-export of `fast_verify` (5b5252e). The BINSEC sweep was not rerun: no source Sign or KeyGen calls changed since the last full profile build and smoke run named above (section 4) | 5b5252e |
 
+The stack-offset fix (branch `fv-p6`; 1.9) is a later tree again. It changed no Lean statement or proof, no name in
+`lean/headline-theorems.txt` (412) or `lean/fast-verify-theorems.txt` (51), and nothing Sign or KeyGen calls: the changes under
+`src/` are `src/fast_verify/dispatch.rs` (a stack-realigning local in each of the six wrappers, and `prepare_vk_avx2` building
+the key in place) and a `#[path]` attribute in `src/fast_verify.rs`; `lean/Impl` is re-extracted and only the extraction digest
+moved. Every gate below ran on the Linux build box on 2026-11-07 or 2026-11-08, on the tree of the commit named in the last column.
+The two standalone Lean gates ran on bd2a963, the last commit that changes `src/` or `lean/` (the `lean` step of `ci.sh --lean`
+repeated the first on 306360d); the other gates ran on 306360d, which differs from bd2a963 by one attribute in
+`bench/src/bin/stackscan.rs`; the commit that adds this table changes documentation and benchmark result
+files only.
+
+| Gate | Result | Run on |
+|---|---|---|
+| `scripts/lean-check.sh` | `LEAN CHECK OK`: `Build completed successfully (3333 jobs)`; axiom gate over the extracted definitions and the names in `lean/headline-theorems.txt`, 877 checked, then over the 9 names of `lean/keccak4-theorems.txt` and the 51 of `lean/fast-verify-theorems.txt`; each `AXIOM GATE OK`, axioms used: `propext`, `Classical.choice`, `Quot.sound` | bd2a963 |
+| `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`: `Build completed successfully (3325 jobs)`, 146 names checked, `AXIOM GATE OK` | bd2a963 |
+| `scripts/ci.sh --lean` | `CI SUMMARY: 21 passed, 0 failed, 0 skipped` (every step, including `test-avx2`, `avx2-inlining`, `thumbv7em`, `msrv-1.86`, `diff-awslc`, the three fuzz targets at 60 s, `extract-hash`, `axiom-gate-selftest`, and `lean` with `LEAN CHECK OK`: `Build completed successfully (3333 jobs)`, 877, 9 and 51 names checked, each `AXIOM GATE OK`) | 306360d |
+| `scripts/check-avx2-inlining.sh` | `OK: no out-of-line intrinsic wrappers; verify-only arithmetic fully inlined; verify wrappers realign their frames; 53806 lines of ymm code`; the three `verify_prepared_avx2` instantiations hold 4077, 4966 and 5513 lines of ymm code (K = 4, 6, 8); all nine wrapper instantiations (`verify_internal_avx2`, `verify_prepared_avx2`, `prepare_vk_avx2` for K = 4, 6, 8) print `1` under "stack-realigning wrappers" (`andq $-32, %rsp` or stronger in the first 20 lines of the body) | 306360d |
+| `ML_DSA_REQUIRE_AVX2=1 cargo test --release --features avx2,internals` | 27 result lines (26 test binaries and the doc-tests), 127 tests passed, 0 failed, 1 ignored (the timing test of `tests/keccak4.rs`) | 306360d |
+| `cargo +1.86.0 build --features avx2` | builds (the declared MSRV) | 306360d |
+| README example test (`cargo test --test readme_example`) | 2 passed | 306360d |
+| `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (extraction inputs sha256 7cd7dfdef38482e0fedcd14ee70330a351283e4e15a224f96631edabea5c6036); a fresh extraction on the box leaves `Funs.lean` and `Types.lean` unchanged | 306360d |
+| checkct driver | builds (release, `-p driver`) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`, in the default release profile (nightly-2026-10-06) and with nearcore's exact flags (nightly-2026-10-06 and 1.95.0): 18 of 18 cells built. The driver now includes the real `src/fast_verify.rs` through `#[path]` instead of repeating its re-exports, so it follows the source by itself. The BINSEC sweep was not rerun: no source Sign or KeyGen calls changed since the last full profile build and smoke run named above (section 4) | 306360d |
+
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
 
@@ -318,11 +340,18 @@ the three sets' bounds γ1 − β, taken from the parameter sets, widths 1, 4, 6
 exports `verify_internal`, `prepare_vk` and `verify_prepared_internal`, and `api.rs` calls those. Each checks `cpu::has_avx2` (CPUID leaf 7 AVX2, leaf 1
 XSAVE, OSXSAVE and AVX, XCR0 bits 1 and 2, cached in an `AtomicU8`; a build that is already compiled for AVX2 skips the check)
 and then calls a `#[target_feature(enable = "avx2")]` wrapper (`src/fast_verify/dispatch.rs`) that runs
-`verify_internal_x4::<K, L, Avx2>` or `prepare_vk_x4::<K, L, Avx2>`, or else the scalar function. The third name, the prepared-key
+`verify_internal_x4::<K, L, Avx2>` or the key half (`PreparedVk::zeroed()` followed by `prepare_vk_into_x4::<K, L, Avx2>`, which
+is `prepare_vk_x4` by `Proofs.prepare_vk_into_x4_zero`, so that a 57 KB key is built in place and not copied out), or else the scalar function. The third name, the prepared-key
 verify, has no 4-way body: its wrapper `verify_prepared_avx2` calls the proved scalar `verify::verify_prepared_internal`, which is
 `#[inline(always)]` in this build, so that the proved loops (multiply-accumulate row, lazy NTTs, UseHint, norm check) are
 compiled with AVX2 and vectorized by LLVM. Like the other two it is reached only after the cached `cpu::has_avx2()` check, and
-it calls nothing but extracted code: no intrinsic, no `Lanes4` method. Without the feature, on other
+it calls nothing but extracted code: no intrinsic, no `Lanes4` method. Each wrapper starts with `align_frame()`, a
+`#[repr(align(32))]` local passed to `core::hint::black_box` (contents never read), which makes LLVM realign the wrapper's
+stack frame to 32 bytes. Without it LLVM spills the 4-way Keccak's 256-bit vectors to 16-byte-aligned slots and accesses
+them unaligned, and at about one stack offset in seven a slot straddles a 4 KiB page, which made one-shot verify and
+`verifying_key_NN` up to 7, 13 and 24 µs above the median at that offset (ML-DSA-44, 65, 87) (`bench/results/2026-11-07-p6.md`: diagnosis, and a scan of 257
+stack offsets, before and after). `align_frame` is plain safe Rust with no effect on any value, so it is outside the proof like the rest
+of the glue; `scripts/check-avx2-inlining.sh` checks that all nine wrapper instantiations realign. Without the feature, on other
 targets and under Miri (so also in the extraction) `fast_verify` only re-exports the scalar functions, and nothing of the
 dispatch exists. Thus:
 
@@ -377,7 +406,8 @@ dispatch exists. Thus:
 5. **With the `avx2` feature only** (x86_64): the tested equivalence of the `Avx2` lane operations to the proved `Shim4` (1.9),
    the dispatch glue and CPU detection (`src/fast_verify/dispatch.rs`, `src/cpu.rs`), the three `#[target_feature(enable =
    "avx2")]` wrappers there (`verify_internal_avx2`, `prepare_vk_avx2`, `verify_prepared_avx2`: each a call of one proved
-   function, reached only after `cpu::has_avx2()`), and rustc and LLVM compiling those clones (the 4-way bodies, and the proved
+   function, reached only after `cpu::has_avx2()`; each starts with the value-free `align_frame()` of 1.9, and `prepare_vk_avx2`
+builds its key in place with the proved `prepare_vk_into_x4`), and rustc and LLVM compiling those clones (the 4-way bodies, and the proved
    scalar prepared-key verify inlined into `verify_prepared_avx2`), besides the same trust in item 3. The NTT's AVX2 copy likewise
    rests on `tests/dispatch.rs` (section 3).
 
@@ -429,7 +459,7 @@ the AVX2 check and its cache from `src/ntt.rs` into `src/cpu.rs`, which is share
 `nearcore-dispatch` rows describe a build whose AVX2 check differs from the current one in where it lives.
 
 The harness builds on this tree. `checkct/driver` gained the `keccak4` module, the `cpu` module (with the `avx2` feature on
-x86_64, the cfg of `lib.rs`) and a `fast_verify` module (`src/fast_verify.rs` itself cannot be included by `#[path]`, because its `mod dispatch;` would be looked up next to it; the driver repeats its two cfg-gated items and includes `src/fast_verify/dispatch.rs`). The pre-set anchor in `checkct/run-select.sh` is now the
+x86_64, the cfg of `lib.rs`) and a `fast_verify` module (the real `src/fast_verify.rs`, included by `#[path]`; its `mod dispatch;` carries its own `#[path]`, so it resolves from the driver too, and the driver no longer repeats the re-export list that went stale once; since the p6 round). The pre-set anchor in `checkct/run-select.sh` is now the
 symbol `driver::cpu::AVX2`. Checked on the `src/`, driver and scripts of commit 6ccc3e6 (the later verify-only arithmetic of 1.9 changed `src/verify.rs`, and the driver gained `src/verify_arith.rs` at 997b2e5 so that `verify.rs` compiles there; after that change the driver was rebuilt for riscv32imac, thumbv7em and x86_64 with and without `avx2`, but the profile sweep and the smoke run below were not repeated): the driver builds for riscv32imac, thumbv7em and x86_64 in
 every `run-select.sh` profile (`default`, `nearcore`, `nearcore-novec`, `dispatch`, `nearcore-dispatch`, `avx2`,
 `nearcore-avx2`, `nearcore-exact`, `nearcore-exact-dispatch`, `nearcore-exact-novec`, and `ZEROIZE=1` and `EXPERIMENTS=1`
@@ -520,7 +550,7 @@ Three real leaks were found and fixed (CT-1, CT-2, CT-3 in section 6). Limits:
 | libcrux-ml-dsa 0.0.11 (portable + AVX2), mldsa-native v2.0.0 (C + AVX2), RustCrypto | 0 disagreements, 0 crashes: 1.05M keygens and 1.5M signatures byte-identical; 15.4M verify cases (every single-bit flip of σ and pk for 60 cases per set, plus mutation classes covering c̃, z, hint encodings, pk; about 185M verify calls), all 150k honest signatures accepted by all; fuzzing 3.66M `verify_xdiff` and 195k `sign_xdiff` executions. Sensitivity: with the hint zero-padding check removed, 4,012 disagreements. Malformed sk (FIPS-undefined): ours, libcrux and mldsa-native sign identically; RustCrypto panics; mldsa-native's `pk_from_sk` also rejects inconsistent t0/tr/ρ (`crosscheck/`) |
 | Differential fuzzing vs RustCrypto (`fuzz/`) | about 50 minutes per target, 0 crashes, 0 disagreements: `verify_diff` 12.1M execs (mutated c̃/z/hints/pk, ctx 0–256, wrong lengths; 96.7% region coverage of `src`), `sign_diff` 787k (98.2%), `decode_roundtrip` 1.1M (Sign on arbitrary sk bytes never panics; matches upstream wherever upstream accepts the key). Sensitivity: with the hint zero-padding check removed, `verify_diff` found it after about 3,800 runs; a removed `count > ω` check was not found in 180 s (it rarely changes the verdict). The κ-exhaustion path was never reached |
 | Proof mutation testing | 29 semantic mutants of `src` (rounding edge cases, hint checks, norm bounds, NTT⁻¹ layers and scale, sampler indices, seeds and hash inputs, κ budget, ctx and length guards, parameter constants): every one breaks the Lean build at the spec theorem of the mutated function. `cargo test` missed 5 (λ/4-byte c̃ compare, `infinity_norm` threshold, HintBitUnpack's count > ω check, Verify's ‖z‖∞ `<`, κ budget); regression tests now kill four (`tests/mutants.rs`, the `prefix_eq` unit test in `src/verify.rs`); the κ budget guard (`while κ + ℓ − 1 ≤ 0xFFFF`, now the function `sign::more_attempts`) is tested at its boundary by `sign_loop_guard_allows_the_last_attempt` (the `<` variant of the guard fails it), while that Sign's loop calls the guard is shown by the proof only. Of the 29 mutants, about a third fail the Lean build as unprovable goals and the rest as proof-script shape breaks (the per-mutant record is not kept). The mutation harness itself is not committed, so this row cannot be re-run |
-| AVX2 fast verify (needs a CPU with AVX2; `ML_DSA_REQUIRE_AVX2=1` turns a missing AVX2 into a failure) | the link that is tested, not proved (1.9): `tests/keccak4_avx2.rs` (every AVX2 lane operation, every rotation the kernel uses, all 63 rotation amounts and more than 150,000 whole states against `Shim4` and four scalar permutations), `tests/fast_verify_x4.rs` (4-way sampler, ExpandA and verify over `Shim4` and `Avx2` against the scalar functions), `tests/fast_verify.rs` (dispatched and AVX2 verify against scalar verify on ACVP sigVer, Wycheproof verify and random valid, corrupted, wrong-length and random inputs, every API path, all three sets; CPU detection against the standard library's), `tests/fast_verify_dispatch.rs` (the API reaches the AVX2 wrapper exactly when the CPU has AVX2). `tests/verify_arith.rs` (the verify-only NTT, multiply-accumulate row, norm check and w1 packing against the shared functions on corner and random inputs). Last run (2026-11-07, x86_64 Linux build box with AVX2, tree 5b5252e, release profile): `ML_DSA_REQUIRE_AVX2=1 cargo test --release --features avx2,internals` passed in full (127 tests in 27 binaries, every one `ok`, none failed); `keccak4_avx2` 4 tests, `fast_verify` 5, `fast_verify_x4` 2, `fast_verify_dispatch` 1, `dispatch` 1, `keccak4` 3 (plus its ignored timing test), `verify_arith` 4 |
+| AVX2 fast verify (needs a CPU with AVX2; `ML_DSA_REQUIRE_AVX2=1` turns a missing AVX2 into a failure) | the link that is tested, not proved (1.9): `tests/keccak4_avx2.rs` (every AVX2 lane operation, every rotation the kernel uses, all 63 rotation amounts and more than 150,000 whole states against `Shim4` and four scalar permutations), `tests/fast_verify_x4.rs` (4-way sampler, ExpandA and verify over `Shim4` and `Avx2` against the scalar functions), `tests/fast_verify.rs` (dispatched and AVX2 verify against scalar verify on ACVP sigVer, Wycheproof verify and random valid, corrupted, wrong-length and random inputs, every API path, all three sets; CPU detection against the standard library's), `tests/fast_verify_dispatch.rs` (the API reaches the AVX2 wrapper exactly when the CPU has AVX2). `tests/verify_arith.rs` (the verify-only NTT, multiply-accumulate row, norm check and w1 packing against the shared functions on corner and random inputs). Last run (2026-11-07, x86_64 Linux build box with AVX2, tree 306360d, release profile): `ML_DSA_REQUIRE_AVX2=1 cargo test --release --features avx2,internals` passed in full (127 tests in 27 binaries, every one `ok`, none failed); `keccak4_avx2` 4 tests, `fast_verify` 5, `fast_verify_x4` 2, `fast_verify_dispatch` 1, `dispatch` 1, `keccak4` 3 (plus its ignored timing test), `verify_arith` 4 |
 | Leaf and API tests | round trips on upstream bytes, naive references, every HintBitUnpack ⊥ case, the verify-only `poly_use_hint_pub` against `poly_use_hint` on every r < q for all three sets and `bit_unpack_pub` against `bit_unpack` on random, zero, all-ones and single-bit inputs for 10, 18 and 20 bits (`tests/leaf.rs`); the portable 4-way Keccak against four scalar permutations (`tests/keccak4.rs`); the branchless 4-way parse on boundary candidates (`src/sampling.rs`, `boundary_tests`); optional key checks against 200 random mutations per set (`tests/sk_well_formed.rs`, `tests/pk_from_sk.rs`); SHAKE KATs (`tests/shake_kat.rs`, `shake_lanes.rs`); dispatch vs portable NTT (`tests/dispatch.rs`) |
 | zeroize | `tests/zeroize.rs` scans the stack below `keygen`, `pk_from_sk`, `signing_key`, `sign`, `sign_prepared` and single Sign attempts (rejected early, rejected late, accepted) for residue of K, s1, s2, t0, ρ″, the mask y and the values derived from it (ŷ, Â ∘ ŷ, w, ĉ, ⟨⟨cs1⟩⟩, ⟨⟨cs2⟩⟩, r0, ⟨⟨ct0⟩⟩, and z and c̃ of rejected attempts), and checks the drop wipe; see Z-1 for the optimization-level caveat |
 | Rust CI (`scripts/ci.sh`) | tests for default, `zeroize` (all 24 scans in release; the 3 `signing_key` scans at opt-level 0) and `avx2` (with `ML_DSA_REQUIRE_AVX2=1`, so a runner without AVX2 fails instead of skipping the AVX2 comparisons); `avx2-inlining` (`scripts/check-avx2-inlining.sh`: no `_mm256_*` function is called out of line in the library build under nearcore's flags); thumbv7em; MSRV 1.86; wasm32; nearcore profile on 1.95.0 (fat LTO, overflow checks, panic = abort for the build) incl. zeroize and, with `ML_DSA_REQUIRE_AVX2=1`, `avx2`; 60 s fuzz smoke of three targets; the aws-lc differential; `cargo deny`; `extract-hash` and `axiom-gate-selftest` (section 0); on GitHub, also the default and release zeroize suites on macOS arm64 (`ci.yml`, `macos-arm64`) |
@@ -536,42 +566,45 @@ empty context, one key pair per set). Columns: `scalar` is the build without the
 `avx2` is the `avx2` feature (the dispatched 4-way verify, 1.9); `v3` is the `avx2` feature plus `-C target-cpu=x86-64-v3`,
 where AVX2 is static and nothing is detected. The reference rows are measured in the same runs; the table lists their `avx2`-run
 value (they move by up to 4 µs between a run's three variants, which is run-to-run and layout noise, or, for libcrux, static AVX2
-under `v3`). Results and raw logs: `bench/results/2026-11-07-p5.md` (the table below; it adds the AVX2 wrapper of the prepared-key verify to
-the p4 tree; the 1.99.1 columns are its second run, `fast-verify-p5.log`, except the `avx2` one-shot ML-DSA-65 cell, from the first run,
-`fast-verify-p5-run1.log`, because the second hit a slow stack offset, see below) and `bench/results/2026-11-07-p4.md` (the verify-only arithmetic), and the logs next to them.
+under `v3`). Results and raw logs: `bench/results/2026-11-07-p6.md` (the table below, from the final tree of the stack-offset fix; one run per
+toolchain, no cell selected between runs; `bench/results/2026-11-07-p6/`), `bench/results/2026-11-07-p5.md` (the AVX2 wrapper of the
+prepared-key verify) and `bench/results/2026-11-07-p4.md` (the verify-only arithmetic), and the logs next to them.
 
 | µs | 44, 1.99.1 | 65, 1.99.1 | 87, 1.99.1 | 44, 1.95.0 | 65, 1.95.0 | 87, 1.95.0 |
 |---|---|---|---|---|---|---|
-| ours, `scalar` | 52.5 | 88.6 | 153.3 | 52.8 | 88.7 | 153.1 |
-| ours, `avx2` | 26.7 | 42.4 | 65.0 | 26.7 | 42.1 | 65.2 |
-| ours, `v3` | 27.2 | 42.8 | 64.4 | 27.6 | 42.1 | 65.3 |
-| `verifying_key_NN` (builds the prepared key), `scalar` | 41.0 | 75.1 | 133.8 | 40.8 | 74.2 | 133.7 |
-| `verifying_key_NN`, `avx2` | 18.2 | 32.5 | 53.5 | 17.7 | 32.4 | 53.7 |
-| prepared-key verify, `scalar` | 11.9 | 14.5 | 19.6 | 12.3 | 14.9 | 20.3 |
-| prepared-key verify, `avx2` | 9.7 | 11.3 | 15.2 | 9.6 | 11.3 | 15.3 |
-| aws-lc-rs 1.18.2 | 22.7 | 36.8 | 57.6 | 22.4 | 36.5 | 56.5 |
-| mldsa-native v2.0.0, AVX2 | 20.9 | 34.3 | 53.2 | 20.9 | 34.3 | 53.3 |
-| libcrux-ml-dsa 0.0.11, AVX2 | 25.9 | 41.0 | 64.7 | 26.8 | 43.0 | 67.8 |
-| RustCrypto `ml-dsa` a3690c4 | 112.0 | 170.7 | 270.1 | 111.4 | 171.7 | 270.6 |
+| ours, `scalar` | 52.6 | 89.0 | 153.1 | 52.9 | 88.7 | 153.4 |
+| ours, `avx2` | 26.5 | 41.8 | 64.6 | 26.2 | 41.9 | 64.7 |
+| ours, `v3` | 26.1 | 41.5 | 64.3 | 26.1 | 41.6 | 64.3 |
+| `verifying_key_NN` (builds the prepared key), `scalar` | 41.1 | 75.1 | 133.0 | 40.9 | 74.4 | 133.6 |
+| `verifying_key_NN`, `avx2` | 17.6 | 32.2 | 51.8 | 17.5 | 32.2 | 51.8 |
+| prepared-key verify, `scalar` | 12.3 | 14.5 | 19.8 | 12.4 | 15.4 | 20.3 |
+| prepared-key verify, `avx2` | 9.7 | 11.3 | 15.0 | 9.7 | 11.4 | 15.2 |
+| aws-lc-rs 1.18.2 | 22.5 | 36.4 | 56.5 | 22.4 | 36.4 | 56.6 |
+| mldsa-native v2.0.0, AVX2 | 21.0 | 34.3 | 53.5 | 20.9 | 34.3 | 53.2 |
+| libcrux-ml-dsa 0.0.11, AVX2 | 25.5 | 41.0 | 71.9 | 27.1 | 43.2 | 68.1 |
+| RustCrypto `ml-dsa` a3690c4 | 112.1 | 171.1 | 271.4 | 111.1 | 171.4 | 270.8 |
 
-What it shows, for these builds and this machine: the dispatched verify runs in 0.42–0.51 of the scalar time and in 1.13–1.19×
-the time of aws-lc-rs's uncached verify; ML-DSA-65 verify went from 103.8 µs to 88.6 µs scalar and from 54.0 µs to 42.4 µs
-dispatched (1.99.1) with the verify-only arithmetic of 1.9 (a fused multiply-accumulate row, a lazy-reduction NTT, a mask-free
-norm check and a fixed-width w1 packing; 42.4 µs on 1.95.0), and these are plain integer code, so the scalar build gets
+What it shows, for these builds and this machine: the dispatched verify runs in 0.42–0.51 of the scalar time and in 1.14–1.18×
+the time of aws-lc-rs's uncached verify; ML-DSA-65 verify went from 103.8 µs to 89.0 µs scalar and from 54.0 µs to 41.8 µs
+dispatched (1.99.1; 41.9 µs on 1.95.0) with the verify-only arithmetic of 1.9 (a fused multiply-accumulate row, a lazy-reduction NTT, a mask-free
+norm check and a fixed-width w1 packing), and these are plain integer code, so the scalar build gets
 most of the gain too. Prepared-key verify, which computes no ExpandA, is much faster than aws-lc-rs's uncached verify in every set,
-scalar or `avx2` (ML-DSA-65: 14.5 and 11.3 µs against 36.8), and `verifying_key_NN` costs about 0.77 of one `avx2` one-shot verify
-(32.5 against 42.4 µs). It is a different operation from one-shot verify: it needs the key to be held, and a bounded cache is a
+scalar or `avx2` (ML-DSA-65: 14.5 and 11.3 µs against 36.4), and `verifying_key_NN` costs about 0.77 of one `avx2` one-shot verify
+(32.2 against 41.8 µs). It is a different operation from one-shot verify: it needs the key to be held, and a bounded cache is a
 nearcore decision ([nearcore-integration.md](nearcore-integration.md)). The prepared-key verify runs no ExpandA, so it has no 4-way
 body; with the `avx2` feature it is dispatched to a second `#[target_feature(enable = "avx2")]` wrapper around the same proved
 scalar function (1.9), which takes it from 12.3, 14.8 and 20.2 µs to 9.8, 11.3 and 15.3 (interleaved A/B; 0.79, 0.76, 0.76), as fast as the `v3`
-build, where AVX2 is static (9.5, 11.1, 15.0; interleaved A/B in `bench/results/2026-11-07-p5.md`). The one-shot verify and
-`verifying_key_NN` did not move (they already ran inside an AVX2 wrapper). The `avx2` one-shot cells move by 7 to 12 µs with the
-position of the stack (the process environment decides it): the same binary reads 42.1 µs at one offset and 54.7 at another, in
-the base as well as on this branch, in about one offset of six or seven (`bench/results/2026-11-07-p5.md`); the cell for ML-DSA-65
-on 1.99.1 is the run that hit a fast offset, which the interleaved A/B (both binaries in one environment: 42.74 against 42.39)
-confirms. The cause was not isolated. Sign was A/B-tested against the commit before these changes and
-did not move beyond run-to-run noise (ML-DSA-65 deterministic sign 356.4 and 352.0 µs); the sign figures below date from
-2026-10-31. Not measured: aarch64, wasm32, Intel and other AMD parts; one key pair per set, hot caches. Reproduce with `bench/fast-verify.sh`
+build, where AVX2 is static (9.5, 11.1, 14.7; `bench/results/2026-11-07-p6.md`). **The stack offset no longer matters.**
+Until the last round the `avx2` one-shot verify and `verifying_key_NN` cells moved with the position of the stack (the process
+environment decides it): the same binary read 42.1 µs at one offset and 54.7 at another, about one offset in seven, up to 24 µs
+above the median for ML-DSA-87 (scan of 257 offsets, ML-DSA-65: median 42.3, maximum 55.4 µs, 23 offsets above 1.1 times the median). The cause is that LLVM spills the 4-way
+Keccak's 256-bit vectors to slots that are only 16-byte aligned, and a slot that straddles a 4 KiB page makes every access a page
+split; the wrappers now realign their frames to 32 bytes (1.9), and `verifying_key_NN` builds its key in place. After the fix the
+same scan has a maximum of 1.02 to 1.03 times the median in every set and operation, with no offset above 1.1 times
+(ML-DSA-65 one-shot: median 41.5, maximum 42.5 µs), on rustc 1.99.1 at 257 offsets and on 1.95.0 at 65 (`bench/stackscan.sh`, run
+by `bench/fast-verify.sh`, which fails above 1.15; `bench/results/2026-11-07-p6.md`). Sign was A/B-tested against the commit before
+the AVX2 changes and did not move beyond run-to-run noise (ML-DSA-65 deterministic sign 356.4 and 352.0 µs), and nothing Sign
+calls changed in p6; the sign figures below date from 2026-10-31. Not measured: aarch64, wasm32, Intel and other AMD parts; one key pair per set, hot caches. Reproduce with `bench/fast-verify.sh`
 ([reproduce.md](reproduce.md)).
 
 **Keygen and sign, ML-DSA-87** (the verify rows of this earlier table were replaced by the table above). Microseconds, median of 15
