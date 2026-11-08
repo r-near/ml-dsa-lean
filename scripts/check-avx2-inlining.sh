@@ -1,17 +1,22 @@
 #!/usr/bin/env bash
-# Checks that the AVX2 4-way verify body is compiled with AVX2, i.e. that every AVX2 intrinsic is inlined into a
-# `#[target_feature(enable = "avx2")]` function. Usage: bash scripts/check-avx2-inlining.sh   (x86_64 Linux)
+# Checks that the AVX2 4-way verify body is compiled with AVX2 and that LLVM turned the 4-way Keccak permutation into
+# 256-bit vector code. Usage: bash scripts/check-avx2-inlining.sh   (x86_64 Linux)
 #
 # Why: the 4-way verify body (src/fast_verify/dispatch.rs, `verify_internal_avx2`; likewise `prepare_vk_avx2` and
-# `verify_prepared_avx2`) calls generic code over
-# `keccak4::Lanes4`, instantiated with `keccak4::avx2::Avx2`. If any link of that chain is not `#[inline(always)]`, the
-# callee is compiled WITHOUT AVX2 and calls the `_mm256_*` intrinsics out of line. The result is still correct, but
-# several times slower than the scalar code, and nothing else would notice. The check builds the library in release with
-# `--features avx2`, emits assembly, and fails if the assembly defines any function whose name contains `_mm256_` or
-# `_mm_` (the intrinsic wrappers of core::arch), which exist only when an intrinsic was not inlined. It also requires
-# that the file does contain 256-bit vector code (ymm registers), so that an empty or wrongly built input cannot pass.
-# It also fails if any verify-only arithmetic function (see the last check below) is defined out of line.
-#
+# `verify_prepared_avx2`) is proved plain Rust. The `avx2` feature only compiles it a second time inside
+# `#[target_feature(enable = "avx2")]` wrappers, and two things must then hold, neither of which any proof can see:
+#   1. Everything is inlined into the wrapper (every link of the chain is `#[inline(always)]`). A callee that is not inlined
+#      is compiled WITHOUT AVX2: still correct, but several times slower, and nothing else would notice. The check builds the
+#      library in release with `--features avx2`, emits assembly, and fails if a verify-only arithmetic function is defined
+#      out of line, if a wrapper holds (almost) no ymm code, or if a wrapper does not realign its stack frame. It also
+#      requires that the file contains 256-bit vector code (ymm registers) at all.
+#   2. The 4-way Keccak permutation (src/keccak4.rs: a loop over the four states around a straight-line two-round body) is
+#      vectorized by LLVM's loop vectorizer. That is a compiler heuristic: when it fails, the code is still correct but
+#      scalar and 3x slower than the vector code (`bench/results/fv-vec/README.md`). Every permutation rotation amount that
+#      the vector code does with a shift (21 of the 24 distinct amounts; the rotations by 1, 8 and 56 are an add and byte
+#      shuffles) must show up as `vpsllq $N, %ymm` in each `verify_internal_avx2` and `prepare_vk_avx2` instantiation.
+#      A scalar or SSE-width permutation has none (it rotates with `rol`/`rorx`, or shifts xmm registers).
+# There are no intrinsics in the crate, so the old guard against out-of-line `_mm256_*` wrappers is gone.
 # The nearcore flags (-Ctarget-feature=+sse2,...,+movbe,+pclmulqdq, no AVX2) are what make this matter, so the check
 # builds with them unless NEARCORE_RUSTFLAGS is set to something else.
 set -uo pipefail
@@ -20,20 +25,13 @@ FLAGS="${NEARCORE_RUSTFLAGS:--Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popc
 OUT="$(mktemp -d)"
 trap 'rm -rf "$OUT"' EXIT
 # One codegen unit so that every instantiation lands in one file; --emit=asm only for the library.
-RUSTFLAGS="$FLAGS" cargo rustc --release --lib --features avx2 -- --emit=asm -Ccodegen-units=1 -Cdebuginfo=0 || { echo "build failed"; exit 1; }
+RUSTFLAGS="$FLAGS" cargo ${TOOLCHAIN:+"+$TOOLCHAIN"} rustc --release --lib --features avx2 -- --emit=asm -Ccodegen-units=1 -Cdebuginfo=0 || { echo "build failed"; exit 1; }
 ASM="$(ls -t target/release/deps/ml_dsa_lean-*.s 2>/dev/null | head -n 1)"
 [ -n "$ASM" ] || { echo "no assembly file found under target/release/deps"; exit 1; }
 echo "assembly: $ASM ($(wc -l < "$ASM") lines)"
 ymm="$(grep -c 'ymm' "$ASM")"
 echo "lines mentioning ymm registers: $ymm"
 if [ "$ymm" -lt 1000 ]; then echo "FAIL: too little 256-bit code: the AVX2 body was not built or not emitted"; exit 1; fi
-# Defined functions (symbol followed by a colon at line start) that are intrinsic wrappers.
-out_of_line="$(grep -E '^[^ .#][^:]*(_mm256_|_mm_)[^:]*:' "$ASM" | head -n 20)"
-if [ -n "$out_of_line" ]; then
-  echo "FAIL: AVX2 intrinsics are called out of line (a function between the #[target_feature] wrapper and the intrinsics is not #[inline(always)]):"
-  echo "$out_of_line"
-  exit 1
-fi
 # The verify-only arithmetic (src/verify_arith.rs, rounding::vec_norm_lt_pub / poly_use_hint_pub, encode::bit_pack_pub /
 # w1_encode_pub / bit_unpack_pub) and the prepared-key verify body (verify::verify_prepared_internal, whose wrapper is
 # `verify_prepared_avx2`) are plain integer
@@ -61,6 +59,21 @@ if echo "$prep" | awk '$1 < 100 { bad=1 } END { exit !bad }'; then
   echo "FAIL: a verify_prepared_avx2 instantiation has (almost) no ymm code: the proved verify was not inlined into it"
   exit 1
 fi
+# The 4-way permutation must be vector code in every wrapper that runs it: see (2) above.
+rotshifts="62 28 27 36 44 6 55 20 3 10 43 25 39 41 45 15 21 18 2 61 14"
+perm="$(awk -v imms="$rotshifts" '
+  BEGIN { n = split(imms, I, " ") }
+  /^[^ .#][^:]*(verify_internal_avx2|prepare_vk_avx2)[^:]*:/ { name=$0; inbody=1; names[name]=1; next }
+  inbody && /\.cfi_endproc/ { inbody=0 }
+  inbody && /vpsllq[ \t]+\$[0-9]+,[ \t]*%ymm/ { match($0, /\$[0-9]+/); have[name, substr($0, RSTART + 1, RLENGTH - 1)]=1 }
+  END { for (nm in names) { miss=""; for (i = 1; i <= n; i++) if (!have[nm, I[i]]) miss = miss " " I[i]; print (miss == "" ? "vector" : "SCALAR(missing vpsllq" miss ")"), nm } }' "$ASM")"
+echo "4-way permutation in the wrappers (vector / SCALAR, symbol):"
+echo "$perm"
+if [ "$(echo "$perm" | grep -c .)" -lt 6 ]; then echo "FAIL: expected six wrapper instantiations (verify_internal_avx2, prepare_vk_avx2 for K = 4, 6, 8)"; exit 1; fi
+if echo "$perm" | grep -q '^SCALAR'; then
+  echo "FAIL: the 4-way Keccak permutation is not vectorized in a wrapper (LLVM's loop vectorizer rejected the loop over the four states in src/keccak4.rs)"
+  exit 1
+fi
 # Every verify wrapper must realign its stack frame (`align_frame` in src/fast_verify/dispatch.rs): with the frame 32-byte
 # aligned, no 32-byte spill slot or array can straddle a 4 KiB page (a page-split access costs about 30 cycles, and a call at
 # the wrong stack offset used to take up to 12 us longer; bench/results/2026-11-07-p6.md). The realignment is an effect of an
@@ -80,4 +93,4 @@ if echo "$realign" | grep -q '^0 '; then
   echo "FAIL: a verify wrapper does not realign its stack frame to 32 bytes (align_frame was dropped or optimized away)"
   exit 1
 fi
-echo "OK: no out-of-line intrinsic wrappers; verify-only arithmetic fully inlined; verify wrappers realign their frames; $ymm lines of ymm code"
+echo "OK: 4-way permutation vectorized in every wrapper; verify-only arithmetic fully inlined; verify wrappers realign their frames; $ymm lines of ymm code"
