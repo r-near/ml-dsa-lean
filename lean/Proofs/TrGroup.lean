@@ -43,7 +43,7 @@ theorem T3_succ_gt (M : List UInt8) (q t0 b : Nat) (st st2 : St4) (trs : Array U
 theorem absorb_if_spec (st : St4) (pk : Slice U8) (tail : Array U64 17#usize) (q t : Usize)
     (hq : q.val = (bytes pk).length / 136)
     (htail : ∀ k, k < 17 → toU64 (tail.val[k]!) = Wb (blkT (bytes pk) q.val) k) :
-    (if t <= q then sampling.absorb_block_lane3 Sh4 st pk tail q t else ok st : RustM St4) ⦃ st1 =>
+    (if t <= q then sampling.absorb_block_lane3 st pk tail q t else ok st : RustM St4) ⦃ st1 =>
       (∀ i, i < 3 → pj st1 i = pj st i) ∧ (t.val ≤ q.val → pj st1 3 = xor17 (pj st 3) (blkT (bytes pk) t.val)) ∧
       (¬ t.val ≤ q.val → st1 = st) ⦄ := by
   split
@@ -122,7 +122,7 @@ theorem rej3_body_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (pk : 
     (st : St4) (trs : Array U64 25#usize) (t : Usize) (p0 p1 p2 : Array U32 312#usize) (j0 j1 j2 : Usize) (more : Bool)
     (hb : more = true → 56 * (b + 1) ≤ N)
     (h : GInv3 rho s r N b (bytes pk) q.val t0 (st, trs, t, p0, p1, p2, j0, j1, j2, more)) :
-    sampling.rej_ntt_poly_x3_tr_loop.body Sh4 pk tail q st trs t p0 p1 p2 j0 j1 j2 more ⦃ c =>
+    sampling.rej_ntt_poly_x3_tr_loop.body pk tail q st trs t p0 p1 p2 j0 j1 j2 more ⦃ c =>
       match c with
       | .done y => more = false ∧ y = (st, trs, t, p0, p1, p2)
       | .cont x' => more = true ∧ GInv3 rho s r N (b + 1) (bytes pk) q.val t0 x' ⦄ := by
@@ -134,7 +134,7 @@ theorem rej3_body_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (pk : 
   · rename_i hm
     refine WP.spec_bind (absorb_if_spec st pk tail q t hq htail) ?_
     rintro st1 ⟨h1a, h1b, h1c⟩
-    step with keccak_f1600_x4_shim_spec
+    step with keccak_f1600_x4_spec
     have hst2 : ∀ i, i < 3 → pj st2 i = Spec.KeccakF1600^[b + 1] (padSt (Mi rho s r i)) := by
       intro i hi
       rw [st2_post i (by omega), h1a i hi, hst i hi, Function.iterate_succ_apply']
@@ -192,7 +192,7 @@ theorem rej3_body_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (pk : 
 
 def runLoop3 (pk : Slice U8) (tail : Array U64 17#usize) (q : Usize) (x : X3) :
     RustM (St4 × Array U64 25#usize × Usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize) :=
-  sampling.rej_ntt_poly_x3_tr_loop Sh4 pk tail q x.1 x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2.1
+  sampling.rej_ntt_poly_x3_tr_loop pk tail q x.1 x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2.1
     x.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.2.2
 
 /-- The lane-3 part of the result: the block counter is at most `q + 1`, and either lane 3 of the state is the sponge after
@@ -365,7 +365,7 @@ theorem rej_ntt_poly_x3_tr_spec (rho : Array U8 32#usize) (s r : Array U8 4#usiz
     (htail : ∀ k, k < 17 → toU64 (tail.val[k]!) = Wb (blkT (bytes pk) q.val) k)
     (ht0 : t0.val ≤ q.val + 1) (hs0 : toLanes trs0 = HS (bytes pk) t0.val)
     (F : Nat) (P : Nat → Poly) (hP : ∀ i, i < 3 → Spec.RejNTTPoly F (Mi rho s r i) = some (P i)) :
-    sampling.rej_ntt_poly_x3_tr Sh4 rho s r pk tail q trs0 t0 ⦃ res =>
+    sampling.rej_ntt_poly_x3_tr rho s r pk tail q trs0 t0 ⦃ res =>
       (∀ (i : Nat) (hi : i < res.1.val.length), i < 3 → Repr (res.1.val[i]) (P i)) ∧
       res.2.2.val ≤ q.val + 1 ∧ toLanes res.2.1 = HS (bytes pk) res.2.2.val ⦄ := by
   have hG : F ≤ 56 * ((F + 55) / 56) := by omega
@@ -420,7 +420,7 @@ theorem rej_ntt_poly_x3_tr_partial (rho : Array U8 32#usize) (s r : Array U8 4#u
     (hq : q.val = (bytes pk).length / 136)
     (htail : ∀ k, k < 17 → toU64 (tail.val[k]!) = Wb (blkT (bytes pk) q.val) k)
     (ht0 : t0.val ≤ q.val + 1) (hs0 : toLanes trs0 = HS (bytes pk) t0.val) :
-    sampling.rej_ntt_poly_x3_tr Sh4 rho s r pk tail q trs0 t0 ⦃ res => ∃ (F : Nat) (P : Nat → Poly),
+    sampling.rej_ntt_poly_x3_tr rho s r pk tail q trs0 t0 ⦃ res => ∃ (F : Nat) (P : Nat → Poly),
       (∀ i, i < 3 → Spec.RejNTTPoly F (Mi rho s r i) = some (P i)) ∧
       (∀ (i : Nat) (hi : i < res.1.val.length), i < 3 → Repr (res.1.val[i]) (P i)) ∧
       res.2.2.val ≤ q.val + 1 ∧ toLanes res.2.1 = HS (bytes pk) res.2.2.val ⦄div := by

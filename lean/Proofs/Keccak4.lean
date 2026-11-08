@@ -7,6 +7,17 @@ set_option maxRecDepth 8192
 namespace Proofs
 open Impl
 
+theorem ln_of_get {n : Usize} (a : Array U64 n) (k : Nat) (hk : k < a.val.length) (v : U64) (hv : v = a.val[k]) :
+    toU64 v = ln a k := by
+  subst hv; exact (ln_eq a k hk).symm
+
+theorem ln_make4 (x0 x1 x2 x3 : U64) (h : [x0, x1, x2, x3].length = (4#usize).val) (j : Nat) (hj : j < 4) :
+    ln (Array.make 4#usize [x0, x1, x2, x3] h) j =
+      if j = 0 then toU64 x0 else if j = 1 then toU64 x1 else if j = 2 then toU64 x2 else toU64 x3 := by
+  unfold ln
+  simp only [Array.make]
+  rcases (by omega : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> simp
+
 /-- One lane of a rotation: `(x <<< L) ||| (x >>> R)` with `R = 64 - L` is `Spec.Keccak.rotl x L`. -/
 theorem rot_of_bv (x i1 i2 i3 : U64) (L R : U32) (hL : 0 < L.val) (hL' : L.val < 64) (hR : R.val = 64 - L.val)
     (h1 : i1.bv = x.bv <<< L.val) (h2 : i2.bv = x.bv >>> R.val) (h3 : i3.bv = i1.bv ||| i2.bv) :
@@ -257,7 +268,7 @@ theorem RC_idx4 (i : Usize) (hi : i.val < 24) (v : U64) (hv : v = keccak.RC.val[
     rw [RC_len]; exact hi)) : toU64 v = Spec.Keccak.RCs[i.val]! := RC_idx i hi v hv
 
 /-- The loop over the four states: each of them goes through rounds `r` and `r + 1`. -/
-theorem inner_loop_spec (s : St4) (r : Usize) (hr : r.val + 1 < 24) :
+theorem keccak_x4_states_loop_spec (s : St4) (r : Usize) (hr : r.val + 1 < 24) :
     keccak4.keccak_f1600_x4_loop0_loop0 s r 0#usize ⦃ s' => ∀ j, j < 4 →
       pj s' j = Spec.Keccak.Rnd (Spec.Keccak.Rnd (pj s j) r.val) (r.val + 1) ⦄ := by
   unfold keccak4.keccak_f1600_x4_loop0_loop0
@@ -305,7 +316,7 @@ theorem keccak_f1600_x4_spec (s : St4) :
     · rename_i hr
       have hr24 : r.val < 24 := by scalar_tac
       have hr23 : r.val + 1 < 24 := by omega
-      step with inner_loop_spec sc r hr23 as ⟨s1, hs1⟩
+      step with keccak_x4_states_loop_spec sc r hr23 as ⟨s1, hs1⟩
       step as ⟨r1, hr1⟩
       refine ⟨by omega, by omega, fun k hk => ?_, by omega⟩
       rw [hs1 k hk, h2 k hk, hr1, List.range_succ, List.range_succ, List.foldl_append, List.foldl_append,

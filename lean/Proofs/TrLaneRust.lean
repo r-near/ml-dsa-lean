@@ -14,8 +14,6 @@ set_option maxRecDepth 8192
 namespace Proofs
 open Impl
 
-attribute [local step] shim_xor_spec
-
 theorem RATE256_val : sampling.RATE256.val = 136 := by
   unfold sampling.RATE256; rfl
 
@@ -193,7 +191,7 @@ theorem blk_lane_spec (pk : Slice U8) (tail : Array U64 17#usize) (q t k : Usize
 theorem absorb_block_lane3_spec (st : St4) (pk : Slice U8) (tail : Array U64 17#usize) (q t : Usize)
     (hq : q.val = (bytes pk).length / 136) (ht : t.val ≤ q.val)
     (htail : ∀ k, k < 17 → toU64 (tail.val[k]!) = Wb (blkT (bytes pk) q.val) k) :
-    sampling.absorb_block_lane3 Sh4 st pk tail q t ⦃ st' =>
+    sampling.absorb_block_lane3 st pk tail q t ⦃ st' =>
       (∀ i, i < 3 → pj st' i = pj st i) ∧ pj st' 3 = xor17 (pj st 3) (blkT (bytes pk) t.val) ⦄ := by
   unfold sampling.absorb_block_lane3 sampling.absorb_block_lane3_loop
   have hblk : (blkT (bytes pk) t.val).length = 136 := blkT_length _ _ (by omega)
@@ -212,19 +210,23 @@ theorem absorb_block_lane3_spec (st : St4) (pk : Slice U8) (tail : Array U64 17#
       intro w hw
       step*
       have hk25 : k.val < 25 := by omega
-      have ha := at4_idx st1 k _ hk25 a_post2
       refine ⟨by omega, fun k' hk' i' hi' => ?_, by omega⟩
-      subst a2_post
-      rw [at4_set st1 k a1 k' hk25]
+      subst a1_post3
+      rw [at4_set st1 k a2 k' hk25]
       by_cases hkk : k.val = k'
       · subst hkk
-        rw [if_pos rfl, a1_post i' hi', ha, ln_make4 _ _ _ _ _ i' hi', h2 k.val hk25 i' hi']
+        have ha1 := at4_idx st1 k _ hk25 a1_post2
+        have ha := at4_idx st1 k _ hk25 a_post2
+        have hx := ln_of_get _ 3 (by simp) _ i_post2
+        have hx1 := xor_of_bv _ _ _ i1_post2
+        rw [ha] at hx
         have hlt : k.val < k1.val := by omega
+        rw [if_pos rfl, a2_post, ln_set _ _ _ _ (by simp), ha1]
         by_cases hi3 : i' = 3
         · subst hi3
-          simp [hlt, hw]
-        · have : i' = 0 ∨ i' = 1 ∨ i' = 2 := by omega
-          rcases this with rfl | rfl | rfl <;> simp [toU64_zero]
+          have h2k := h2 k.val hk25 3 (by omega)
+          rw [if_pos (by simp), hx1, hx, h2k, if_neg (by omega), hw, if_pos ⟨rfl, hlt⟩]
+        · rw [if_neg (by simp; omega), h2 k.val hk25 i' hi', if_neg (by omega), if_neg (by omega)]
       · rw [if_neg hkk, h2 k' hk' i' hi']
         have : k' < k1.val ↔ k' < k.val := by omega
         simp only [this]

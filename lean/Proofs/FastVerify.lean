@@ -5,19 +5,20 @@ import Proofs.Divergence
 /-!
 # The 4-way verify body equals the scalar one
 
-`verify.verify_internal_x4 K L Sh4` (the 4-way ExpandA, prepared key built in place) is *equal* as a `RustM` value
+`verify.verify_internal_x4 K L` (the 4-way ExpandA, prepared key built in place) is *equal* as a `RustM` value
 to the scalar `verify.verify_internal K L`, for every input, for every parameter set that satisfies `Params.Std`.
 Equality includes divergence: both sides are `div` exactly when the spec's `ExpandA` has no result at any fuel.
 
-* `expand_a_x4_eq` (ExpandA4) : `sampling.expand_a_x4 K L Sh4 ρ = sampling.expand_a K L ρ`.
+* `expand_a_x4_eq` (ExpandA4) : `sampling.expand_a_x4 K L ρ = sampling.expand_a K L ρ`.
 * `prepare_vk_x4_eq`, `prepare_vk_into_x4_zero` : the key half.
 * `verify_internal_x4_eq` : the whole verifier, for any `p`, `pk`, `m_prefix`, `m`, `sig`.
 * `verify_internal_x4_NN_exact`, `verify_internal_x4_NN_div_iff` : the `_exact` and `_div_iff` forms of
   `verify_internal_NN` for the three standard sets, stated about the `api` wrapper body run with the 4-way verifier.
 
-Because `Sh4` is the portable 4-way Keccak whose lanes are proved equal to the scalar permutation
-(`keccak_f1600_x4_shim_spec`), this says that the 4-way verifier, on the shim, computes FIPS 204 Algorithm 8 exactly.
-The AVX2 backend is a refinement of the same `Lanes4` interface and is not part of this statement.
+The 4-way Keccak (`keccak4.keccak_f1600_x4`, plain Rust) is proved equal, state by state, to the scalar permutation
+(`keccak_f1600_x4_spec`), so this says that the 4-way verifier computes FIPS 204 Algorithm 8 exactly. The AVX2
+build compiles these same functions inside `#[target_feature(enable = "avx2")]` wrappers; the dispatch to them
+is proved in `Proofs/Dispatch.lean`.
 -/
 
 open Aeneas Aeneas.Std RustM
@@ -30,36 +31,36 @@ open Verify APIInternal
 open SampleA
 
 /-- `prepare_vk_into_x4` on the all-zero key is `prepare_vk_x4`. -/
-theorem prepare_vk_into_x4_zero {X : Type} (K L : Usize) (I : keccak4.Lanes4 X) (pk : Slice U8) :
-    verify.prepare_vk_into_x4 I pk
+theorem prepare_vk_into_x4_zero (K L : Usize) (pk : Slice U8) :
+    verify.prepare_vk_into_x4 pk
       ({ a_hat := Array.repeat K (Array.repeat L (Array.repeat 256#usize 0#u32))
          t1_2d_hat := Array.repeat K (Array.repeat 256#usize 0#u32)
-         tr := Array.repeat 64#usize 0#u8 } : verify.PreparedVk K L) = verify.prepare_vk_x4 K L I pk := rfl
+         tr := Array.repeat 64#usize 0#u8 } : verify.PreparedVk K L) = verify.prepare_vk_x4 K L pk := rfl
 
 /-- The in-place 4-way key half followed by anything is the by-value `prepare_vk_x4` followed by it. -/
-theorem prepare_vk_x4_zeroed_bind {X : Type} {α : Type} (K L : Usize) (I : keccak4.Lanes4 X) (pk : Slice U8)
+theorem prepare_vk_x4_zeroed_bind {α : Type} (K L : Usize) (pk : Slice U8)
     (F : verify.PreparedVk K L → RustM α) :
-    (verify.PreparedVk.zeroed K L >>= fun vk => verify.prepare_vk_into_x4 I pk vk >>= F) =
-      (verify.prepare_vk_x4 K L I pk >>= F) := by
+    (verify.PreparedVk.zeroed K L >>= fun vk => verify.prepare_vk_into_x4 pk vk >>= F) =
+      (verify.prepare_vk_x4 K L pk >>= F) := by
   simp only [verify.PreparedVk.zeroed, Std.bind_tc_ok]
   rw [prepare_vk_into_x4_zero]
 
 /-- The numeric facts about `K`, `L` that the 4-way ExpandA needs, from the standard parameter bundle. -/
 theorem expand_a_x4_eq_std {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (rho : Array U8 32#usize) :
-    sampling.expand_a_x4 K L Sh4 rho = sampling.expand_a K L rho :=
+    sampling.expand_a_x4 K L rho = sampling.expand_a K L rho :=
   expand_a_x4_eq sp K L hp.1.K_eq hp.1.L_eq hp.2.ell_pos hp.2.k_le_8 hp.2.kl_lt rho
 
 theorem bytesA_inj {n : Usize} {a b : Array U8 n} (h : bytesA a = bytesA b) : a = b :=
   Subtype.ext (List.map_injective_iff.mpr ofNat_val_injective h)
 
-/-- **The 3+1 ExpandA with `tr` is ExpandA followed by `tr = H(pk, 64)`.** `expand_a_tr_into_x4` on the shim returns
+/-- **The 3+1 ExpandA with `tr` is ExpandA followed by `tr = H(pk, 64)`.** `expand_a_tr_into_x4` returns
 exactly what `expand_a` and `hash_pk` return, as `RustM` values (so including divergence, which happens where ExpandA's
 does), whatever matrix it starts from and whatever its schedule decides. -/
 theorem expand_a_tr_into_x4_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (rho : Array U8 32#usize) (pk : Slice U8)
     (a : Array (Array (Array U32 256#usize) L) K) :
-    sampling.expand_a_tr_into_x4 Sh4 rho pk a =
+    sampling.expand_a_tr_into_x4 rho pk a =
       (sampling.expand_a K L rho >>= fun a1 => verify.hash_pk pk >>= fun tr => ok (tr, a1)) := by
   have hK : K.val = sp.k := hp.1.K_eq
   have hL : L.val = sp.ℓ := hp.1.L_eq
@@ -122,7 +123,7 @@ theorem expand_a_tr_into_x4_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spe
 /-- **`prepare_vk_x4` is `prepare_vk`.** -/
 theorem prepare_vk_x4_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (pk : Slice U8) :
-    verify.prepare_vk_x4 K L Sh4 pk = verify.prepare_vk K L pk := by
+    verify.prepare_vk_x4 K L pk = verify.prepare_vk K L pk := by
   unfold verify.prepare_vk_x4 verify.prepare_vk
   simp only [expand_a_tr_into_x4_eq hp, bind_assoc, Std.bind_tc_ok]
   rfl
@@ -130,7 +131,7 @@ theorem prepare_vk_x4_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Para
 /-- **`verify_internal_x4` is `verify_internal`**, as `RustM` values (so including divergence), for every input. -/
 theorem verify_internal_x4_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (p : Impl.params.Params) (pk m_prefix m sig : Slice U8) :
-    verify.verify_internal_x4 K L Sh4 p pk m_prefix m sig = verify.verify_internal K L p pk m_prefix m sig := by
+    verify.verify_internal_x4 K L p pk m_prefix m sig = verify.verify_internal K L p pk m_prefix m sig := by
   rw [verify_internal_def]
   unfold verify.verify_internal_x4
   simp only [prepare_vk_x4_zeroed_bind, prepare_vk_x4_eq hp]
@@ -143,7 +144,7 @@ def verifyInternalX4API (n N : Usize) (K L : Usize) (P : RustM params.Params) (p
   let s ← lift (Array.to_slice pk)
   let s1 ← lift (Array.to_slice (Std.Array.empty Std.U8))
   let s2 ← lift (Array.to_slice sig)
-  verify.verify_internal_x4 K L Sh4 p s s1 m s2
+  verify.verify_internal_x4 K L p s s1 m s2
 
 theorem verifyInternalX4API_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
     (hp : Params.Std ip K L sp) (n N : Usize) (pk : Array U8 n) (m : Slice U8) (sig : Array U8 N) :

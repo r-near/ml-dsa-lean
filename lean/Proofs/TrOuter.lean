@@ -27,7 +27,7 @@ theorem tr_body_partial {K L : Usize} (rho : Array U8 32#usize) (pk : Slice U8) 
     (htail : ∀ k, k < 17 → toU64 (tail.val[k]!) = Wb (blkT (bytes pk) q.val) k)
     (ht : t.val ≤ q.val + 1) (hs : toLanes trs = HS (bytes pk) t.val)
     (F : Nat) (Pf : Nat → Poly) (h : GoodA rho n.val F Pf a first.val) :
-    sampling.expand_a_tr_into_x4_loop.body Sh4 rho pk n q g3 tail a trs t first g ⦃ c =>
+    sampling.expand_a_tr_into_x4_loop.body rho pk n q g3 tail a trs t first g ⦃ c =>
       match c with
       | .done y => ¬ (first.val < n.val ∧ g.val < g3.val) ∧ y = (a, trs, t, first)
       | .cont (a', trs', t', first', g') => first'.val = first.val + 3 ∧ g'.val = g.val + 1 ∧
@@ -176,7 +176,7 @@ theorem tr_loop_partial {K L : Usize} (rho : Array U8 32#usize) (pk : Slice U8) 
     (a : Array (Array (Array U32 256#usize) L) K) (trs : Array U64 25#usize) (t first g : Usize)
     (ht : t.val ≤ q.val + 1) (hs : toLanes trs = HS (bytes pk) t.val)
     (F : Nat) (Pf : Nat → Poly) (h : GoodA rho n.val F Pf a first.val) :
-    sampling.expand_a_tr_into_x4_loop Sh4 rho pk a n q g3 tail trs t first g ⦃ y =>
+    sampling.expand_a_tr_into_x4_loop rho pk a n q g3 tail trs t first g ⦃ y =>
       (∃ (F' : Nat) (Pf' : Nat → Poly), GoodA rho n.val F' Pf' y.1 y.2.2.2.val) ∧
       y.2.2.1.val ≤ q.val + 1 ∧ toLanes y.2.1 = HS (bytes pk) y.2.2.1.val ⦄div := by
   unfold sampling.expand_a_tr_into_x4_loop
@@ -203,7 +203,7 @@ theorem tr_body_term {K L : Usize} (rho : Array U8 32#usize) (pk : Slice U8) (n 
     (htail : ∀ k, k < 17 → toU64 (tail.val[k]!) = Wb (blkT (bytes pk) q.val) k)
     (ht : t.val ≤ q.val + 1) (hs : toLanes trs = HS (bytes pk) t.val)
     (F : Nat) (hF : ∀ e, e < n.val → ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P) :
-    sampling.expand_a_tr_into_x4_loop.body Sh4 rho pk n q g3 tail a trs t first g ⦃ c =>
+    sampling.expand_a_tr_into_x4_loop.body rho pk n q g3 tail a trs t first g ⦃ c =>
       match c with
       | .done y => ¬ (first.val < n.val ∧ g.val < g3.val) ∧ y = (a, trs, t, first)
       | .cont (_, trs', t', first', _) => first.val < n.val ∧ first'.val = first.val + 3 ∧
@@ -273,7 +273,7 @@ theorem tr_loop_term {K L : Usize} (rho : Array U8 32#usize) (pk : Slice U8) (n 
     (F : Nat) (hF : ∀ e, e < n.val → ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P)
     (a : Array (Array (Array U32 256#usize) L) K) (trs : Array U64 25#usize) (t first g : Usize)
     (ht : t.val ≤ q.val + 1) (hs : toLanes trs = HS (bytes pk) t.val) :
-    sampling.expand_a_tr_into_x4_loop Sh4 rho pk a n q g3 tail trs t first g ⦃ y =>
+    sampling.expand_a_tr_into_x4_loop rho pk a n q g3 tail trs t first g ⦃ y =>
       y.2.2.1.val ≤ q.val + 1 ∧ toLanes y.2.1 = HS (bytes pk) y.2.2.1.val ⦄ := by
   unfold sampling.expand_a_tr_into_x4_loop
   apply loop.spec_decr_nat
@@ -295,7 +295,7 @@ theorem tr_loop_term {K L : Usize} (rho : Array U8 32#usize) (pk : Slice U8) (n 
 theorem expand_a_from_x4_partial {K L : Usize} (rho : Array U8 32#usize) (hL : 0 < L.val) (hLs : L.val < 256)
     (hK : K.val < 256) (hKL : K.val * L.val ≤ 2048) (a : Array (Array (Array U32 256#usize) L) K) (first : Usize)
     (F : Nat) (Pf : Nat → Poly) (h : GoodA rho (K.val * L.val) F Pf a first.val) :
-    sampling.expand_a_from_x4 Sh4 rho a first ⦃ y => ∃ (F' : Nat) (Pf' : Nat → Poly),
+    sampling.expand_a_from_x4 rho a first ⦃ y => ∃ (F' : Nat) (Pf' : Nat → Poly),
       GoodA rho (K.val * L.val) F' Pf' y (K.val * L.val) ⦄div := by
   unfold sampling.expand_a_from_x4
   step*
@@ -310,7 +310,7 @@ theorem expand_a_from_x4_term {K L : Usize} (rho : Array U8 32#usize) (hL : 0 < 
     (hF : ∀ e, e < K.val * L.val →
       ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P)
     (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) :
-    sampling.expand_a_from_x4 Sh4 rho a first ⦃ _ => True ⦄ := by
+    sampling.expand_a_from_x4 rho a first ⦃ _ => True ⦄ := by
   unfold sampling.expand_a_from_x4
   step*
   have hn' : n.val = K.val * L.val := n_post
@@ -341,7 +341,7 @@ theorem bytesA_tr (pk : Slice U8) (out : Array U8 64#usize)
 theorem expand_a_tr_into_x4_partial {K L : Usize} (rho : Array U8 32#usize) (pk : Slice U8)
     (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hKL : K.val * L.val ≤ 2048)
     (a : Array (Array (Array U32 256#usize) L) K) :
-    sampling.expand_a_tr_into_x4 Sh4 rho pk a ⦃ r => (∃ (F : Nat) (Pf : Nat → Poly),
+    sampling.expand_a_tr_into_x4 rho pk a ⦃ r => (∃ (F : Nat) (Pf : Nat → Poly),
       GoodA rho (K.val * L.val) F Pf r.2 (K.val * L.val)) ∧ bytesA r.1 = H (bytes pk) 64 ⦄div := by
   unfold sampling.expand_a_tr_into_x4
   simp only [RATE256_eq]
@@ -379,7 +379,7 @@ theorem expand_a_tr_into_x4_term {K L : Usize} (rho : Array U8 32#usize) (pk : S
     (hF : ∀ e, e < K.val * L.val →
       ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P)
     (a : Array (Array (Array U32 256#usize) L) K) :
-    sampling.expand_a_tr_into_x4 Sh4 rho pk a ⦃ _ => True ⦄ := by
+    sampling.expand_a_tr_into_x4 rho pk a ⦃ _ => True ⦄ := by
   unfold sampling.expand_a_tr_into_x4
   simp only [RATE256_eq]
   step as ⟨n, hn'⟩

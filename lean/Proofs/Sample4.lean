@@ -307,7 +307,7 @@ theorem rej_x4_body_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N b
     (st : St4) (p0 p1 p2 p3 : Array U32 312#usize) (j0 j1 j2 j3 : Usize) (more : Bool)
     (hb : more = true → 56 * (b + 1) ≤ N)
     (h : GInv rho s r N b (st, p0, p1, p2, p3, j0, j1, j2, j3, more)) :
-    sampling.rej_ntt_poly_x4_loop.body Sh4 st p0 p1 p2 p3 j0 j1 j2 j3 more ⦃ c =>
+    sampling.rej_ntt_poly_x4_loop.body st p0 p1 p2 p3 j0 j1 j2 j3 more ⦃ c =>
       match c with
       | .done y => more = false ∧ y = (p0, p1, p2, p3)
       | .cont x' => more = true ∧ GInv rho s r N (b + 1) x' ⦄ := by
@@ -315,7 +315,7 @@ theorem rej_x4_body_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N b
   simp only [sampling.rej_ntt_poly_x4_loop.body]
   split
   · rename_i hm
-    step with keccak_f1600_x4_shim_spec
+    step with keccak_f1600_x4_spec
     have hst1' := keccak_step_lanes rho s r b st st1 hst st1_post
     have hT : ∀ (i : Nat), i < 4 → ∀ p < 168, (Tn rho s r N i)[168 * b + p]? = some (KM.sb (pj st1 i) p) := by
       intro i hi p hp
@@ -367,7 +367,7 @@ theorem rej_x4_body_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N b
 def runLoop (x : St4 × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize ×
     Usize × Usize × Usize × Usize × Bool) :
     RustM (Array U32 312#usize × Array U32 312#usize × Array U32 312#usize × Array U32 312#usize) :=
-  sampling.rej_ntt_poly_x4_loop Sh4 x.1 x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2.1 x.2.2.2.2.2.2.1
+  sampling.rej_ntt_poly_x4_loop x.1 x.2.1 x.2.2.1 x.2.2.2.1 x.2.2.2.2.1 x.2.2.2.2.2.1 x.2.2.2.2.2.2.1
     x.2.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.2.1 x.2.2.2.2.2.2.2.2.2
 
 def FinAll (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N : Nat)
@@ -458,7 +458,7 @@ theorem init_GInv (rho : Array U8 32#usize) (s r : Array U8 4#usize) (N : Nat) (
 
 theorem rej_ntt_poly_x4_spec (rho : Array U8 32#usize) (s r : Array U8 4#usize) (F : Nat) (P : Nat → Poly)
     (hP : ∀ i, i < 4 → Spec.RejNTTPoly F (Mi rho s r i) = some (P i)) :
-    sampling.rej_ntt_poly_x4 Sh4 rho s r ⦃ q =>
+    sampling.rej_ntt_poly_x4 rho s r ⦃ q =>
       ∀ (i : Nat) (hi : i < q.val.length), i < 4 → Repr (q.val[i]) (P i) ⦄ := by
   have hG : F ≤ 56 * ((F + 55) / 56) := by omega
   set G := (F + 55) / 56 with hGdef
@@ -552,7 +552,7 @@ theorem rej_x4_loop_partial (rho : Array U8 32#usize) (s r : Array U8 4#usize)
       · exact lane_fin _ _ _ le_rfl _ _ hl3 hn.2.2.2
 
 theorem rej_ntt_poly_x4_partial (rho : Array U8 32#usize) (s r : Array U8 4#usize) :
-    sampling.rej_ntt_poly_x4 Sh4 rho s r ⦃ q => ∃ (F : Nat) (P : Nat → Poly),
+    sampling.rej_ntt_poly_x4 rho s r ⦃ q => ∃ (F : Nat) (P : Nat → Poly),
       (∀ i, i < 4 → Spec.RejNTTPoly F (Mi rho s r i) = some (P i)) ∧
       ∀ (i : Nat) (hi : i < q.val.length), i < 4 → Repr (q.val[i]) (P i) ⦄div := by
   unfold sampling.rej_ntt_poly_x4

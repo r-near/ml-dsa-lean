@@ -3,7 +3,7 @@ import Proofs.Sample4
 /-!
 # The 4-way ExpandA
 
-`sampling.expand_a_x4 K L Sh4` is `sampling.expand_a K L` (`expand_a_x4_eq`): both are partially correct for the spec's
+`sampling.expand_a_x4 K L` is `sampling.expand_a K L` (`expand_a_x4_eq`): both are partially correct for the spec's
 `ExpandA` (`expand_a_x4_partial`, `expand_a_partial`), the 4-way one terminates whenever the spec's `ExpandA` has a
 result (`expand_a_x4_term`), and the matrix is unique (`ReprMat.unique`), so the two `RustM` values agree, divergence
 included (`rustM_eq_of_partial`).
@@ -192,7 +192,7 @@ theorem x4_body_partial {K L : Usize} (rho : Array U8 32#usize) (n : Usize)
     (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) (hn : n.val ≤ 2048)
     (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
     (F : Nat) (Pf : Nat → Poly) (h : GoodA rho n.val F Pf a first.val) :
-    sampling.expand_a_from_x4_loop.body Sh4 rho n a first ⦃ c =>
+    sampling.expand_a_from_x4_loop.body rho n a first ⦃ c =>
       match c with
       | .done y => ¬ first.val < n.val ∧ y = a
       | .cont (a', first') => first'.val = first.val + 4 ∧
@@ -365,7 +365,7 @@ theorem x4_loop_partial {K L : Usize} (rho : Array U8 32#usize) (n : Usize) (hn 
     (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
     (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) (F : Nat) (Pf : Nat → Poly)
     (h : GoodA rho n.val F Pf a first.val) :
-    sampling.expand_a_from_x4_loop Sh4 rho a n first ⦃ y => ∃ (F' : Nat) (Pf' : Nat → Poly),
+    sampling.expand_a_from_x4_loop rho a n first ⦃ y => ∃ (F' : Nat) (Pf' : Nat → Poly),
       GoodA rho n.val F' Pf' y n.val ⦄div := by
   unfold sampling.expand_a_from_x4_loop
   refine loop.dspec_inv _ (fun x : Array (Array (Array U32 256#usize) L) K × Usize =>
@@ -379,7 +379,7 @@ theorem x4_loop_partial {K L : Usize} (rho : Array U8 32#usize) (n : Usize) (hn 
 
 theorem expand_a_into_x4_partial {K L : Usize} (rho : Array U8 32#usize) (hL : 0 < L.val) (hLs : L.val < 256)
     (hK : K.val < 256) (hKL : K.val * L.val ≤ 2048) (a : Array (Array (Array U32 256#usize) L) K) :
-    sampling.expand_a_into_x4 Sh4 rho a ⦃ y => ∃ (F : Nat) (Pf : Nat → Poly),
+    sampling.expand_a_into_x4 rho a ⦃ y => ∃ (F : Nat) (Pf : Nat → Poly),
       GoodA rho (K.val * L.val) F Pf y (K.val * L.val) ⦄div := by
   unfold sampling.expand_a_into_x4 sampling.expand_a_from_x4
   step*
@@ -438,7 +438,7 @@ theorem goodA_to_expandA {K L : Usize} (sp : Spec.Params) (hK : K.val = sp.k) (h
 theorem expand_a_x4_partial (sp : Spec.Params) (K L : Usize) (hK : K.val = sp.k) (hL : L.val = sp.ℓ)
     (hLpos : 0 < L.val) (hLs : L.val < 256) (hK256 : K.val < 256) (hKL : K.val * L.val ≤ 2048)
     (rho : Array U8 32#usize) :
-    sampling.expand_a_x4 K L Sh4 rho ⦃ r => ∃ (A : Vector (Vector Poly sp.ℓ) sp.k) (F : Nat),
+    sampling.expand_a_x4 K L rho ⦃ r => ∃ (A : Vector (Vector Poly sp.ℓ) sp.k) (F : Nat),
       Spec.ExpandA sp F (bytesA rho) = some A ∧ ReprMat r A ⦄div := by
   unfold sampling.expand_a_x4
   step*
@@ -455,7 +455,7 @@ theorem x4_body_term {K L : Usize} (rho : Array U8 32#usize) (n : Usize)
     (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) (hn : n.val ≤ 2048)
     (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
     (F : Nat) (hF : ∀ e, e < n.val → ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P) :
-    sampling.expand_a_from_x4_loop.body Sh4 rho n a first ⦃ c =>
+    sampling.expand_a_from_x4_loop.body rho n a first ⦃ c =>
       match c with
       | .done _ => ¬ first.val < n.val
       | .cont (_, first') => first.val < n.val ∧ first'.val = first.val + 4 ⦄ := by
@@ -525,7 +525,7 @@ theorem x4_loop_term {K L : Usize} (rho : Array U8 32#usize) (n : Usize) (hn : n
     (hL : 0 < L.val) (hLs : L.val < 256) (hK : K.val < 256) (hnKL : n.val = K.val * L.val)
     (F : Nat) (hF : ∀ e, e < n.val → ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P)
     (a : Array (Array (Array U32 256#usize) L) K) (first : Usize) :
-    sampling.expand_a_from_x4_loop Sh4 rho a n first ⦃ _ => True ⦄ := by
+    sampling.expand_a_from_x4_loop rho a n first ⦃ _ => True ⦄ := by
   unfold sampling.expand_a_from_x4_loop
   apply loop.spec_decr_nat
     (fun (p : Array (Array (Array U32 256#usize) L) K × Usize) => n.val - p.2.val)
@@ -543,7 +543,7 @@ theorem expand_a_into_x4_term {K L : Usize} (rho : Array U8 32#usize) (hL : 0 < 
     (hF : ∀ e, e < K.val * L.val →
       ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P)
     (a : Array (Array (Array U32 256#usize) L) K) :
-    sampling.expand_a_into_x4 Sh4 rho a ⦃ _ => True ⦄ := by
+    sampling.expand_a_into_x4 rho a ⦃ _ => True ⦄ := by
   unfold sampling.expand_a_into_x4 sampling.expand_a_from_x4
   step*
   have hn' : n.val = K.val * L.val := n_post
@@ -553,7 +553,7 @@ theorem expand_a_x4_term {K L : Usize} (rho : Array U8 32#usize) (hL : 0 < L.val
     (hK : K.val < 256) (hKL : K.val * L.val ≤ 2048) (F : Nat)
     (hF : ∀ e, e < K.val * L.val →
       ∃ P, Spec.RejNTTPoly F (pSeed (bytesA rho) (e / L.val) (e % L.val)) = some P) :
-    sampling.expand_a_x4 K L Sh4 rho ⦃ _ => True ⦄ := by
+    sampling.expand_a_x4 K L rho ⦃ _ => True ⦄ := by
   unfold sampling.expand_a_x4
   step*
   exact expand_a_into_x4_term rho hL hLs hK hKL F hF _
@@ -593,7 +593,7 @@ theorem rustM_eq_of_partial {α : Type} (x y : RustM α) (P : Prop) (Qx Qy : α 
 
 theorem expand_a_x4_eq (sp : Spec.Params) (K L : Usize) (hK : K.val = sp.k) (hL : L.val = sp.ℓ)
     (hl0 : 0 < sp.ℓ) (hk8 : sp.k ≤ 8) (hkl : sp.k + sp.ℓ < 256) (rho : Array U8 32#usize) :
-    sampling.expand_a_x4 K L Sh4 rho = sampling.expand_a K L rho := by
+    sampling.expand_a_x4 K L rho = sampling.expand_a K L rho := by
   have hLpos : 0 < L.val := by omega
   have hLs : L.val < 256 := by omega
   have hK256 : K.val < 256 := by omega
