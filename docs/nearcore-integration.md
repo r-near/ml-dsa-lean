@@ -284,8 +284,8 @@ whatever the call chain above it makes it (a different one per thread, and per c
 4-way Keccak's 256-bit vectors to slots that are only 16-byte aligned, so that a slot straddling a 4 KiB page made each access a
 page split. Each dispatch wrapper now realigns its own frame to 32 bytes (`align_frame` in `src/fast_verify/dispatch.rs`; safe
 Rust, no new `unsafe`, nothing in the proofs changed), and `bench/stackscan.sh` (run by `bench/fast-verify.sh`) scans 257 stack
-offsets: with the fix the largest value is 1.02 to 1.03 times the median for every set and operation on rustc 1.99.1, and no
-rustc 1.95.0 scan (65 offsets, every 64 bytes) has an offset above 1.1 times the median (ML-DSA-65 one-shot, median 41.5, maximum 42.5 µs;
+offsets: with the fix the largest value is 1.02 to 1.03 times the median for every set and operation on rustc 1.99.1, and so is
+rustc 1.95.0 (largest 1.04, no offset above 1.1 times the median; ML-DSA-65 one-shot on 1.99.1: median 41.5, maximum 42.5 µs;
 `bench/results/2026-11-07-p6.md`). For a gas calibration this means the figure above is the cost at every offset; before it was
 the cost at six offsets in seven. Not measured: the stack of a real nearcore thread.
 

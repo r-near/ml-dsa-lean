@@ -68,7 +68,7 @@ The stack-offset fix (branch `fv-p6`; 1.9) is a later tree again. It changed no 
 `src/` are `src/fast_verify/dispatch.rs` (a stack-realigning local in each of the six wrappers, and `prepare_vk_avx2` building
 the key in place) and a `#[path]` attribute in `src/fast_verify.rs`; `lean/Impl` is re-extracted and only the extraction digest
 moved. Every gate below ran on the Linux build box on 2026-11-07 or 2026-11-08, on the tree of the commit named in the last column.
-The two standalone Lean gates ran on bd2a963, the last commit that changes `src/` or `lean/` (the `lean` step of `ci.sh --lean`
+The two standalone Lean gates ran on bd2a963, a bench-only commit whose `src/` and `lean/` are those of 364252a (the last commit that changes either) and of the final tree (the `lean` step of `ci.sh --lean`
 repeated the first on 306360d); the other gates ran on 306360d, which differs from bd2a963 by one attribute in
 `bench/src/bin/stackscan.rs`; the commit that adds this table changes documentation and benchmark result
 files only.
@@ -601,7 +601,7 @@ above the median for ML-DSA-87 (scan of 257 offsets, ML-DSA-65: median 42.3, max
 Keccak's 256-bit vectors to slots that are only 16-byte aligned, and a slot that straddles a 4 KiB page makes every access a page
 split; the wrappers now realign their frames to 32 bytes (1.9), and `verifying_key_NN` builds its key in place. After the fix the
 same scan has a maximum of 1.02 to 1.03 times the median in every set and operation, with no offset above 1.1 times
-(ML-DSA-65 one-shot: median 41.5, maximum 42.5 µs), on rustc 1.99.1 at 257 offsets and on 1.95.0 at 65 (`bench/stackscan.sh`, run
+(ML-DSA-65 one-shot: median 41.5, maximum 42.5 µs), on rustc 1.99.1 and on 1.95.0, both at 257 offsets (`bench/stackscan.sh`, run
 by `bench/fast-verify.sh`, which fails above 1.15; `bench/results/2026-11-07-p6.md`). Sign was A/B-tested against the commit before
 the AVX2 changes and did not move beyond run-to-run noise (ML-DSA-65 deterministic sign 356.4 and 352.0 µs), and nothing Sign
 calls changed in p6; the sign figures below date from 2026-10-31. Not measured: aarch64, wasm32, Intel and other AMD parts; one key pair per set, hot caches. Reproduce with `bench/fast-verify.sh`
