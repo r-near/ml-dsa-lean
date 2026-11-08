@@ -95,6 +95,7 @@ fn main() {
     let op = opt("--op").unwrap_or_else(|| "verify".into());
     let rounds: usize = opt("--rounds").map(|s| s.parse().unwrap()).unwrap_or(9);
     let calls: usize = opt("--calls").map(|s| s.parse().unwrap()).unwrap_or(200);
+    #[cfg_attr(not(all(feature = "internals", feature = "avx2")), allow(unused_variables))]
     let off: usize = opt("--off").map(|s| s.parse().unwrap()).unwrap_or(0);
     let marker = 0u8;
     let sp = (std::hint::black_box(&marker) as *const u8 as usize) & 0xfff;
