@@ -537,7 +537,8 @@ empty context, one key pair per set). Columns: `scalar` is the build without the
 where AVX2 is static and nothing is detected. The reference rows are measured in the same runs; the table lists their `avx2`-run
 value (they move by up to 4 µs between a run's three variants, which is run-to-run and layout noise, or, for libcrux, static AVX2
 under `v3`). Results and raw logs: `bench/results/2026-11-07-p5.md` (the table below; it adds the AVX2 wrapper of the prepared-key verify to
-the p4 tree) and `bench/results/2026-11-07-p4.md` (the verify-only arithmetic), and the logs next to them.
+the p4 tree; the 1.99.1 columns are its second run, `fast-verify-p5.log`, except the `avx2` one-shot ML-DSA-65 cell, from the first run,
+`fast-verify-p5-run1.log`, because the second hit a slow stack offset, see below) and `bench/results/2026-11-07-p4.md` (the verify-only arithmetic), and the logs next to them.
 
 | µs | 44, 1.99.1 | 65, 1.99.1 | 87, 1.99.1 | 44, 1.95.0 | 65, 1.95.0 | 87, 1.95.0 |
 |---|---|---|---|---|---|---|
