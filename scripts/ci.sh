@@ -139,7 +139,7 @@ step_test_zeroize() {
     cargo test --features zeroize --test zeroize -- stack_residue_signing_key
 }
 step_test_zeroize_release() { cargo test --release --features zeroize; }
-# The avx2 steps run the AVX2 tests (tests/keccak4_avx2.rs, tests/fast_verify.rs, tests/fast_verify_dispatch.rs, and the
+# The avx2 steps run the AVX2 tests (tests/keccak4_avx2.rs, tests/fast_verify.rs, tests/fast_verify_x4.rs, tests/fast_verify_tr.rs, and the
 # ACVP, Wycheproof and KAT suites through the dispatched API). ML_DSA_REQUIRE_AVX2=1 turns "this machine has no AVX2, so
 # the AVX2 path was not compared" from a printed note into a failure; GitHub-hosted x86_64 runners have AVX2.
 step_test_avx2() { ML_DSA_REQUIRE_AVX2=1 cargo test --features avx2; }

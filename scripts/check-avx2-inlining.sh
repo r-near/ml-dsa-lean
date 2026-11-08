@@ -8,7 +8,7 @@
 #   1. Everything is inlined into the wrapper (every link of the chain is `#[inline(always)]`). A callee that is not inlined
 #      is compiled WITHOUT AVX2: still correct, but several times slower, and nothing else would notice. The check builds the
 #      library in release with `--features avx2`, emits assembly, and fails if a verify-only arithmetic function is defined
-#      out of line, if a wrapper holds (almost) no ymm code, or if a wrapper does not realign its stack frame. It also
+#      out of line, if a wrapper holds (almost) no ymm code, or if a wrapper that owns a `PreparedVk` does not realign its stack frame. It also
 #      requires that the file contains 256-bit vector code (ymm registers) at all.
 #   2. The 4-way Keccak permutation (src/keccak4.rs: a loop over the four states around a straight-line two-round body) is
 #      vectorized by LLVM's loop vectorizer. That is a compiler heuristic: when it fails, the code is still correct but
@@ -74,23 +74,25 @@ if echo "$perm" | grep -q '^SCALAR'; then
   echo "FAIL: the 4-way Keccak permutation is not vectorized in a wrapper (LLVM's loop vectorizer rejected the loop over the four states in src/keccak4.rs)"
   exit 1
 fi
-# Every verify wrapper must realign its stack frame (`align_frame` in src/fast_verify/dispatch.rs): with the frame 32-byte
-# aligned, no 32-byte spill slot or array can straddle a 4 KiB page (a page-split access costs about 30 cycles, and a call at
-# the wrong stack offset used to take up to 12 us longer; bench/results/2026-11-07-p6.md). The realignment is an effect of an
-# over-aligned local that LLVM has to honor, so this is the regression guard across compiler versions. The prologue of each
-# instantiation (K = 4, 6, 8 of verify_internal_avx2, verify_prepared_avx2 and prepare_vk_avx2) must hold `andq $-32` (or a
-# stronger mask) on %rsp before its first `subq`.
+# The wrappers that own a `PreparedVk` (verify_internal_avx2, prepare_vk_avx2) must realign their stack frame. `PreparedVk` is
+# `#[repr(align(32))]` (src/verify.rs), so LLVM has to give the local a 32-byte aligned address, and with the frame 32-byte
+# aligned no 32-byte spill slot or array can straddle a 4 KiB page (a page-split access costs about 30 cycles, and a call at
+# the wrong stack offset used to take up to 12 us longer; bench/results/2026-11-07-p6.md). There is no code for this beyond
+# the type's alignment, so this is the regression guard across compiler versions. The prologue of each of the six
+# instantiations (K = 4, 6, 8 of verify_internal_avx2 and prepare_vk_avx2) must hold `andq $-32` (or a stronger mask) on %rsp.
+# verify_prepared_avx2 only borrows a key and is not required to realign (bench/stackscan.sh measures it: no call-to-call
+# variation from the stack offset); its count is printed for information.
 realign="$(awk '
-  /^[^ .#][^:]*(verify_internal_avx2|verify_prepared_avx2|prepare_vk_avx2)[^:]*:/ { name=$0; inbody=1; seen[name]=0; line=0; next }
+  /^[^ .#][^:]*(verify_internal_avx2|prepare_vk_avx2)[^:]*:/ { name=$0; inbody=1; seen[name]=0; line=0; next }
   inbody && /\.cfi_endproc/ { inbody=0 }
   inbody { line++ }
   inbody && line <= 20 && /andq[ \t]+\$-(32|64|128),[ \t]*%rsp/ { seen[name]=1 }
   END { for (k in seen) print seen[k], k }' "$ASM")"
 echo "stack-realigning wrappers (1 = realigned, symbol):"
 echo "$realign"
-if [ "$(echo "$realign" | grep -c .)" -lt 9 ]; then echo "FAIL: expected nine wrapper instantiations (verify_internal_avx2, verify_prepared_avx2, prepare_vk_avx2 for K = 4, 6, 8)"; exit 1; fi
+if [ "$(echo "$realign" | grep -c .)" -lt 6 ]; then echo "FAIL: expected six wrapper instantiations (verify_internal_avx2, prepare_vk_avx2 for K = 4, 6, 8)"; exit 1; fi
 if echo "$realign" | grep -q '^0 '; then
-  echo "FAIL: a verify wrapper does not realign its stack frame to 32 bytes (align_frame was dropped or optimized away)"
+  echo "FAIL: a wrapper that owns a PreparedVk does not realign its stack frame to 32 bytes (#[repr(align(32))] on PreparedVk was dropped, or the compiler no longer honors it)"
   exit 1
 fi
-echo "OK: 4-way permutation vectorized in every wrapper; verify-only arithmetic fully inlined; verify wrappers realign their frames; $ymm lines of ymm code"
+echo "OK: 4-way permutation vectorized in every wrapper; verify-only arithmetic fully inlined; the wrappers that own a key realign their frames; $ymm lines of ymm code"
