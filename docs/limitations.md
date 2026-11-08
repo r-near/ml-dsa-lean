@@ -27,28 +27,31 @@ input.
 - **It is about the Rust source as modeled by Aeneas.** Stack exhaustion, out-of-memory, rustc and LLVM, and the instruction
   set are trusted.
 - **Extraction runs with `--cfg miri`**, so the proved code is the source with its `cfg(miri)` variants: the `black_box`
-  barriers (`field::opaque_u32` and the RISC-V mask barrier) are the identity there, and the AVX2 dispatch is absent. Those
-  are not in the proved code ([assurance.md](assurance.md) section 2).
+  barriers (`field::opaque_u32` and the RISC-V mask barrier) are the identity there (none is on a verify path), and the CPU check
+  `cpu::avx2()` is the stub `None`. The dispatch around it is extracted and proved for every answer of the check; the check
+  itself is not ([assurance.md](assurance.md) sections 1.9 and 2).
 - **The specification is trusted.** `lean/Spec` is our transcription of FIPS 204; the standard itself is not formalized. It
   has been cross-checked against test vectors and against ocaml-pq's independent transcription (proved equal in `xspec/`,
   with the qualifiers in [assurance.md](assurance.md) section 1.8: their Sign loop stops after 821 attempts, their key import
   rejects inconsistent keys that FIPS 204 accepts, and some directions assume their rejection samplers terminate).
 - **The `zeroize` feature is outside the proof.**
-- **The `avx2` feature is proved only modulo a tested link.** Without it, the code that ships is exactly the extracted code
-  and the crate has `forbid(unsafe_code)`. With it on x86_64, `verify_NN` and `verifying_key_NN` check the CPU at run time and
-  use a 4-way body (4-way Keccak-f[1600], SHAKE128 and ExpandA, with `tr = H(pk, 64)` hashed in a spare lane). Lean proves that body equal to the scalar verify on every
-  input, divergence included, for its plain-Rust instance `Shim4` only (`lean/fast-verify-theorems.txt`,
-  [assurance.md](assurance.md) section 1.9). The shipped AVX2 build runs the same body over intrinsic lane operations
-  (`Avx2`), which are tested equal to `Shim4`, not proved (`tests/keccak4_avx2.rs`). So that build is proved modulo the tested
-  equivalence of the AVX2 lane operations to the proved shim. Also outside the proof:
-  - the dispatch glue (`src/fast_verify/dispatch.rs`) and the CPU and OS detection (`src/cpu.rs`);
-  - rustc and LLVM compiling the `#[target_feature(enable = "avx2")]` clone of the body, which the proof does not see (a
-    missed inlining would change only speed, and `scripts/check-avx2-inlining.sh` checks for that);
-  - the AVX2 copy of the NTT, which is tested against the portable copy (`tests/dispatch.rs`), not proved.
+- **The `avx2` feature is proved at source level; the CPU check and the compilation are trusted.** Without it, the code that
+  ships is exactly the extracted code and the crate has `forbid(unsafe_code)`. With it on x86_64, `verify_NN`, `verify_internal_NN`,
+  `verifying_key_NN`, `verify_prepared_NN` and `verify_internal_prepared_NN` check the CPU at run time and use a 4-way body
+  (4-way Keccak-f[1600], SHAKE128 and ExpandA, with `tr = H(pk, 64)` hashed in a spare lane) or the prepared-key verify, compiled with
+  AVX2. Lean proves the 4-way body equal to the scalar verify on every input, divergence included, and proves the dispatch (the
+  `_with` functions that take the CPU check's answer, and the public functions that call them) equal to the scalar function for
+  **every** answer (`lean/fast-verify-theorems.txt`, `Proofs/Dispatch.lean`, [assurance.md](assurance.md) section 1.9). The 4-way
+  Keccak is plain Rust and proved, not an intrinsic layer with a tested link. Still outside the proof, on those paths:
+  - the CPU check (`src/cpu.rs`, and the 15 lines of `src/api.rs` that call it): a wrong answer can only be a crash on a CPU without
+    AVX2 or a slower scalar run, never a different result, because both arms are proved equal;
+  - rustc and LLVM compiling the `#[target_feature(enable = "avx2")]` wrappers, which the proof does not see (that the compiler
+    inlines and vectorizes is a performance property, and `scripts/check-avx2-inlining.sh` checks it);
+  - the AVX2 copy of the NTT, used by signing and key generation (not by verify), which is tested against the portable copy
+    (`tests/dispatch.rs`), not proved.
 
-  These make up the crate's only `unsafe`. A lane operation that differs from the shim on an input the tests missed, or a
-  compiler error in the AVX2 clone, would let the AVX2 verdict differ from the proved one; the tests are evidence against
-  that, not a proof.
+  These make up the crate's only `unsafe`. A compiler error in the AVX2 wrappers would let the AVX2 verdict differ from the proved
+  one; the tests (`../tests/fast_verify.rs` and friends) are evidence against that, not a proof.
 - **HashML-DSA and external μ are not implemented.**
 - **Constant time is not proved.** It is checked on compiled code with BINSEC (next section).
 - **Not audited by any third party, not FIPS-validated, and not a certified module.**
@@ -83,9 +86,9 @@ Tests are evidence, not proofs.
 
 - **Differential tests** against RustCrypto `ml-dsa`, `aws-lc-rs` (0 verdict differences in about 3.2M verify comparisons;
   empty context only), libcrux-ml-dsa and mldsa-native (`../crosscheck/`).
-- **AVX2 fast verify** (needs a CPU with AVX2): the AVX2 lane operations, rotations and whole permutations against `Shim4`
-  and the scalar permutation (`../tests/keccak4_avx2.rs`); the dispatched and AVX2 verify against the scalar verify on ACVP,
-  Wycheproof and random inputs through every API path (`../tests/fast_verify.rs`).
+- **AVX2 fast verify** (needs a CPU with AVX2): the permutation compiled with AVX2 against four scalar permutations
+  (`../tests/keccak4_avx2.rs`); the dispatched and AVX2 verify against the scalar verify on ACVP, Wycheproof and random inputs
+  through every API path (`../tests/fast_verify.rs`).
 - **Test vectors:** NIST ACVP (keyGen, sigGen, sigVer; the preHash and external-μ cases are skipped) and Wycheproof.
 - **Fuzzing:** differential fuzz targets against RustCrypto (`../fuzz/`) and the other implementations.
 

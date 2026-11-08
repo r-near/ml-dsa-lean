@@ -49,9 +49,10 @@ cover the rest.
 Optional features:
 
 - `zeroize` wipes dropped signing keys and, best effort, secret intermediates.
-- `avx2` adds runtime-dispatched AVX2 code on x86_64: a fast verify whose 4-way body is proved equal to the scalar verify,
-  with the AVX2 lane operations it runs on tested equal to the proved model, not proved, and an AVX2 NTT that is tested, not
-  proved. The dispatch glue is outside the proof; see `docs/limitations.md`.
+- `avx2` adds runtime-dispatched AVX2 code on x86_64: a fast verify whose 4-way body, and the run-time choice between it and the
+  scalar verify (for either answer of the CPU check), are proved equal to the scalar verify at source level; and an AVX2 NTT for
+  signing and key generation that is tested, not proved. The CPU check and the compiler's output for the AVX2 wrappers are outside
+  the proof; see `docs/limitations.md`.
 
 Requires Rust 1.86 or newer.
 

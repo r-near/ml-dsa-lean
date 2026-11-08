@@ -333,12 +333,12 @@ no BINSEC verdict, and functional evidence from `tests/dispatch.rs` and the KAT 
   hardware, as in section 2.3).
 
 
-**The 4-way verify (`src/fast_verify.rs`).** Verify handles only public data, so the 4-way body, the AVX2 lane operations
-(`keccak4::avx2`) and the verify-only `poly_use_hint_pub` and `bit_unpack_pub` have no BINSEC probes and need none; BINSEC
+**The 4-way verify (`src/fast_verify.rs`).** Verify handles only public data, so the 4-way body (plain Rust, compiled with AVX2 inside
+the `#[target_feature]` wrappers of `src/fast_verify/dispatch.rs`) and the verify-only `poly_use_hint_pub` and `bit_unpack_pub` have no BINSEC probes and need none; BINSEC
 0.11.3 could not lift the VEX code anyway. The functional evidence for them, and for the dispatch, is in assurance.md section 1.9
 and the tests it lists. The full sweep was not rerun after the dispatch gained the verify arm: it predates it, and Sign and KeyGen code is
-unchanged since. The driver builds on this tree for every target and profile (it includes `keccak4` and `cpu` by `#[path]`
-and mirrors the two cfg-gated items of `fast_verify.rs` around the real `fast_verify/dispatch.rs`), and a small BINSEC run
+unchanged since. The driver builds on this tree for every target and profile (it includes `keccak4`, `cpu`, the real
+`fast_verify.rs` (with its `dispatch` module) and `api.rs` by `#[path]`), and a small BINSEC run
 reproduced the sweep's verdicts for the probes it covered (assurance.md section 4). The pre-set described above anchors on
 the symbol `driver::cpu::AVX2` (`checkct/run-select.sh`): the cache static moved from `src/ntt.rs` to `src/cpu.rs` and is now
 shared by the NTT and verify dispatch.

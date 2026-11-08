@@ -31,15 +31,19 @@ ML_DSA_REQUIRE_AVX2=1 cargo test --features avx2,internals   # on an AVX2 machin
 bash scripts/check-avx2-inlining.sh                           # x86_64 Linux; see below
 ```
 
-The `avx2` feature's tests (`tests/keccak4_avx2.rs`, `tests/fast_verify.rs`, `tests/fast_verify_x4.rs`,
-`tests/fast_verify_dispatch.rs`, `tests/dispatch.rs`) compare the AVX2 code with the portable code and need a CPU with AVX2 to say
+The `avx2` feature's tests (`tests/keccak4_avx2.rs`, `tests/fast_verify.rs`, `tests/fast_verify_x4.rs`, `tests/fast_verify_tr.rs`,
+`tests/dispatch.rs`) compare the AVX2 code with the portable code and need a CPU with AVX2 to say
 anything: without one they pass after printing a note that the AVX2 path was not compared. `ML_DSA_REQUIRE_AVX2=1` turns that
 note into a failure (`scripts/ci.sh` sets it for its `avx2` steps). They are `cfg`'d out on other architectures, so a pass on
 an aarch64 Mac proves nothing about them; run them on x86_64. `scripts/check-avx2-inlining.sh` builds the library in release with
-`--features avx2` under nearcore's target features, emits assembly, and fails unless the 4-way verify body contains 256-bit vector
-code and no `_mm256_*` or `_mm_*` intrinsic wrapper is called out of line (it would still be correct, but several times slower).
+`--features avx2` under nearcore's target features, emits assembly, and fails unless each wrapper contains 256-bit vector code, the
+4-way permutation in it is vectorized, no verify-only arithmetic function is defined out of line, and the wrappers that own a
+`PreparedVk` realign their stack frames (these are performance properties: a miss would still be correct, but several times slower).
+`bash bench/stackscan.sh build NAME && OPS=verify,vk,prepared bash bench/stackscan.sh check CPU NAME` scans 257 stack offsets for
+all nine wrapper instantiations (`STACK SCAN OK` when the largest is within 1.15 of the median).
 The Lean theorems behind the 4-way verify (`lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`) are checked by
-`scripts/lean-check.sh` (section 2.1).
+`scripts/lean-check.sh` (section 2.1). `Proofs/Dispatch.lean` (in the second list) is the proof that the dispatch between the scalar and
+the AVX2 functions makes no difference for either answer of the CPU check.
 
 MSRV is Rust 1.86 (`cargo +1.86.0 build`). The crate itself is `no_std`, has no dependencies without the `zeroize` feature, and
 needs no C compiler. `cargo test` does need one, because the dev-dependency `aws-lc-rs` builds `aws-lc-sys` (C) for the
@@ -105,7 +109,7 @@ on a nonzero Lake exit, on any `error:` or `declaration uses 'sorry'` in the ful
 `scripts/check-axioms.sh`. The axiom check prints the axioms of every extracted definition and of every name in
 `lean/headline-theorems.txt` and fails if any is not one of `propext`, `Classical.choice`, `Quot.sound`. `lean-check.sh` then runs
 the same gate over `lean/keccak4-theorems.txt` and `lean/fast-verify-theorems.txt` (the 4-way Keccak, sampler, ExpandA and verify
-theorems, assurance.md section 1.9; `scripts/check-axioms.sh --list FILE --no-impl` runs one list). A `sorry` would
+theorems and the dispatch theorems, assurance.md section 1.9; `scripts/check-axioms.sh --list FILE --no-impl` runs one list). A `sorry` would
 show up as `sorryAx` and `native_decide` as an extra axiom, so both fail the check. The axiom gate prints the declaration count
 on its `defs/theorems to check:` and `checked:` lines (the count depends on the tree; assurance.md section 0 has the recorded one); success ends with `LEAN CHECK OK` and does not
 repeat it. Pass module names to build less, for example

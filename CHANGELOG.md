@@ -10,9 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - With the `avx2` feature on x86_64, `verify_NN` and `verifying_key_NN` check the CPU at run time and use a 4-way body (4-way
-  Keccak-f[1600], SHAKE128 and ExpandA) on a CPU with AVX2. Lean proves the body equal to the scalar verify on every input for its
-  plain-Rust instance; the AVX2 lane operations it runs on are tested equal to that instance, not proved
-  (`docs/assurance.md` section 1.9, `docs/limitations.md`). ML-DSA-65 verify takes 54.0 µs with it against 103.8 µs scalar under
+  Keccak-f[1600], SHAKE128 and ExpandA) on a CPU with AVX2. Lean proves the body equal to the scalar verify on every input, and
+  (below) the choice between the two for every answer of the CPU check (`docs/assurance.md` section 1.9, `docs/limitations.md`). ML-DSA-65 verify takes 54.0 µs with it against 103.8 µs scalar under
   nearcore's flags with rustc 1.99.1 (`bench/results/2026-11-07-p3.md`); 43.1 µs with the verify-only arithmetic below
   (`bench/results/2026-11-07-p4.md`).
 - Lean theorems for the 4-way verify (`lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`), gated by
@@ -48,12 +47,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - With the `avx2` feature, the one-shot verify and `verifying_key_NN` compute `tr = H(pk, 64)` in the fourth lane of the first
   groups of the 4-way ExpandA (three ExpandA entries per group, the SHAKE256 absorb of the key in the spare lane; what the lane
   does not reach is finished with the scalar permutation) instead of with the scalar permutation after ExpandA. Plain Rust inside
-  the existing `Lanes4` surface; the dispatch wrappers are unchanged and nothing Sign or KeyGen calls changed. Lean proves it
+  plain Rust; the dispatch wrappers are unchanged and nothing Sign or KeyGen calls changed. Lean proves it
   equal to ExpandA followed by `hash_pk` as `RustM` values for every key and all three parameter sets, for any group schedule
   (`Proofs.expand_a_tr_into_x4_eq`; `prepare_vk_x4_eq` keeps its statement; 28 more names in `lean/fast-verify-theorems.txt`, 79 in
   all). ML-DSA-65 one-shot verify takes 38.5 µs (rustc 1.99.1; 41.8 before) and 38.7 µs (1.95.0), ML-DSA-44 26.1 (was 26.5) and
   ML-DSA-87 60.8 µs (was 64.6); `verifying_key_65` 28.5 µs (was 32.2). The prepared-key verify is unchanged
   (`bench/results/2026-11-07-p7.md`, `docs/assurance.md` section 1.9). `tests/fast_verify_tr.rs` compares it with the scalar functions.
+- The 4-way Keccak is plain Rust and proved, and the AVX2 dispatch is extracted and proved (`bench/results/2026-11-08-p8.md`,
+  `docs/assurance.md` section 1.9):
+  - `src/keccak4.rs` has no trait, no lane operation and no intrinsic: `keccak_f1600_x4` is a loop over the four states around a
+    straight-line scalar round, which LLVM vectorizes when it is compiled with AVX2 (a performance property that
+    `scripts/check-avx2-inlining.sh` checks, not a premise). Lean proves `round25`, `lane_rounds2` and `keccak_f1600_x4` equal to
+    four runs of the scalar permutation (`lean/keccak4-theorems.txt`: 6 names, was 9). The `Lanes4`/`Shim4`/`Avx2` layer and its
+    tested-not-proved link are gone. Every theorem that took the `Sh4` instance lost that argument and nothing else, except
+    `keccak_f1600_x4_shim_spec`, which is `keccak_f1600_x4_spec` (and `prepare_vk_into_x4_zero`, `prepare_vk_x4_zeroed_bind`, which
+    lost their `Lanes4` argument too). No statement in `lean/headline-theorems.txt` changed.
+  - The choice between the scalar and the AVX2 functions is extracted Rust. `cpu::avx2()` returns `Option<Avx2>`, a token only it can
+    make; three crate-private functions in `src/fast_verify.rs` (`verify_internal_with`, `prepare_vk_with`,
+    `verify_prepared_internal_with`) take it and call the scalar function or `unsafe { wrapper }`; each public verify,
+    `verifying_key` and prepared-verify function in `src/api.rs` is one line calling its `NAME_with(cpu::avx2(), ..)` twin (15 new
+    crate-private functions). `Proofs/Dispatch.lean` proves, as `RustM` equalities for every token value, that each `_with` function
+    is the scalar function (23 more names in `lean/fast-verify-theorems.txt`).
+  - Removed: `align_frame()`/`black_box` (`PreparedVk` is `#[repr(align(32))]` instead; `scripts/check-avx2-inlining.sh` requires
+    the realignment of the six wrappers that own a key), the dead test hooks of `src/fast_verify/dispatch.rs` (the `internals`
+    entry points moved to `src/fast_verify/hooks.rs`) and `tests/fast_verify_dispatch.rs`.
 - The checkct driver includes the real `src/fast_verify.rs` instead of a hand-copied list of its re-exports.
 - `bench/fast-verify.sh` ends with a stack-offset scan (`bench/stackscan.sh`; `bench/ab.sh` has a `PAD` knob and `scan` subcommands)
   that fails when any stack offset makes verify, `verifying_key` or the prepared-key verify more than 1.15 times slower than the
