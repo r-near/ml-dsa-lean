@@ -40,7 +40,7 @@ macro_rules! run {
 /// Part of the diagnosis (needs `internals` and `avx2`): the 4-way permutation alone, 100 per call, on a state at byte
 /// offset `off` of an 8 KiB-aligned heap buffer; and the 4-way ExpandA of ML-DSA-65.
 #[cfg(all(feature = "internals", feature = "avx2"))]
-fn diag(op: &str, off: usize, rounds: usize, calls: usize) -> Vec<f64> {
+fn diag(op: &str, set: u32, off: usize, rounds: usize, calls: usize) -> Vec<f64> {
     use ml_dsa_lean::fast_verify::expand_a_x4_avx2_or_none;
     use ml_dsa_lean::keccak4::avx2_checked;
     // 8 KiB-aligned heap buffer, allocated directly (a `Box<Buf>` with `repr(align(8192))` is built on the stack first, which
@@ -62,9 +62,11 @@ fn diag(op: &str, off: usize, rounds: usize, calls: usize) -> Vec<f64> {
                         assert!(avx2_checked::keccak_f1600_x4(s));
                     }
                 }
-                _ => {
-                    std::hint::black_box(expand_a_x4_avx2_or_none::<6, 5>(std::hint::black_box(&rho)));
-                }
+                _ => match set {
+                    44 => drop(std::hint::black_box(expand_a_x4_avx2_or_none::<4, 4>(std::hint::black_box(&rho)))),
+                    65 => drop(std::hint::black_box(expand_a_x4_avx2_or_none::<6, 5>(std::hint::black_box(&rho)))),
+                    _ => drop(std::hint::black_box(expand_a_x4_avx2_or_none::<8, 7>(std::hint::black_box(&rho)))),
+                },
             }
         }
         let ns = t.elapsed().as_secs_f64() * 1e9 / calls as f64;
@@ -88,7 +90,7 @@ fn main() {
     let op_s: &str = &op;
     #[cfg(all(feature = "internals", feature = "avx2"))]
     if op == "k4" || op == "expanda" {
-        let mut times = diag(&op, off, rounds, calls);
+        let mut times = diag(&op, set, off, rounds, calls);
         times.sort_by(|a, b| a.partial_cmp(b).unwrap());
         println!("SCAN {set} {op} {:.0} {:.0} {:.0} {sp}", times[times.len() / 2], times[0], times[times.len() - 1]);
         return;

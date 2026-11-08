@@ -5,7 +5,7 @@ use crate::cpu::has_avx2;
 use crate::keccak4::avx2::Avx2;
 use crate::params::Params;
 use crate::verify::{self, PreparedVk};
-use crate::verify::{prepare_vk_x4, verify_internal_x4};
+use crate::verify::{prepare_vk_into_x4, verify_internal_x4};
 #[cfg(feature = "internals")]
 use crate::sampling::{expand_a_into_x4, expand_a_x4, rej_ntt_poly_x4};
 
@@ -77,10 +77,17 @@ fn verify_prepared_avx2<const K: usize, const L: usize>(
     verify::verify_prepared_internal::<K, L>(p, vk, m_prefix, m, sig)
 }
 
+/// `verify::prepare_vk_x4` with the 4-way AVX2 lanes, built in place: the key is created as a local that is also the result
+/// (so it is the caller's result slot) and `prepare_vk_into_x4` fills it. That is `prepare_vk_x4` itself
+/// (`Proofs/FastVerify.lean`: `prepare_vk_into_x4_zero`, `prepare_vk_x4_zeroed_bind`), without the by-value function's
+/// 57 KB (ML-DSA-87) matrix local and the copy of it into the result, which glibc runs as `rep movsb` and which is several
+/// times slower when the two buffers happen to sit at a distance that is a small multiple of 4 KiB (`bench/results/2026-11-07-p6.md`).
 #[target_feature(enable = "avx2")]
 fn prepare_vk_avx2<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
     align_frame();
-    prepare_vk_x4::<K, L, Avx2>(pk)
+    let mut vk = PreparedVk::<K, L>::zeroed();
+    prepare_vk_into_x4::<K, L, Avx2>(pk, &mut vk);
+    vk
 }
 
 /// `verify::verify_internal`, or its 4-way AVX2 version when this CPU has AVX2. Same signature, preconditions and
