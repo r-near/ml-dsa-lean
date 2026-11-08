@@ -279,7 +279,8 @@ third-party audit and no CMVP or other validation of this crate or its spec exis
 operations on `[u64; 4]` values passed by value (`xor`, `andnot`, `rotl::<L, R>`, `splat`; no associated type). It has two
 instances. `Shim4` is plain Rust over the four lanes. `avx2::Avx2` (feature `avx2`, x86_64, not Miri) is the same operations as
 AVX2 intrinsics; it is crate-private, because its safe trait methods execute AVX2 instructions. On top of the kernel,
-`src/sampling.rs` has a 4-way SHAKE128 RejNTTPoly and ExpandA (`rej_ntt_poly_x4`, `expand_a_x4`, `expand_a_into_x4`) and
+`src/sampling.rs` has a 4-way SHAKE128 RejNTTPoly and ExpandA (`rej_ntt_poly_x4`, `expand_a_x4`, `expand_a_into_x4`,
+`expand_a_from_x4`) and the variant that also hashes the public key (`rej_ntt_poly_x3_tr`, `expand_a_tr_into_x4`, below), and
 `src/verify.rs` has `prepare_vk_x4` and `verify_internal_x4`, all generic over `Lanes4`. They are extraction roots
 (`scripts/extract-roots.txt`); the generic extraction turns the trait into a Lean structure and the instance into an explicit
 argument, so a proof about the generic body never looks inside an instance. In Lean `Sh4` is the extracted `Shim4` instance.
@@ -300,8 +301,30 @@ checked for standard axioms only by `scripts/lean-check.sh`; every statement is 
 | `laneInv_step`, `push_candidate_spec`, `al_val`, `st6_val`, `st7_val`, `rej_ntt_cands8_spec`, `rej_ntt_block_x4_spec`, `rej_ntt_lane_x4_spec`, `first_256_spec` (`Sample4`, `Sample4Block`) | the branchless parse of a block straight from the lane words (eight candidates from three lanes) performs the same accept-or-skip steps as the byte-wise sampler's fold over the 56 candidates, for each lane |
 | `keccak_step_lanes`, `rej_x4_body_spec`, `rej_x4_loop_spec`, `rej_ntt_poly_x4_spec`, `rej_ntt_poly_x4_partial` (`Sample4`) | if the spec's RejNTTPoly returns `P i` for the four seeds at some fuel, the 4-way sampler terminates with polynomials representing `P i` (total form); in any case it is partially correct (`partial`, which covers divergence) |
 | `expandA_ent`, `expand_a_x4_partial`, `expand_a_x4_term`, `ReprMat.unique`, `rustM_eq_of_partial`, `expand_a_x4_eq`, `expand_a_x4_eq_std` (`ExpandA4`) | `sampling.expand_a_x4 K L Sh4 ρ = sampling.expand_a K L ρ` as `RustM` values, divergence included, under `Params.Std` |
-| `prepare_vk_x4_eq`, `verify_internal_x4_eq` (`FastVerify`) | `verify.prepare_vk_x4 K L Sh4 pk = verify.prepare_vk K L pk` and `verify.verify_internal_x4 K L Sh4 p pk m_prefix m sig = verify.verify_internal K L p pk m_prefix m sig` for every argument, as `RustM` values |
+| `HS_succ`, `HS_final`, `shake256_byte`, `xorBlock_eq_xor17`, `blkT_last`, `blkT_getD_full` (`TrLane`) | the SHAKE256 absorb of a key by whole blocks: `HS pk t` is the sponge state after the first `t` blocks of the padded key, one step XORs block `t` and permutes, block `⌊\|pk\|/136⌋` is the rest of the key followed by the padding, and the first 64 bytes of `HS pk (⌊\|pk\|/136⌋ + 1)` are `SHAKE256(pk, 64)` |
+| `set_lane3_spec`, `lane3_state_spec`, `squeeze64_spec`, `absorb_block_lane3_spec`, `tr_tail_lanes_spec`, `tr_finish_scalar_spec` (`TrLaneRust`) | the extracted helpers of the hashing lane: lane 3 of the 4-way state is loaded from and stored to a 25-word sponge state; a block (read from `pk`, or the padded tail lanes) is XORed into lane 3 and nothing else changes; the tail lanes are the lanes of the last padded block; the scalar finish from any `t ≤ q + 1` blocks done yields the first 64 bytes of `HS pk (q + 1)` |
+| `rej3_body_spec`, `rej3_loop_spec`, `rej3_loop_partial`, `rej_ntt_poly_x3_tr_spec`, `rej_ntt_poly_x3_tr_partial` (`TrGroup`) | the three-lane group sampler with the lane-3 absorb: lanes 0 to 2 are the sampler's lanes as before, lane 3 holds `HS pk t` after `t` permutations while `t ≤ q`, and at the end the carried sponge state is `HS pk t'` with `t' ≤ q + 1` (total form under a fuel for the three seeds, and partial form that covers divergence) |
+| `tr_body_partial`, `tr_loop_partial`, `tr_body_term`, `tr_loop_term`, `expand_a_from_x4_partial`, `expand_a_from_x4_term`, `tr_groups_ok`, `bytesA_tr`, `expand_a_tr_into_x4_partial`, `expand_a_tr_into_x4_term` (`TrOuter`) | the group loop for any number of hashing groups `g3`: it keeps "the matrix entries below `first` are right" and "the carried state is `HS pk t`", the rest of the matrix is the plain 4-wide loop, the scalar finish returns `SHAKE256(pk, 64)`, and the whole function is partially correct and terminates when ExpandA has a result |
+| `expand_a_tr_into_x4_eq` (`FastVerify`) | `sampling.expand_a_tr_into_x4 Sh4 ρ pk a = (expand_a K L ρ >>= fun a1 => hash_pk pk >>= fun tr => ok (tr, a1))` as `RustM` values, divergence included, for every matrix `a` it starts from, under `Params.Std` |
+| `prepare_vk_x4_eq`, `verify_internal_x4_eq` (`FastVerify`) | (`prepare_vk_x4_eq` keeps its statement; its proof goes through `expand_a_tr_into_x4_eq`) `verify.prepare_vk_x4 K L Sh4 pk = verify.prepare_vk K L pk` and `verify.verify_internal_x4 K L Sh4 p pk m_prefix m sig = verify.verify_internal K L p pk m_prefix m sig` for every argument, as `RustM` values |
 | `verifyInternalX4API_eq`, `verify_internal_x4_NN_eq`, `verify_internal_x4_NN_exact`, `verify_internal_x4_NN_div_iff` for NN ∈ {44, 65, 87} (`FastVerify`) | the body of `api.verify_internal_NN` run with the 4-way verifier equals `api.verify_internal_NN`, has the three-part `_exact` statement of 1.1 (never fails; agrees with `Spec.Verify_internal` whenever either returns), and diverges exactly when the spec returns no verdict at any fuel |
+
+**`tr = H(pk, 64)` in the fourth lane of the 4-way ExpandA** (branch `fv-p7`). Verify's ExpandA runs `K·L` independent SHAKE128
+sponges four at a time through `keccak_f1600_x4`, and `tr` is one SHAKE256 sponge over the key, a chain of `⌊|pk|/136⌋ + 1`
+permutations (10, 15, 20) that cannot be split across lanes. `expand_a_tr_into_x4` (used by `prepare_vk_x4` and
+`prepare_vk_into_x4`, hence by the one-shot verify and by `verifying_key_NN`) runs the first `g3 = tr_groups(n, q)` groups with
+three ExpandA entries each (`rej_ntt_poly_x3_tr`) and the key's sponge in lane 3, carries the sponge between groups as a 25-word
+state, finishes the groups of four as before (`expand_a_from_x4`), and finishes whatever blocks of the hash the lane did not
+reach with the scalar permutation (`tr_finish_scalar`; for ML-DSA-65 the last five). `g3` is 2, 2 and 4 for 44, 65 and 87
+(`bench/results/2026-11-07-p7.md`: the schedule and why). The proof does not depend on `g3`: `expand_a_tr_into_x4_eq` holds for the
+function as written, so the schedule is a speed choice, outside the correctness argument. Everything is plain Rust inside the
+existing `Lanes4` surface: no new method, trait or intrinsic, no `unsafe`, and the dispatch wrappers are unchanged. The one thing
+that is only tested is, as for the rest of the 4-way body, that the AVX2 instance computes what `Shim4` does
+(`tests/fast_verify_tr.rs` compares `expand_a_tr_into_x4` over `Shim4` and over `Avx2` with `expand_a` and the scalar SHAKE256 for the
+three parameter-set shapes and for key lengths on both sides of every 136-byte block edge). Intermediate lemma statements: the
+extracted loop of `expand_a_into_x4` is now `expand_a_from_x4_loop` (the function is split into the `from` form and a wrapper that starts at 0),
+so `x4_body_partial`, `x4_loop_partial`, `x4_body_term` and `x4_loop_term` name the renamed constants and have no other
+change; every hypothesis and conclusion is as before. No statement in `lean/headline-theorems.txt` changed.
 
 The verify-only rewrites are different: the scalar verify uses them too, so they are in every build, and their theorems are in
 `lean/headline-theorems.txt` (the API statements of 1.1 are unchanged; the proofs of the functions that call them were
@@ -363,7 +386,8 @@ dispatch exists. Thus:
   source and checked against the scalar ρ offsets; at least 4,000 inputs each) and all 63 non-trivial rotation amounts (400
   inputs each), and more than 150,000 whole states against `Shim4` and four scalar permutations plus a chain of 2,000 iterated
   permutations. `tests/fast_verify_x4.rs` compares the 4-way sampler, ExpandA and verify over `Shim4` and over `Avx2` with the
-  scalar functions (including the padded last group of ML-DSA-65, whose K·L = 30 is not a multiple of four), and
+  scalar functions (including the padded last group of ML-DSA-65, whose K·L = 30 is not a multiple of four),
+  `tests/fast_verify_tr.rs` does the same for `expand_a_tr_into_x4` against `expand_a` and the scalar SHAKE256 (the three parameter-set shapes, and key lengths 0, 1, 135, 136, 137, 271, 272, 273 and on up), and
   `tests/fast_verify.rs` compares the dispatched and the AVX2 verify with the scalar verify on the ACVP sigVer vectors, the
   Wycheproof verify vectors and random valid, corrupted, wrong-length and random inputs, through `verify_NN`,
   `verify_internal_NN` and the prepared-key paths, for all three sets. `tests/fast_verify_dispatch.rs` checks that the public
@@ -566,31 +590,31 @@ empty context, one key pair per set). Columns: `scalar` is the build without the
 `avx2` is the `avx2` feature (the dispatched 4-way verify, 1.9); `v3` is the `avx2` feature plus `-C target-cpu=x86-64-v3`,
 where AVX2 is static and nothing is detected. The reference rows are measured in the same runs; the table lists their `avx2`-run
 value (they move by up to 4 µs between a run's three variants, which is run-to-run and layout noise, or, for libcrux, static AVX2
-under `v3`). Results and raw logs: `bench/results/2026-11-07-p6.md` (the table below, from the final tree of the stack-offset fix; one run per
-toolchain, no cell selected between runs; `bench/results/2026-11-07-p6/`), `bench/results/2026-11-07-p5.md` (the AVX2 wrapper of the
+under `v3`). Results and raw logs: `bench/results/2026-11-07-p7.md` (the table below, from the final tree of the `tr` change; one run per
+toolchain, no cell selected between runs; `bench/results/2026-11-07-p7/`), `bench/results/2026-11-07-p6.md` (the stack-offset fix), `bench/results/2026-11-07-p5.md` (the AVX2 wrapper of the
 prepared-key verify) and `bench/results/2026-11-07-p4.md` (the verify-only arithmetic), and the logs next to them.
 
 | µs | 44, 1.99.1 | 65, 1.99.1 | 87, 1.99.1 | 44, 1.95.0 | 65, 1.95.0 | 87, 1.95.0 |
 |---|---|---|---|---|---|---|
-| ours, `scalar` | 52.6 | 89.0 | 153.1 | 52.9 | 88.7 | 153.4 |
-| ours, `avx2` | 26.5 | 41.8 | 64.6 | 26.2 | 41.9 | 64.7 |
-| ours, `v3` | 26.1 | 41.5 | 64.3 | 26.1 | 41.6 | 64.3 |
-| `verifying_key_NN` (builds the prepared key), `scalar` | 41.1 | 75.1 | 133.0 | 40.9 | 74.4 | 133.6 |
-| `verifying_key_NN`, `avx2` | 17.6 | 32.2 | 51.8 | 17.5 | 32.2 | 51.8 |
-| prepared-key verify, `scalar` | 12.3 | 14.5 | 19.8 | 12.4 | 15.4 | 20.3 |
-| prepared-key verify, `avx2` | 9.7 | 11.3 | 15.0 | 9.7 | 11.4 | 15.2 |
-| aws-lc-rs 1.18.2 | 22.5 | 36.4 | 56.5 | 22.4 | 36.4 | 56.6 |
-| mldsa-native v2.0.0, AVX2 | 21.0 | 34.3 | 53.5 | 20.9 | 34.3 | 53.2 |
-| libcrux-ml-dsa 0.0.11, AVX2 | 25.5 | 41.0 | 71.9 | 27.1 | 43.2 | 68.1 |
-| RustCrypto `ml-dsa` a3690c4 | 112.1 | 171.1 | 271.4 | 111.1 | 171.4 | 270.8 |
+| ours, `scalar` | 53.1 | 88.4 | 154.2 | 52.9 | 88.9 | 154.0 |
+| ours, `avx2` | 26.1 | 38.5 | 60.8 | 26.1 | 38.7 | 61.1 |
+| ours, `v3` | 25.7 | 38.3 | 60.2 | 25.7 | 39.1 | 60.9 |
+| `verifying_key_NN` (builds the prepared key), `scalar` | 41.0 | 75.4 | 134.8 | 40.8 | 74.3 | 133.6 |
+| `verifying_key_NN`, `avx2` | 16.8 | 28.5 | 47.9 | 16.9 | 28.6 | 48.3 |
+| prepared-key verify, `scalar` | 11.9 | 14.8 | 19.8 | 12.5 | 15.0 | 20.5 |
+| prepared-key verify, `avx2` | 9.7 | 11.3 | 15.2 | 9.6 | 11.5 | 15.3 |
+| aws-lc-rs 1.18.2 | 22.5 | 36.4 | 56.6 | 22.7 | 36.4 | 56.6 |
+| mldsa-native v2.0.0, AVX2 | 20.9 | 34.3 | 53.3 | 21.0 | 34.3 | 53.2 |
+| libcrux-ml-dsa 0.0.11, AVX2 | 25.7 | 41.0 | 64.8 | 26.8 | 43.1 | 68.1 |
+| RustCrypto `ml-dsa` a3690c4 | 111.7 | 172.2 | 270.4 | 111.8 | 171.1 | 270.1 |
 
-What it shows, for these builds and this machine: the dispatched verify runs in 0.42–0.51 of the scalar time and in 1.14–1.18×
-the time of aws-lc-rs's uncached verify; ML-DSA-65 verify went from 103.8 µs to 89.0 µs scalar and from 54.0 µs to 41.8 µs
-dispatched (1.99.1; 41.9 µs on 1.95.0) with the verify-only arithmetic of 1.9 (a fused multiply-accumulate row, a lazy-reduction NTT, a mask-free
+What it shows, for these builds and this machine: the dispatched verify runs in 0.39–0.49 of the scalar time and in 1.06–1.16×
+the time of aws-lc-rs's uncached verify; ML-DSA-65 verify went from 103.8 µs to 88.4 µs scalar and from 54.0 µs to 38.5 µs
+dispatched (1.99.1; 38.7 µs on 1.95.0) with the verify-only arithmetic of 1.9 (a fused multiply-accumulate row, a lazy-reduction NTT, a mask-free
 norm check and a fixed-width w1 packing), and these are plain integer code, so the scalar build gets
-most of the gain too. Prepared-key verify, which computes no ExpandA, is much faster than aws-lc-rs's uncached verify in every set,
-scalar or `avx2` (ML-DSA-65: 14.5 and 11.3 µs against 36.4), and `verifying_key_NN` costs about 0.77 of one `avx2` one-shot verify
-(32.2 against 41.8 µs). It is a different operation from one-shot verify: it needs the key to be held, and a bounded cache is a
+most of the gain too. The last step, from 41.8 to 38.5 µs for ML-DSA-65 (0.5 and 3.8 µs for 44 and 87), is `tr = H(pk, 64)` computed in the fourth lane of the first ExpandA groups instead of with the scalar permutation after them (1.9; interleaved A/B at three stack paddings, `bench/results/2026-11-07-p7.md`); the scalar build is unchanged. Prepared-key verify, which computes no ExpandA, is much faster than aws-lc-rs's uncached verify in every set,
+scalar or `avx2` (ML-DSA-65: 14.8 and 11.3 µs against 36.4), and `verifying_key_NN` costs about 0.74 of one `avx2` one-shot verify
+(28.5 against 38.5 µs). It is a different operation from one-shot verify: it needs the key to be held, and a bounded cache is a
 nearcore decision ([nearcore-integration.md](nearcore-integration.md)). The prepared-key verify runs no ExpandA, so it has no 4-way
 body; with the `avx2` feature it is dispatched to a second `#[target_feature(enable = "avx2")]` wrapper around the same proved
 scalar function (1.9), which takes it from 12.3, 14.8 and 20.2 µs to 9.8, 11.3 and 15.3 (interleaved A/B; 0.79, 0.76, 0.76), as fast as the `v3`
@@ -601,7 +625,7 @@ above the median for ML-DSA-87 (scan of 257 offsets, ML-DSA-65: median 42.3, max
 Keccak's 256-bit vectors to slots that are only 16-byte aligned, and a slot that straddles a 4 KiB page makes every access a page
 split; the wrappers now realign their frames to 32 bytes (1.9), and `verifying_key_NN` builds its key in place. After the fix the
 same scan has a maximum of 1.02 to 1.03 times the median in every set and operation, with no offset above 1.1 times
-(ML-DSA-65 one-shot: median 41.5, maximum 42.5 µs), on rustc 1.99.1 and on 1.95.0, both at 257 offsets (`bench/stackscan.sh`, run
+(ML-DSA-65 one-shot: median 41.5, maximum 42.5 µs), on rustc 1.99.1 and on 1.95.0, both at 257 offsets; rerun on the final tree of the `tr` change: largest padding 1.02 times the median on 1.99.1 and 1.03 on 1.95.0 for one-shot verify and `verifying_key_NN` (1.06 for the prepared-key verify on 1.95.0, which runs no 4-way code), none above 1.1 (`bench/stackscan.sh`, run
 by `bench/fast-verify.sh`, which fails above 1.15; `bench/results/2026-11-07-p6.md`). Sign was A/B-tested against the commit before
 the AVX2 changes and did not move beyond run-to-run noise (ML-DSA-65 deterministic sign 356.4 and 352.0 µs), and nothing Sign
 calls changed in p6; the sign figures below date from 2026-10-31. Not measured: aarch64, wasm32, Intel and other AMD parts; one key pair per set, hot caches. Reproduce with `bench/fast-verify.sh`

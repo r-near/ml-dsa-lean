@@ -45,6 +45,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   ML-DSA-65 one-shot verify takes 41.8 µs (rustc 1.99.1) and 41.9 µs (1.95.0), at every offset (it was 42.4 at a fast offset),
   and `verifying_key_87` 51.8 µs (was 53.5); the prepared-key verify is unchanged. No Lean statement or proof changed; the source
   changes are in the dispatch glue only (`bench/results/2026-11-07-p6.md`, `docs/assurance.md` section 1.9).
+- With the `avx2` feature, the one-shot verify and `verifying_key_NN` compute `tr = H(pk, 64)` in the fourth lane of the first
+  groups of the 4-way ExpandA (three ExpandA entries per group, the SHAKE256 absorb of the key in the spare lane; what the lane
+  does not reach is finished with the scalar permutation) instead of with the scalar permutation after ExpandA. Plain Rust inside
+  the existing `Lanes4` surface; the dispatch wrappers are unchanged and nothing Sign or KeyGen calls changed. Lean proves it
+  equal to ExpandA followed by `hash_pk` as `RustM` values for every key and all three parameter sets, for any group schedule
+  (`Proofs.expand_a_tr_into_x4_eq`; `prepare_vk_x4_eq` keeps its statement; 28 more names in `lean/fast-verify-theorems.txt`, 79 in
+  all). ML-DSA-65 one-shot verify takes 38.5 µs (rustc 1.99.1; 41.8 before) and 38.7 µs (1.95.0), ML-DSA-44 26.1 (was 26.5) and
+  ML-DSA-87 60.8 µs (was 64.6); `verifying_key_65` 28.5 µs (was 32.2). The prepared-key verify is unchanged
+  (`bench/results/2026-11-07-p7.md`, `docs/assurance.md` section 1.9). `tests/fast_verify_tr.rs` compares it with the scalar functions.
 - The checkct driver includes the real `src/fast_verify.rs` instead of a hand-copied list of its re-exports.
 - `bench/fast-verify.sh` ends with a stack-offset scan (`bench/stackscan.sh`; `bench/ab.sh` has a `PAD` knob and `scan` subcommands)
   that fails when any stack offset makes verify, `verifying_key` or the prepared-key verify more than 1.15 times slower than the

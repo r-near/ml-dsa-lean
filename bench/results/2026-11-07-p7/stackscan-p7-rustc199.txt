@@ -1,0 +1,13 @@
+stack-offset scan of p7 (rustc 1.99.1, cpu 45, bench/stackscan.sh check, STEP 16, 0 to 4096 bytes of environment padding, ASLR off):
+microseconds per call, median of rounds, one run per padding
+ set op        pads     min  median     max  max-min  >1.1xmed     p90
+  44 prepared   257    9.59    9.69    9.83     0.24     0/257    9.78
+  44 verify     257   25.76   25.89   26.28     0.53     0/257   26.05
+  44 vk         257   16.79   16.86   17.03     0.24     0/257   16.93
+  65 prepared   257   11.05   11.15   11.41     0.35     0/257   11.24
+  65 verify     257   38.15   38.31   38.61     0.46     0/257   38.45
+  65 vk         257   28.41   28.55   28.73     0.32     0/257   28.63
+  87 prepared   257   14.79   14.97   15.23     0.44     0/257   15.07
+  87 verify     257   60.39   60.56   60.92     0.53     0/257   60.71
+  87 vk         257   47.79   47.95   48.19     0.40     0/257   48.04
+STACK SCAN OK
