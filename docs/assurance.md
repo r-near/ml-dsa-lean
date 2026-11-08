@@ -85,6 +85,30 @@ files only.
 | `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (extraction inputs sha256 7cd7dfdef38482e0fedcd14ee70330a351283e4e15a224f96631edabea5c6036); a fresh extraction on the box leaves `Funs.lean` and `Types.lean` unchanged | 306360d |
 | checkct driver | builds (release, `-p driver`) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`, in the default release profile (nightly-2026-10-06) and with nearcore's exact flags (nightly-2026-10-06 and 1.95.0): 18 of 18 cells built. The driver now includes the real `src/fast_verify.rs` through `#[path]` instead of repeating its re-exports, so it follows the source by itself. The BINSEC sweep was not rerun: no source Sign or KeyGen calls changed since the last full profile build and smoke run named above (section 4) | 306360d |
 
+The 3+1 ExpandA (`tr = H(pk, 64)` in the fourth lane of the first groups of the 4-way ExpandA; branch `fv-p7`; 1.9) is a later tree
+again, and unlike the two before it changes Lean: `lean/Impl` is re-extracted with real changes to `Funs.lean` (the new
+functions, and `expand_a_into_x4` split into a wrapper and `expand_a_from_x4`), four modules are new (`Proofs/TrLane.lean`,
+`TrLaneRust.lean`, `TrGroup.lean`, `TrOuter.lean`), `FastVerify.lean` gains `expand_a_tr_into_x4_eq` and a new proof of
+`prepare_vk_x4_eq`, and `lean/fast-verify-theorems.txt` goes from 51 to 79 names. No name in `lean/headline-theorems.txt`
+(412) and nothing under `lean/Spec` changed, and no existing theorem statement changed except that `x4_body_partial`,
+`x4_loop_partial`, `x4_body_term` and `x4_loop_term` name the renamed extracted constants `expand_a_from_x4_loop(.body)` (same
+hypotheses and conclusions). Nothing Sign or KeyGen calls changed, and the dispatch wrappers are unchanged. Every gate below ran on
+the Linux build box on 2026-11-08, on the tree of commit b1f47e0; the commit that adds this table changes documentation only (`git diff b1f47e0 -- src lean scripts` is empty). The A/B and timing runs of
+`bench/results/2026-11-07-p7.md` ran on d89e790 and a503937, which have the same `src/` and `lean/` as b1f47e0.
+
+| Gate | Result | Run on |
+|---|---|---|
+| `scripts/lean-check.sh` | `LEAN CHECK OK`: `Build completed successfully (3336 jobs)`; axiom gate over the extracted definitions and the names in `lean/headline-theorems.txt`, 906 checked, then over the 9 names of `lean/keccak4-theorems.txt` and the 79 of `lean/fast-verify-theorems.txt`; each `AXIOM GATE OK`, axioms used: `propext`, `Classical.choice`, `Quot.sound` | b1f47e0 |
+| `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`: `Build completed successfully (3324 jobs)`, 146 names checked, `AXIOM GATE OK` | b1f47e0 |
+| `scripts/ci.sh --lean` | `CI SUMMARY: 21 passed, 0 failed, 0 skipped` (every step, including `test-avx2`, `avx2-inlining`, `thumbv7em`, `msrv-1.86`, `diff-awslc`, the three fuzz targets at 60 s, `extract-hash`, `axiom-gate-selftest`, and `lean` with `LEAN CHECK OK`: 3336 jobs, 906, 9 and 79 names checked, each `AXIOM GATE OK`) | b1f47e0 |
+| `scripts/check-avx2-inlining.sh` | `OK: no out-of-line intrinsic wrappers; verify-only arithmetic fully inlined; verify wrappers realign their frames; 57800 lines of ymm code`; the three `verify_prepared_avx2` instantiations hold 4077, 4966 and 5513 lines of ymm code (K = 4, 6, 8); all nine wrapper instantiations print `1` under "stack-realigning wrappers" | b1f47e0 |
+| `ML_DSA_REQUIRE_AVX2=1 cargo test --release --features avx2,internals` | 28 result lines (27 test binaries and the doc-tests), 129 tests passed, 0 failed, 1 ignored (the timing test of `tests/keccak4.rs`); the new binary is `tests/fast_verify_tr.rs` (2 tests) | b1f47e0 |
+| `cargo +1.86.0 build --features avx2` | builds (the declared MSRV) | b1f47e0 |
+| README example test (`cargo test --test readme_example`) | 2 passed | b1f47e0 |
+| `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (extraction inputs sha256 3adb4fe23cf3a64f91bb70c22a348f474660edb850023bfd3d0ac9bdea9d0cd3) | b1f47e0 |
+| checkct driver | builds (release, `-p driver`) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`, in the default release profile (nightly-2026-10-06) and with nearcore's flags (nightly-2026-10-06 and 1.95.0): 18 of 18 cells built. The BINSEC sweep was not rerun: no source Sign or KeyGen calls changed (section 4) | b1f47e0 |
+| `bench/stackscan.sh check` (also run by `bench/fast-verify.sh`) | `STACK SCAN OK` at 257 paddings on rustc 1.99.1 and 1.95.0 (largest padding over the median 1.02 and 1.03 for one-shot verify and `verifying_key_NN`; none above 1.1), and at 65 paddings inside `bench/fast-verify.sh` on both | a503937 (same `src/`) |
+
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
 
@@ -211,7 +235,7 @@ representation relations of `Proofs/Repr.lean`.
 | `Encode*` | bit accumulator = SimpleBitPack/BitPack and unpack (Alg 16–19), the verify-only fixed-width `bit_unpack_pub` (1.9), w1Encode, pk/sk encode/decode (Alg 22–25); decoders for every byte string of the right length | coefficient ranges for the encoders |
 | `Hint` | HintBitUnpack for every byte string incl. all ⊥ cases; HintBitPack (Alg 20/21) | weight ≤ ω for packing |
 | `Keccak*` | Keccak-f[1600]; SHAKE128/256 absorb, finalize, squeeze vs `Spec.SHAKE*`; absorbing a then b = absorbing a ‖ b | none |
-| `Keccak4`, `Sample4`, `Sample4Block`, `ExpandA4`, `FastVerify` | the 4-way Keccak-f[1600], RejNTTPoly, ExpandA and verify body, each equal to its scalar counterpart for the plain-Rust instance `Shim4` (1.9) | `Params.Std` for the verify theorems; none for the permutation |
+| `Keccak4`, `Sample4`, `Sample4Block`, `ExpandA4`, `TrLane`, `TrLaneRust`, `TrGroup`, `TrOuter`, `FastVerify` | the 4-way Keccak-f[1600], RejNTTPoly, ExpandA (also with `tr = H(pk, 64)` in the fourth lane) and verify body, each equal to its scalar counterpart for the plain-Rust instance `Shim4` (1.9) | `Params.Std` for the verify theorems; none for the permutation |
 | `SampleA`, `SampleS`, `SampleBall`, `ExpandMask` | RejNTTPoly, ExpandA (Alg 30/32), RejBoundedPoly, ExpandS (Alg 31/33), SampleInBall (Alg 29), ExpandMask (Alg 34) | `RejTerm`; η ∈ {2, 4}; τ ≤ 64; κ + ℓ ≤ 2¹⁶ |
 | `SigCodec`, `Steps`, `Bridge` | sigDecode for every byte string of length sigLen, sigEncode; Sign steps 18–21 and 25–26, KeyGen t and Power2Round, Verify t1·2^d and c̃ compare, API ctx prefix; Z_q norm bridges | γ1 ∈ {2¹⁷, 2¹⁹}, γ2, d = 13 |
 | `KeyGen`, `Verify`, `Sign` | KeyGen_internal (Alg 6), Verify_internal (Alg 8), Sign_internal (Alg 7, bounded) against the spec | `Params.Std`, `RejTerm`; unconditional versions in `PartialKeyGen`, `PartialAPI`, `PartialSign` |
@@ -581,10 +605,10 @@ Three real leaks were found and fixed (CT-1, CT-2, CT-3 in section 6). Limits:
 
 ### Benchmarks
 
-**Verify, all three sets.** ML-DSA verify in microseconds, median of 15 rounds, measured on 2026-11-07 by `bench/fast-verify.sh` under
+**Verify, all three sets.** ML-DSA verify in microseconds, median of 15 rounds, measured on 2026-11-07 and 2026-11-08 by `bench/fast-verify.sh` under
 nearcore's build settings: the `nearcore` profile of `bench/Cargo.toml` (opt-level 3, fat LTO, one codegen unit, panic = abort,
 overflow checks on) and nearcore's x86_64 target features (`+sse2,…,+pclmulqdq`, no AVX2). One pinned core of an AMD EPYC 9B14
-(Zen 4) KVM guest at a measured 3.4 GHz, zero steal, otherwise idle (load average about 1, the benchmark itself); cpu 45 for the
+(Zen 4) KVM guest at a measured 3.4 GHz, zero steal, otherwise idle (load average about 1 to 2, the benchmark itself and one other job); cpu 45 for the
 default toolchain (rustc 1.99.1) and cpu 46 for 1.95.0, nearcore's. Same inputs as the 2026-11-06 run (256 messages of 64 bytes,
 empty context, one key pair per set). Columns: `scalar` is the build without the `avx2` feature (the proved scalar verify);
 `avx2` is the `avx2` feature (the dispatched 4-way verify, 1.9); `v3` is the `avx2` feature plus `-C target-cpu=x86-64-v3`,
@@ -609,10 +633,10 @@ prepared-key verify) and `bench/results/2026-11-07-p4.md` (the verify-only arith
 | RustCrypto `ml-dsa` a3690c4 | 111.7 | 172.2 | 270.4 | 111.8 | 171.1 | 270.1 |
 
 What it shows, for these builds and this machine: the dispatched verify runs in 0.39–0.49 of the scalar time and in 1.06–1.16×
-the time of aws-lc-rs's uncached verify; ML-DSA-65 verify went from 103.8 µs to 88.4 µs scalar and from 54.0 µs to 38.5 µs
-dispatched (1.99.1; 38.7 µs on 1.95.0) with the verify-only arithmetic of 1.9 (a fused multiply-accumulate row, a lazy-reduction NTT, a mask-free
+the time of aws-lc-rs's uncached verify; ML-DSA-65 verify went from 103.8 µs to 88.4 µs scalar and from 54.0 µs to 41.8 µs
+dispatched (1.99.1; 41.9 µs on 1.95.0) with the verify-only arithmetic of 1.9 (a fused multiply-accumulate row, a lazy-reduction NTT, a mask-free
 norm check and a fixed-width w1 packing), and these are plain integer code, so the scalar build gets
-most of the gain too. The last step, from 41.8 to 38.5 µs for ML-DSA-65 (0.5 and 3.8 µs for 44 and 87), is `tr = H(pk, 64)` computed in the fourth lane of the first ExpandA groups instead of with the scalar permutation after them (1.9; interleaved A/B at three stack paddings, `bench/results/2026-11-07-p7.md`); the scalar build is unchanged. Prepared-key verify, which computes no ExpandA, is much faster than aws-lc-rs's uncached verify in every set,
+most of the gain too. The last step, from 41.8 to 38.5 µs for ML-DSA-65 (38.7 on 1.95.0; 0.5 and 3.8 µs for 44 and 87 on 1.99.1), is `tr = H(pk, 64)` computed in the fourth lane of the first ExpandA groups instead of with the scalar permutation after them (1.9; interleaved A/B at three stack paddings, `bench/results/2026-11-07-p7.md`); the scalar build is unchanged. Prepared-key verify, which computes no ExpandA, is much faster than aws-lc-rs's uncached verify in every set,
 scalar or `avx2` (ML-DSA-65: 14.8 and 11.3 µs against 36.4), and `verifying_key_NN` costs about 0.74 of one `avx2` one-shot verify
 (28.5 against 38.5 µs). It is a different operation from one-shot verify: it needs the key to be held, and a bounded cache is a
 nearcore decision ([nearcore-integration.md](nearcore-integration.md)). The prepared-key verify runs no ExpandA, so it has no 4-way
