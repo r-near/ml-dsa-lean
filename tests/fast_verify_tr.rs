@@ -1,7 +1,7 @@
 //! `tr = H(pk, 64)` in the fourth lane of the 4-way ExpandA (`sampling::expand_a_tr_into_x4`, used by
 //! `verify::prepare_vk_into_x4` and `prepare_vk_x4`) against `expand_a` and the scalar SHAKE256.
 //!
-//! * `Shim4` (the proved instance, `lean/Proofs/ExpandATr.lean`): always run.
+//! * `Shim4` (the proved instance, `lean/Proofs/TrOuter.lean` and `FastVerify.lean`): always run.
 //! * `Avx2` (feature `avx2`, CPU with AVX2): the same checks with the intrinsic instance, through the `internals` wrapper.
 //!
 //! Coverage: the three parameter-set shapes (K·L = 16, 30, 56) with a real-length pk (1312, 1952, 2592 bytes), small
