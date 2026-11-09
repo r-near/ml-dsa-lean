@@ -5,6 +5,7 @@
 # (wired into scripts/lean-check.sh next to keccak4-theorems.txt; headline-theorems.txt is unchanged).
 import Proofs.FastVerify
 import Proofs.Dispatch
+import Proofs.NoDispatch
 # The 4-lane sponge/sampler is the scalar one: stream relation, state init, the branchless block parse straight from the
 # lane words (one candidate, eight candidates of three lanes, one block, one lane), the loop, the group sampler.
 Proofs.absorb_pad34
@@ -123,3 +124,9 @@ Proofs.api_verify_internal_87_with_eq
 Proofs.api_verifying_key_87_with_eq
 Proofs.api_verify_prepared_87_with_eq
 Proofs.api_verify_internal_prepared_87_with_eq
+# The build without the verify dispatch (a default build, any build that is not x86_64): its `_with` functions, extracted from
+# the second extraction of scripts/check-feature-independence.sh, are the scalar functions for every token value
+# (Proofs/NoDispatch.lean, generated). Added in round 10.
+Proofs.NoDispatch.verify_internal_with_eq
+Proofs.NoDispatch.prepare_vk_with_eq
+Proofs.NoDispatch.verify_prepared_internal_with_eq

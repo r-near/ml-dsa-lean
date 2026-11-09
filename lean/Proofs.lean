@@ -50,3 +50,4 @@ import Proofs.PreparedVerify
 import Proofs.PreparedSign
 import Proofs.FastVerify
 import Proofs.Dispatch
+import Proofs.NoDispatch

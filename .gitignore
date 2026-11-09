@@ -5,3 +5,4 @@ lean/.lake/
 .extract/
 lean/SpecTests/WycheproofData.lean
 __pycache__/
+.extract-nodispatch/
