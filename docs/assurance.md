@@ -122,8 +122,7 @@ prove the plain-Rust 4-way Keccak directly (no lane-operation specs, no `Sh4` in
 extraction covers `cpu.rs`, `fast_verify.rs`, its `dispatch.rs` and 15 `api::*_with` functions, and `lean/keccak4-theorems.txt`
 (9 to 6 names) and `lean/fast-verify-theorems.txt` (79 to 102) change. The fast-verify theorems lose the `Sh4` instance
 argument and nothing else (`git diff fv-vec -- lean/Proofs` shows each statement). No name in `lean/headline-theorems.txt` is removed. Every gate below ran on the Linux
-build box on 2026-11-08 and 2026-11-09 on the tree of commit 428f6e2. The commit that adds this table changes documentation and
-benchmark result files only (`git diff 428f6e2 -- src lean scripts checkct/driver tests Cargo.toml` is empty), so the gates apply
+build box on 2026-11-08 and 2026-11-09 on the tree of commit 428f6e2. The commits that add this table change documentation, benchmark result files and checkct result files only (`git diff 428f6e2 -- src lean scripts checkct/driver tests Cargo.toml` is empty), so the gates apply
 to it. Earlier runs of the Lean gates on older trees of the same branch (5f638b7, 2cb3765, c3b856e) are not cited.
 
 | Gate | Result | Run on |
@@ -137,8 +136,8 @@ to it. Earlier runs of the Lean gates on older trees of the same branch (5f638b7
 | README example test (`cargo test --test readme_example`) | 2 passed | 428f6e2 |
 | `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (extraction inputs sha256 81b73246535d20d36ff25b04ebe980a3c4989e8101076b99e82e8a17783ef3f4) | 428f6e2 |
 | checkct driver | builds (release, `-p driver`) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`: 6 of 6 cells. The driver includes the real `src/cpu.rs`, `src/fast_verify.rs` and `src/api.rs` | 428f6e2 |
-| BINSEC smoke (`checkct/results/smoke-fast-verify/`) | 40 cells (8 probes: `keygen_seed_hash`, `sign_rho_pp_hash`, `control_early_exit_44`, `control_prepared_branch_44`, `signing_key_44`, `make_hint_44`, `hint_step_1_44`, `response_1x1_44`; default profile on riscv32imac, thumbv7em and x86_64, `dispatch` and `nearcore-exact-dispatch` on x86_64), run with the driver of 428f6e2: all 40 verdicts equal the sweep's (the `driver::cpu::AVX2` cache static was found and pre-set in both dispatch profiles). Against the sweep, instruction and check counts are equal in 34 cells and differ slightly in 5 (`control_prepared_branch_44` on riscv32imac, and four probes in the `dispatch` profile; section 4). One cell needed a rerun: `control_prepared_branch_44` on x86_64 ended `unknown` at the 1800 s timeout (1 pending path, 65173 of 65173 checks passed) while the box was busy with Lean jobs, and gave the sweep's `insecure` when rerun alone at 5400 s. `verdicts.tsv` and `build-matrix.txt` (10 profiles plus the zeroize and experiments builds, 30 of 30 cells `secure`; the aarch64 builds, the split-run and `exact-novec-zeroize` were not rerun) are in `checkct/results/smoke-fast-verify/` | 428f6e2 |
-| `bench/stackscan.sh check` (257 paddings; nine instantiations) | `STACK SCAN OK`; largest padding over the median 1.03 (ML-DSA-87 `verifying_key`), none above 1.1. The scan cannot see the prepared-key anchor of 1.9; the A/B does | 428f6e2 |
+| BINSEC smoke (`checkct/results/smoke-fast-verify/`) | 40 cells (8 probes: `keygen_seed_hash`, `sign_rho_pp_hash`, `control_early_exit_44`, `control_prepared_branch_44`, `signing_key_44`, `make_hint_44`, `hint_step_1_44`, `response_1x1_44`; default profile on riscv32imac, thumbv7em and x86_64, `dispatch` and `nearcore-exact-dispatch` on x86_64), run with the driver of 428f6e2: all 40 verdicts equal the sweep's (the `driver::cpu::AVX2` cache static was found and pre-set in both dispatch profiles). Against the sweep, instruction and check counts are equal in 33 cells and differ slightly in 7 (`control_prepared_branch_44` on riscv32imac and on x86_64, and four probes in the `dispatch` profile; section 4). One cell needed a rerun: `control_prepared_branch_44` on x86_64 ended `unknown` at the 1800 s timeout (1 pending path, 65173 of 65173 checks passed) while the box was busy with Lean jobs, and gave the sweep's `insecure` when rerun alone at 5400 s (leak found at 3924 s; 989265 instructions, 65173 of 65174 checks, against the sweep's 989292 and 65175 of 65176). `verdicts.tsv` and `build-matrix.txt` (10 profiles plus the zeroize and experiments builds, 30 of 30 cells `secure`; the aarch64 builds, the split-run and `exact-novec-zeroize` were not rerun) are in `checkct/results/smoke-fast-verify/` | 428f6e2 |
+| `bench/stackscan.sh check` (257 paddings; nine instantiations; rustc 1.99.1 only, 1.95.0 not rerun) | `STACK SCAN OK`; largest padding over the median 1.03 (ML-DSA-87 `verifying_key`), none above 1.1. The scan cannot see the prepared-key anchor of 1.9; the A/B does | 428f6e2 |
 | Interleaved A/B against `fast-verify` and `fv-vec` (`bench/results/2026-11-08-p8.md`) | 44/65/87 one-shot, `verifying_key` and prepared verify at paddings 0, 672 and 2752: all 27 cells within 0.9% of `fast-verify` and within about 1.3% of `fv-vec` | 428f6e2 |
 
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
@@ -530,7 +529,7 @@ See also section 7 (known limitations).
 - **Positive existence for most inputs.** The `_exact` theorems say the Rust never panics and agrees with the spec whenever
   either returns; that the spec returns `some` for a given input has a kernel witness only for the ML-DSA-44 instance in 1.7.
 - **The opt-in `avx2` feature** (runtime CPUID dispatch, the crate's only `unsafe`: `forbid(unsafe_code)` without the feature,
-  `deny` with it and an `allow` on each of the NTT dispatch, the CPU check, the verify dispatch and the test-only `internals` wrappers) is covered
+  `deny` with it and an `allow` on each of the NTT dispatch, the CPU check, the verify dispatch and the test-only `internals` wrappers; the `internals` hooks in `src/fast_verify/hooks.rs` call the AVX2 wrappers after their own `has_avx2()` check instead of holding an `Avx2` token, so "only `cpu::avx2()` makes a token" describes the API path, not those test entry points) is covered
   for verify, `verifying_key` and the prepared verify (1.9): the 4-way body is proved equal to the scalar verify and the dispatch
   between them is proved for every CPU-check answer. **Exactly what is not proved on those paths** (the audit that `Proofs/Dispatch.lean`
   is meant to leave nothing else): with the feature on x86_64, every Rust line reachable from `api::verify_*`, `api::verify_internal_*`,
@@ -589,10 +588,10 @@ A BINSEC smoke run of eight probes (the Sign pieces `signing_key_44`, `hint_step
 verdict as the sweep in all 40 cells: 24 in the default profile (riscv32imac, thumbv7em, x86_64), 8 in `dispatch` and 8 in
 `nearcore-exact-dispatch` (x86_64; the cache pre-set found its symbol and applied). The `control_prepared_branch_44` cell on x86_64
 ended `unknown` at the 1800 s timeout while the box was busy (65173 of 65173 checks passed, 1 pending path) and gave the sweep's
-`insecure` when rerun alone at 5400 s. Against the sweep, counts are identical in 34 cells and differ slightly in 5: the four Sign
+`insecure` when rerun alone at 5400 s. Against the sweep, counts are identical in 33 cells and differ slightly in 7: the four Sign
 probes in `dispatch` (for example `signing_key_44`: 998423 instructions against 1000499, code layout after the cache moved; the
-same counts as the previous smoke run on the `fast-verify` tree), and `control_prepared_branch_44` on riscv32imac (2230863 against 2230914; the
-previous smoke run had the sweep's count, so this one comes from the `_with` functions that the prepared-key probe now passes through). The controls and the
+same counts as the previous smoke run on the `fast-verify` tree), and `control_prepared_branch_44` on riscv32imac (2230863 against 2230914) and on x86_64 (989265 against 989292); the
+previous smoke run had the sweep's counts in these two cells, so the change is code layout after the probe's path moved through the `_with` functions (the verdict is unchanged). The controls and the
 `nearcore-exact-dispatch` `unknown` cells give the same verdicts as in the sweep. The full sweep was not rerun: no
 Sign or KeyGen code changed. Rows: `checkct/results/smoke-fast-verify/`.
 
