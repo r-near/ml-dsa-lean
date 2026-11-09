@@ -18,6 +18,9 @@ if grep -nE "(^|[^a-z])error:|declaration uses 'sorry'" .lake/check-build.log; t
   echo "LEAN CHECK FAIL: errors or sorry in the build log"; exit 1
 fi
 cd ..
+# The cheap gates first: the cfg inventory of src/ and the theorem counts in the README.
+python3 -I scripts/cfg_inventory.py
+python3 -I scripts/check-readme-counts.py
 scripts/check-axioms.sh
 scripts/check-axioms.sh --list keccak4-theorems.txt --no-impl
 scripts/check-axioms.sh --list fast-verify-theorems.txt --no-impl
@@ -25,4 +28,10 @@ scripts/check-axioms.sh --list fast-verify-theorems.txt --no-impl
 # implemented_by or extern anywhere in lean/Impl, lean/Spec, lean/Proofs. The self-test injects each into an Impl module.
 scripts/check-no-decls.sh
 scripts/check-no-decls.sh --self-test
+# Declarations reachable from the verify entry points, by walking the resolved constants (not text).
+scripts/reachable-defs.sh
+# Feature independence (needs the extraction tools): the crate extracted a second time without the verify dispatch, compared with
+# lean/Impl, and lean/Proofs/NoDispatch.lean (built above) is what that extraction generates. Only for a full run (no module
+# arguments), and not again when scripts/ci.sh has just run it as its own step.
+if [ $# -eq 0 ] && [ -z "${ML_DSA_FEATURE_INDEPENDENCE_DONE:-}" ]; then scripts/check-feature-independence.sh; fi
 echo "LEAN CHECK OK: $*"

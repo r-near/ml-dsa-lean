@@ -20,9 +20,10 @@
 #
 # Steps: test-default, test-zeroize, test-zeroize-release, test-avx2, avx2-inlining, thumbv7em, msrv-1.86, nearcore-build,
 # nearcore-test, nearcore-test-avx2, nearcore-test-zeroize, wasm32, wasm32-zeroize, diff-awslc,
-# fuzz-<target> (one per target in fuzz/fuzz_targets), deny, extract-hash, axiom-gate-selftest, no-decls-text, lean.
+# fuzz-<target> (one per target in fuzz/fuzz_targets), deny, extract-hash, axiom-gate-selftest, no-decls-text, cfg-inventory,
+# readme-counts, feature-independence (with --lean), lean.
 #
-# extract-hash, axiom-gate-selftest and no-decls-text need no Rust and no Lean:
+# extract-hash, axiom-gate-selftest, no-decls-text, cfg-inventory and readme-counts need no Rust and no Lean:
 #   extract-hash          fails if the extraction inputs (every file under src/, Cargo.toml with its package version normalized
 #                         to 0.0.0 so a release bump does not count, the roots, the tool pins), any file
 #                         under lean/Impl (recursively) or scripts/extract-roots.txt no longer match what
@@ -35,6 +36,13 @@
 #                         and strings are not), then a scan of every .lean file under lean/Impl, lean/Spec and lean/Proofs for
 #                         axiom, opaque, sorry, admit, native_decide, implemented_by and extern. The Lean half (the whole
 #                         environment, with an injected-declaration self-test) runs in the `lean` step via scripts/lean-check.sh.
+#   cfg-inventory         every #[cfg(..)], #[cfg_attr(..)] and cfg!(..) site in src/ against the justified whitelist
+#                         scripts/cfg-inventory.txt (scripts/cfg_inventory.py): a new or changed cfg-split body fails until a
+#                         reviewer writes it into the whitelist.
+#   readme-counts         the theorem counts in README.md against the theorem lists (scripts/check-readme-counts.py).
+# feature-independence (--lean only; needs the extraction tools of scripts/setup-tools.sh, no Lean) extracts the crate a second
+# time without the verify dispatch and diffs the generated Lean against lean/Impl, failing on any difference outside a
+# whitelist (scripts/check-feature-independence.sh). SKIP when the tools are missing.
 #
 # NOTE: test-zeroize skips stack_residue_* where they fail at opt-level 0. test-zeroize runs the zeroize feature's tests in
 # the dev profile (opt-level 0) without the 21 failing stack-residue scans (keygen, pk_from_sk, sign, sign_prepared and the
@@ -71,7 +79,8 @@ done
 
 # Known step names; --only must name only these (a typo must not turn the run into a silent no-op).
 KNOWN_STEPS=(test-default test-zeroize test-zeroize-release test-avx2 avx2-inlining thumbv7em msrv-1.86 nearcore-build nearcore-test
-             nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize diff-awslc deny extract-hash axiom-gate-selftest no-decls-text lean)
+             nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize diff-awslc deny extract-hash axiom-gate-selftest no-decls-text
+             cfg-inventory readme-counts feature-independence lean)
 for f in fuzz/fuzz_targets/*.rs; do KNOWN_STEPS+=("fuzz-$(basename "$f" .rs)"); done
 if [ -n "$ONLY" ]; then
   IFS=',' read -r -a _only <<< "${ONLY#,}"
@@ -319,7 +328,14 @@ expect_gate_fail() {
   return 1
 }
 step_no_decls_text() { scripts/check-no-decls.sh --text-only && python3 -I scripts/no_decls_text.py --self-test; }
-step_lean() { scripts/lean-check.sh; }
+step_cfg_inventory() { python3 -I scripts/cfg_inventory.py; }
+step_readme_counts() { python3 -I scripts/check-readme-counts.py; }
+step_feature_independence() {
+  if [ ! -x "${ML_DSA_TOOLS:-$HOME/hax-tools}/bin/cargo-hax" ]; then echo "SKIP: the extraction tools are not installed (scripts/setup-tools.sh)"; return 77; fi
+  scripts/check-feature-independence.sh
+}
+# lean-check.sh runs the feature-independence gate itself unless told not to; this script has already run it as its own step.
+step_lean() { ML_DSA_FEATURE_INDEPENDENCE_DONE=1 scripts/lean-check.sh; }
 
 run_step test-default step_test_default
 run_step test-zeroize step_test_zeroize
@@ -343,6 +359,9 @@ run_step deny step_deny
 run_step extract-hash step_extract_hash
 run_step axiom-gate-selftest step_axiom_gate_selftest
 run_step no-decls-text step_no_decls_text
+run_step cfg-inventory step_cfg_inventory
+run_step readme-counts step_readme_counts
+if [ "$LEAN" -eq 1 ] || [[ "$ONLY" == *",feature-independence,"* ]]; then run_step feature-independence step_feature_independence; fi
 if [ "$LEAN" -eq 1 ] || [[ "$ONLY" == *",lean,"* ]]; then run_step lean step_lean; fi
 
 echo; echo "=== SUMMARY ==="

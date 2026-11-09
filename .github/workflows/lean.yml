@@ -83,7 +83,10 @@ jobs:
 
       # Builds the default targets (Impl, Spec, Proofs), fails on any `error:` or `sorry` in the log, then runs the axiom
       # gate over lean/headline-theorems.txt and the whole-environment scan for axiom, opaque, sorry, admit, native_decide,
-      # implemented_by and extern (scripts/check-no-decls.sh, with its injected-declaration self-test). Prints "LEAN CHECK OK"
+      # implemented_by and extern (scripts/check-no-decls.sh, with its injected-declaration self-test), the reachable-declaration count
+      # (scripts/reachable-defs.sh), the cfg inventory of src/, and the feature-independence gate (a second extraction of src/
+      # without the verify dispatch, compared with lean/Impl; scripts/check-feature-independence.sh, which uses the tools
+      # installed above). Prints "LEAN CHECK OK"
       # only if all pass. The script has its own 3000 s `lake build` timeout.
       - name: scripts/lean-check.sh
         run: scripts/lean-check.sh
