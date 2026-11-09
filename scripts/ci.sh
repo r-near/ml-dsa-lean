@@ -20,9 +20,9 @@
 #
 # Steps: test-default, test-zeroize, test-zeroize-release, test-avx2, avx2-inlining, thumbv7em, msrv-1.86, nearcore-build,
 # nearcore-test, nearcore-test-avx2, nearcore-test-zeroize, wasm32, wasm32-zeroize, diff-awslc,
-# fuzz-<target> (one per target in fuzz/fuzz_targets), deny, extract-hash, axiom-gate-selftest, lean.
+# fuzz-<target> (one per target in fuzz/fuzz_targets), deny, extract-hash, axiom-gate-selftest, no-decls-text, lean.
 #
-# extract-hash and axiom-gate-selftest need no Rust and no Lean:
+# extract-hash, axiom-gate-selftest and no-decls-text need no Rust and no Lean:
 #   extract-hash          fails if the extraction inputs (every file under src/, Cargo.toml with its package version normalized
 #                         to 0.0.0 so a release bump does not count, the roots, the tool pins), any file
 #                         under lean/Impl (recursively) or scripts/extract-roots.txt no longer match what
@@ -31,6 +31,10 @@
 #                         and comparing every file, is in .github/workflows/lean.yml).
 #   axiom-gate-selftest   runs scripts/check-axioms.sh on a missing, an empty and a comment-only list and fails unless it
 #                         exits 1 with "AXIOM GATE FAIL", so the gate cannot silently pass on no declarations.
+#   no-decls-text         the text half of scripts/check-no-decls.sh: its self-test (each forbidden construct is found, comments
+#                         and strings are not), then a scan of every .lean file under lean/Impl, lean/Spec and lean/Proofs for
+#                         axiom, opaque, sorry, admit, native_decide, implemented_by and extern. The Lean half (the whole
+#                         environment, with an injected-declaration self-test) runs in the `lean` step via scripts/lean-check.sh.
 #
 # NOTE: test-zeroize skips stack_residue_* where they fail at opt-level 0. test-zeroize runs the zeroize feature's tests in
 # the dev profile (opt-level 0) without the 21 failing stack-residue scans (keygen, pk_from_sk, sign, sign_prepared and the
@@ -67,7 +71,7 @@ done
 
 # Known step names; --only must name only these (a typo must not turn the run into a silent no-op).
 KNOWN_STEPS=(test-default test-zeroize test-zeroize-release test-avx2 avx2-inlining thumbv7em msrv-1.86 nearcore-build nearcore-test
-             nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize diff-awslc deny extract-hash axiom-gate-selftest lean)
+             nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize diff-awslc deny extract-hash axiom-gate-selftest no-decls-text lean)
 for f in fuzz/fuzz_targets/*.rs; do KNOWN_STEPS+=("fuzz-$(basename "$f" .rs)"); done
 if [ -n "$ONLY" ]; then
   IFS=',' read -r -a _only <<< "${ONLY#,}"
@@ -314,6 +318,7 @@ expect_gate_fail() {
   printf '%s\n' "$out"
   return 1
 }
+step_no_decls_text() { scripts/check-no-decls.sh --text-only && python3 -I scripts/no_decls_text.py --self-test; }
 step_lean() { scripts/lean-check.sh; }
 
 run_step test-default step_test_default
@@ -337,6 +342,7 @@ run_step diff-awslc step_diff_awslc
 run_step deny step_deny
 run_step extract-hash step_extract_hash
 run_step axiom-gate-selftest step_axiom_gate_selftest
+run_step no-decls-text step_no_decls_text
 if [ "$LEAN" -eq 1 ] || [[ "$ONLY" == *",lean,"* ]]; then run_step lean step_lean; fi
 
 echo; echo "=== SUMMARY ==="

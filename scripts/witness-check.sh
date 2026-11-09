@@ -28,4 +28,7 @@ if grep -nE "(^|[^a-z])error:|declaration uses 'sorry'" .lake/witness-build.log;
 fi
 cd ..
 scripts/check-axioms.sh --list witness-theorems.txt --no-impl
+# With the TopWitness modules built, every module of lean/Impl, lean/Spec and lean/Proofs has an .olean: the whole-
+# environment scan must now cover all of them (scripts/lean-check.sh scans the default roots).
+scripts/check-no-decls.sh --all-built
 echo "WITNESS CHECK OK: $*"

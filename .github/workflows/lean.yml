@@ -82,8 +82,9 @@ jobs:
           echo "lean/Impl is byte-identical to a fresh extraction of src/ ($(find "$out" -type f | wc -l) files)"
 
       # Builds the default targets (Impl, Spec, Proofs), fails on any `error:` or `sorry` in the log, then runs the axiom
-      # gate over lean/headline-theorems.txt. Prints "LEAN CHECK OK" only if all pass. The script has its own 3000 s
-      # `lake build` timeout.
+      # gate over lean/headline-theorems.txt and the whole-environment scan for axiom, opaque, sorry, admit, native_decide,
+      # implemented_by and extern (scripts/check-no-decls.sh, with its injected-declaration self-test). Prints "LEAN CHECK OK"
+      # only if all pass. The script has its own 3000 s `lake build` timeout.
       - name: scripts/lean-check.sh
         run: scripts/lean-check.sh
 
@@ -105,6 +106,6 @@ jobs:
         uses: ./.github/actions/setup-lean
 
       # Builds Proofs.TopWitnessCorrect (not imported by the default roots), then the axiom gate over
-      # lean/witness-theorems.txt.
+      # lean/witness-theorems.txt and the no-declarations scan with every module built.
       - name: scripts/witness-check.sh
         run: scripts/witness-check.sh

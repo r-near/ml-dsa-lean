@@ -21,4 +21,8 @@ cd ..
 scripts/check-axioms.sh
 scripts/check-axioms.sh --list keccak4-theorems.txt --no-impl
 scripts/check-axioms.sh --list fast-verify-theorems.txt --no-impl
+# The whole environment, not only the dependencies of the names above: no axiom, opaque, sorry, admit, native_decide,
+# implemented_by or extern anywhere in lean/Impl, lean/Spec, lean/Proofs. The self-test injects each into an Impl module.
+scripts/check-no-decls.sh
+scripts/check-no-decls.sh --self-test
 echo "LEAN CHECK OK: $*"
