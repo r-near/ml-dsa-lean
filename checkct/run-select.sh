@@ -10,20 +10,17 @@
 #   JOBS     parallel BINSEC instances (default 4: they share the container cap, and 16 at 64g got large probes killed).
 #            A probe killed at the cap reports "error", never "secure"; check `journalctl -k -g "Killed process"` (checkct/README.md, "Reading `error` results")
 #   OUT      as in run.sh (copies the compiled drivers)
-#   PROFILE  as in run.sh (nearcore = opt-level 3, fat LTO, one codegen unit), plus the dispatch profiles:
-#            dispatch          the checkct profile with the driver's `avx2` cargo feature, which turns on the crate's
-#                              `cfg(feature = "avx2")`: the runtime AVX2 dispatch of src/ntt.rs and src/fast_verify.rs is compiled in (x86_64 only)
-#            nearcore-dispatch the nearcore settings plus the same feature
+#   PROFILE  as in run.sh (nearcore = opt-level 3, fat LTO, one codegen unit), plus:
+#            avx2, nearcore-avx2  the same with -C target-feature=+avx2 (BINSEC cannot lift the VEX instructions; a check that
+#                              the scalar parts stay secure)
 #            nearcore-exact    the exact nearcore release build (see the block comment below): nearcore's [profile.release] incl.
 #                              overflow-checks = true, nearcore's x86_64 target features and Rust 1.95.0 (CT_TOOLCHAIN)
-#            nearcore-exact-dispatch  nearcore-exact plus the driver's `avx2` feature, cache pre-set as in nearcore-dispatch
 #            nearcore-exact-novec     nearcore-exact plus -C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false
-#            In a dispatch profile the dispatch cache (a static in .bss) is pre-set to "no AVX2" in every x86_64 BINSEC
-#            script, see run_one below; the run fails if the static or the script anchor is not found. In every other
-#            profile no dispatch is compiled and nothing is pre-set (the log says so).
+#            There is no run-time AVX2 dispatch in the crate any more (round 12), so there are no dispatch profiles and nothing is
+#            pre-set in the BINSEC scripts.
 #   TRACE    1 runs BINSEC with -sse-debug-level 3 -sse-loglevel debug and keeps only the last executed instruction and the
 #            executed-instruction count of each probe (a "last:" line in the Summary): where a path was cut or stuck
-#   ZEROIZE  1 builds the driver with the crate's `zeroize` feature, whatever the profile (not with a dispatch profile): the
+#   ZEROIZE  1 builds the driver with the crate's `zeroize` feature, whatever the profile: the
 #            `cfg(feature = "zeroize")` code of src/ (the wipes of Sign's attempt, the in-place decoders' `.zeroize()`
 #            calls, `Drop` of the prepared key) is then compiled. No default driver contains it. The container adds the
 #            optional `zeroize` dependency (the version of Cargo.lock) to its working copy of checkct/driver/Cargo.toml and
@@ -39,7 +36,7 @@ set -o pipefail
 : "${ONLY:?set ONLY to a regex over the probe names}"
 TIMEOUT="${TIMEOUT:-7200}"
 NAME="${NAME:-ct-select}"
-case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch|nearcore-exact-novec) TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}"
+case "$PROFILE" in nearcore-exact|nearcore-exact-novec) TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}"
   case " $TARGETS " in *" x86_64-unknown-linux-gnu "*) ;; *) echo "PROFILE=$PROFILE is x86_64 only (nearcore's settings); TARGETS=$TARGETS" >&2; exit 2 ;; esac ;; esac
 TARGETS="${TARGETS:-riscv32imac-unknown-none-elf thumbv7em-none-eabihf x86_64-unknown-linux-gnu}"
 JOBS="${JOBS:-4}"
@@ -48,14 +45,12 @@ if [ -n "$OUT" ]; then
   mkdir -p "$OUT" && chmod 777 "$OUT" && MOUNT="-v $OUT:/out"
 fi
 PENV=""
-DISPATCH=""
 case "$PROFILE" in
   ""|nearcore|nearcore-novec|avx2|nearcore-avx2) ;;
   nearcore-exact|nearcore-exact-novec) ;;
-  dispatch|nearcore-dispatch|nearcore-exact-dispatch) DISPATCH=1 ;;
-  *) echo "unknown PROFILE=$PROFILE (known: nearcore, nearcore-novec, avx2, nearcore-avx2, dispatch, nearcore-dispatch, nearcore-exact, nearcore-exact-dispatch, nearcore-exact-novec)" >&2; exit 2 ;;
+  *) echo "unknown PROFILE=$PROFILE (known: nearcore, nearcore-novec, avx2, nearcore-avx2, nearcore-exact, nearcore-exact-novec)" >&2; exit 2 ;;
 esac
-case "$PROFILE" in nearcore|nearcore-novec|nearcore-dispatch)
+case "$PROFILE" in nearcore|nearcore-novec)
   PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort" ;; esac
 # BINSEC cannot lift some SSE2 instructions (movmskpd) that LLVM emits when it vectorizes the loops at opt-level 3.
 # cargo-checkct drops RUSTFLAGS, so use the per-target variable, which replaces the x86_64 rustflags of checkct/.cargo/config.toml, so repeat them.
@@ -63,7 +58,7 @@ if [ "$PROFILE" = nearcore-novec ]; then
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false"
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
-# PROFILE=nearcore-exact, nearcore-exact-dispatch: the build settings of nearcore's release binary, read from the
+# PROFILE=nearcore-exact: the build settings of nearcore's release binary, read from the
 # nearcore clone at commit cd5a94457 (2026-11-03). The older "nearcore" profiles above stay as they were (historical
 # numbers refer to them).
 #   Cargo.toml:388-392      [profile.release] overflow-checks = true, panic = 'abort', lto = "fat", codegen-units = 1
@@ -86,7 +81,7 @@ fi
 # and fails if it is not the requested one. RUSTC_BOOTSTRAP=1 lets that stable compiler take the -Zbuild-std of
 # checkct/.cargo/config.toml (the driver is no_std and needs build-std's compiler-builtins-mem for memcpy/memset;
 # RUSTC_BOOTSTRAP does not change code generation). CT_TOOLCHAIN=nightly-2026-10-06 builds with the checkct nightly instead.
-case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch|nearcore-exact-novec)
+case "$PROFILE" in nearcore-exact|nearcore-exact-novec)
   PENV="-e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 -e CARGO_PROFILE_RELEASE_LTO=fat -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 -e CARGO_PROFILE_RELEASE_PANIC=abort -e CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=false -e RUSTC_BOOTSTRAP=1 -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
   export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS="-C linker=rust-lld -C linker-flavor=ld.lld -C relocation-model=static -C target-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq -C force-unwind-tables=y"
   # nearcore-exact-novec: nearcore-exact plus the loop and SLP vectorizers off (as nearcore-novec), to see which unknowns are VEX artifacts
@@ -101,8 +96,8 @@ if [ "$PROFILE" = avx2 ] || [ "$PROFILE" = nearcore-avx2 ]; then
   PENV="$PENV -e CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS"
 fi
 EXACT=""
-case "$PROFILE" in nearcore-exact|nearcore-exact-dispatch|nearcore-exact-novec) EXACT=1 ;; esac
-docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPERIMENTS" -e ZEROIZE="$ZEROIZE" -e TRACE="$TRACE" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
+case "$PROFILE" in nearcore-exact|nearcore-exact-novec) EXACT=1 ;; esac
+docker run --rm -e EXACT="$EXACT" -e EXPERIMENTS="$EXPERIMENTS" -e ZEROIZE="$ZEROIZE" -e TRACE="$TRACE" -e PROFILE_NAME="${PROFILE:-default}" --memory "${CT_MEMORY:-64g}" --memory-swap "${CT_MEMORY:-64g}" --cpus "${CT_CPUS:-24}" --name "$NAME" $MOUNT $PENV -e ONLY="$ONLY" -e EXCLUDE="$EXCLUDE" -e TIMEOUT="$TIMEOUT" -e TARGETS="$TARGETS" -e JOBS="$JOBS" \
   -v "$PWD":/src:ro ct-binsec bash -c '
   mkdir /home/opam/w && cp -r /src/src /src/checkct /src/Cargo.toml /home/opam/w/ &&
   rm -rf /home/opam/w/checkct/target && cd /home/opam/w && eval $(opam env) &&
@@ -114,19 +109,12 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
   echo "toolchain for PROFILE=$PROFILE_NAME (checkct/rust-toolchain.toml: $(grep ^channel checkct/rust-toolchain.toml), RUSTC_BOOTSTRAP=${RUSTC_BOOTSTRAP:-unset}):" &&
   (cd checkct && rustc -vV | sed "s/^/  /") &&
   echo "x86_64 rustflags: ${CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUSTFLAGS:-(checkct/.cargo/config.toml)}; CARGO_PROFILE_RELEASE_*: $(env | grep ^CARGO_PROFILE_RELEASE_ | tr "\n" " ")" &&
-  # Dispatch profiles: make `avx2` a default feature of the driver (cargo-checkct has no --features option). The
-  # feature is declared in checkct/driver/Cargo.toml; the #[path]-included sources see it as cfg(feature = "avx2").
-  if [ -n "$DISPATCH" ]; then
-    sed -i "s/^avx2 = \[\]\$/avx2 = []\ndefault = [\"avx2\"]/" checkct/driver/Cargo.toml &&
-    grep -q "^default = \[\"avx2\"\]\$" checkct/driver/Cargo.toml || { echo "PRESET FAILED: could not enable the avx2 feature in checkct/driver/Cargo.toml"; exit 1; }
-  fi
   # ZEROIZE=1: the `zeroize` feature of the crate, as an optional dependency added to the working copy of the driver manifest
   # (the repository manifest does not declare it). The version is the one of the crate lock file.
   if [ -n "$ZEROIZE" ]; then
-    [ -n "$DISPATCH" ] && { echo "ZEROIZE=1 is not combined with a dispatch profile"; exit 1; }
     zv=$(grep -A1 "^name = \"zeroize\"\$" /src/Cargo.lock | sed -n "s/^version = \"\\(.*\\)\"\$/\\1/p" | head -1)
     [ -n "$zv" ] || { echo "ZEROIZE: no zeroize version in Cargo.lock"; exit 1; }
-    sed -i "s/^\\[dependencies\\]\$/[dependencies]\nzeroize = { version = \"=$zv\", default-features = false, optional = true }/; s/^avx2 = \\[\\]\$/avx2 = []\nzeroize = [\"dep:zeroize\"]\ndefault = [\"zeroize\"]/" checkct/driver/Cargo.toml &&
+    sed -i "s/^\\[dependencies\\]\$/[dependencies]\nzeroize = { version = \"=$zv\", default-features = false, optional = true }/; s/^experiments = \\[\\]\$/experiments = []\nzeroize = [\"dep:zeroize\"]\ndefault = [\"zeroize\"]/" checkct/driver/Cargo.toml &&
     grep -q "^default = \\[\"zeroize\"\\]\$" checkct/driver/Cargo.toml && grep -q "^zeroize = { version" checkct/driver/Cargo.toml || { echo "ZEROIZE: could not add the zeroize feature to checkct/driver/Cargo.toml"; exit 1; }
     echo "zeroize feature enabled (zeroize =$zv); driver manifest: $(grep -E "^(zeroize|default)" checkct/driver/Cargo.toml | tr "\n" " ")"
   fi
@@ -144,47 +132,10 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
     echo "driver .comment ($t): $cm"
     if [ -n "$EXACT" ] && [ "${CT_TOOLCHAIN:-1.95.0}" = 1.95.0 ] && ! echo "$cm" | grep -q "rustc version 1.95.0 "; then
       echo "TOOLCHAIN MISMATCH: PROFILE=$PROFILE_NAME wants rustc 1.95.0 but the driver was built by something else"; exit 1; fi ;; esac; done
-  # The dispatch static of src/cpu.rs (static AVX2: AtomicU8, shared by the NTT dispatch and the verify dispatch): print
-  # the address of exactly that symbol. v0 mangling _RNvNtC<crate hash>_6driver3cpu4AVX2 (legacy:
-  # _ZN6driver3cpu4AVX217h<hash>E), plus the suffixes LTO adds (.0, .llvm.<number>). No other symbol of the binary
-  # matches (the dispatched bodies are functions, type t).
-  avx2_sym() { nm "$1/release/driver" 2>/dev/null | grep -E "^[0-9a-f]+ [bBdD] (_RNvNtC[A-Za-z0-9]+_6driver3cpu4AVX2|_ZN6driver3cpu4AVX217h[0-9a-f]{16}E)(\.[0-9]+)?(\.llvm\.[0-9]+)?\$" | cut -d" " -f1; }
-  export -f avx2_sym
-  rm -f /tmp/preset-failed
-  for t in $TARGETS; do
-    case "$t" in x86_64*) ;; *) echo "preset $t: no AVX2 dispatch on this architecture, nothing to pre-set"; continue ;; esac
-    n=$(avx2_sym "$t" | wc -l)
-    if [ -n "$DISPATCH" ]; then
-      if [ "$n" -eq 1 ]; then echo "preset $t: PROFILE=$PROFILE_NAME: dispatch compiled in, AVX2 cache static at 0x$(avx2_sym "$t"); every script gets @[0x..., 1] := 1"
-      else echo "PRESET FAILED $t: PROFILE=$PROFILE_NAME is a dispatch profile but $n symbols match driver::cpu::AVX2 (expected 1)" | tee -a /tmp/preset-failed; fi
-    else
-      if [ "$n" -eq 0 ]; then echo "preset $t: PROFILE=$PROFILE_NAME: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set"
-      else echo "PRESET FAILED $t: PROFILE=$PROFILE_NAME is not a dispatch profile but the binary has the dispatch static" | tee -a /tmp/preset-failed; fi
-    fi
-  done
-  [ -e /tmp/preset-failed ] && exit 1
   run_one() {
     t=$1; s=$2; isa=""
     case "$t" in thumb*) isa="-isa armv7:thumb" ;; esac
     ep=$(basename "$s" .binsec); ep=${ep#driver.}; ep=$(echo "$ep" | sed "s/__/::/g")
-    # The runtime AVX2 dispatch (src/ntt.rs and src/fast_verify.rs, compiled only in the dispatch profiles) caches its
-    # CPUID answer in one static (src/cpu.rs). BINSEC leaves .bss symbolic, so it would explore the AVX2 arm, whose VEX
-    # instructions it cannot lift
-    # ("KO", status unknown). cargo-checkct models cpuid as "no optional features"; do the same for the cache: pre-set
-    # it to 1 ("checked, no AVX2") on x86_64. The symbol is matched exactly (avx2_sym); a missing symbol or anchor
-    # fails the run.
-    pre=""
-    case "$t" in x86_64*) if [ -n "$DISPATCH" ]; then
-      sym=$(avx2_sym "$t"); mod="/tmp/mod.$$.$ep.binsec"
-      sed "/^@\[rsp, 8\] :=/a @[0x$sym, 1] := 1" "$s" > "$mod"
-      if [ -n "$sym" ] && grep -q "^@\[0x$sym, 1\] := 1\$" "$mod"; then
-        s="$mod"; pre=" (AVX2 cache 0x$sym pre-set to 1)"
-      else
-        echo "PRESET FAILED $t $ep: anchor @[rsp, 8] := not found in $s (symbol 0x$sym)" | tee -a /tmp/preset-failed
-        { echo "  driver  $t  $ep  error"; echo "      note: AVX2 cache pre-set failed (anchor not found in the BINSEC script)"; } > "/tmp/sel.$t.$ep.out"
-        return 0
-      fi
-    fi ;; esac
     # TRACE=1: BINSEC prints every executed instruction ([sse:step] lines); only the last one and the count are kept.
     # That is the instruction a path was at when the run ended (a cut path, or the query a timed-out path is stuck in).
     trace=""; [ -n "$TRACE" ] && trace="-sse-debug-level 3 -sse-loglevel debug"
@@ -194,7 +145,7 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
     st=$(echo "$out" | sed -n "s/.*Program status is : \([a-z]*\).*/\1/p" | head -1)
     {
       echo "  driver  $t  $ep  ${st:-error}"
-      # SHA-256 of the ELF that BINSEC analyzed and of the script it was given (after the dispatch pre-set), so that a later
+      # SHA-256 of the ELF that BINSEC analyzed and of the script it was given , so that a later
       # rerun can be compared with this one by file identity instead of by instruction counts.
       echo "      sha256: elf $(sha256sum < "$t/release/driver" | cut -d" " -f1) script $(sha256sum < "$s" | cut -d" " -f1)"
       echo "$out" | sed -n "s/.*\[checkct:result\] Instruction \(.*\)/      \1/p"
@@ -202,7 +153,7 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
       echo "$out" | grep -E "visited instructions \(unrolled\)|branching points|checks pass|pending paths" | sed "s/^ */      stat: /"
       [ "$st" = secure ] || echo "$out" | grep -iE "warning|error|unsupported|unknown|undefined|abort|not executable|cannot|failed" | sort | uniq -c | sort -rn | head -8 | sed "s/^ */      note: /"
     } > "/tmp/sel.$t.$ep.out"
-    echo "done $t $ep ${st:-error}$pre"   # streamed as each probe finishes
+    echo "done $t $ep ${st:-error}"   # streamed as each probe finishes
   }
   export -f run_one
   for t in $TARGETS; do for s in $t/release/driver.*.binsec; do
@@ -216,5 +167,4 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
   if [ -d /out ]; then
     for t in $TARGETS; do cp /home/opam/w/checkct/target/$t/release/driver /out/$t.driver; done
   fi
-  [ -e /tmp/preset-failed ] && { echo "PRESET FAILED for some probes:"; cat /tmp/preset-failed; exit 1; }
   exit 0'

@@ -7,6 +7,7 @@
 #   bash bench/ab.sh scan-build NAME         build stackscan (bench/stackscan.sh) and keep it as $AB_DIR/stackscan-NAME
 #   bash bench/ab.sh scan CPU NAME           stack-offset scan of a kept stackscan binary, as `stackscan.sh check`: fails (exit 1) when any
 #                                            padding of the environment makes a call more than LIMIT (1.15) times slower than the median
+# EXTRA_RF (build only) is appended to the RUSTFLAGS, e.g. EXTRA_RF="-Ctarget-feature=+avx,+avx2".
 # AB_DIR defaults to ~/rx/scratch/ab. SETS (default 65), ONLY (default verify), ROUNDS (default 7) tune a pass. PAD (bytes of
 # environment padding, default none) runs every binary under `env -i PAD=xxx... setarch -R`, i.e. at one fixed stack offset: a
 # gain that holds at several PADs (for instance 0, 672 and 2752) is not a stack-offset artifact. ASLR is off then, as in the scan.
@@ -17,7 +18,7 @@ NC="-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcn
 case "$1" in
 build)
   cd bench || exit 1
-  CARGO_PROFILE_NEARCORE_OVERFLOW_CHECKS=true RUSTFLAGS="$NC" cargo ${TOOLCHAIN:+"+$TOOLCHAIN"} build --profile nearcore --bin bench --features avx2 \
+  CARGO_PROFILE_NEARCORE_OVERFLOW_CHECKS=true RUSTFLAGS="$NC${EXTRA_RF:+ $EXTRA_RF}" cargo ${TOOLCHAIN:+"+$TOOLCHAIN"} build --profile nearcore --bin bench --features avx2 \
     --message-format=json-render-diagnostics >"$AB_DIR/build-$2.json" || exit 1
   python3 - "$AB_DIR/build-$2.json" "$AB_DIR/bench-$2" <<'PY'
 import json, shutil, sys

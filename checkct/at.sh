@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Disassemble around an address of a driver built by checkct/select-ntt.sh:
-#   bash checkct/at.sh MODE ADDR [CONTEXT_BYTES]     MODE = default | dispatch | avx2 | navx2
+#   bash checkct/at.sh MODE ADDR [CONTEXT_BYTES]     MODE = default | avx2 | navx2
 set -o pipefail
 case "$1" in
-  default) D=ntt-ct-out ;; dispatch) D=ntt-ct-out-dispatch ;; avx2) D=ntt-ct-out-avx2 ;; navx2) D=ntt-ct-out-navx2 ;;
+  default) D=ntt-ct-out ;; avx2) D=ntt-ct-out-avx2 ;; navx2) D=ntt-ct-out-navx2 ;;
   *) D=$1 ;;
 esac
 SCRATCH="${ML_DSA_SCRATCH:-${XDG_CACHE_HOME:-$HOME/.cache}/ml-dsa-lean/scratch}"

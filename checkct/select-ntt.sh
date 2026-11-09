@@ -4,11 +4,7 @@
 # Usage (from the repository root):
 #   bash checkct/select-ntt.sh 2>&1 | tee ntt-ct.log
 #   bash checkct/select-ntt.sh avx2      # x86_64 only, built with -C target-feature=+avx2 (static AVX2 arm)
-#   bash checkct/select-ntt.sh dispatch  # x86_64 only, PROFILE=dispatch: the driver is built with its `avx2` feature, so
-#                                        # the runtime AVX2 dispatch is compiled in; the cache is pre-set to "no AVX2"
-#                                        # (the portable arm), see run-select.sh. Other targets build the same as default.
-#   bash checkct/select-ntt.sh nearcore-dispatch   # the same with the nearcore settings
-# The default mode builds without the dispatch (the crate default; `avx2` is opt-in) and says so in the log.
+# The default mode builds the crate default. There are no dispatch modes (round 12).
 # A second argument replaces the probe regex (matched against driver__module__probe), a third the target list.
 # The container name is unique per invocation unless NAME is set.
 # Environment overrides for run-select.sh (NAME, JOBS, TIMEOUT, OUT, TARGETS, PROFILE) are honored.
@@ -23,9 +19,6 @@ case "$mode" in
     export OUT="${OUT:-$SCRATCH/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-4}" ;;
   nearcore-avx2)
     export TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}" PROFILE=nearcore-avx2
-    export OUT="${OUT:-$SCRATCH/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-4}" ;;
-  dispatch|nearcore-dispatch)
-    export TARGETS="${TARGETS:-x86_64-unknown-linux-gnu}" PROFILE="$mode"
     export OUT="${OUT:-$SCRATCH/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-4}" ;;
   *)
     export OUT="${OUT:-$SCRATCH/ntt-ct-out-$mode-$$}" JOBS="${JOBS:-24}" ;;

@@ -28,10 +28,6 @@ mod keccak;
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/keccak4.rs"]
 mod keccak4;
-// The CPU check of the NTT dispatch (only with the `avx2` feature on x86_64; the driver never sets `miri`).
-#[allow(dead_code, unexpected_cfgs)]
-#[path = "../../../src/cpu.rs"]
-mod cpu;
 #[allow(dead_code)]
 #[path = "../../../src/encode.rs"]
 mod encode;

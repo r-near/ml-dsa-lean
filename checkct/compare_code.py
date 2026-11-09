@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Function-by-function comparison of two sets of checkct driver binaries (checkct/compare-code.sh).
 
-Usage: compare_code.py DIR_A DIR_B     (each holds none/driver-TARGET and avx2/driver-TARGET)
+Usage: compare_code.py DIR_A DIR_B     (each holds none/driver-TARGET)
        compare_code.py --self-test
 
 For every binary the text is disassembled with `llvm-objdump -d`. A function is the block under a `ADDR <name>:` label. Masked
@@ -189,7 +189,7 @@ def main():
         sys.exit(2)
     a, b = sys.argv[1:3]
     bad, cells = 0, 0
-    for feat in ('none', 'avx2'):
+    for feat in ('none',):
         for t in TARGETS:
             try:
                 fa, fb = functions(f'{a}/{feat}/driver-{t}'), functions(f'{b}/{feat}/driver-{t}')
@@ -207,8 +207,8 @@ def main():
             for n in only_b[:20]:
                 print(f'    only in B: {n}')
             bad += nbad
-    if cells != 2 * len(TARGETS):
-        print(f'COMPARE ERROR: compared {cells} binaries, expected {2 * len(TARGETS)}')
+    if cells != len(TARGETS):
+        print(f'COMPARE ERROR: compared {cells} binaries, expected {len(TARGETS)}')
         sys.exit(2)
     print(f'COMPARE OK: every function of all {cells} binaries is identical after masking' if not bad
           else f'COMPARE DIFFERENCES: {bad}')

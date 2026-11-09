@@ -13,14 +13,11 @@
 #   NAME     docker container name (default ct-run); to stop a run early, use `docker kill $NAME`
 # CT_MEMORY / CT_CPUS: docker --memory / --cpus caps (default 64g / 24); an uncapped BINSEC run can exhaust the
 # host's memory.
-#            The dispatch profiles ("dispatch", "nearcore-dispatch": the driver built with its `avx2` feature, so the runtime
-#            AVX2 dispatch of src/ntt.rs is compiled in) are only supported by checkct/run-select.sh, which pre-sets the
-#            dispatch cache in the BINSEC scripts; this script refuses them (without the pre-set BINSEC would explore the
-#            AVX2 arm and stop at its first VEX instruction). Use e.g.
-#            PROFILE=dispatch ONLY='.' bash checkct/run-select.sh, or bash checkct/select-ntt.sh dispatch.
+#            There are no dispatch profiles (round 12: the crate has no run-time AVX2 dispatch). The profiles that need the
+#            nearcore-exact toolchain and flags are supported only by checkct/run-select.sh.
 set -o pipefail
-case "$PROFILE" in dispatch|nearcore-dispatch|nearcore-exact|nearcore-exact-dispatch|nearcore-exact-novec)
-  echo "run.sh does not support PROFILE=$PROFILE: use checkct/run-select.sh (dispatch cache pre-set, nearcore-exact toolchain and flags); see the header of this file" >&2
+case "$PROFILE" in nearcore-exact|nearcore-exact-novec)
+  echo "run.sh does not support PROFILE=$PROFILE: use checkct/run-select.sh (nearcore-exact toolchain and flags); see the header of this file" >&2
   exit 2 ;; esac
 TIMEOUT="${TIMEOUT:-900}"
 NAME="${NAME:-ct-run}"

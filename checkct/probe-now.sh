@@ -2,7 +2,6 @@
 # Run one probe again inside a RUNNING run-select.sh container (docker exec), on the scripts and driver it built, with a
 # short timeout and the full BINSEC log. For diagnosis of a probe of a sweep in flight; not for verdicts.
 #   bash checkct/probe-now.sh CONTAINER PROBE [TIMEOUT] [extra binsec args]     PROBE e.g. extra__sk_is_well_formed_44
-# A dispatch container needs the cache pre-set: use the /tmp/mod.* script run-select.sh wrote (this script prefers it).
 set -o pipefail
 C=$1; P=$2; T=${3:-120}; shift $(( $# < 3 ? $# : 3 ))
 docker exec -w /home/opam/w/checkct/target "$C" bash -c '
