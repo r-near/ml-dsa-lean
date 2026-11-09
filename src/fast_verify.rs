@@ -12,7 +12,8 @@
 //! call of the proved 4-way function (`verify::verify_internal_x4`, `prepare_vk_into_x4`) or of the scalar function
 //! (`verify_prepared_internal`). Nothing in this module or in the wrappers is compiled differently from what the Lean
 //! extraction sees, except the CPU check that makes the token (`cpu.rs`: under extraction, `cpu::avx2()` is the stub
-//! `None`). `Proofs/Dispatch.lean` proves, for every value of the token argument (so for whatever the CPU check
+//! `None`) and `align_frame()` in the prepared-key wrapper (empty under extraction; a value-free stack-alignment anchor
+//! otherwise, see `dispatch.rs`). `Proofs/Dispatch.lean` proves, for every value of the token argument (so for whatever the CPU check
 //! returns), that each `_with` function equals the scalar function it replaces, as `RustM` values including
 //! divergence; `api.rs` has the same for the public functions. The `_with` functions are crate-private: they are
 //! reachable only with a token, and only `cpu::avx2()` makes one, after it found AVX2.
