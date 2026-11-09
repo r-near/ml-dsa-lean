@@ -217,12 +217,15 @@ fn verify_core<const K: usize, const L: usize>(
     let z_hat = ntt_vec_pub(z);
     let c_hat = ntt_pub(c);
     let mut scratch = VerifyScratch::<K> { w1: [[0u32; 256]; K], w1_enc: [0u8; 8 * 192] };
+    // The loop works on a borrow of the field, so that its extraction (`verify_core_loop`) is a loop over the array w1, as
+    // before the scratch existed.
+    let w1 = &mut scratch.w1;
     let mut i = 0;
     while i < K {
         let w_hat = mac_row_pub::<L>(&vk.a_hat[i], &z_hat, &c_hat, &vk.t1_2d_hat[i]);
         let w_approx = ntt_inverse_pub(&w_hat);
         // 11: w′1 ← UseHint(h, w′_Approx)
-        scratch.w1[i] = poly_use_hint_pub(p, &h[i], &w_approx);
+        w1[i] = poly_use_hint_pub(p, &h[i], &w_approx);
         i += 1;
     }
     // 12: c̃′ ← H(μ ‖ w1Encode(w′1), λ/4)
