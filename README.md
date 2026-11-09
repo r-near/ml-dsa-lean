@@ -51,8 +51,10 @@ Optional features:
 - `zeroize` wipes dropped signing keys and, best effort, secret intermediates.
 - `avx2` adds runtime-dispatched AVX2 code on x86_64: a fast verify whose 4-way body, and the run-time choice between it and the
   scalar verify (for either answer of the CPU check), are proved equal to the scalar verify at source level; and an AVX2 NTT for
-  signing and key generation that is tested, not proved. The CPU check and the compiler's output for the AVX2 wrappers are outside
-  the proof; see `docs/limitations.md`.
+  signing and key generation that is tested, not proved. Outside the proof on the verify paths: the CPU detection (assumed: the CPU and OS
+  support AVX2 whenever it reports it; a false report is undefined behavior), the 15 token-passing call lines in `src/api.rs`, the 3
+  `unsafe` calls in `src/fast_verify.rs`, and the `target_feature`/`repr`/`inline` attributes under the ordinary compiler trust; see
+  `docs/limitations.md`.
 
 Requires Rust 1.86 or newer.
 

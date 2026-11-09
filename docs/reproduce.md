@@ -57,8 +57,8 @@ and `avx2`; thumbv7em and wasm32 builds; MSRV 1.86; a build and tests under the 
 (`CI_TOOLS` overrides that). It needs `cargo-fuzz` and a nightly toolchain for the fuzz steps and reports a SKIP if they are
 missing; `--strict` turns a SKIP into a failure. Run `bash scripts/ci.sh --help` for options such as `--only`. A cold run
 takes tens of minutes. It also runs two checks that need no Rust or Lean: `extract-hash` (the digests of the extraction inputs and of
-`lean/Impl` against `lean/Impl/extract-report.json`, section 2.2) and `axiom-gate-selftest` (`scripts/check-axioms.sh` must fail on a missing
-or empty list). Last recorded result: see assurance.md, section 0.
+`lean/Impl` against `lean/Impl/extract-report.json`, section 2.2) `axiom-gate-selftest` (`scripts/check-axioms.sh` must fail on a missing
+or empty list) and `no-decls-text` (the text half of `scripts/check-no-decls.sh`). Last recorded result: see assurance.md, section 0.
 
 The longer differentials, fuzzing and benchmarks:
 
@@ -110,7 +110,7 @@ on a nonzero Lake exit, on any `error:` or `declaration uses 'sorry'` in the ful
 `lean/headline-theorems.txt` and fails if any is not one of `propext`, `Classical.choice`, `Quot.sound`. `lean-check.sh` then runs
 the same gate over `lean/keccak4-theorems.txt` and `lean/fast-verify-theorems.txt` (the 4-way Keccak, sampler, ExpandA and verify
 theorems and the dispatch theorems, assurance.md section 1.9; `scripts/check-axioms.sh --list FILE --no-impl` runs one list). A `sorry` would
-show up as `sorryAx` and `native_decide` as an extra axiom, so both fail the check. The axiom gate prints the declaration count
+show up as `sorryAx` and `native_decide` as an extra axiom, so both fail the check. That gate looks only at the dependencies of the names it is given, so `lean-check.sh` also runs `scripts/check-no-decls.sh`, which fails on any `axiom`, `opaque`, `sorry`, `admit`, `native_decide`, `implemented_by` or `extern` declared anywhere in `lean/Impl`, `lean/Spec` or `lean/Proofs` (a scan of the source text and a walk over the Lean environment's constants of those modules), and `scripts/check-no-decls.sh --self-test`, which injects each of them into an `Impl` module and requires the scan to report it. `witness-check.sh` repeats the scan with the `TopWitness` modules built (`--all-built`). The axiom gate prints the declaration count
 on its `defs/theorems to check:` and `checked:` lines (the count depends on the tree; assurance.md section 0 has the recorded one); success ends with `LEAN CHECK OK` and does not
 repeat it. Pass module names to build less, for example
 `bash scripts/lean-check.sh Proofs.PartialAPI`. Dependencies (Mathlib and Aeneas) are fetched with `lake exe cache get`
@@ -142,7 +142,7 @@ elan from tagged releases and checks recorded SHA-256 values. On every run it ch
 whole Aeneas and Charon tool directories (cargo-hax runs the executables that `hax-metadata.toml` in them names, so every file
 counts, and the execute bit) against recorded digests, reinstalling if they differ, and runs each tool. `scripts/extract.py` exits nonzero on
 any gate failure (an Aeneas error or warning, a local opaque function, a referenced external axiom, an `api` function missing
-from `scripts/extract-roots.txt`) and writes into `lean/Impl` only on success. `lean/Impl/extract-report.json` records a
+from `scripts/extract-roots.txt`) and writes into `lean/Impl` only on success. Aeneas declares an `axiom` for every external function it knows a name pattern for, used or not (four, `core.iter.range.Step.*.default`, for this crate); extraction removes them (`extract_hash.clean_external`) and the files in `lean/Impl` and the hashes in the report are those of the cleaned text. `lean/Impl/extract-report.json` records a
 digest of the extraction inputs (every file under `src/` with its name, `Cargo.toml` without `[dev-dependencies]` and with its package `version` replaced by `0.0.0`, the roots and
 the tool pins) and the SHA-256 of each file in `lean/Impl`; `bash scripts/ci.sh --only extract-hash` compares them with the
 tree (no tools needed) and rejects symlinks, so a changed input or a hand-edited or added file in `lean/Impl` without a new

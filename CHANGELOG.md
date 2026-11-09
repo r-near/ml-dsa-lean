@@ -69,10 +69,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     crate-private functions). `Proofs/Dispatch.lean` proves, as `RustM` equalities for every token value, that each `_with` function
     is the scalar function (23 more names in `lean/fast-verify-theorems.txt`).
   - `align_frame()`/`black_box` is gone from the two wrappers that own a `PreparedVk` (the type is `#[repr(align(32))]` instead) and
-    kept in `verify_prepared_avx2` alone, which only borrows a key: without it the prepared-key verify was 2 to 8 % slower in the
-    interleaved A/B. It is empty under extraction (`scripts/check-avx2-inlining.sh` still requires the realignment of all nine
-    wrapper instantiations). Removed: the dead test hooks of `src/fast_verify/dispatch.rs` (the `internals`
+    was kept in `verify_prepared_avx2` alone, which only borrows a key: without it the prepared-key verify was 2 to 8 % slower in the
+    interleaved A/B. It was empty under extraction; the next entry replaces it with a scratch the proved code uses
+    (`scripts/check-avx2-inlining.sh` still requires the realignment of all nine wrapper instantiations). Removed: the dead test hooks of `src/fast_verify/dispatch.rs` (the `internals`
     entry points moved to `src/fast_verify/hooks.rs`) and `tests/fast_verify_dispatch.rs`.
+- The last computational `cfg(miri)` substitution on a verify path is gone, and the Lean environment declares no axiom
+  (`bench/results/2026-11-09-p9.md`, `docs/assurance.md` sections 1.9, 2, 3):
+  - `align_frame()` (a `black_box` stack-alignment anchor that existed only in the compiled build) is removed from
+    `verify_prepared_avx2`. `verify_core` now computes w′1 and its encoding in a `#[repr(align(32))]` `VerifyScratch` that it owns, which
+    gives every wrapper that inlines it a 32-byte aligned frame from an object the proved code uses. The prepared-key verify is at
+    parity with the previous tree and with `fast-verify`. `scripts/check-avx2-inlining.sh` still requires the realignment in all
+    nine wrapper instantiations. The extraction and `Proofs/Verify.lean` carry the new struct; no theorem in
+    `lean/headline-theorems.txt` or `lean/fast-verify-theorems.txt` changed.
+  - Extraction no longer leaves the four unreferenced `core.iter.range.Step.*.default` axioms in `lean/Impl/FunsExternal.lean`
+    and `FunsExternal_Template.lean`: `scripts/extract.py` removes the axiom declarations Aeneas emits when nothing references them
+    (`scripts/extract_hash.py` `clean_external`, with a self-test; the recorded hashes are those of the cleaned files, and `extract_hash.py
+    check` fails on a file that still declares one). `scripts/check-no-decls.sh` (in `scripts/lean-check.sh` and `witness-check.sh`;
+    its text half is the CI step `no-decls-text`) fails on any `axiom`, `opaque`, `sorry`, `admit`, `native_decide`, `implemented_by`
+    or `extern` in `lean/Impl`, `lean/Spec` or `lean/Proofs`, by walking the Lean environment's constants of those modules, with a
+    self-test that injects each into an `Impl` module.
+  - Documentation: the AVX2 residual is the same list everywhere (the CPU detection and its cache, the 15 token-passing call lines
+    in `src/api.rs`, the 3 `unsafe` calls in `src/fast_verify.rs`, and the `target_feature`/`repr`/`inline` attributes under the
+    ordinary compiler trust), and a false positive of the CPU detection is stated as undefined behavior (a false negative selects the
+    scalar path); earlier text said a wrong CPU check could only crash.
 - The checkct driver includes the real `src/fast_verify.rs` instead of a hand-copied list of its re-exports.
 - `bench/fast-verify.sh` ends with a stack-offset scan (`bench/stackscan.sh`; `bench/ab.sh` has a `PAD` knob and `scan` subcommands)
   that fails when any stack offset makes verify, `verifying_key` or the prepared-key verify more than 1.15 times slower than the

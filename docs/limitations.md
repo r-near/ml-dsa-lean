@@ -35,18 +35,27 @@ input.
   with the qualifiers in [assurance.md](assurance.md) section 1.8: their Sign loop stops after 821 attempts, their key import
   rejects inconsistent keys that FIPS 204 accepts, and some directions assume their rejection samplers terminate).
 - **The `zeroize` feature is outside the proof.**
-- **The `avx2` feature is proved at source level; the CPU check and the compilation are trusted.** Without it, the code that
+- **The `avx2` feature is proved at source level; the CPU detection, the dispatch glue lines and the compilation are trusted.** Without it, the code that
   ships is exactly the extracted code and the crate has `forbid(unsafe_code)`. With it on x86_64, `verify_NN`, `verify_internal_NN`,
   `verifying_key_NN`, `verify_prepared_NN` and `verify_internal_prepared_NN` check the CPU at run time and use a 4-way body
   (4-way Keccak-f[1600], SHAKE128 and ExpandA, with `tr = H(pk, 64)` hashed in a spare lane) or the prepared-key verify, compiled with
   AVX2. Lean proves the 4-way body equal to the scalar verify on every input, divergence included, and proves the dispatch (the
   `_with` functions that take the CPU check's answer, and the public functions that call them) equal to the scalar function for
   **every** answer (`lean/fast-verify-theorems.txt`, `Proofs/Dispatch.lean`, [assurance.md](assurance.md) section 1.9). The 4-way
-  Keccak is plain Rust and proved, not an intrinsic layer with a tested link. Still outside the proof, on those paths:
-  - the CPU check (`src/cpu.rs`, and the 15 lines of `src/api.rs` that call it): a wrong answer can only be a crash on a CPU without
-    AVX2 or a slower scalar run, never a different result, because both arms are proved equal;
-  - rustc and LLVM compiling the `#[target_feature(enable = "avx2")]` wrappers, which the proof does not see (that the compiler
-    inlines and vectorizes is a performance property, and `scripts/check-avx2-inlining.sh` checks it);
+  Keccak is plain Rust and proved, not an intrinsic layer with a tested link. Still outside the proof, on the verify paths
+  (the exact residual, with file and line references, is in [assurance.md](assurance.md) section 3):
+  - the CPU detection and its cache (`src/cpu.rs`: `detect_avx2`, the `AVX2` atomic, `has_avx2`, `avx2`). "CPU and OS support
+    AVX2 whenever the detector reports it" is an assumption. The detector tests that CPUID's maximum basic leaf is at least 7,
+    leaf 1 ECX bits 26 to 28 (XSAVE, OSXSAVE, AVX), XCR0 bits 1 and 2 (the OS saves XMM and YMM state) and leaf 7 subleaf 0
+    EBX bit 5 (AVX2). A false negative only selects the scalar function, which is proved to be the same function. A false
+    positive executes a `#[target_feature(enable = "avx2")]` function on a CPU or OS that cannot run it, which is undefined
+    behavior (SIGILL is one possible outcome, not a guaranteed one), and the equality theorems do not constrain it;
+  - the 15 token-passing call lines `NAME_with(cpu::avx2(), ..)` in `src/api.rs`;
+  - the 3 `unsafe` calls of the wrappers in `src/fast_verify.rs` (one in each `_with` function);
+  - the attributes `#[target_feature(enable = "avx2")]`, `#[repr(align(32))]` and `#[inline(always)]` (from `cfg_attr`), and
+    rustc and LLVM compiling the three wrappers, which the proof does not see (that the compiler inlines and vectorizes is a
+    performance property, and `scripts/check-avx2-inlining.sh` checks it); this is the ordinary compiler trust, applied to
+    code that carries these attributes;
   - the AVX2 copy of the NTT, used by signing and key generation (not by verify), which is tested against the portable copy
     (`tests/dispatch.rs`), not proved.
 
