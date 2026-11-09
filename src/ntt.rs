@@ -97,7 +97,6 @@ pub const ZETAS_NEG_SHOUP: [u32; 256] = [
 pub const F_SHOUP: u32 = 4278190082;
 // END GENERATED
 
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 256], m: &mut usize) {
     let mut i = 0;
     while i < ITERATIONS {
@@ -116,7 +115,6 @@ fn ntt_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 256], m: &
     }
 }
 
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_inverse_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 256], m: &mut usize) {
     let mut i = 0;
     while i < ITERATIONS {
@@ -136,7 +134,6 @@ fn ntt_inverse_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 25
 }
 
 /// Algorithm 41 NTT(w) in place, the shared body (see "Dispatch" below).
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_body_mut(w: &mut [u32; 256]) {
     let mut m = 0;
     ntt_layer::<128, 1>(w, &mut m);
@@ -150,7 +147,6 @@ fn ntt_body_mut(w: &mut [u32; 256]) {
 }
 
 /// Algorithm 41 NTT(w), the shared body: a copy of `w`, transformed in place.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_body(w: &[u32; 256]) -> [u32; 256] {
     let mut o = *w;
     ntt_body_mut(&mut o);
@@ -158,7 +154,6 @@ fn ntt_body(w: &[u32; 256]) -> [u32; 256] {
 }
 
 /// Algorithm 42 NTT⁻¹(ŵ) in place, the shared body (see "Dispatch" below).
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_inverse_body_mut(w: &mut [u32; 256]) {
     let mut m = 256;
     ntt_inverse_layer::<1, 128>(w, &mut m);
@@ -178,7 +173,6 @@ fn ntt_inverse_body_mut(w: &mut [u32; 256]) {
 }
 
 /// Algorithm 42 NTT⁻¹(ŵ), the shared body: a copy of `w_hat`, transformed in place.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn ntt_inverse_body(w_hat: &[u32; 256]) -> [u32; 256] {
     let mut w = *w_hat;
     ntt_inverse_body_mut(&mut w);
@@ -186,7 +180,6 @@ fn ntt_inverse_body(w_hat: &[u32; 256]) -> [u32; 256] {
 }
 
 /// Algorithm 45 MultiplyNTT(â, b̂), the shared body.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")), inline(always))]
 fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
     let mut c = [0u32; 256];
     let mut i = 0;
@@ -197,192 +190,31 @@ fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
     c
 }
 
-// ---------------------------------------------------------------------------------------------------------------
-// Dispatch. NOT part of the Lean proof; read this before relying on the theorems for a shipped binary.
-//
-// Opt-in: the dispatch exists only with the `avx2` cargo feature on x86_64. Without it (the default) the entry points
-// below are the portable body and the crate has no `unsafe` (`forbid(unsafe_code)` in lib.rs).
-// `ntt`, `ntt_inverse` and `multiply_ntt` are the only entry points the rest of the crate (and the proofs) use.
-// Each has one shared body (`#[inline(always)]` only in the build that has the second compilation, see `field.rs`), proved against FIPS 204 (`Proofs/NTT.lean`, `NTTInverse.lean`,
-// `NTTOps.lean`). On x86_64 the body is compiled twice: once with the crate's target features, and once inside a
-// `#[target_feature(enable = "avx2")]` wrapper, where LLVM vectorizes the 32 x 32 -> 64 bit butterflies with
-// 256-bit vectors. A cached CPUID/XGETBV check picks one of the two compilations of the SAME source body.
-//   * Extraction runs with `--cfg miri` (scripts/extract.py). There the entry point is just the body: the proved
-//     model has no dispatch, no atomic and no `unsafe`.
-//   * What the proof does not cover: that the shim picks a compilation the CPU can run (the AVX2 check below), and
-//     that rustc/LLVM compile both copies of the body faithfully. The compiler is trusted for the portable copy too,
-//     but the AVX2 copy is a separate run of the vectorizer over the whole arithmetic core, and it has less
-//     evidence behind it: BINSEC cannot lift it, so its constant-time check is a static instruction scan, and its
-//     functional check is `tests/dispatch.rs` (random and edge inputs against the portable copy) plus the KAT
-//     suites run with `--features avx2` on an AVX2 machine. The choice is a function of the CPU only, never of
-//     secret data.
-//   * A wrong answer from the check is one of two things. "AVX2 usable but not reported" runs the portable body
-//     (slower, same result: both copies compute the same function; `tests/dispatch.rs` compares them on random
-//     and edge inputs). "AVX2 reported but unusable" executes a `#[target_feature]` function on a CPU or OS that
-//     cannot run it, which is undefined behavior (SIGILL is one possible outcome, not a guaranteed one). "The CPU
-//     and OS support AVX2 whenever `has_avx2` reports it" is an assumption.
-//   * A build with `-C target-feature=+avx2` (or `-C target-cpu=x86-64-v3`) takes the first arm below: the whole
-//     crate is already compiled for AVX2, so there is no detection and no second copy.
-// docs/object-code-assurance.md ("AVX2 dispatch") has the BINSEC coverage argument.
-// ---------------------------------------------------------------------------------------------------------------
-
-#[cfg(any(not(feature = "avx2"), miri, not(target_arch = "x86_64"), target_feature = "avx2"))]
-mod dispatch {
-    use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body, ntt_inverse_body_mut};
-    pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
-        ntt_body(w)
-    }
-    pub fn ntt_in_place(w: &mut [u32; 256]) {
-        ntt_body_mut(w)
-    }
-    pub fn ntt_inverse(w_hat: &[u32; 256]) -> [u32; 256] {
-        ntt_inverse_body(w_hat)
-    }
-    pub fn ntt_inverse_in_place(w: &mut [u32; 256]) {
-        ntt_inverse_body_mut(w)
-    }
-    pub fn multiply_ntt(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
-        multiply_ntt_body(a, b)
-    }
-}
-
-#[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")))]
-#[allow(unsafe_code)]
-mod dispatch {
-    use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body, ntt_inverse_body_mut};
-    use crate::cpu::has_avx2;
-
-    #[target_feature(enable = "avx2")]
-    fn ntt_avx2(w: &[u32; 256]) -> [u32; 256] {
-        ntt_body(w)
-    }
-    #[target_feature(enable = "avx2")]
-    fn ntt_in_place_avx2(w: &mut [u32; 256]) {
-        ntt_body_mut(w)
-    }
-    #[target_feature(enable = "avx2")]
-    fn ntt_inverse_avx2(w_hat: &[u32; 256]) -> [u32; 256] {
-        ntt_inverse_body(w_hat)
-    }
-    #[target_feature(enable = "avx2")]
-    fn ntt_inverse_in_place_avx2(w: &mut [u32; 256]) {
-        ntt_inverse_body_mut(w)
-    }
-    #[target_feature(enable = "avx2")]
-    fn multiply_ntt_avx2(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
-        multiply_ntt_body(a, b)
-    }
-
-    // `has_avx2` (src/cpu.rs, shared with src/fast_verify.rs) is the one place that establishes the contract of every
-    // `unsafe` call below: the CPU and the OS support AVX2. The `*_avx2` functions are the same bodies as the portable
-    // ones, compiled with AVX2 enabled, so a missed AVX2 only costs speed; a false report is undefined behavior
-    // (see the notes above). Any new caller of an `*_avx2` function must go through `has_avx2` too.
-
-    pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
-        if has_avx2() {
-            // SAFETY: `has_avx2` checked the CPU and OS support for AVX2.
-            unsafe { ntt_avx2(w) }
-        } else {
-            ntt_body(w)
-        }
-    }
-    pub fn ntt_in_place(w: &mut [u32; 256]) {
-        if has_avx2() {
-            // SAFETY: as above.
-            unsafe { ntt_in_place_avx2(w) }
-        } else {
-            ntt_body_mut(w)
-        }
-    }
-    pub fn ntt_inverse(w_hat: &[u32; 256]) -> [u32; 256] {
-        if has_avx2() {
-            // SAFETY: as above.
-            unsafe { ntt_inverse_avx2(w_hat) }
-        } else {
-            ntt_inverse_body(w_hat)
-        }
-    }
-    pub fn ntt_inverse_in_place(w: &mut [u32; 256]) {
-        if has_avx2() {
-            // SAFETY: as above.
-            unsafe { ntt_inverse_in_place_avx2(w) }
-        } else {
-            ntt_inverse_body_mut(w)
-        }
-    }
-    pub fn multiply_ntt(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
-        if has_avx2() {
-            // SAFETY: as above.
-            unsafe { multiply_ntt_avx2(a, b) }
-        } else {
-            multiply_ntt_body(a, b)
-        }
-    }
-
-    /// The portable and the AVX2 compilation of each body on `w` (and `w` against NTT(w) for the product), for
-    /// `tests/dispatch.rs`; `None` without AVX2.
-    #[cfg(feature = "internals")]
-    pub fn both(w: &[u32; 256]) -> Option<[([u32; 256], [u32; 256]); 4]> {
-        if !has_avx2() {
-            return None;
-        }
-        let v = ntt_body(w);
-        let mut p = *w;
-        ntt_body_mut(&mut p);
-        let mut a = *w;
-        // SAFETY: checked above.
-        unsafe {
-            ntt_in_place_avx2(&mut a);
-            Some([
-                (ntt_body(w), ntt_avx2(w)),
-                (ntt_inverse_body(w), ntt_inverse_avx2(w)),
-                (multiply_ntt_body(w, &v), multiply_ntt_avx2(w, &v)),
-                (p, a),
-            ])
-        }
-    }
-}
-
 /// Algorithm 41 NTT(w).
 pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
-    dispatch::ntt(w)
+    ntt_body(w)
 }
 
 /// Algorithm 41 NTT(w), in place: `w` ← NTT(w). The same body as `ntt`, without the second 1 KiB buffer a by-value
 /// result needs, so a secret polynomial is transformed where it lies and no copy of the result is left behind.
 pub fn ntt_in_place(w: &mut [u32; 256]) {
-    dispatch::ntt_in_place(w)
+    ntt_body_mut(w)
 }
 
 /// Algorithm 42 NTT⁻¹(ŵ).
 pub fn ntt_inverse(w_hat: &[u32; 256]) -> [u32; 256] {
-    dispatch::ntt_inverse(w_hat)
+    ntt_inverse_body(w_hat)
 }
 
 /// Algorithm 42 NTT⁻¹(ŵ), in place: `w` ← NTT⁻¹(w). The same body as `ntt_inverse`, without the second 1 KiB buffer a
 /// by-value result needs (the counterpart of `ntt_in_place`).
 pub fn ntt_inverse_in_place(w: &mut [u32; 256]) {
-    dispatch::ntt_inverse_in_place(w)
+    ntt_inverse_body_mut(w)
 }
 
 /// Algorithm 45 MultiplyNTT(â, b̂).
 pub fn multiply_ntt(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
-    dispatch::multiply_ntt(a, b)
-}
-
-/// For `tests/dispatch.rs`: (portable, AVX2) results of NTT, NTT⁻¹, the product and the in-place NTT on `w`, or `None`
-/// if this CPU has no AVX2 or the build has no second compilation.
-#[cfg(feature = "internals")]
-pub fn compare_compilations(w: &[u32; 256]) -> Option<[([u32; 256], [u32; 256]); 4]> {
-    #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2")))]
-    {
-        dispatch::both(w)
-    }
-    #[cfg(not(all(feature = "avx2", not(miri), target_arch = "x86_64", not(target_feature = "avx2"))))]
-    {
-        let _ = w;
-        None
-    }
+    multiply_ntt_body(a, b)
 }
 
 /// Algorithm 44 AddNTT on one polynomial (coefficient-wise, same as Algorithm 46 AddVectorNTT row).

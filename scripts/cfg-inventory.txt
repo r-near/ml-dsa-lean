@@ -1,13 +1,10 @@
 # The cfg inventory of src/ (scripts/cfg_inventory.py checks this file against the source; read the header there).
 #
-# Every entry is a place where the compiled text depends on the build configuration. The conditions are of four kinds:
+# Every entry is a place where the compiled text depends on the build configuration. The conditions are of three kinds
+# (there is no `avx2` kind any more: since round 12 nothing in src/ depends on the `avx2` feature or on a CPU check, and the
+# target features of the build do not select any text; scripts/check-feature-independence.sh extracts under two sets of them
+# and its whitelist is empty):
 #
-#   avx2 dispatch   `feature = "avx2"` with `target_arch = "x86_64"` and `miri` (the extraction sets `--cfg miri` and the feature):
-#                   which of two definitions a build gets. Verify has none (round 12: it always calls the 4-way code and the
-#                   target features of the build decide what LLVM emits; scripts/check-feature-independence.sh compares the
-#                   extractions under two sets of target features and its whitelist is empty). The NTT dispatch (src/ntt.rs,
-#                   src/cpu.rs) is the one that remains for Sign and KeyGen: its AVX2-build body is a plain `if has_avx2()` over
-#                   two compilations of the same proved body, and the extraction sees the portable body.
 #   miri            `cfg(miri)` selects the identity where the compiled build has `core::hint::black_box` (the identity on values),
 #                   so that the extraction sees plain code. Documented in docs/assurance.md (CT-1, CT-2).
 #   zeroize         `feature = "zeroize"`: wipes of secrets in Sign and KeyGen (and the secret-key decoders), outside the Lean
@@ -17,60 +14,11 @@
 # Besides cfg attributes and `cfg!`, the scan also lists every other construct that reads a compile-time source: `cfg_if!`, `cfg_match!`,
 # `env!`, `option_env!`, `include!`, `include_bytes!`, `include_str!`, `is_*_feature_detected!`, a plain `#[path = ..]`, a
 # `macro_rules!` whose body mentions cfg, any stray `cfg` identifier (form `cfg-token`), and a build script (`build.rs` or a
-# `build =` key). src/ has none of these today but the `cfg!` in src/cpu.rs and the two `#[path]` attributes below.
+# `build =` key). src/ has none of these today.
 # (scripts/extract_hash.py also rejects a build script and an `env!`/`include!`-style macro in src/ outright, whatever is listed here.)
 #
-# A new or changed entry means a configuration-dependent computation was added or moved: review it against these four kinds.
+# A new or changed entry means a configuration-dependent computation was added or moved: review it against these three kinds.
 # Regenerate a skeleton with `python3 -I scripts/cfg_inventory.py --init` and write the justification by hand.
-
-file: src/cpu.rs
-form: cfg
-item: fn detect_avx2
-cfg: all(feature="avx2",not(miri),target_arch="x86_64")
-count: 1
-why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
-
-file: src/cpu.rs
-form: cfg
-item: fn detect_avx2_uncached
-cfg: all(feature="avx2",feature="internals",not(miri),target_arch="x86_64")
-count: 1
-why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
-
-file: src/cpu.rs
-form: cfg
-item: fn has_avx2
-cfg: all(feature="avx2",not(miri),target_arch="x86_64")
-count: 1
-why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
-
-file: src/cpu.rs
-form: cfg
-item: fn has_avx2_cached
-cfg: all(feature="avx2",feature="internals",not(miri),target_arch="x86_64")
-count: 1
-why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
-
-file: src/cpu.rs
-form: cfg
-item: static AVX2:
-cfg: all(feature="avx2",not(miri),target_arch="x86_64")
-count: 1
-why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
-
-file: src/cpu.rs
-form: cfg
-item: use core::sync::atomic::
-cfg: all(feature="avx2",not(miri),target_arch="x86_64")
-count: 1
-why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
-
-file: src/cpu.rs
-form: cfg!
-item: expr in fn has_avx2
-cfg: target_feature="avx2"
-count: 1
-why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
 
 file: src/encode.rs
 form: cfg
@@ -142,13 +90,6 @@ cfg: not(miri)
 count: 1
 why: miri: `opaque_u32` is `core::hint::black_box` in the compiled build and the identity under `--cfg miri` (the extraction); both return their argument (docs/assurance.md CT-2). Present in both extractions alike, so the feature-independence gate does not see it; it is a known, documented substitution of the identity function.
 
-file: src/field.rs
-form: cfg_attr
-cfg: all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2"))
-attrs: inline(always)
-count: 6
-why: attribute-only (avx2 dispatch): `#[inline(always)]` so the body is compiled inside the `#[target_feature(enable = "avx2")]` function that calls it, in the build that has the second NTT/field compilation. No change to the computation.
-
 file: src/keccak.rs
 form: cfg
 item: fn wipe
@@ -200,20 +141,6 @@ why: attribute-only (lint): `let mut` is needed only for the `zeroize` wipe that
 
 file: src/lib.rs
 form: cfg
-item: mod cpu
-cfg: feature="internals"
-count: 1
-why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
-
-file: src/lib.rs
-form: cfg
-item: mod cpu
-cfg: not(feature="internals")
-count: 1
-why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
-
-file: src/lib.rs
-form: cfg
 item: mod encode
 cfg: feature="internals"
 count: 1
@@ -379,27 +306,6 @@ item: mod verify_arith
 cfg: not(feature="internals")
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
-
-file: src/lib.rs
-form: cfg_attr
-cfg: feature="avx2"
-attrs: allow(unsafe_code)
-count: 2
-why: attribute-only (lint level): the crate forbids `unsafe` without the `avx2` feature, denies it with the feature and allows it only in the modules that carry the dispatch (src/cpu.rs, src/ntt.rs, src/fast_verify/dispatch.rs, and the test hooks).
-
-file: src/lib.rs
-form: cfg_attr
-cfg: feature="avx2"
-attrs: deny(unsafe_code)
-count: 1
-why: attribute-only (lint level): the crate forbids `unsafe` without the `avx2` feature, denies it with the feature and allows it only in the modules that carry the dispatch (src/cpu.rs, src/ntt.rs, src/fast_verify/dispatch.rs, and the test hooks).
-
-file: src/lib.rs
-form: cfg_attr
-cfg: not(feature="avx2")
-attrs: forbid(unsafe_code)
-count: 1
-why: attribute-only (lint level): the crate forbids `unsafe` without the `avx2` feature, denies it with the feature and allows it only in the modules that carry the dispatch (src/cpu.rs, src/ntt.rs, src/fast_verify/dispatch.rs, and the test hooks).
 
 file: src/lib.rs
 form: cfg_attr
@@ -407,48 +313,6 @@ cfg: not(feature="internals")
 attrs: allow(dead_code)
 count: 1
 why: attribute-only (lint): items used only by tests and fuzzing (`internals`) are not dead code there.
-
-file: src/ntt.rs
-form: cfg
-item: fn both
-cfg: feature="internals"
-count: 1
-why: internals + avx2: test helper `compare_compilations` / `dispatch::both` (tests/dispatch.rs).
-
-file: src/ntt.rs
-form: cfg
-item: fn compare_compilations
-cfg: feature="internals"
-count: 1
-why: internals + avx2: test helper `compare_compilations` / `dispatch::both` (tests/dispatch.rs).
-
-file: src/ntt.rs
-form: cfg
-item: mod dispatch
-cfg: all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2"))
-count: 1
-why: avx2 dispatch (residual, outside the Lean proof): the AVX2 build on x86_64 compiles every NTT body twice (portable and `#[target_feature(enable = "avx2")]`) and picks one with `has_avx2()`; five `unsafe` calls. Same proved body in both; documented in docs/assurance.md as the NTT dispatch residual.
-
-file: src/ntt.rs
-form: cfg
-item: mod dispatch
-cfg: any(not(feature="avx2"),miri,not(target_arch="x86_64"),target_feature="avx2")
-count: 1
-why: avx2 dispatch (residual): the portable NTT entry points, which are the only ones in a default build and in the extraction (`miri`). The extraction and the proofs are about this module.
-
-file: src/ntt.rs
-form: cfg
-item: stmt in fn compare_compilations
-cfg: all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2"))
-count: 1
-why: internals + avx2: test helper `compare_compilations` / `dispatch::both` (tests/dispatch.rs).
-
-file: src/ntt.rs
-form: cfg
-item: stmt in fn compare_compilations
-cfg: not(all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2")))
-count: 1
-why: internals + avx2: test helper `compare_compilations` / `dispatch::both` (tests/dispatch.rs).
 
 file: src/ntt.rs
 form: cfg
@@ -477,13 +341,6 @@ item: stmt in fn scalar_vector_ntt_inverse_into
 cfg: feature="zeroize"
 count: 1
 why: zeroize: Sign/KeyGen-side wipe of per-entry temporaries (`matrix_vector_ntt_into`, `ntt_vec_into`, `scalar_vector_ntt_inverse_into`); the values are the same with and without it. Not used by verify.
-
-file: src/ntt.rs
-form: cfg_attr
-cfg: all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2"))
-attrs: inline(always)
-count: 7
-why: attribute-only (avx2 dispatch): `#[inline(always)]` so the body is compiled inside the `#[target_feature(enable = "avx2")]` function that calls it, in the build that has the second NTT/field compilation. No change to the computation.
 
 file: src/ntt.rs
 form: cfg_attr

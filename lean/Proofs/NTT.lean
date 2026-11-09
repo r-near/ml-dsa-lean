@@ -256,14 +256,14 @@ theorem ntt_body_mut_spec (w : Array U32 256#usize) (hw : Canonical w) :
 
 theorem ntt_spec (w : Array U32 256#usize) (hw : Canonical w) :
     ntt.ntt w ⦃ r => Canonical r ∧ toZq r = Spec.NTT (toZq w) ⦄ := by
-  unfold ntt.ntt ntt.dispatch.ntt ntt.ntt_body
+  unfold ntt.ntt ntt.ntt_body
   exact ntt_body_mut_spec w hw
 
 /-- The in-place entry point `ntt_in_place` (the Rust takes `&mut [u32; 256]`; the extraction passes the array in and
 returns the updated one) satisfies the same spec as `ntt`. -/
 theorem ntt_in_place_spec (w : Array U32 256#usize) (hw : Canonical w) :
     ntt.ntt_in_place w ⦃ r => Canonical r ∧ toZq r = Spec.NTT (toZq w) ⦄ := by
-  unfold ntt.ntt_in_place ntt.dispatch.ntt_in_place
+  unfold ntt.ntt_in_place
   exact ntt_body_mut_spec w hw
 
 /-- **Headline theorem.** On canonical input the extracted `ntt` returns, without failing or diverging,

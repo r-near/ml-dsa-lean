@@ -5,12 +5,9 @@
 //! free functions only: no iterator adapters, closures, operator-trait impls, `hybrid-array` or
 //! `module-lattice`. Parameter sets are a `Params` value plus `K`/`L` const generics.
 #![no_std]
-// The only `unsafe` is the NTT dispatch of the opt-in `avx2` feature (x86_64): the `#[target_feature(enable = "avx2")]` copies of the
-// NTT bodies in src/ntt.rs and the CPU check in src/cpu.rs, each with its own `allow`. Verify, `verifying_key` and the prepared
-// verify have no dispatch and no `unsafe` (round 12): they call the 4-way functions directly, and the build's target features
-// decide what LLVM emits. Without the feature the crate forbids `unsafe` outright.
-#![cfg_attr(not(feature = "avx2"), forbid(unsafe_code))]
-#![cfg_attr(feature = "avx2", deny(unsafe_code))]
+// The crate has no `unsafe` and detects nothing at run time. A build that wants AVX2 code says so at compile time
+// (`-C target-feature=+avx2`, `-C target-cpu=x86-64-v3`); the Cargo feature `avx2` is a deprecated no-op.
+#![forbid(unsafe_code)]
 #![allow(clippy::many_single_char_names, clippy::needless_range_loop)]
 
 // Only `api` is public. The other modules hold panicking internals (`sign::sign_internal` and
@@ -22,13 +19,6 @@ pub mod api;
 pub mod encode;
 #[cfg(not(feature = "internals"))]
 mod encode;
-// The CPU check of the NTT dispatch (`cpu.rs`); it exists only with the `avx2` feature on x86_64.
-#[cfg(feature = "internals")]
-#[cfg_attr(feature = "avx2", allow(unsafe_code))]
-pub mod cpu;
-#[cfg(not(feature = "internals"))]
-#[cfg_attr(feature = "avx2", allow(unsafe_code))]
-mod cpu;
 #[cfg(feature = "internals")]
 pub mod field;
 #[cfg(not(feature = "internals"))]

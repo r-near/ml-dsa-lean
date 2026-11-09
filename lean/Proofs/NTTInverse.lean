@@ -245,14 +245,14 @@ theorem ntt_inverse_body_mut_spec (w : Array U32 256#usize) (hw : Canonical w) :
 
 theorem ntt_inverse_spec (w : Array U32 256#usize) (hw : Canonical w) :
     ntt.ntt_inverse w ⦃ r => Canonical r ∧ toZq r = Spec.NTTInv (toZq w) ⦄ := by
-  unfold ntt.ntt_inverse ntt.dispatch.ntt_inverse ntt.ntt_inverse_body
+  unfold ntt.ntt_inverse ntt.ntt_inverse_body
   exact ntt_inverse_body_mut_spec w hw
 
 /-- The in-place entry point `ntt_inverse_in_place` (the Rust takes `&mut [u32; 256]`; the extraction passes the array
 in and returns the updated one) satisfies the same spec as `ntt_inverse`. -/
 theorem ntt_inverse_in_place_spec (w : Array U32 256#usize) (hw : Canonical w) :
     ntt.ntt_inverse_in_place w ⦃ r => Canonical r ∧ toZq r = Spec.NTTInv (toZq w) ⦄ := by
-  unfold ntt.ntt_inverse_in_place ntt.dispatch.ntt_inverse_in_place
+  unfold ntt.ntt_inverse_in_place
   exact ntt_inverse_body_mut_spec w hw
 
 /-- **Inverse NTT.** On canonical input the extracted `ntt_inverse` returns, without failing or
