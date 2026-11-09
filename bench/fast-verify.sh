@@ -15,7 +15,7 @@
 #   scalar  no `avx2` feature: the proved scalar verify.                                   RUSTFLAGS = nearcore's
 #   avx2    `--features avx2`: runtime dispatch; on AVX2 hardware verify is the 4-way body. RUSTFLAGS = nearcore's
 #   v3      `--features avx2` and -C target-cpu=x86-64-v3: AVX2 is static, no detection.   RUSTFLAGS = target-cpu=x86-64-v3
-# The `avx2` rows are the shipping configuration: the proved 4-way body (verify::verify_internal_x4) with the AVX2 lane ops.
+# The `avx2` rows are the shipping configuration: the proved 4-way body (verify::verify_internal_x4) compiled with AVX2 (plain Rust, no lane operations).
 #
 # `ours+prepared-vk verify` is the prepared-key verify: it runs no ExpandA, so it has no 4-way body; with the `avx2` feature it is
 # the same proved scalar function inside a second AVX2 wrapper (`verify_prepared_avx2`). `ours verify` includes building the

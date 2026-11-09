@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ns per 4-way Keccak-f[1600] permutation (AVX2 lane operations) and ExpandA-65 time, under nearcore's profile and target
+# ns per 4-way Keccak-f[1600] permutation (the plain-Rust permutation compiled with AVX2) and ExpandA-65 time, under nearcore's profile and target
 # features. Run from the repository root on an idle x86_64 Linux machine: bash bench/keccak4.sh [CPU] [TOOLCHAIN]
 set -o pipefail
 CPU=${1:-3}

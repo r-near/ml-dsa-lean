@@ -59,9 +59,11 @@ missing; `--strict` turns a SKIP into a failure. Run `bash scripts/ci.sh --help`
 takes tens of minutes. It also runs checks that need no Rust or Lean: `extract-hash` (the digests of the extraction inputs and of
 `lean/Impl` against `lean/Impl/extract-report.json`, section 2.2), `axiom-gate-selftest` (`scripts/check-axioms.sh` must fail on a missing
 or empty list), `no-decls-text` (the text half of `scripts/check-no-decls.sh`), `cfg-inventory` (`scripts/cfg_inventory.py`: every
-`#[cfg(..)]`, `#[cfg_attr(..)]` and `cfg!` site in `src/` against the justified whitelist `scripts/cfg-inventory.txt`; a new or changed
-cfg site fails until it is listed with a reason) and `readme-counts` (`scripts/check-readme-counts.py`: the theorem counts the README
-states against `lean/*-theorems.txt`). With `--lean` it also runs `feature-independence` (`scripts/check-feature-independence.sh`, section 2.2).
+`#[cfg(..)]`, `#[cfg_attr(..)]`, `cfg!`, `cfg_if!`, `env!`, `include!`, `is_*_feature_detected!` and `#[path]` site in `src/`, and any build
+script, against the justified whitelist `scripts/cfg-inventory.txt`; a new or changed site fails until it is listed with a reason, and so
+does a scan that finds no site), `readme-counts` (`scripts/check-readme-counts.py`: the theorem counts the README
+states against `lean/*-theorems.txt`) and `ci-selftest` (`scripts/ci-selftest.sh`: the `--only lean` path of `ci.sh` and `lean-check.sh`
+against stub gates, so the feature-independence check cannot be skipped silently; and `checkct/compare_code.py --self-test`). With `--lean` it also runs `feature-independence` (`scripts/check-feature-independence.sh`, section 2.2).
 Last recorded result: see assurance.md, section 0.
 
 The longer differentials, fuzzing and benchmarks:
@@ -148,8 +150,10 @@ entries of the commented whitelist in `scripts/feature_independence.py` (the `cp
 entry points, which are `match t {}` in that build, and the three `*_avx2` functions, which exist only in the dispatch build), and
 seven declarations must be byte-identical in both, among them the three `_with` functions. It also checks that
 `lean/Proofs/NoDispatch.lean`, which proves the default build's `_with` functions equal to the scalar ones, is the file generated from
-the second extraction. `python3 -I scripts/cfg_inventory.py` is the Rust-side census of every `cfg` site in `src/` against
-`scripts/cfg-inventory.txt`.
+the second extraction. `python3 -I scripts/cfg_inventory.py` is the Rust-side census of every `cfg` site (and the other compile-time selectors, and any build
+script) in `src/` against `scripts/cfg-inventory.txt`. `scripts/lean-check.sh` runs the feature-independence check itself unless
+`scripts/ci.sh` passes `ML_DSA_FEATURE_INDEPENDENCE_DONE=1`, which it does only after its own `feature-independence` step passed in the
+same invocation; a run with module arguments (`scripts/lean-check.sh Proofs.X`) prints `LEAN CHECK OK (PARTIAL ...)` and is not the done-gate.
 
 `scripts/setup-tools.sh` needs `rustup`, `curl`, `zstd`, `sha256sum` and an x86_64 Linux machine. It downloads cargo-hax and
 elan from tagged releases and checks recorded SHA-256 values. On every run it checks the installed cargo-hax binary and the

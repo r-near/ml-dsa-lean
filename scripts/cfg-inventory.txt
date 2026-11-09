@@ -18,6 +18,7 @@
 # `env!`, `option_env!`, `include!`, `include_bytes!`, `include_str!`, `is_*_feature_detected!`, a plain `#[path = ..]`, a
 # `macro_rules!` whose body mentions cfg, any stray `cfg` identifier (form `cfg-token`), and a build script (`build.rs` or a
 # `build =` key). src/ has none of these today but the `cfg!` in src/cpu.rs and the two `#[path]` attributes below.
+# (scripts/extract_hash.py also rejects a build script and an `env!`/`include!`-style macro in src/ outright, whatever is listed here.)
 #
 # A new or changed entry means a configuration-dependent computation was added or moved: review it against these four kinds.
 # Regenerate a skeleton with `python3 -I scripts/cfg_inventory.py --init` and write the justification by hand.

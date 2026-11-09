@@ -15,13 +15,13 @@ name = "micro"
 path = "src/bin/micro.rs"
 required-features = ["internals"]
 
-# ExpandA micro-benchmark for the 4-way sampler (AVX2 lane operations).
+# ExpandA micro-benchmark for the 4-way sampler (plain Rust compiled with AVX2; there are no lane operations).
 [[bin]]
 name = "expanda"
 path = "src/bin/expanda.rs"
 required-features = ["internals", "avx2"]
 
-# 4-way Keccak-f[1600] micro-benchmark (AVX2 lane operations).
+# 4-way Keccak-f[1600] micro-benchmark (the plain-Rust permutation compiled with AVX2; there are no lane operations).
 [[bin]]
 name = "keccak4"
 path = "src/bin/keccak4.rs"

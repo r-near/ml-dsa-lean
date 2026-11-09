@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with an exact whitelist, `lean/Proofs/NoDispatch.lean` (the default build's `_with` functions are the scalar ones), a census of every
   `cfg` site in `src/`, a walk of the Lean environment from the verify entry points (`scripts/reachable-defs.sh`), and a check of the
   theorem counts in the README.
+- Gate hardening after an independent audit of the above (`docs/assurance.md`, "Round 11"; no change under `src/` or `lean/`): the cfg
+  inventory is token-aware, covers `cfg_if!`, `env!`, `include!`, `is_*_feature_detected!`, `#[path]`, `macro_rules!` and build scripts, and
+  fails when it parses no site; the cleaner of the extraction keeps any external axiom whose last name component appears anywhere else;
+  `scripts/ci.sh` no longer tells `lean-check.sh` that feature independence ran unless it did (`scripts/ci-selftest.sh`); and
+  `checkct/compare_code.py` rejects empty or truncated disassemblies.
 
 ### Changed
 
