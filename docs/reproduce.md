@@ -26,24 +26,23 @@ Resource figures are what the recorded runs used. They are rough guides, not gua
 cargo test                      # default features: unit tests, KATs, ACVP, Wycheproof, differential tests against RustCrypto
 cargo test --features zeroize   # at opt-level 0 the stack-residue scans fail (Z-1 in assurance.md); use --release
 cargo test --release --features zeroize
-cargo test --features avx2
-ML_DSA_REQUIRE_AVX2=1 cargo test --features avx2,internals   # on an AVX2 machine; see below
+cargo test --features avx2                                    # the feature is a deprecated no-op
+RUSTFLAGS="-C target-feature=+avx2" ML_DSA_REQUIRE_AVX2=1 cargo test   # on an AVX2 machine; see below
 bash scripts/check-avx2-inlining.sh                           # x86_64 Linux; see below
 ```
 
-The `avx2` feature's tests (`tests/keccak4_avx2.rs`, `tests/fast_verify.rs`, `tests/fast_verify_x4.rs`, `tests/fast_verify_tr.rs`,
-`tests/dispatch.rs`) compare the AVX2 code with the portable code and need a CPU with AVX2 to say
-anything: without one they pass after printing a note that the AVX2 path was not compared. `ML_DSA_REQUIRE_AVX2=1` turns that
-note into a failure (`scripts/ci.sh` sets it for its `avx2` steps). They are `cfg`'d out on other architectures, so a pass on
-an aarch64 Mac proves nothing about them; run them on x86_64. `scripts/check-avx2-inlining.sh` builds the library in release with
-`--features avx2` under nearcore's target features, emits assembly, and fails unless each wrapper contains 256-bit vector code, the
-4-way permutation in it is vectorized, no verify-only arithmetic function is defined out of line, and the wrappers that own a
-`PreparedVk` realign their stack frames (these are performance properties: a miss would still be correct, but several times slower).
-`bash bench/stackscan.sh build NAME && OPS=verify,vk,prepared bash bench/stackscan.sh check CPU NAME` scans 257 stack offsets for
-all nine wrapper instantiations (`STACK SCAN OK` when the largest is within 1.15 of the median).
+Verify always runs the 4-way code; what LLVM makes of it depends on the target features of the build (SSE2 by default, 256-bit code with `-C target-feature=+avx2`), and
+nothing is chosen at run time. The tests that compare the 4-way code with the scalar functions (`tests/keccak4.rs`, `tests/keccak4_long.rs`, `tests/fast_verify.rs`,
+`tests/fast_verify_x4.rs`, `tests/fast_verify_tr.rs`) are meant to be run in both configurations: as they are, and with `RUSTFLAGS="-C target-feature=+avx2"` on an
+AVX2 machine (`scripts/ci.sh` step `test-avx2` does both, and also runs the suite with `--features avx2`, the no-op). Without AVX2 target features they still run and
+pass; `ML_DSA_REQUIRE_AVX2=1` turns "this build has no AVX2 target feature" from a printed note into a failure (`scripts/ci.sh` sets it for its AVX2 step). They are `cfg`'d out of nothing, so they also run
+on an aarch64 Mac, where they test the NEON compilation. `scripts/check-avx2-inlining.sh` builds the library in release under nearcore's target features plus `+avx,+avx2`, emits
+assembly, and fails unless the 4-way permutation is 256-bit vector code and the functions that own a `PreparedVk` or a `VerifyScratch` realign their stack frames to 32 bytes
+(these are performance properties: a miss would still be correct, but several times slower).
+`EXTRA_RF="-Ctarget-feature=+avx,+avx2" bash bench/stackscan.sh build NAME && OPS=verify,vk,prepared bash bench/stackscan.sh check CPU NAME` scans 257 stack offsets
+(`STACK SCAN OK` when the largest is within 1.15 of the median; without `EXTRA_RF` it scans the 128-bit build).
 The Lean theorems behind the 4-way verify (`lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`) are checked by
-`scripts/lean-check.sh` (section 2.1). `Proofs/Dispatch.lean` (in the second list) is the proof that the dispatch between the scalar and
-the AVX2 functions makes no difference for either answer of the CPU check.
+`scripts/lean-check.sh` (section 2.1).
 
 MSRV is Rust 1.86 (`cargo +1.86.0 build`). The crate itself is `no_std`, has no dependencies without the `zeroize` feature, and
 needs no C compiler. `cargo test` does need one, because the dev-dependency `aws-lc-rs` builds `aws-lc-sys` (C) for the
@@ -51,7 +50,7 @@ aws-lc differential; `crosscheck/` and `bench/` also compile mldsa-native's C an
 The dev-dependencies (RustCrypto `ml-dsa` at git rev a3690c4 as the test oracle, aws-lc-rs) are fetched by Cargo.
 
 `bash scripts/ci.sh` runs the whole Rust check list on a Linux x86_64 machine with rustup: tests for default, `zeroize`
-and `avx2`; thumbv7em and wasm32 builds; MSRV 1.86; a build and tests under the settings of a downstream release profile
+and `avx2` (the no-op feature, and AVX2 target features); thumbv7em and wasm32 builds; MSRV 1.86; a build and tests under the settings of a downstream release profile
 (toolchain 1.95.0, fat LTO, overflow checks); the aws-lc-rs differential; a 60-second smoke run of each fuzz target; and
 `cargo deny`. It installs missing toolchains and targets with rustup, and `cargo-deny` into `$HOME/.cache/ml-dsa-lean-ci/tools`
 (`CI_TOOLS` overrides that). It needs `cargo-fuzz` and a nightly toolchain for the fuzz steps and reports a SKIP if they are
@@ -73,15 +72,15 @@ The longer differentials, fuzzing and benchmarks:
 - `bench/` (Linux x86_64; `run.sh` and `compare.sh` pin with `taskset`, and the numbers are only comparable on an otherwise idle
   machine): `bash bench/build.sh OUTDIR` builds the variants; `bash bench/run.sh OUTDIR CPU RESULTDIR [variant ...]` runs them
   pinned to one CPU (the first argument is the directory `build.sh` wrote to); `bash bench/compare.sh LABEL [CPU]` builds and
-  runs the default / `avx2` / `x86-64-v3` comparison behind the table in assurance.md section 5 (output under
+  runs the default / `avx2` (the no-op feature) / `x86-64-v3` comparison of Sign and KeyGen behind the older table in assurance.md section 5 (output under
   `$ML_DSA_SCRATCH/ntt-bench-LABEL`, which defaults to `${XDG_CACHE_HOME:-~/.cache}/ml-dsa-lean/scratch`). See the header of each script.
   `bash bench/fast-verify.sh LABEL [CPU]` is the verify benchmark behind the verify table in assurance.md section 5 and
-  `bench/results/2026-11-07-p3.md`: it builds the scalar, `avx2` and `x86-64-v3` variants under nearcore's profile and target
+  `bench/results/2026-11-07-p3.md`: it builds three variants (labeled `scalar`, `avx2`, `v3`; nearcore's flags, plus `+avx,+avx2`, and `-C target-cpu=x86-64-v3`) under nearcore's profile and target
   features (`SETS=44,65,87` for all sets; `TOOLCHAIN=1.95.0` for nearcore's compiler; `ROUNDS`, `HT_OFFSET` and
   `ML_DSA_SCRATCH` as described in its header) and runs them next to aws-lc-rs and mldsa-native AVX2, pinned to an idle core.
-  `bench/ab.sh` is the interleaved A/B runner behind the per-change savings in that results file.
+  `bench/ab.sh` is the interleaved A/B runner behind the per-change savings in that results file and the tables of `bench/results/2026-11-09-p12.md` (`EXTRA_RF` adds target features to a build).
   `bench/stackscan.sh build|run|check` scans the process environment padding (every 64 bytes by default, 16 with `STEP=16`, up to
-  4 KiB, ASLR off) for verify, `verifying_key` and the prepared-key verify of the `avx2` build and fails when any padding is more
+  4 KiB, ASLR off) for verify, `verifying_key` and the prepared-key verify of a build (with `EXTRA_RF`, one with AVX2 target features) and fails when any padding is more
   than `LIMIT` (1.15) times the median; `bench/fast-verify.sh` runs it at the end (`STACKSCAN=0` skips it), and `bench/ab.sh`
   takes `PAD=<bytes>` and has `scan-build`/`scan` subcommands. `bench/results/2026-11-07-p6.md` is the stack-offset write-up.
 - `tools/stack/README.md`: measuring worst-case stack use.
@@ -115,7 +114,7 @@ on a nonzero Lake exit, on any `error:` or `declaration uses 'sorry'` in the ful
 `scripts/check-axioms.sh`. The axiom check prints the axioms of every extracted definition and of every name in
 `lean/headline-theorems.txt` and fails if any is not one of `propext`, `Classical.choice`, `Quot.sound`. `lean-check.sh` then runs
 the same gate over `lean/keccak4-theorems.txt` and `lean/fast-verify-theorems.txt` (the 4-way Keccak, sampler, ExpandA and verify
-theorems and the dispatch theorems, assurance.md section 1.9; `scripts/check-axioms.sh --list FILE --no-impl` runs one list). A `sorry` would
+theorems, assurance.md section 1.9; `scripts/check-axioms.sh --list FILE --no-impl` runs one list). A `sorry` would
 show up as `sorryAx` and `native_decide` as an extra axiom, so both fail the check. That gate looks only at the dependencies of the names it is given, so `lean-check.sh` also runs `scripts/check-no-decls.sh`, which fails on any `axiom`, `opaque`, `sorry`, `admit`, `native_decide`, `implemented_by` or `extern` declared anywhere in `lean/Impl`, `lean/Spec` or `lean/Proofs` (a scan of the source text and a walk over the Lean environment's constants of those modules), and `scripts/check-no-decls.sh --self-test`, which injects each of them into an `Impl` module and requires the scan to report it. `witness-check.sh` repeats the scan with the `TopWitness` modules built (`--all-built`). The axiom gate prints the declaration count
 on its `defs/theorems to check:` and `checked:` lines (the count depends on the tree; assurance.md section 0 has the recorded one); success ends with `LEAN CHECK OK` and does not
 repeat it. Pass module names to build less, for example
@@ -143,14 +142,11 @@ diff -r lean/Impl "$out"                    # no output: every file, including e
 To regenerate `lean/Impl` after changing `src/`, run `python3 scripts/extract.py` (it refuses an output directory that holds
 symlinks or files it does not write), then `python3 -I scripts/extract_hash.py check`, and commit `lean/Impl`.
 
-The extraction sees the crate with the `avx2` feature (the dispatch build, under `--cfg miri`). To check that the default build (no
-`avx2` feature) has the same verify code, run `bash scripts/check-feature-independence.sh`: it extracts a second time with
-`--no-default-features` (still `--cfg miri`) and compares the generated Lean with `lean/Impl`. Every difference must be one of the 7
-entries of the commented whitelist in `scripts/feature_independence.py` (the `cpu.Avx2` type, the three `fast_verify.dispatch.*_on`
-entry points, which are `match t {}` in that build, and the three `*_avx2` functions, which exist only in the dispatch build), and
-seven declarations must be byte-identical in both, among them the three `_with` functions. It also checks that
-`lean/Proofs/NoDispatch.lean`, which proves the default build's `_with` functions equal to the scalar ones, is the file generated from
-the second extraction. `python3 -I scripts/cfg_inventory.py` is the Rust-side census of every `cfg` site (and the other compile-time selectors, and any build
+The extraction runs with `--cfg miri` and no cargo feature, and the crate has no cargo feature that changes what is extracted. To check that the target features of a build
+do not change the extracted code, run `bash scripts/check-feature-independence.sh`: it extracts a second time with `-C target-feature=+avx,+avx2` (still `--cfg miri`; the rustflags are
+recorded in each `extract-report.json`) and compares the generated Lean with `lean/Impl`. The whitelist of differences in `scripts/feature_independence.py` is empty, so any difference fails. The gate cannot pass
+vacuously: it fails if both extractions recorded the same rustflags, and a probe crate (`scripts/fi-probe`, whose one function is `cfg!(target_feature = "avx2")`) must extract to `true` under the second flags and `false` under
+the first, which shows that the flag reached rustc. `python3 -I scripts/cfg_inventory.py` is the Rust-side census of every `cfg` site (and the other compile-time selectors, and any build
 script) in `src/` against `scripts/cfg-inventory.txt`. `scripts/lean-check.sh` runs the feature-independence check itself unless
 `scripts/ci.sh` passes `ML_DSA_FEATURE_INDEPENDENCE_DONE=1`, which it does only after its own `feature-independence` step passed in the
 same invocation; a run with module arguments (`scripts/lean-check.sh Proofs.X`) prints `LEAN CHECK OK (PARTIAL ...)` and is not the done-gate.
@@ -221,7 +217,7 @@ ONLY=. EXCLUDE=census_sign TARGETS=x86_64-unknown-linux-gnu JOBS=4 TIMEOUT=3600 
   NAME=ct-x86-default bash checkct/run-select.sh 2>&1 | tee sweep-x86-default.log
 ```
 
-For other profiles set `PROFILE=nearcore`, `dispatch`, `nearcore-dispatch`, `nearcore-exact`, `nearcore-exact-dispatch` or
+For other profiles set `PROFILE=nearcore`, `nearcore-novec`, `avx2`, `nearcore-avx2`, `nearcore-exact` or
 `nearcore-exact-novec` (the `nearcore-exact*` profiles are x86_64 only and used `TIMEOUT=600`, `JOBS=8`, `CT_MEMORY=8g`); for thumbv7em and riscv32imac
 change `TARGETS`; AArch64 is `NONEON=1 ONLY=. EXCLUDE=census_sign TIMEOUT=3600 JOBS=4 CT_MEMORY=32g bash checkct/aarch64.sh`. The two whole-Sign censuses ran
 separately, one container each, because they need far more memory (`ONLY=census_sign JOBS=1 TIMEOUT=3600 CT_MEMORY=110g`, or
@@ -233,11 +229,11 @@ script does not stop its container (`docker kill NAME`). A quick check of a few 
 `JOBS` set to fit your memory.
 
 `checkct/README.md` explains the other scripts (`run-select.sh` for selected probes and the long sweeps, profiles for the
-AVX2 dispatch and for a downstream release build, split probes for AArch64 and riscv32imac), the memory the large probes
+AVX2 target features and for a downstream release build, split probes for AArch64 and riscv32imac), the memory the large probes
 need (some need more than 100 GB; a probe killed at the memory cap shows only `error`, and `journalctl -k -g 'Killed
 process'` tells you whether the kernel killed it), the recorded verdicts and what they do and do not show. Tools for
-mapping a leak address to a source line are listed there too. A static scan of the AVX2 code, which BINSEC cannot lift, is
-`checkct/scan-avx2.sh`.
+mapping a leak address to a source line are listed there too. BINSEC cannot lift AVX/VEX code, so the profiles that use it (`avx2`, `nearcore-avx2`, and `nearcore-exact`, where `+fma` brings AVX) have no verdict for the
+probes that contain vector code; the old static scan of the dispatched AVX2 NTT (`checkct/scan-avx2.sh`) is gone with the dispatch.
 
 ## 4. Test vectors
 

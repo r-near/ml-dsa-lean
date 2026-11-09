@@ -267,7 +267,7 @@ What the runs cannot cover:
   Sign is covered by its secret-touching pieces (`response_*`, `hint_step_*`, the hash and ExpandMask probes, `prepare_sk`).
 - **Unknowns:** probes where BINSEC did not finish or cannot lift an instruction (VEX forms under `+fma`, some AArch64 solver
   queries, some riscv32imac pieces). No leak was found in them and no conclusion is drawn.
-- **The AVX2 copy** of the dispatched NTT: BINSEC cannot lift VEX instructions, so it is covered by the static scan only (3.5).
+- **Builds with AVX2 target features:** BINSEC cannot lift VEX instructions, so a build with `-C target-feature=+avx2` has no verdict for the probes that contain vector code (3.5).
 - **AArch64 with NEON** (the default AArch64 build): BINSEC 0.11.3 cannot lift the vector `umax`/`umin` instructions, so probes stop `unknown` at the first one. macOS is
   not covered at all.
 - **Other builds:** other rustc versions, flags and inlining contexts. Verdicts depend on code shape (CT-1 and CT-2 in
@@ -285,70 +285,30 @@ there." Not claimed: constant time of the whole `sign_internal` as linked into a
 flags, of macOS or AArch64-with-NEON builds, or of hardware (variable-latency instructions, speculation, power). Trusted:
 BINSEC's instruction lifting, solver and plugin; "all instructions take operand-independent time".
 
-### 3.5 AVX2 dispatch (the NTT bodies and the 4-way verify)
+### 3.5 AVX2 target features (round 12; there is no dispatch any more)
 
-`src/ntt.rs` ("Dispatch") compiles the NTT, inverse NTT and pointwise-product bodies twice on x86_64 and picks one at run
-time, **only with the opt-in `avx2` cargo feature**. The default build has a single portable compilation, no `unsafe`
-(`forbid(unsafe_code)`). The same feature also dispatches `verify` and the prepared-key constructor to a 4-way body
-(`src/fast_verify.rs`); the last paragraph of this section is about that. This section records what the feature does to the claims above.
-
-**Measured.** The sweep covers the default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit) and, on x86_64,
-the `dispatch` and `nearcore-dispatch` builds (crate feature `avx2`, dispatch cache pre-set to "no AVX2" in every script; the
-run prints the address of the cache static and checks it per probe, and `PRESET FAILED` stops it if the symbol or the script
-anchor is missing). In both dispatch builds every NTT-reaching probe (`ntt`, `ntt_inverse`, `multiply_ntt`, `ntt_vec_44`,
-`matrix_vector_ntt_*`, `scalar_vector_ntt_inverse_1`, `compute_t_*`, `prepare_sk_*`, `signing_key_*`), every field probe
-(including `field_mul_shoup`, `field_mul_mont`) and every signing-step probe (`response_*`, `hint_step_*`, including the
-one-polynomial splits) has the same verdict as in the build without dispatch (`checkct/README.md`); forced inlining
-(`cfg_attr(inline(always))` in `src/field.rs`) did not change a verdict. Without the cache pre-set, `ntt`, `ntt_inverse` and
-`multiply_ntt` under `dispatch` are `unknown` ("uninterpreted KO", the AVX2 arm), which shows the pre-set is what makes the
-verdicts reachable (measured at the merge of the opt-in dispatch, 6e25e52). `scan-avx2.sh` on a dispatch driver finds four
-functions: `ntt_avx2`, `ntt_inverse_avx2`, `ntt_in_place_avx2` and `multiply_ntt_avx2`.
-
-**Trust argument.** The Lean proofs (`Proofs/NTT.lean`, `NTTInverse.lean`, `NTTOps.lean`) are about the source of the shared
-bodies `ntt_body`, `ntt_inverse_body` and `multiply_ntt_body`. Extraction runs with `--cfg miri`, where the
-public entry points are the bodies themselves: the proved model contains no dispatch, no atomic and no `unsafe`. In a normal
-build the dispatch picks one of two compilations of that same body: the crate's baseline target features, or a
-`#[target_feature(enable = "avx2")]` wrapper in which LLVM vectorizes the 32 x 32 -> 64 bit butterflies. The CPU check (CPUID leaf 1 XSAVE/OSXSAVE/AVX,
-leaf 7 AVX2, XCR0 bits 1 and 2, a relaxed `AtomicU8` cache; `src/cpu.rs`, shared with the verify dispatch, and in `src/ntt.rs` when the sweep recorded here ran) is outside the proof. It reads only the CPU model. A false negative (AVX2 present, not reported) only selects the portable copy
-(slower, same result: both copies compute the same function). A false positive (AVX2 reported on a CPU or OS that cannot run it) executes a
-`#[target_feature]` function there, which is undefined behavior (SIGILL is one possible outcome); "the CPU and OS support AVX2 whenever the CPU check
-reports it" is an assumption. `tests/dispatch.rs` compares the two
-compilations on random and edge polynomials. What stays assumed is that LLVM compiles both copies faithfully. That assumption is made for the
-portable copy too, but the AVX2 copy is a separate vectorizer run over the whole arithmetic core with less evidence behind it:
-no BINSEC verdict, and functional evidence from `tests/dispatch.rs` and the KAT suites run with `--features avx2` only.
+Until round 12 the opt-in `avx2` cargo feature compiled the NTT bodies twice on x86_64 and picked one at run time (a CPUID check, a cache static and `#[target_feature]` copies), and
+dispatched `verify` to a 4-way body the same way. That dispatch, its `unsafe` and `src/cpu.rs` are gone: the crate has one compilation of every function per build, `#![forbid(unsafe_code)]` holds
+in every configuration, and the Cargo feature `avx2` is a deprecated no-op. A build that wants AVX2 code compiles with `-C target-feature=+avx2` (or `-C target-cpu=x86-64-v3`), which changes what
+LLVM emits for the same Rust text and nothing else (the extraction is identical under both, `scripts/check-feature-independence.sh`; `docs/assurance.md` section 0, Round 12). What this section used to record
+(the dispatch builds `dispatch` and `nearcore-dispatch`, the dispatch cache pre-set, `scan-avx2.sh` on the four `*_avx2` functions) describes trees up to fv-p11 and is not repeated; the
+sweep tables in `checkct/README.md` that name those profiles are marked as history there.
 
 **What BINSEC covers.**
-- cargo-checkct models `cpuid` as "no optional features", so runtime-dispatched SIMD paths are never explored by default. The dispatch cache is a `static` in `.bss`, which
-  BINSEC leaves symbolic, so it would explore the AVX2 arm anyway. `checkct/run-select.sh` therefore pre-sets the cache to 1
-  ("checked, no AVX2") in the generated BINSEC scripts on x86_64 in the dispatch profiles, which is exactly what the stubbed `cpuid` would have produced.
-  The probes then follow the portable arm, which is the body the proofs cover.
-- BINSEC 0.11.3 cannot lift the VEX-encoded instructions of the AVX2 copy (status `unknown`, "uninterpreted KO" at the first
-  vector instruction). A build with `-C target-feature=+avx2` (`bash checkct/select-ntt.sh avx2`) therefore ends `unknown` for
-  every probe that reaches the vectorized NTT; the scalar probes (`field_mul_shoup`, `field_mont_reduce`, `field_mul_mont`)
-  stay `secure` there. No claim is made about BINSEC verdicts for the AVX2 copy.
-- Substitute for the AVX2 copy: a static scan of the disassembly (`checkct/scan-avx2.sh`, `checkct/scan-avx2.py`). For
-  `ntt_avx2`, `ntt_inverse_avx2`, `ntt_in_place_avx2` and `multiply_ntt_avx2` it reports no `div`/`idiv`, no gather or
-  scatter, only conditional jumps that are loop back-edges on a counter compared with an immediate, and index registers that
-  are only those loop counters. The only
-  indirect calls are calls through two `.got` slots (the `memcpy` calls of the by-value `[u32; 256]` arrays). This is a review aid, not a proof: it does not show that the vector instructions are data-independent in time
-  (VPMULUDQ and the other instructions used are fixed-latency on current Intel and AMD cores, which is an assumption about
-  hardware, as in section 2.3).
+- The default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit; no AVX2) and `nearcore-novec` are the builds with verdicts (section 3.2 and `checkct/README.md`). `docs/assurance.md` section 4, "Round 12", has the
+  rerun on this tree: the NTT callers of Sign and KeyGen compile differently from fv-p11 now that the dispatch is gone (`checkct/compare_code.py`: 39 of 233 functions differ on x86_64), so the sweep's verdicts for them
+  were re-checked on the final tree rather than carried over.
+- BINSEC 0.11.3 cannot lift VEX-encoded instructions. A build with `-C target-feature=+avx2` (`bash checkct/select-ntt.sh avx2`) therefore ends `unknown` for
+  every probe that reaches vectorized code; the scalar probes (`field_mul_shoup`, `field_mont_reduce`, `field_mul_mont`) stay `secure` there. `nearcore`'s own flags have `+fma`, which implies AVX in LLVM, so the
+  `nearcore-exact` profile is in the same position for 49 of 113 probes. No claim is made about BINSEC verdicts for AVX or AVX2 code.
+- There is no substitute static scan of vector code any more: `checkct/scan-avx2.sh` scanned the `*_avx2` functions of the dispatch driver, which no longer exist.
 
-
-**The 4-way verify (`src/fast_verify.rs`).** Verify handles only public data, so the 4-way body (plain Rust, compiled with AVX2 inside
-the `#[target_feature]` wrappers of `src/fast_verify/dispatch.rs`) and the verify-only `poly_use_hint_pub` and `bit_unpack_pub` have no BINSEC probes and need none; BINSEC
-0.11.3 could not lift the VEX code anyway. The functional evidence for them, and for the dispatch, is in assurance.md section 1.9
-and the tests it lists. The full sweep was not rerun after the dispatch gained the verify arm: it predates it, and Sign and KeyGen code is
-unchanged since. The driver builds on this tree for every target and profile (it includes `keccak4`, `cpu`, the real
-`fast_verify.rs` (with its `dispatch` module) and `api.rs` by `#[path]`), and a small BINSEC run
-reproduced the sweep's verdicts for the probes it covered (assurance.md section 4). The pre-set described above anchors on
-the symbol `driver::cpu::AVX2` (`checkct/run-select.sh`): the cache static moved from `src/ntt.rs` to `src/cpu.rs` and is now
-shared by the NTT and verify dispatch.
+**The 4-way verify.** Verify handles only public data, so the 4-way body (plain Rust, `src/keccak4.rs`, `src/sampling.rs`, `src/verify.rs`) and the verify-only `poly_use_hint_pub` and `bit_unpack_pub` have no BINSEC probes
+and need none. The functional evidence for them is in `docs/assurance.md` section 1.9 and the tests it lists, run in the default configuration and with AVX2 target features.
 
 A reminder from the first version of the dispatch: it marked the field functions `#[inline(always)]` on every target, which made
 the riscv32imac `response_*` and `hint_step_*` probes `unknown` (one pending path after an hour) where the Shoup/Montgomery tree
-without dispatch finishes them in about ten minutes. The attribute is now gated by `cfg_attr` on x86_64 builds that have the
-dispatch. BINSEC completion depends on code shape, not only on the source.
+without it finishes them in about ten minutes. BINSEC completion depends on code shape, not only on the source.
 
 ## 4. Part 3: options for object-code functional correctness of our crate
 

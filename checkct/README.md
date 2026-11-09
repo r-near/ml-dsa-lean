@@ -1,9 +1,8 @@
 # checkct: binary-level constant-time checks (BINSEC)
 
 Port of the RustCrypto `ml-dsa/checkct` harness (signatures repo, rev a3690c4) to this crate. The driver
-`#[path]`-includes the crate sources unchanged (`params`, `field`, `rounding`, `ntt`, `keccak`, `keccak4`, `cpu` (with the
-`avx2` feature, x86_64), `encode`, `sampling`, `keygen`, `sign`, `verify`, `fast_verify` (whose `mod dispatch` carries an explicit
-`#[path]`, so `src/fast_verify.rs` is included whole and nothing of it is repeated in `driver/src/main.rs`), `api`; the
+`#[path]`-includes the crate sources unchanged (`params`, `field`, `rounding`, `ntt`, `keccak`, `keccak4`, `encode`, `sampling`,
+`keygen`, `sign`, `verify`, `verify_arith`, `api`; the
 crate is `no_std` with no dependencies, so no shims are needed), marks every probe input secret through the `__checkct_private_rand` hook, and lets BINSEC (via `cargo-checkct`) symbolically
 execute the compiled release binary, flagging any secret-dependent branch, memory access, or division operand.
 
@@ -36,61 +35,36 @@ Scripts (all start from the repository root; stopping a script does not stop its
 | `leaks.sh LOG BINDIR` | maps every leaking instruction address of a `Summary:` block to `file:line` and the instruction (`llvm-objdump -d -l` on the `OUT` binaries) | `OBJDUMP` as third argument |
 | `aarch64.sh` | experiment: AArch64 (see below); `cargo-checkct` does not support the target, so it builds the driver for `aarch64-unknown-linux-gnu` in the container and writes the BINSEC scripts itself | `ONLY`, `TIMEOUT`, `JOBS`, `NAME`, `OUT`, `NONEON=1` |
 | `split-run.sh [round2]` | the split probes of `driver/src/split.rs` on AArch64 (`NONEON=1`) and riscv32imac, two containers in parallel, exit status nonzero if either fails (see "Split probes") | `TIMEOUT` (3600), `JOBS` (2 per container), `AONLY`, `RONLY` |
-| `select-ntt.sh [mode]` | the NTT and field-product probes and the KeyGen/Sign pieces built on them, through `run-select.sh`; `mode` is `default`, `dispatch`, `nearcore-dispatch`, `avx2` or `nearcore-avx2` (see "Profiles for the AVX2 dispatch") | `TIMEOUT` (3600), `JOBS`, `OUT`, `NAME`; the 2nd and 3rd arguments replace the probe regex and the target list |
-| `scan-avx2.sh DIR` | static scan of the `*_avx2` functions of a dispatch driver (`DIR` is a directory name under `$ML_DSA_SCRATCH`, the `OUT` of a dispatch run); fails if there are none | |
+| `select-ntt.sh [mode]` | the NTT and field-product probes and the KeyGen/Sign pieces built on them, through `run-select.sh`; `mode` is `default`, `avx2` or `nearcore-avx2` (see "Profiles") | `TIMEOUT` (3600), `JOBS`, `OUT`, `NAME`; the 2nd and 3rd arguments replace the probe regex and the target list |
 
 `PROFILE=nearcore` builds with `opt-level = 3`, `lto = "fat"`, `codegen-units = 1`, `panic = "abort"` (through
 `CARGO_PROFILE_RELEASE_*`). It approximates nearcore's release build but does not match it: nearcore (checked at
 nearcore cd5a94457, 2026-11-03) also sets `overflow-checks = true`, builds x86_64 with
 `-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq` and
 `-Cforce-unwind-tables=y`, and uses Rust 1.95.0. The `nearcore` results below are for this approximation only; the
-profiles that take all of those settings are `nearcore-exact` and `nearcore-exact-dispatch`
-(section "`nearcore-exact` and `nearcore-exact-dispatch`" below; x86_64 only, `run-select.sh`). The default is the checkct workspace profile (release plus debug info, `panic = "abort"`,
+profile that takes all of those settings is `nearcore-exact`
+(section "`nearcore-exact`" below; x86_64 only, `run-select.sh`). The default is the checkct workspace profile (release plus debug info, `panic = "abort"`,
 16 codegen units). BINSEC's `-sse-timeout` is only checked between paths, so a probe stuck in a long solver query
 can run well past `TIMEOUT`.
 
-### Profiles for the AVX2 dispatch
+### Profiles
 
-The crate's runtime AVX2 dispatch of the NTT bodies (`src/ntt.rs`, `mod dispatch`) and of verify (`src/fast_verify.rs`), with the one
-cached CPU check they share (`src/cpu.rs`), exists only with the opt-in cargo
-feature `avx2`. The driver includes `src/` through `#[path]`, so the sources are modules of the driver crate and see
-the driver's own feature: `checkct/driver/Cargo.toml` declares `avx2 = []`, off by default like the crate's. A build of
-the driver without it has no dispatch (the default; what `run.sh` builds). `cargo-checkct` has no `--features` option, so
-the dispatch profiles of `run-select.sh` make `avx2` a default feature in the container's working copy of that file.
+The crate has no run-time AVX2 dispatch and no `avx2` code selection any more (round 12): the driver has no `avx2` feature, `src/cpu.rs` and `fast_verify` are gone from it, and each profile is one
+compilation of the same sources. A build that wants AVX2 code gets it from target features.
 
-| `PROFILE` | driver build | dispatch compiled | cache pre-set |
-|---|---|---|---|
-| (unset), `nearcore`, `nearcore-novec` | no `avx2` feature | no | none; the log says "no dispatch compiled" |
-| `dispatch` | the checkct profile with the `avx2` feature | yes, on x86_64 (a no-op on the other targets) | yes |
-| `nearcore-dispatch` | the nearcore settings with the `avx2` feature | as above | yes |
-| `avx2`, `nearcore-avx2` | `-C target-feature=+avx2`, no feature | no: the static-AVX2 arm, one AVX2 compilation of each body | none |
-| `nearcore-exact` | nearcore's `[profile.release]` incl. `overflow-checks` (driver package), nearcore's x86_64 target features, rustc 1.95.0; no `avx2` feature | no | none |
-| `nearcore-exact-dispatch` | `nearcore-exact` with the `avx2` feature | yes, as `nearcore-dispatch` | yes |
-| `nearcore-exact-novec` | `nearcore-exact` plus `-C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false` (x86_64 only) | no | none |
+| `PROFILE` | driver build |
+|---|---|
+| (unset) | the checkct workspace profile (release plus debug info, `panic = "abort"`, 16 codegen units) |
+| `nearcore`, `nearcore-novec` | opt-level 3, fat LTO, one codegen unit, `panic = "abort"`; `nearcore-novec` adds `-C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false` |
+| `avx2`, `nearcore-avx2` | the default profile (`nearcore-avx2`: the `nearcore` settings) with `-C target-feature=+avx2`; BINSEC cannot lift the VEX code, so probes that reach vector code end `unknown` |
+| `nearcore-exact` | nearcore's `[profile.release]` incl. `overflow-checks` (driver package), nearcore's x86_64 target features, rustc 1.95.0 |
+| `nearcore-exact-novec` | `nearcore-exact` plus `-C llvm-args=-vectorize-loops=false -C llvm-args=-vectorize-slp=false` (x86_64 only) |
 
-In a dispatch profile `run-select.sh` pre-sets the dispatch cache (`static AVX2: AtomicU8` in `.bss`) to 1 ("checked, no
-AVX2") in every x86_64 BINSEC script, which is what `cargo-checkct`'s stubbed `cpuid` would have produced; without it
-BINSEC leaves the static symbolic, enters the AVX2 arm and stops at its first VEX instruction ("uninterpreted KO",
-status `unknown`). The run is loud about it:
+An unknown `PROFILE` is rejected. The profiles `dispatch`, `nearcore-dispatch` and `nearcore-exact-dispatch` of earlier rounds built the driver with the `avx2` Cargo feature and pre-set the dispatch cache
+(`static AVX2: AtomicU8`, anchored on the symbol `driver::cpu::AVX2`) to "no AVX2" in every x86_64 BINSEC script; they, the anchor and `scan-avx2.sh` are removed. The sweep tables below that name them record
+results for the trees at 1a72d9e and before, where those profiles existed, and are history.
 
-- before any probe starts, it prints `preset <target>: PROFILE=...: dispatch compiled in, AVX2 cache static at 0x...` (or
-  `no dispatch compiled ... nothing to pre-set`), and aborts with `PRESET FAILED` unless `nm` finds exactly one symbol
-  `driver::cpu::AVX2` (matched exactly, in v0 or legacy mangling with the LTO suffixes) in a dispatch profile
-  and none in any other profile;
-- per probe it checks that the `@[rsp, 8] :=` anchor of the generated script matched and the inserted line is there,
-  and prints `done <target> <probe> <status> (AVX2 cache 0x... pre-set to 1)`; a missing anchor reports the probe as
-  `error` and the script exits 1;
-- an unknown `PROFILE` is rejected. `run.sh` refuses the dispatch profiles (it would not pre-set the cache); use
-  `run-select.sh` or `select-ntt.sh dispatch`.
-
-`select-ntt.sh dispatch` is `PROFILE=dispatch` on x86_64 only (the other targets build the same code as the default),
-`select-ntt.sh` alone the default build. `scan-avx2.sh` needs a driver from a dispatch profile and fails if the
-disassembly has no `*_avx2` function (the default build gives none). Measured at the merge of the opt-in dispatch,
-x86_64, 5 probes (`ntt`, `ntt_inverse`, `multiply_ntt`, `field_mul_shoup`, `field_mul_mont`): `dispatch` and
-`nearcore-dispatch` give `secure` for all five with the pre-set; the default profile gives `secure` for all five with no
-dispatch compiled; with the pre-set disabled, `dispatch` gives `unknown` ("Cut path (uninterpreted KO)") for `ntt`,
-`ntt_inverse` and `multiply_ntt`. `scan-avx2.sh` reports `ntt_avx2`, `ntt_inverse_avx2` and `multiply_ntt_avx2`.
-The sweep at 1a72d9e below covers every probe in both dispatch profiles.
+`select-ntt.sh` alone is the default build; `select-ntt.sh avx2` and `select-ntt.sh nearcore-avx2` build with `+avx2` (x86_64 only).
 
 Toolchain (every profile except `nearcore-exact*`, which use 1.95.0, see below): `nightly-2026-10-06` with `rust-src` (`checkct/rust-toolchain.toml`), `-Zbuild-std=core,panic_abort` with
 `compiler-builtins-mem` (`.cargo/config.toml`, copied from upstream). BINSEC 0.11.3, unisim_archisec 0.0.14,

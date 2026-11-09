@@ -160,8 +160,7 @@ step_test_zeroize() {
     cargo test --features zeroize --test zeroize -- stack_residue_signing_key
 }
 step_test_zeroize_release() { cargo test --release --features zeroize; }
-# The avx2 steps run the whole suite twice: with the `avx2` feature (a deprecated no-op for verify; it still enables the NTT
-# dispatch of Sign and KeyGen until that is removed) and with AVX2 target features (RUSTFLAGS="-C target-feature=+avx2"),
+# The avx2 steps run the whole suite twice: with the `avx2` feature (a deprecated no-op: it changes no code) and with AVX2 target features (RUSTFLAGS="-C target-feature=+avx2"),
 # which is what makes LLVM emit 256-bit code for the 4-way verify. ML_DSA_REQUIRE_AVX2=1 makes tests/fast_verify.rs fail unless
 # the build has the AVX2 target feature (a build without it is also correct, so the note is not an error otherwise);
 # GitHub-hosted x86_64 runners have AVX2.

@@ -19,12 +19,10 @@ including malformed ones. The nearcore doc states the message is passed with an 
 the Lean transcription of FIPS 204's Verify on every input on which either returns (the transcription is trusted, not
 the standard itself) is in `docs/assurance.md` §1.1; the verdict differential against aws-lc-rs 1.18.2
 (`tests/awslc_diff.rs`, `docs/assurance.md` §5) found 0 differences in about 3.2M verify comparisons, incl. malformed
-inputs, with ctx = "" as nearcore uses it. It is a test, not a proof about aws-lc. The §1.1 statement is about the portable
-build; with the opt-in `avx2` feature, verify runs a 4-way body that is proved equal to the scalar one, and the run-time choice
-between the two is proved to make no difference to the result for either answer of the CPU check (`docs/assurance.md` §1.9). What
-is not proved, on the verify paths: the CPU detection and its cache (assumed: CPU and OS support AVX2 whenever it reports it; a
-false report is undefined behavior, not just a crash), the 15 token-passing call lines in `src/api.rs`, the 3 `unsafe` calls in
-`src/fast_verify/dispatch.rs`, and the `target_feature`/`repr`/`inline` attributes under the ordinary compiler trust (`docs/assurance.md` §3),
+inputs, with ctx = "" as nearcore uses it. It is a test, not a proof about aws-lc. The §1.1 statement is about the function
+`api::verify_65` runs, which is the 4-way verify in every build: it is proved equal to the scalar one (`docs/assurance.md` §1.9), nothing
+chooses between them at run time, and the crate has no `unsafe` and no CPU detection. What is not proved, on the verify paths, is the
+compilation of the proved source by rustc and LLVM for the target features of the build (`docs/assurance.md` §2 item 3, §3),
 which matters for a consensus-critical verdict (§4, §5 item 6).
 
 ## 1. Key and signature representation today
@@ -124,7 +122,9 @@ table (release in parentheses; the ratio is not uniform, from 1.3 times for `sig
 | `verify_prepared_*` | 53,264 (34,216) | 66,064 (45,480) | 83,984 (58,792) |
 | `sign_prepared_*` | 134,768 (73,384) | 180,064 (100,920) | 236,464 (133,976) |
 
-These figures predate the fast verify; the stack use of the `avx2` feature's 4-way verify body was not measured. The key
+These dev-profile figures predate the fast verify. Release-profile figures for the 4-way verify (`bench/results/2026-11-09-p12.md`, `docs/assurance.md` §3): one-shot `verify_*` 56 / 80 / 118 KB
+and `verifying_key_*` 50 / 73 / 108 KB below the caller's frame (ML-DSA-44 / 65 / 87), 11 / 9 / 7 and 15 / 15 / 73 KB more than before; the 87 figure of `verifying_key_*` includes a second copy of the key that the compiler does not elide. The key
+The key
 constructors also place the returned key object in the caller's frame (20.5 / 36.9 / 65.6 KB for
 `verifying_key_*`, 28.8 / 48.2 / 81.0 KB for `signing_key_*`). The largest dev-profile figure is `signing_key_87`,
 about 475 KB below the caller's frame plus the 81 KB result slot.
@@ -160,7 +160,7 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   Wycheproof, the differentials; the last one `tests/zeroize.rs` with the `zeroize` feature) with nearcore's release
   settings and its x86_64 rustflags, on 1.95.0, and `nearcore-build` checks that `-C overflow-checks=on` is on the crate's
   rustc line and that `target_feature="sse4.2"`, `"bmi2"`, `"lzcnt"` and `"movbe"` are in rustc's cfg. Both passed on a Linux machine on 2026-11-03,
-  with and without the `avx2` feature. The step prints cargo's unit graph first: every unit is `opt=3 lto=fat cgu=1
+  with and without the `avx2` feature (a no-op since round 12). The step prints cargo's unit graph first: every unit is `opt=3 lto=fat cgu=1
   overflow_checks=True`; the library build unit is `panic=abort`, the test units are `panic=unwind` because cargo ignores
   `panic = "abort"` for test targets (so the tests exercise overflow checks, not the abort path). A passing run is an empirical
   check on those inputs, not a proof that no overflow can occur in the compiled code.
@@ -185,27 +185,21 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   and in release. A nearcore test run in its dev profile would not show the stack-residue results.
 - x86_64 target features: `+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq`, plus
   `-Cforce-unwind-tables=y` (`.cargo/config.toml:9`; the profiling config adds frame pointers). **There is no `avx` or `avx2`**
-  in that list. Our NTT is vectorized by LLVM only with AVX2, and the 4-way Keccak of the fast verify is an AVX2 kernel, so
-  nearcore's build as it stands gets the `scalar` rows of section 6 (and of the benchmark table in `docs/assurance.md` §5). To get
-  the AVX2 rows without changing nearcore's target features, nearcore would enable our opt-in `avx2` cargo feature: it checks
-  the CPU at run time (a cached CPUID/XGETBV check) and dispatches the NTT, `verify_NN` and `verifying_key_NN` to AVX2 code, and
-  runs the scalar code on a CPU without AVX2. The alternative, `-C target-cpu=x86-64-v3`, makes the binary require AVX2 and, for
-  verify, was not reliably faster than the feature (`docs/assurance.md` §5, Benchmarks: ML-DSA-65 on 1.95.0 took 60.9 µs against 55.4 µs). Either is nearcore's decision. What the feature costs in
-  assurance: the crate then has `unsafe` (the call into three `#[target_feature]` wrappers, and the AVX2 copy of the NTT that signing
-  and key generation use), and the verify it runs is the proved 4-way body, with the dispatch proved equal to the scalar verify for
-  every answer of the CPU check. Outside the proof, on the verify paths: the CPU detection and its cache (`src/cpu.rs`; "CPU and OS
-  support AVX2 whenever it reports it" is an assumption, and a false report is undefined behavior), the 15 token-passing call lines
-  in `src/api.rs`, the 3 `unsafe` calls in `src/fast_verify/dispatch.rs`, and the `target_feature`/`repr`/`inline` attributes, under the
-  ordinary compiler trust (`docs/assurance.md` §1.9, §3, FV-1 in §7). Because the dispatch depends on the CPU, two validators with and without AVX2
-  would run different compiled code for the same transaction; the two functions are proved equal at source level, and the
-  compiled code is tested equal (`tests/fast_verify.rs`: ACVP, Wycheproof and random inputs). `scripts/ci.sh` runs the
-  tests with the feature under nearcore's flags (`nearcore-test-avx2`) and checks that the AVX2 body is compiled with AVX2
-  (`avx2-inlining`). The CT results for the `nearcore` profile do not cover nearcore's exact build (`docs/assurance.md` §4).
+  in that list (LLVM may enable AVX through `+fma`; it does not enable AVX2). Verify runs the 4-way Keccak in every build, and what the compiler makes of it depends on
+  those flags: under nearcore's flags as they stand it is 128-bit (SSE2) code, which takes ML-DSA-65 one-shot verify 57.9 µs against 88.4 µs for the scalar functions (`docs/assurance.md` §5,
+  Benchmarks; `bench/results/2026-11-09-p12.md`). The 38.4 µs figure needs AVX2 at compile time: nearcore would add `-C target-feature=+avx,+avx2` or
+  `-C target-cpu=x86-64-v3` to its target features, and the binary would then require a CPU with AVX2. **This document does not claim that nearcore's current feature floor
+  (FMA, BMI1/2, MOVBE and the others) guarantees AVX2 on the machines that run nearcore**, so changing the flags is nearcore's decision after it knows its validator hardware.
+  The crate no longer has a run-time choice: the `avx2` Cargo feature is a deprecated no-op (0.1.0 had a feature that dispatched the NTT, `verify_NN` and `verifying_key_NN`
+  at run time on a cached CPUID check; that dispatch and its `unsafe` are gone, and with them the assumption that a CPU check is right). What the compiler does with the proved source is
+  the ordinary compiler trust (`docs/assurance.md` §1.9, §2, §3). Because nothing depends on the CPU at run time, two validators run the same compiled code for the same input as long as
+  they run the same build; `scripts/ci.sh` runs the tests under nearcore's flags (`nearcore-test`), with AVX2 target features added (`nearcore-test-avx2`), and checks that
+  the 4-way permutation is 256-bit code in the latter (`avx2-inlining`). The CT results for the `nearcore` profile do not cover nearcore's exact build (`docs/assurance.md` §4).
 - Toolchain: `rust-toolchain.toml:12` pins 1.95.0 with a comment not to bump past 1.87-era wasm behavior for contract
   developers (:6–10); workspace `rust-version = "1.95.0"`, edition 2024 (`Cargo.toml:4–5`). Our `rust-version` is 1.86
-  (needed for safe `#[target_feature]`, `Cargo.toml` comment), edition 2024. `scripts/ci.sh` builds on 1.86.0 and on 1.95.0.
+  (kept from the older `avx2` feature's safe `#[target_feature]` functions, `Cargo.toml` comment), edition 2024. `scripts/ci.sh` builds on 1.86.0 and on 1.95.0.
 - Linting policy: nearcore's workspace `[lints.clippy]` denies correctness, suspicious and perf (`Cargo.toml:95–99`); nothing
-  there forbids `unsafe`. Our crate has no `unsafe` unless `avx2` is on.
+  there forbids `unsafe`. Our crate has no `unsafe` (`#![forbid(unsafe_code)]` in every configuration).
 - `deny.toml`: licenses allow only MIT, Apache-2.0 and Apache-2.0 WITH LLVM-exception; `unknown-git = "deny"`;
   `multiple-versions = "deny"`. Our crate is `MIT OR Apache-2.0`, has no non-optional dependencies, and its optional one
   is `zeroize` (already in nearcore's lockfile; version compatibility not checked). The RustCrypto git dependency in our
@@ -236,7 +230,7 @@ Public surface of `api` (39 functions and 6 types, the same per set NN ∈ {44, 
 | `signing_key_NN(sk)`, `sign_prepared_NN(ssk, m, ctx, rnd)`, `sign_internal_prepared_NN` | `SigningKeyNN` (not `Clone`; 28,768 / 48,224 / 80,992 B; wipes on drop with `zeroize`) |
 | `sk_is_well_formed_NN(sk)`, `pk_from_sk_NN(sk)` | `bool`, `Option<[u8; PK]>`; optional checks, not FIPS steps |
 
-Cargo features: `zeroize` (optional dependency), `avx2` (x86_64 only), `internals` (not a supported surface).
+Cargo features: `zeroize` (optional dependency), `avx2` (a deprecated no-op), `internals` (not a supported surface).
 
 What would need to stabilize, as options rather than recommendations:
 
@@ -251,10 +245,7 @@ What would need to stabilize, as options rather than recommendations:
    `pub` for the Lean theorems and tests. Options: keep, or move behind a feature.
 5. **Prepared-key types.** `VerifyingKeyNN` is `Clone` with a private field and size in the tens of KB (meant to be boxed);
    `SigningKeyNN` is deliberately not `Clone`. Whether these are public API or an implementation detail of a cache is open.
-6. **Feature semantics.** `avx2` dispatches the NTT, `verify_NN` and `verifying_key_NN` at run time on a cached CPUID check and
-   contains the only `unsafe`; its verify and the dispatch to it are proved equal to the scalar verify at source level, with the CPU
-   detection (an assumption: a false report is undefined behavior), the 15 call lines in `src/api.rs`, the 3 `unsafe` calls in
-   `src/fast_verify/dispatch.rs` and the `target_feature`/`repr`/`inline` attributes outside the proof (`docs/assurance.md` §3); `zeroize` changes `Drop` behavior; Cargo
+6. **Feature semantics.** `avx2` is a deprecated no-op (AVX2 code comes from `-C target-feature=+avx2`, section 4); `zeroize` changes `Drop` behavior; Cargo
    unifies features across a dependency graph, so enabling `internals` anywhere in the graph exposes panicking internals (E-1 in `docs/assurance.md` §7).
 7. **Behavior contracts.** Verify returns `false` for malformed hint encodings and `ctx.len() > 255` (it equals the verdict of the Lean
    transcription of FIPS 204's Verify on every input on which either returns, `docs/assurance.md` §1.1); the possible non-termination of ExpandA/SampleInBall on adversarial input (probability
@@ -263,60 +254,45 @@ What would need to stabilize, as options rather than recommendations:
 
 ## 6. Verify time, and the prepared verifying-key cache: the options and their numbers
 
-**One-shot verify.** Measured with nearcore's `[profile.release]` settings and its x86_64 target features, on rustc 1.95.0
-(nearcore's pinned toolchain), median of 15 rounds, one pinned core of an otherwise idle AMD EPYC 9B14 (Zen 4) virtual machine,
-2026-11-07 (`bench/fast-verify.sh`; the setup, the rustc 1.99.1 numbers and the other implementations are in
-`docs/assurance.md` §5 and `bench/results/2026-11-07-p7.md`). "Without the feature" is the proved scalar verify, which is what
-nearcore's flags give today; "with `avx2`" is the opt-in feature (section 4).
+**One-shot verify.** Measured on 2026-11-09 with nearcore's `[profile.release]` settings (the `nearcore` profile of `bench/Cargo.toml`) and its x86_64 target features, on rustc 1.99.1, median over 4 passes of
+7 rounds, one pinned core of an AMD EPYC 9B14 (Zen 4) virtual machine that was not idle (load average about 3), interleaved binaries (`bench/ab.sh`; the setup, the aarch64 numbers and the other implementations are in
+`docs/assurance.md` §5 and `bench/results/2026-11-09-p12.md`). Verify always runs the 4-way code now, so the rows are build flags, not a feature.
+"Scalar" is the proved scalar verify, which `api` no longer calls (it is the reference the 4-way code is proved equal to) and is listed for comparison only.
 
-| Verify, µs, rustc 1.95.0 | ML-DSA-44 | ML-DSA-65 | ML-DSA-87 |
+| Verify, µs, rustc 1.99.1 | ML-DSA-44 | ML-DSA-65 | ML-DSA-87 |
 |---|---|---|---|
-| this crate, without the `avx2` feature | 52.9 | 88.9 | 154.0 |
-| this crate, with the `avx2` feature | 26.1 | 38.7 | 61.1 |
-| aws-lc-rs 1.18.2 (the backend nearcore ships) | 22.7 | 36.4 | 56.6 |
-| mldsa-native 2.0.0, AVX2 | 21.0 | 34.3 | 53.2 |
+| this crate under nearcore's flags (no AVX2) | 38.6 | 57.9 | 96.2 |
+| this crate under nearcore's flags plus `-C target-feature=+avx,+avx2` | 26.1 | 38.4 | 60.7 |
+| the scalar functions under nearcore's flags (for comparison only) | 52.5 | 88.4 | 152.6 |
+| aws-lc-rs 1.18.2 (the backend nearcore ships; earlier run, same machine) | 22.5 | 36.4 | 56.6 |
+| mldsa-native 2.0.0, AVX2 (earlier run, same machine) | 21.0 | 34.3 | 53.3 |
 
-For ML-DSA-65, the only set nearcore has: 88.9 µs without the feature (2.4 times aws-lc-rs on this machine), 38.7 µs with it
-(1.06 times). These were measured on one machine, not on the hardware behind nearcore's ≈ 80 µs aws-lc figure (§2), so they say
-which backend is faster on this machine, not what the gas calibration should be. aws-lc-rs verifies faster than this crate in
-every row. The same runs, in the columns used by the table in `docs/assurance.md` §5, give ML-DSA-65 verify of 88.4 and 38.5 µs
-on rustc 1.99.1. Both builds got faster in the last round (103.3 and 55.4 µs on 1.95.0 before it) from verify-only arithmetic
-that is proved equal to the specification (`docs/assurance.md` §1.9): a fused multiply-accumulate row, a lazy-reduction NTT, a
-mask-free norm check and a fixed-width w1 packing. The `avx2` figure then went from 41.9 to 38.7 µs when `tr = H(pk, 64)`, which
-the one-shot verify computes, moved into the fourth lane of the first groups of the 4-way ExpandA (`docs/assurance.md` §1.9;
-proved equal to the scalar ExpandA and hash, `bench/results/2026-11-07-p7.md`).
+**Under nearcore's current flags this crate's verify runs at 38.6 / 57.9 / 96.2 µs** (for ML-DSA-65: 57.9 µs, 1.6 times aws-lc-rs on this machine); the figures in the second row need AVX2 target
+features, which nearcore's flags do not have (1.06 times aws-lc-rs for ML-DSA-65). These were measured on one machine, not on the hardware behind nearcore's ≈ 80 µs aws-lc figure (§2), so they say
+which backend is faster on this machine, not what the gas calibration should be. aws-lc-rs verifies faster than this crate in every row. The 4-way code is the same proved source in every row; the
+target features only decide the vector width (`docs/assurance.md` §1.9). Earlier rounds measured a run-time dispatch to an AVX2 wrapper (26.1 / 38.7 / 61.1 µs on rustc 1.95.0 with the
+`avx2` feature); the AVX2 target-feature build runs the same code at the same speed (26.1 / 38.4 / 60.7 µs), and without AVX2 target features the dispatch ran the scalar functions, so a validator
+without AVX2 is now 26 to 37 % faster than the old fallback. On rustc 1.95.0, nearcore's pinned toolchain, this round did not re-measure; the 1.95.0 behavior of earlier rounds was within 1 % of 1.99.1 on the AVX2 rows.
 
-**The cost no longer depends on where the caller's stack is.** Until the last round the `avx2` one-shot verify, and
-`verifying_key_NN`, took up to 7, 13 and 24 µs longer than the median (ML-DSA-44, 65, 87; for 65: 55.4 against 42.3) when the
-dispatched wrapper's frame landed at the wrong offset, which is about one stack offset in seven, and a real caller's stack offset is
-whatever the call chain above it makes it (a different one per thread, and per call depth). The cause was LLVM spilling the
-4-way Keccak's 256-bit vectors to slots that are only 16-byte aligned, so that a slot straddling a 4 KiB page made each access a
-page split. `PreparedVk` is now `#[repr(align(32))]`, so the wrappers that own one get a 32-byte aligned frame (no code exists only
-for that, and nothing in the proofs depends on the attribute); the prepared-key wrapper, which only borrows a key, gets its aligned
-frame from the `#[repr(align(32))]` scratch (w′1 and its encoding) that the proved `verify_core` computes in (`docs/assurance.md` §1.9; it
-used to call a `black_box` anchor that existed only in the compiled build, which is gone), and `bench/stackscan.sh` (run by `bench/fast-verify.sh`) scans 257 stack
-offsets: with the fix the largest value is 1.02 to 1.03 times the median for every set and operation on rustc 1.99.1, and so is
-rustc 1.95.0 (largest 1.04, no offset above 1.1 times the median; ML-DSA-65 one-shot on 1.99.1: median 41.5, maximum 42.5 µs;
-`bench/results/2026-11-07-p6.md`); rerun after the `tr` change: largest 1.02 (1.99.1) and 1.03 (1.95.0) for one-shot verify and
-`verifying_key_NN`, ML-DSA-65 one-shot median 38.3 and maximum 38.6 µs on 1.99.1 (`bench/results/2026-11-07-p7.md`). For a gas calibration this means the figure above is the cost at every offset; before it was
-the cost at six offsets in seven. Not measured: the stack of a real nearcore thread.
+**The cost does not depend on where the caller's stack is** in a build with AVX2 target features. Before the stack-frame work of earlier rounds, a call took up to 7, 13 and 24 µs longer than the median
+(ML-DSA-44, 65, 87) at about one stack offset in seven, because LLVM spilled the 4-way Keccak's 256-bit vectors to 16-byte aligned slots and a slot that straddled a 4 KiB page made each access a page
+split (`bench/results/2026-11-07-p6.md`). `PreparedVk` and the scratch that `verify_core` computes in are `#[repr(align(32))]`, which gives the functions that own them a 32-byte aligned frame (no code
+exists only for that, and nothing in the proofs depends on the attribute), and `bench/stackscan.sh` scans 257 stack offsets (`docs/assurance.md` §5, Benchmarks). Not measured: the stack of a real nearcore thread.
 
 **Prepared key.** `verifying_key_NN(pk)` computes Â = ExpandA(ρ), NTT(t1·2^d) and tr once; `verify_prepared_NN` returns exactly what
 `verify_NN` returns for that key (proved: `verify_prepared_NN_eq`, `docs/assurance.md` §1.4). Same runs:
 
-| rustc 1.95.0, µs | ML-DSA-44 | ML-DSA-65 | ML-DSA-87 |
+| rustc 1.99.1, µs | ML-DSA-44 | ML-DSA-65 | ML-DSA-87 |
 |---|---|---|---|
-| `verifying_key_NN`, without / with `avx2` | 40.8 / 16.9 | 74.3 / 28.6 | 133.6 / 48.3 |
-| `verify_prepared_NN`, without / with `avx2` | 12.5 / 9.6 | 15.0 / 11.5 | 20.5 / 15.3 |
+| `verifying_key_NN`, nearcore's flags / plus AVX2 | 27.4 / 17.9 | 45.0 / 27.6 | 79.5 / 47.0 |
+| `verify_prepared_NN`, nearcore's flags / plus AVX2 | 12.4 / 9.5 | 14.6 / 10.9 | 20.1 / 15.4 |
 
-`verify_prepared_NN` runs no ExpandA, so it has no 4-way body. With the feature it is dispatched to a second
-`#[target_feature(enable = "avx2")]` wrapper around the same proved scalar function (`docs/assurance.md` §1.9; no
-intrinsic, and the proofs of §1.4 apply to it as they are), which makes it 0.76 of the scalar time (ML-DSA-65: 15.0 µs without
-the feature, 11.5 µs with it; the `v3` build, where AVX2 is static, takes 11.1). A prepared-key verify is faster than aws-lc-rs's
-uncached verify (36.4 µs), which matters only if nearcore holds prepared keys: the aws-lc-rs figure is
+`verify_prepared_NN` runs no ExpandA, so it has no 4-way body: it is the proved scalar function, compiled with the build's target features. A prepared-key verify is faster than aws-lc-rs's
+uncached verify (36.4 µs) in both columns, which matters only if nearcore holds prepared keys: the aws-lc-rs figure is
 `UnparsedPublicKey::new(..).verify(..)` on every call, as nearcore calls it.
-Building the key and verifying costs a little more than one one-shot verify (ML-DSA-65 with `avx2`: 28.6 + 11.5 = 40.1 µs against
-38.7 µs), so a prepared key pays off from the second verify with the same key.
+Building the key and verifying costs a little more than one one-shot verify (ML-DSA-65 with AVX2 target features: 27.6 + 10.9 = 38.5 µs against
+38.4 µs), so a prepared key pays off from the second verify with the same key. `verifying_key_NN` needs 50 / 73 / 108 KB of stack below the caller's frame, plus the returned key
+(`docs/assurance.md` §3).
 
 Where a cache could apply in nearcore: any place the same public key verifies many signatures. Approval verification
 runs one message over many validators' keys each block (`approval_verification.rs:33`, `:71`), but those keys are ed25519 today;
@@ -335,9 +311,8 @@ never cheaper than not caching. Options: (a) no cache, one-shot `verify_65` only
 - Re-measure verify time and the two gas parameters on one machine for both backends, including the worst-case signature
   shape nearcore's own benches probe (`core/crypto/benches/ml_dsa_worst_case.rs`); our numbers (section 6) used the benchmark
   inputs (256 messages of 64 bytes), not worst-case shapes.
-- Whether to enable the `avx2` feature, given that its CPU detection (assumed correct; a false report is undefined behavior), the 15
-  call lines in `src/api.rs`, the 3 `unsafe` calls in `src/fast_verify/dispatch.rs` and the compilation of its wrappers are outside the proof
-  (section 4), and that validators with and without AVX2 then run different compiled code for the same input.
+- Whether to build with AVX2 target features (`-C target-feature=+avx,+avx2`): it is the difference between 57.9 and 38.4 µs for ML-DSA-65 one-shot verify, and the binary then requires AVX2 on
+  every machine that runs it. Nothing is detected at run time any more.
 - Frames above the call on the real threads (section 3), and whether any signature check runs on a reduced stack.
 - If nearcore keeps aws-lc for 65 and wants 44 or 87: aws-lc-rs 1.18.2 supports all three sets, so adding sets does not
   require this crate. (A source comment in aws-lc-rs, `src/pqdsa/signature.rs:125–126`, reads "# FIPS" / "Approved for all

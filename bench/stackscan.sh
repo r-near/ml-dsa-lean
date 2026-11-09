@@ -9,7 +9,7 @@
 #   bash bench/stackscan.sh check CPU NAME      like run, but exits 1 when, for any set, max > LIMIT x median (default 1.15):
 #                                               a regression check for future rounds
 # Environment: AB_DIR (default ~/rx/scratch/ab), STEP (16), MAX (4096), SETS (44,65,87), OPS (verify; also vk, prepared),
-#              ROUNDS (9), CALLS (200), LIMIT (1.15), TOOLCHAIN, FEATURES (default avx2).
+#              ROUNDS (9), CALLS (200), LIMIT (1.15), TOOLCHAIN, FEATURES (default none), EXTRA_RF (build).
 set -o pipefail
 AB_DIR=${AB_DIR:-$HOME/rx/scratch/ab}
 mkdir -p "$AB_DIR"
@@ -17,8 +17,8 @@ NC="-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcn
 case "$1" in
 build)
   cd bench || exit 1
-  CARGO_PROFILE_NEARCORE_OVERFLOW_CHECKS=true RUSTFLAGS="$NC" cargo ${TOOLCHAIN:+"+$TOOLCHAIN"} build --profile nearcore --bin stackscan \
-    --features "${FEATURES-avx2}" --message-format=json-render-diagnostics >"$AB_DIR/build-scan-$2.json" || exit 1
+  CARGO_PROFILE_NEARCORE_OVERFLOW_CHECKS=true RUSTFLAGS="$NC${EXTRA_RF:+ $EXTRA_RF}" cargo ${TOOLCHAIN:+"+$TOOLCHAIN"} build --profile nearcore --bin stackscan \
+    --features "${FEATURES-}" --message-format=json-render-diagnostics >"$AB_DIR/build-scan-$2.json" || exit 1
   python3 - "$AB_DIR/build-scan-$2.json" "$AB_DIR/stackscan-$2" <<'PY'
 import json, shutil, sys
 exe = None

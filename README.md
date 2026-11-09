@@ -49,14 +49,27 @@ cover the rest.
 Optional features:
 
 - `zeroize` wipes dropped signing keys and, best effort, secret intermediates.
-- `avx2` adds runtime-dispatched AVX2 code on x86_64: a fast verify whose 4-way body, and the run-time choice between it and the
-  scalar verify (for either answer of the CPU check), are proved equal to the scalar verify at source level; and an AVX2 NTT for
-  signing and key generation that is tested, not proved. Outside the proof on the verify paths: the CPU detection (assumed: the CPU and OS
-  support AVX2 whenever it reports it; a false report is undefined behavior), the 15 token-passing call lines in `src/api.rs`, the 3
-  `unsafe` calls in `src/fast_verify/dispatch.rs`, and the `target_feature`/`repr`/`inline` attributes under the ordinary compiler trust; see
-  `docs/limitations.md`.
+- `avx2` is a deprecated no-op, kept so that `features = ["avx2"]` still resolves. The crate has no `unsafe` and detects nothing at run time. See
+  "Speed and build flags" below for how to get AVX2 code.
 
 Requires Rust 1.86 or newer.
+
+## Speed and build flags
+
+Verify always runs a 4-way code path (four Keccak states side by side, plain Rust, proved equal to the scalar verify in Lean). What the compiler makes of it
+depends on the flags you build with, not on the CPU the binary happens to run on. One-shot verify on an AMD EPYC 9B14 (Zen 4), rustc 1.99.1, µs per call, ML-DSA-44 / 65 / 87:
+
+| Build flags | `verify_NN` (4-way) | the scalar functions it replaced, same flags |
+|---|---|---|
+| none (baseline x86-64) | 76.6 / 115.7 / 190.0 | 75.8 / 122.4 / 202.7 |
+| nearcore's current flags (`-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq`, no AVX2) | 38.6 / 57.9 / 96.2 | 52.5 / 88.4 / 152.6 |
+| nearcore's flags plus `-C target-feature=+avx,+avx2` | 26.1 / 38.4 / 60.7 | 49.5 / 85.9 / 149.8 |
+
+Under nearcore's current flags fast verify runs at 38.6 / 57.9 / 96.2 µs. The 26.1 / 38.4 / 60.7 µs figures need `+avx2` (or `-C target-cpu=x86-64-v3`) at compile time, and
+a binary built that way runs only on a CPU with AVX2. This README does not claim that the CPU features in nearcore's list (FMA, BMI2, MOVBE and the others) guarantee AVX2 on
+the machines that run it. On aarch64 the 4-way verify is 42 to 61 % faster than scalar with no flags. Measurements and method: `bench/results/2026-11-09-p12.md`.
+
+Stack: the 4-way verify uses more stack than the scalar one did. One-shot `verify_NN` 56 / 80 / 118 KB, `verifying_key_NN` 50 / 73 / 108 KB (ML-DSA-44 / 65 / 87), measured; see `src/api.rs`.
 
 ## How it's checked
 

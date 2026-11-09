@@ -7,106 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+This section is the net change since 0.1.0. The branch went through a run-time AVX2 dispatch for verify on the way (rounds 1 to 11 of
+`docs/assurance.md`, section 0); the last round removed it, so none of it ships.
+
 ### Added
 
-- With the `avx2` feature on x86_64, `verify_NN` and `verifying_key_NN` check the CPU at run time and use a 4-way body (4-way
-  Keccak-f[1600], SHAKE128 and ExpandA) on a CPU with AVX2. Lean proves the body equal to the scalar verify on every input, and
-  (below) the choice between the two for every answer of the CPU check (`docs/assurance.md` section 1.9, `docs/limitations.md`). ML-DSA-65 verify takes 54.0 µs with it against 103.8 µs scalar under
-  nearcore's flags with rustc 1.99.1 (`bench/results/2026-11-07-p3.md`); 43.1 µs with the verify-only arithmetic below
-  (`bench/results/2026-11-07-p4.md`).
-- Lean theorems for the 4-way verify (`lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`), gated by
-  `scripts/lean-check.sh`; `scripts/check-avx2-inlining.sh` and `bench/fast-verify.sh`.
-- Gates for the dispatch (`docs/assurance.md`, "Round 10"): a second extraction without the `avx2` feature diffed against `lean/Impl`
-  with an exact whitelist, `lean/Proofs/NoDispatch.lean` (the default build's `_with` functions are the scalar ones), a census of every
-  `cfg` site in `src/`, a walk of the Lean environment from the verify entry points (`scripts/reachable-defs.sh`), and a check of the
-  theorem counts in the README.
-- Gate hardening after an independent audit of the above (`docs/assurance.md`, "Round 11"; no change under `src/` or `lean/`): the cfg
-  inventory is token-aware, covers `cfg_if!`, `env!`, `include!`, `is_*_feature_detected!`, `#[path]`, `macro_rules!` and build scripts, and
-  fails when it parses no site; the cleaner of the extraction keeps any external axiom whose last name component appears anywhere else;
-  `scripts/ci.sh` no longer tells `lean-check.sh` that feature independence ran unless it did (`scripts/ci-selftest.sh`); and
-  `checkct/compare_code.py` rejects empty or truncated disassemblies.
+- `verify_NN`, `verify_internal_NN` and `verifying_key_NN` run a 4-way body (4-way Keccak-f[1600], SHAKE128 and ExpandA, with `tr = H(pk, 64)` in the spare
+  fourth lane of the first groups) in every build. It is plain Rust, proved equal to the scalar verify on every input, divergence included, in Lean
+  (`docs/assurance.md` section 1.9, `lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`); nothing selects it at run time and nothing is
+  `cfg`'d: the public functions call it directly. One-shot verify for ML-DSA-44 / 65 / 87 takes 38.6 / 57.9 / 96.2 µs under nearcore's current flags (no AVX2) against
+  52.5 / 88.4 / 152.6 µs for the scalar functions, and 26.1 / 38.4 / 60.7 µs with `-C target-feature=+avx,+avx2` added (AMD EPYC 9B14, rustc 1.99.1;
+  `bench/results/2026-11-09-p12.md`). **The AVX2 numbers need AVX2 target features at compile time**; a binary built that way runs only on a CPU with AVX2.
+- Verify-only arithmetic on public data (`src/verify_arith.rs`, `rounding::poly_use_hint_pub`, `rounding::vec_norm_lt_pub`, `encode::bit_unpack_pub`,
+  `encode::bit_pack_pub`): a lazy-reduction NTT and NTT⁻¹, one fused multiply-accumulate row for Â ∘ NTT(z) − NTT(c) ∘ NTT(t₁·2^d), UseHint and the unpacking of
+  t1 and z in plain arithmetic, a norm check without constant-time masks and a fixed-width w1Encode, each proved equal to the specification
+  (`Proofs/NTTPub.lean`, `Proofs/VerifyArith.lean`; 5 more names in `lean/headline-theorems.txt`, 412 in all). Signing and key generation are unchanged by it.
+  `tests/verify_arith.rs` compares each function with its shared counterpart.
+- Lean theorems for the 4-way verify: 6 names in `lean/keccak4-theorems.txt` and 79 in `lean/fast-verify-theorems.txt`, gated by `scripts/lean-check.sh`. The 4-way Keccak
+  has no trait, no lane operation and no intrinsic: `keccak_f1600_x4` is a loop over four states around a straight-line scalar round, which LLVM vectorizes
+  (256-bit with AVX2 target features, 128-bit without).
+- Gates: `scripts/check-feature-independence.sh` extracts the crate twice, as it is and with `-C target-feature=+avx,+avx2`, and requires `lean/Impl` to be
+  byte-identical (the whitelist is empty; it cannot pass vacuously: a probe crate shows that the second extraction really had the target feature, and the recorded
+  flags must differ); a census of every `cfg` site in `src/` (`scripts/cfg_inventory.py`, token-aware, covering `cfg_if!`, `env!`, `include!`,
+  `is_*_feature_detected!`, `#[path]`, `macro_rules!` and build scripts) against `scripts/cfg-inventory.txt`; a walk of the Lean environment from the verify entry points
+  (`scripts/reachable-defs.sh`); `scripts/check-no-decls.sh` (no `axiom`, `opaque`, `sorry`, `admit`, `native_decide`, `implemented_by` or `extern` in `lean/Impl`,
+  `lean/Spec` or `lean/Proofs`, with a self-test); a check of the theorem counts in the README; `scripts/ci-selftest.sh`; and `checkct/compare_code.py` rejects empty
+  or truncated disassemblies. `scripts/check-avx2-inlining.sh` and `bench/fast-verify.sh` check performance only (256-bit permutation code, 32-byte aligned verify frames, a
+  stack-offset scan `bench/stackscan.sh`).
+- `verify_core` computes w′1 and its encoding in a `#[repr(align(32))]` `VerifyScratch` that it owns, which gives the functions that inline it a 32-byte aligned stack
+  frame from an object the proved code uses (no code exists only in the compiled build).
+- Extraction no longer leaves unreferenced `axiom` declarations in `lean/Impl/FunsExternal.lean` (`scripts/extract_hash.py` `clean_external`, with a self-test).
 
 ### Changed
 
-- Verify uses `poly_use_hint_pub` and `bit_unpack_pub`, plain-arithmetic versions of UseHint and the unpacking of `t1` and `z`,
-  proved equal to the specification (5 more names in `lean/headline-theorems.txt`, 412 in all). The scalar verify is faster too.
-- The `avx2` CPU check moved to `src/cpu.rs`, shared by the NTT and verify dispatch.
-- The three `_with` functions of `src/fast_verify.rs` are one text in every build: `cpu::Avx2` is an uninhabited enum where the dispatch
-  does not exist, and the `unsafe` calls are in `src/fast_verify/dispatch.rs`. The default build still has no `unsafe`.
-- Verify uses verify-only arithmetic on its public data (`src/verify_arith.rs`, `rounding::vec_norm_lt_pub`,
-  `encode::bit_pack_pub`): a lazy-reduction NTT and NTT⁻¹, one fused multiply-accumulate row for Â ∘ NTT(z) − NTT(c) ∘
-  NTT(t₁·2^d), a norm check without constant-time masks and a fixed-width w1Encode, each proved equal to the specification
-  (`Proofs/NTTPub.lean`, `Proofs/VerifyArith.lean`; `lean/fast-verify-theorems.txt`). Signing and key generation are unchanged.
-  ML-DSA-65 verify with the `avx2` feature takes 43.1 µs (was 54.0) and 88.2 µs without it (was 103.8), under nearcore's flags
-  with rustc 1.99.1; ML-DSA-44 26.7 (was 35.5) and ML-DSA-87 64.9 µs (was 84.0). `tests/verify_arith.rs` compares each new function with
-  its shared counterpart.
-- With the `avx2` feature on x86_64, the prepared-key verify (`verify_prepared_NN`, `verify_internal_prepared_NN`) is also
-  compiled with AVX2: a second `#[target_feature(enable = "avx2")]` wrapper (`verify_prepared_avx2`) around the same proved
-  scalar function, reached after the same CPU check. No intrinsic, no new `unsafe` beyond the call into the wrapper, and no
-  Lean statement or proof changed. ML-DSA-65 prepared-key verify takes 11.3 µs (was 14.9; ML-DSA-44 9.7, was 12.3;
-  ML-DSA-87 15.3, was 20.3); one-shot verify and `verifying_key_NN` are unchanged (`bench/results/2026-11-07-p5.md`).
-  `scripts/check-avx2-inlining.sh` now also requires ymm code inside each `verify_prepared_avx2` instantiation.
-- With the `avx2` feature, the verify wrappers (`verify_internal_avx2`, `verify_prepared_avx2`, `prepare_vk_avx2`) realign their
-  stack frames to 32 bytes (`align_frame` in `src/fast_verify/dispatch.rs`: a `#[repr(align(32))]` local passed to `black_box`),
-  and `prepare_vk_avx2` builds the key in place instead of returning a 57 KB value. Before this, one-shot verify and
-  `verifying_key_NN` were up to 7, 13 and 24 µs slower than their median (ML-DSA-44, 65, 87) at about one stack offset in seven:
-  LLVM spilled the 4-way Keccak's vectors to 16-byte-aligned slots, and a slot straddling a 4 KiB page makes each access a page
-  split. After it, the largest of 257 stack offsets is 1.02 to 1.03 times the median in every set and operation (rustc 1.99.1).
-  ML-DSA-65 one-shot verify takes 41.8 µs (rustc 1.99.1) and 41.9 µs (1.95.0), at every offset (it was 42.4 at a fast offset),
-  and `verifying_key_87` 51.8 µs (was 53.5); the prepared-key verify is unchanged. No Lean statement or proof changed; the source
-  changes are in the dispatch glue only (`bench/results/2026-11-07-p6.md`, `docs/assurance.md` section 1.9).
-- With the `avx2` feature, the one-shot verify and `verifying_key_NN` compute `tr = H(pk, 64)` in the fourth lane of the first
-  groups of the 4-way ExpandA (three ExpandA entries per group, the SHAKE256 absorb of the key in the spare lane; what the lane
-  does not reach is finished with the scalar permutation) instead of with the scalar permutation after ExpandA. Plain Rust inside
-  plain Rust; the dispatch wrappers are unchanged and nothing Sign or KeyGen calls changed. Lean proves it
-  equal to ExpandA followed by `hash_pk` as `RustM` values for every key and all three parameter sets, for any group schedule
-  (`Proofs.expand_a_tr_into_x4_eq`; `prepare_vk_x4_eq` keeps its statement; 28 more names in `lean/fast-verify-theorems.txt`, 79 in
-  all). ML-DSA-65 one-shot verify takes 38.5 µs (rustc 1.99.1; 41.8 before) and 38.7 µs (1.95.0), ML-DSA-44 26.1 (was 26.5) and
-  ML-DSA-87 60.8 µs (was 64.6); `verifying_key_65` 28.5 µs (was 32.2). The prepared-key verify is unchanged
-  (`bench/results/2026-11-07-p7.md`, `docs/assurance.md` section 1.9). `tests/fast_verify_tr.rs` compares it with the scalar functions.
-- The 4-way Keccak is plain Rust and proved, and the AVX2 dispatch is extracted and proved (`bench/results/2026-11-08-p8.md`,
-  `docs/assurance.md` section 1.9):
-  - `src/keccak4.rs` has no trait, no lane operation and no intrinsic: `keccak_f1600_x4` is a loop over the four states around a
-    straight-line scalar round, which LLVM vectorizes when it is compiled with AVX2 (a performance property that
-    `scripts/check-avx2-inlining.sh` checks, not a premise). Lean proves `round25`, `lane_rounds2` and `keccak_f1600_x4` equal to
-    four runs of the scalar permutation (`lean/keccak4-theorems.txt`: 6 names, was 9). The `Lanes4`/`Shim4`/`Avx2` layer and its
-    tested-not-proved link are gone. Every theorem that took the `Sh4` instance lost that argument and nothing else, except
-    `keccak_f1600_x4_shim_spec`, which is `keccak_f1600_x4_spec` (and `prepare_vk_into_x4_zero`, `prepare_vk_x4_zeroed_bind`, which
-    lost their `Lanes4` argument too). No statement in `lean/headline-theorems.txt` changed.
-  - The choice between the scalar and the AVX2 functions is extracted Rust. `cpu::avx2()` returns `Option<Avx2>`, a token only it can
-    make; three crate-private functions in `src/fast_verify.rs` (`verify_internal_with`, `prepare_vk_with`,
-    `verify_prepared_internal_with`) take it and call the scalar function or `unsafe { wrapper }`; each public verify,
-    `verifying_key` and prepared-verify function in `src/api.rs` is one line calling its `NAME_with(cpu::avx2(), ..)` twin (15 new
-    crate-private functions). `Proofs/Dispatch.lean` proves, as `RustM` equalities for every token value, that each `_with` function
-    is the scalar function (23 more names in `lean/fast-verify-theorems.txt`).
-  - `align_frame()`/`black_box` is gone from the two wrappers that own a `PreparedVk` (the type is `#[repr(align(32))]` instead) and
-    was kept in `verify_prepared_avx2` alone, which only borrows a key: without it the prepared-key verify was 2 to 8 % slower in the
-    interleaved A/B. It was empty under extraction; the next entry replaces it with a scratch the proved code uses
-    (`scripts/check-avx2-inlining.sh` still requires the realignment of all nine wrapper instantiations). Removed: the dead test hooks of `src/fast_verify/dispatch.rs` (the `internals`
-    entry points moved to `src/fast_verify/hooks.rs`) and `tests/fast_verify_dispatch.rs`.
-- The last computational `cfg(miri)` substitution on a verify path is gone, and the Lean environment declares no axiom
-  (`bench/results/2026-11-09-p9.md`, `docs/assurance.md` sections 1.9, 2, 3):
-  - `align_frame()` (a `black_box` stack-alignment anchor that existed only in the compiled build) is removed from
-    `verify_prepared_avx2`. `verify_core` now computes w′1 and its encoding in a `#[repr(align(32))]` `VerifyScratch` that it owns, which
-    gives every wrapper that inlines it a 32-byte aligned frame from an object the proved code uses. The prepared-key verify is at
-    parity with the previous tree and with `fast-verify`. `scripts/check-avx2-inlining.sh` still requires the realignment in all
-    nine wrapper instantiations. The extraction and `Proofs/Verify.lean` carry the new struct; no theorem in
-    `lean/headline-theorems.txt` or `lean/fast-verify-theorems.txt` changed.
-  - Extraction no longer leaves the four unreferenced `core.iter.range.Step.*.default` axioms in `lean/Impl/FunsExternal.lean`
-    and `FunsExternal_Template.lean`: `scripts/extract.py` removes the axiom declarations Aeneas emits when nothing references them
-    (`scripts/extract_hash.py` `clean_external`, with a self-test; the recorded hashes are those of the cleaned files, and `extract_hash.py
-    check` fails on a file that still declares one). `scripts/check-no-decls.sh` (in `scripts/lean-check.sh` and `witness-check.sh`;
-    its text half is the CI step `no-decls-text`) fails on any `axiom`, `opaque`, `sorry`, `admit`, `native_decide`, `implemented_by`
-    or `extern` in `lean/Impl`, `lean/Spec` or `lean/Proofs`, by walking the Lean environment's constants of those modules, with a
-    self-test that injects each into an `Impl` module.
-  - Documentation: the AVX2 residual is the same list everywhere (the CPU detection and its cache, the 15 token-passing call lines
-    in `src/api.rs`, the 3 `unsafe` calls in `src/fast_verify.rs`, and the `target_feature`/`repr`/`inline` attributes under the
-    ordinary compiler trust), and a false positive of the CPU detection is stated as undefined behavior (a false negative selects the
-    scalar path); earlier text said a wrong CPU check could only crash.
-- The checkct driver includes the real `src/fast_verify.rs` instead of a hand-copied list of its re-exports.
-- `bench/fast-verify.sh` ends with a stack-offset scan (`bench/stackscan.sh`; `bench/ab.sh` has a `PAD` knob and `scan` subcommands)
-  that fails when any stack offset makes verify, `verifying_key` or the prepared-key verify more than 1.15 times slower than the
-  median. `scripts/check-avx2-inlining.sh` now also requires that each verify wrapper realigns its frame.
+- **The crate has no `unsafe` and detects nothing at run time.** `#![forbid(unsafe_code)]` holds in every configuration, `src/cpu.rs` and the NTT's AVX2 dispatch
+  (`#[target_feature]` copies and a cached CPUID check, the `avx2` feature of 0.1.0) are gone, and `src/api.rs` has no token-passing call lines. The Cargo feature `avx2`
+  stays as a deprecated no-op so that `features = ["avx2"]` still resolves; to get AVX2 code build with `-C target-feature=+avx2` or `-C target-cpu=x86-64-v3`.
+  The residual of the proofs for verify is the base shared with 0.1.0 (the spec transcription, Charon/Aeneas, rustc/LLVM, the Lean kernel and the hardware): the CPU
+  detection and its assumption, the 15 call lines and the 3 `unsafe` calls no longer exist.
+- **Cost for users of the 0.1.0 `avx2` feature** (`bench/results/2026-11-09-p12.md`): with nearcore's flags and no AVX2 target features, Sign is 14 to 17 % slower
+  (ML-DSA-65 hedged 342.9 → 402.6 µs) and KeyGen 2 to 6 % slower (ML-DSA-65 140.2 → 145.7 µs), because the AVX2 copy of the NTT is gone. With `+avx2` target features
+  there is no difference beyond noise (-1.9 % to +1.1 %). Users who did not enable the feature see no change in Sign or KeyGen speed.
+- The one-shot verify and `verifying_key_NN` use more stack: `verify_NN` 56 / 80 / 118 KB (was 45 / 71 / 111) and `verifying_key_NN` 50 / 73 / 108 KB (was 35 / 58 / 35);
+  the ML-DSA-87 `verifying_key` figure includes a second copy of the key that the compiler does not elide (`bench/results/2026-11-09-p12.md`).
+- The checkct driver includes the real `src/api.rs`; its `avx2` feature and the `dispatch` BINSEC profiles are gone.
 
 ## [0.1.0] - 2026-11-06
 

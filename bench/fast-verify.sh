@@ -7,7 +7,7 @@
 #              HT_OFFSET (distance to the hyper-thread sibling, default half the logical CPUs),
 #              TOOLCHAIN (a rustup toolchain such as 1.95.0, nearcore's; default: the toolchain in effect). The numbers in
 #              bench/results say which one they used. STACKSCAN (default 1; 0 skips it): after the timings, the stack-offset
-#              scan of the `avx2` build (bench/stackscan.sh check: the environment padded in steps of 64 bytes up to 4 KiB,
+#              scan of the build with AVX2 target features (bench/stackscan.sh check: the environment padded in steps of 64 bytes up to 4 KiB,
 #              ASLR off; fails when any padding makes verify, verifying_key or the prepared-key verify more than 1.15 times
 #              slower than the median, which is how a call at the wrong stack offset used to show up).
 #
@@ -76,8 +76,8 @@ done
 echo "== done; load $(cut -d' ' -f1-3 /proc/loadavg)"
 SCAN_RC=0
 if [ "${STACKSCAN:-1}" != 0 ]; then
-  echo "== stack-offset scan (avx2 build)"
-  AB_DIR=$OUT bash bench/stackscan.sh build avx2 || exit 1
+  echo "== stack-offset scan (build with AVX2 target features)"
+  EXTRA_RF="-Ctarget-feature=+avx,+avx2" AB_DIR=$OUT bash bench/stackscan.sh build avx2 || exit 1
   AB_DIR=$OUT STEP=${SCAN_STEP:-64} SETS=$SETS OPS=verify,vk,prepared bash bench/stackscan.sh check "$CPU" avx2 | tee "$OUT/stackscan.txt" || SCAN_RC=1
 fi
 python3 - "$OUT" "$CPU" "$SETS" <<'PY'
