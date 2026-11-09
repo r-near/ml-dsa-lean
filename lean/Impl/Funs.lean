@@ -7682,7 +7682,7 @@ def fast_verify.dispatch.verify_internal_avx2
   verify.verify_internal_x4 K L p pk m_prefix m sig
 
 /-- [ml_dsa_lean::fast_verify::verify_internal_with]:
-    Source: 'src/fast_verify.rs', lines 52:0-65:1 -/
+    Source: 'src/fast_verify.rs', lines 53:0-66:1 -/
 def fast_verify.verify_internal_with
   (K : Std.Usize) (L : Std.Usize) (avx2 : Option cpu.Avx2) (p : params.Params)
   (pk : Slice Std.U8) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
@@ -7792,7 +7792,7 @@ def fast_verify.dispatch.prepare_vk_avx2
   verify.prepare_vk_into_x4 pk vk
 
 /-- [ml_dsa_lean::fast_verify::prepare_vk_with]:
-    Source: 'src/fast_verify.rs', lines 89:0-95:1 -/
+    Source: 'src/fast_verify.rs', lines 90:0-96:1 -/
 def fast_verify.prepare_vk_with
   (K : Std.Usize) (L : Std.Usize) (avx2 : Option cpu.Avx2) (pk : Slice Std.U8)
   :
@@ -7858,7 +7858,7 @@ def fast_verify.dispatch.verify_prepared_avx2
   verify.verify_prepared_internal p vk m_prefix m sig
 
 /-- [ml_dsa_lean::fast_verify::verify_prepared_internal_with]:
-    Source: 'src/fast_verify.rs', lines 71:0-84:1 -/
+    Source: 'src/fast_verify.rs', lines 72:0-85:1 -/
 def fast_verify.verify_prepared_internal_with
   {K : Std.Usize} {L : Std.Usize} (avx2 : Option cpu.Avx2) (p : params.Params)
   (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
