@@ -329,6 +329,50 @@ def clean_external_selftest():
                 except ValueError as e:
                     if name not in str(e):
                         errors.append(f'impl_texts self-test: wrong error for a {label} reference in {where}: {e}')
+    # The audited counterexample (valid Lean): the axiom `forward.candidate` is used as the bare `candidate` after
+    # `open forward in`. A detector that only looks for dotted suffixes finds nothing and the cleaner removes a live axiom.
+    # Discovery and cleaning run together (impl_texts), as in extraction.
+    cand_axiom = 'axiom forward.candidate : Nat\n'
+    cand_uses = {
+        'open forward in': 'open forward in\nnoncomputable def f : Nat := candidate\n',
+        'open forward (section)': 'open forward\nnoncomputable def f : Nat := candidate\n',
+        'namespace forward': 'namespace forward\nnoncomputable def f : Nat := candidate\nend forward\n',
+        'full name': 'noncomputable def f : Nat := forward.candidate\n',
+        '_root_-qualified': 'noncomputable def f : Nat := _root_.forward.candidate\n',
+        'escaped': 'open \u00abforward\u00bb in\nnoncomputable def f : Nat := \u00abcandidate\u00bb\n',
+        'dot notation on the axiom': 'noncomputable def f : Nat := candidate.succ\n',
+        'after a string that opens a comment': 'def s := "/-"\nnoncomputable def f : Nat := forward.candidate\ndef t := "-/"\n',
+        'after a character literal quote': "def q := '\"'\nnoncomputable def f : Nat := forward.candidate\n",
+        'after an unclosed comment': '/- never closed\nnoncomputable def f : Nat := forward.candidate\n',
+        'in a raw string gap': 'def s := r#"a"# ++ "b"\nnoncomputable def f : Nat := forward.candidate\n',
+    }
+    cand_unused = {
+        'only in a comment': '/- forward.candidate candidate -/\n-- candidate\ndef f : Nat := 1\n',
+        'only in a string': 'def f : String := "open forward in candidate"\n',
+        'in a nested comment': '/- a /- b -/ forward.candidate -/\ndef f : Nat := 1\n',
+        'only a similarly named token': 'def f : Nat := candidates + forward_candidate + candidate_2\n',
+    }
+    def cand_tree(tmp, funs):
+        (tmp / 'Types.lean').write_text('import Aeneas\nnamespace Impl\nend Impl\n')
+        (tmp / 'Funs.lean').write_text('import Aeneas\nnamespace Impl\n' + funs + 'end Impl\n')
+        (tmp / 'FunsExternal_Template.lean').write_text(_EXT_HEADER + cand_axiom)
+    with tempfile.TemporaryDirectory() as d:
+        tmp = Path(d)
+        for label, funs in cand_uses.items():
+            cand_tree(tmp, funs)
+            try:
+                impl_texts(tmp)
+                errors.append(f'impl_texts self-test: the axiom used by `{label}` was removed')
+            except ValueError as e:
+                if 'forward.candidate' not in str(e):
+                    errors.append(f'impl_texts self-test: wrong error for the use `{label}`: {e}')
+        for label, funs in cand_unused.items():
+            cand_tree(tmp, funs)
+            try:
+                if impl_texts(tmp)['FunsExternal.lean'] != want:
+                    errors.append(f'impl_texts self-test: wrong cleaned output for `{label}`')
+            except ValueError as e:
+                errors.append(f'impl_texts self-test: `{label}` is not a use but was reported: {e}')
     return errors
 
 
@@ -411,36 +455,80 @@ def axiom_names(template_text):
     return [m.group(1).replace('\u00ab', '').replace('\u00bb', '') for m in _AXIOM_NAME.finditer(template_text)]
 
 
+def _strip_lean(text):
+    """TEXT, Lean source, with comments, string literals and character literals replaced by spaces. A real scan from left to
+    right, so a `/-` inside a string does not start a comment, a `"` inside a comment does not start a string, block comments
+    nest, and a character literal such as '"' does not open a string. Handles raw strings (`r"..."`, `r#"..."#`). An unclosed
+    comment or string is kept as code (the conservative direction)."""
+    out, i, n = [], 0, len(text)
+    def ident_char(c):
+        return c.isalnum() or c in "_'.\u00ab\u00bb" or ord(c) > 0x7f
+    while i < n:
+        c = text[i]
+        if text.startswith('--', i):
+            j = text.find('\n', i)
+            j = n if j < 0 else j
+            out.append(' ' * (j - i)); i = j
+        elif text.startswith('/-', i):
+            depth, j = 1, i + 2
+            while j < n and depth:
+                if text.startswith('/-', j): depth += 1; j += 2
+                elif text.startswith('-/', j): depth -= 1; j += 2
+                else: j += 1
+            if depth:  # unclosed: not valid Lean; keep it as code (the conservative direction) instead of hiding the rest
+                out.append(c); i += 1
+            else:
+                out.append(re.sub(r'[^\n]', ' ', text[i:j])); i = j
+        elif c == 'r' and (i == 0 or not ident_char(text[i - 1])) and re.match(r'r#*"', text[i:i + 70]):
+            m = re.match(r'r(#*)"', text[i:])
+            end = '"' + m.group(1)
+            j = text.find(end, i + len(m.group(0)))
+            if j < 0:
+                out.append(c); i += 1
+            else:
+                j += len(end)
+                out.append(re.sub(r'[^\n]', ' ', text[i:j])); i = j
+        elif c == '"':
+            j = i + 1
+            while j < n and text[j] != '"':
+                j += 2 if text[j] == '\\' else 1
+            if j >= n:  # unclosed string: keep as code
+                out.append(c); i += 1
+            else:
+                j += 1
+                out.append(re.sub(r'[^\n]', ' ', text[i:j])); i = j
+        elif c == "'" and (i == 0 or not ident_char(text[i - 1])):
+            m = re.match(r"'(?:\\(?:x[0-9a-fA-F]{2}|u\{[0-9a-fA-F]+\}|.)|[^\\'])'", text[i:])
+            if m:
+                out.append(' ' * len(m.group(0))); i += len(m.group(0))
+            else:
+                out.append(c); i += 1
+        else:
+            out.append(c); i += 1
+    return ''.join(out)
+
+
 def _reference_tokens(text):
-    """The identifier tokens of Lean TEXT as a set, comment-free and with the escaping removed: «x» becomes x, and the
-    `_root_.` and `Impl.` prefixes are dropped, so `_root_.core.iter.range.Step.forward.default`, `Impl.core.iter.«range».Step`
-    and the plain name are the same token. (referenced_axioms also matches a dotted token that is a proper suffix of an
-    axiom name, a use after an `open`; a single component never matches.)"""
-    # Comments cannot reference anything (they are removed by the Lean parser); strings are not names.
-    text = re.sub(r'/-.*?-/', ' ', text, flags=re.S)
-    text = re.sub(r'(?m)--.*$', ' ', text)
-    text = re.sub(r'"(?:\\.|[^"\\])*"', ' ', text)
-    text = text.replace('\u00ab', '').replace('\u00bb', '')
-    toks = set()
-    for m in _IDENT.finditer(text):
-        tok = m.group(0).rstrip('.')
-        for prefix in ('_root_.', 'Impl.'):
-            while tok.startswith(prefix):
-                tok = tok[len(prefix):]
-        toks.add(tok)
-    return toks
+    """The identifier tokens of Lean TEXT as a set: comments, string and character literals are blanked (_strip_lean), the
+    `\u00ab` `\u00bb` escapes are removed (so \u00abx\u00bb is the token x), and a trailing dot is dropped. Prefixes are kept; referenced_axioms
+    compares by component."""
+    text = _strip_lean(text).replace('\u00ab', '').replace('\u00bb', '')
+    return {m.group(0).rstrip('.') for m in _IDENT.finditer(text)}
 
 
 def referenced_axioms(gen_dir):
-    """The axioms declared in the external-functions template of GEN_DIR that any generated file refers to, sorted. Scans
-    every file Aeneas generated (Types.lean, Funs.lean, and the template with the axiom declarations themselves removed), by
-    identifier token after normalizing the qualified (`_root_.`, `Impl.`) and escaped (`«x»`) spellings, so a use that is
-    qualified differently from the declaration is still found. It reports a name that merely shares its last components with a
-    used one; that is a reason to look, not a silent pass.
+    """The axioms declared in the external-functions template of GEN_DIR that any generated file might refer to, sorted.
+    Conservative on purpose: an axiom counts as referenced if the LAST COMPONENT of its name appears as a component of any
+    identifier token outside the axiom declarations (so any suffix of the name, the bare last component, the full name, a
+    `_root_.`- or `Impl.`-qualified or \u00ab\u00bb-escaped spelling, and a name reached through `open`, `namespace`, `export` or
+    dot notation all count). The corpus is every file Aeneas generated: Types.lean, Funs.lean and the template with its axiom
+    declarations removed (they go together, so a reference between them does not matter). It over-reports (an unrelated
+    identifier with the same last component keeps the axiom, and extraction then stops with the list), and never under-reports
+    for the spellings above; when in doubt it keeps the declaration, which fails the extraction loudly.
 
-    This detector is a safeguard, not the safety argument. An axiom that is referenced but removed makes Funs.lean fail to
-    elaborate (unknown identifier), so the Lean build catches a miss here; the point of failing early is a precise message
-    and a policy that lean/Impl never carries an axiom a function depends on."""
+    This detector is defense in depth, not the safety argument. An axiom that is referenced but removed makes Funs.lean fail
+    to elaborate (unknown identifier), so the Lean build catches a miss here too; the point of failing early is a precise
+    message and a policy that lean/Impl never carries an axiom a function depends on."""
     gen_dir = Path(gen_dir)
     template = gen_dir / 'FunsExternal_Template.lean'
     if not template.exists():
@@ -452,11 +540,11 @@ def referenced_axioms(gen_dir):
     for name in ('Types.lean', 'Funs.lean'):
         if (gen_dir / name).exists():
             corpus.append((gen_dir / name).read_text(encoding='utf-8'))
-    toks = set()
+    comps = set()
     for c in corpus:
-        toks |= _reference_tokens(c)
-    dotted = [x for x in toks if '.' in x]
-    return sorted(n for n in names if n in toks or any(n.endswith('.' + x) for x in dotted))
+        for tok in _reference_tokens(c):
+            comps.update(tok.split('.'))
+    return sorted(n for n in names if n.split('.')[-1] in comps or n in comps)
 
 
 def impl_texts(gen_dir):
