@@ -117,6 +117,30 @@ After review, two commits (1190159, 2c3e126) added the AVX2 run of `tests/fast_v
 --features avx2,internals` 28 result lines, 129 passed, 0 failed, 1 ignored, and `scripts/check-avx2-inlining.sh` OK (57800 lines of
 ymm code).
 
+Round 8 (branch `fv-p8`; 1.9) is a later tree again and changes Lean and the source. `Proofs/Keccak4.lean` is rewritten to
+prove the plain-Rust 4-way Keccak directly (no lane-operation specs, no `Sh4` instance), `Proofs/Dispatch.lean` is new, the
+extraction covers `cpu.rs`, `fast_verify.rs`, its `dispatch.rs` and 15 `api::*_with` functions, and `lean/keccak4-theorems.txt`
+(9 to 6 names) and `lean/fast-verify-theorems.txt` (79 to 102) change. The fast-verify theorems lose the `Sh4` instance
+argument and nothing else (`git diff fv-vec -- lean/Proofs` shows each statement). No name in `lean/headline-theorems.txt` is removed. Every gate below ran on the Linux
+build box on 2026-11-08 and 2026-11-09 on the tree of commit 428f6e2. The commit that adds this table changes documentation and
+benchmark result files only (`git diff 428f6e2 -- src lean scripts checkct/driver tests Cargo.toml` is empty), so the gates apply
+to it. Earlier runs of the Lean gates on older trees of the same branch (5f638b7, 2cb3765, c3b856e) are not cited.
+
+| Gate | Result | Run on |
+|---|---|---|
+| `scripts/lean-check.sh` (the `lean` step of `ci.sh --lean`) | `LEAN CHECK OK`: `Build completed successfully (3337 jobs)`; axiom gate over the extracted definitions and the names in `lean/headline-theorems.txt`, 926 checked, then over the 6 names of `lean/keccak4-theorems.txt` and the 102 of `lean/fast-verify-theorems.txt`; each `AXIOM GATE OK`, axioms used: `propext`, `Classical.choice`, `Quot.sound` | 428f6e2 |
+| `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`: `Build completed successfully (3324 jobs)`, 146 names checked, axioms `propext`, `Classical.choice`, `Quot.sound`; `AXIOM GATE OK` | 428f6e2 |
+| `scripts/ci.sh --lean` | `CI SUMMARY: 21 passed, 0 failed, 0 skipped` (every step, including `test-avx2`, `avx2-inlining`, `thumbv7em`, `msrv-1.86`, `diff-awslc`, the three fuzz targets at 60 s, `extract-hash`, `axiom-gate-selftest` and `lean`) | 428f6e2 |
+| `scripts/check-avx2-inlining.sh` | `OK: 4-way permutation vectorized in every wrapper; verify-only arithmetic fully inlined; verify wrappers realign their frames; 57465 lines of ymm code`; the three `verify_prepared_avx2` instantiations hold 4077, 4966 and 5513 lines of ymm code (K = 4, 6, 8); all nine wrapper instantiations are vectorized and realigned | 428f6e2 |
+| `ML_DSA_REQUIRE_AVX2=1 cargo test --release --features avx2,internals` | 27 result lines (26 test binaries and the doc-tests), 122 tests passed, 0 failed, 1 ignored (the timing test of `tests/keccak4.rs`); `tests/fast_verify_dispatch.rs` is gone (its hooks were dead code once the token existed) and `tests/fast_verify.rs` now runs each AVX2 wrapper against the scalar function | 428f6e2 |
+| `cargo +1.86.0 build --features avx2` | builds (the declared MSRV) | 428f6e2 |
+| README example test (`cargo test --test readme_example`) | 2 passed | 428f6e2 |
+| `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (extraction inputs sha256 81b73246535d20d36ff25b04ebe980a3c4989e8101076b99e82e8a17783ef3f4) | 428f6e2 |
+| checkct driver | builds (release, `-p driver`) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`: 6 of 6 cells. The driver includes the real `src/cpu.rs`, `src/fast_verify.rs` and `src/api.rs` | 428f6e2 |
+| BINSEC smoke (`checkct/results/smoke-fast-verify/`) | 40 cells (8 probes: `keygen_seed_hash`, `sign_rho_pp_hash`, `control_early_exit_44`, `control_prepared_branch_44`, `signing_key_44`, `make_hint_44`, `hint_step_1_44`, `response_1x1_44`; default profile on riscv32imac, thumbv7em and x86_64, `dispatch` and `nearcore-exact-dispatch` on x86_64), run with the driver of 428f6e2: all 40 verdicts equal the sweep's (the `driver::cpu::AVX2` cache static was found and pre-set in both dispatch profiles). Against the sweep, instruction and check counts are equal in 34 cells and differ slightly in 5 (`control_prepared_branch_44` on riscv32imac, and four probes in the `dispatch` profile; section 4). One cell needed a rerun: `control_prepared_branch_44` on x86_64 ended `unknown` at the 1800 s timeout (1 pending path, 65173 of 65173 checks passed) while the box was busy with Lean jobs, and gave the sweep's `insecure` when rerun alone at 5400 s. `verdicts.tsv` and `build-matrix.txt` (10 profiles plus the zeroize and experiments builds, 30 of 30 cells `secure`; the aarch64 builds, the split-run and `exact-novec-zeroize` were not rerun) are in `checkct/results/smoke-fast-verify/` | 428f6e2 |
+| `bench/stackscan.sh check` (257 paddings; nine instantiations) | `STACK SCAN OK`; largest padding over the median 1.03 (ML-DSA-87 `verifying_key`), none above 1.1. The scan cannot see the prepared-key anchor of 1.9; the A/B does | 428f6e2 |
+| Interleaved A/B against `fast-verify` and `fv-vec` (`bench/results/2026-11-08-p8.md`) | 44/65/87 one-shot, `verifying_key` and prepared verify at paddings 0, 672 and 2752: all 27 cells within 0.9% of `fast-verify` and within about 1.3% of `fv-vec` | 428f6e2 |
+
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
 
@@ -551,19 +575,26 @@ the AVX2 check and its cache from `src/ntt.rs` into `src/cpu.rs`, which is share
 `nearcore-dispatch` rows describe a build whose AVX2 check differs from the current one in where it lives.
 
 The harness builds on this tree. `checkct/driver` gained the `keccak4` module, the `cpu` module (with the `avx2` feature on
-x86_64, the cfg of `lib.rs`) and a `fast_verify` module (the real `src/fast_verify.rs`, included by `#[path]`; its `mod dispatch;` carries its own `#[path]`, so it resolves from the driver too, and the driver no longer repeats the re-export list that went stale once; since the p6 round). The pre-set anchor in `checkct/run-select.sh` is now the
-symbol `driver::cpu::AVX2`. Checked on the `src/`, driver and scripts of commit 6ccc3e6 (the later verify-only arithmetic of 1.9 changed `src/verify.rs`, and the driver gained `src/verify_arith.rs` at 997b2e5 so that `verify.rs` compiles there; after that change the driver was rebuilt for riscv32imac, thumbv7em and x86_64 with and without `avx2`, but the profile sweep and the smoke run below were not repeated): the driver builds for riscv32imac, thumbv7em and x86_64 in
-every `run-select.sh` profile (`default`, `nearcore`, `nearcore-novec`, `dispatch`, `nearcore-dispatch`, `avx2`,
-`nearcore-avx2`, `nearcore-exact`, `nearcore-exact-dispatch`, `nearcore-exact-novec`, and `ZEROIZE=1` and `EXPERIMENTS=1`
-builds), and the dispatch profiles still find exactly one cache symbol to pre-set; `aarch64.sh` (with and without `NONEON=1`) and
-`split-run.sh` build their drivers. A BINSEC smoke run of eight probes (the Sign pieces `signing_key_44`, `hint_step_1_44`, `response_1x1_44` and `make_hint_44`, the hashes
+x86_64, the cfg of `lib.rs`) and a `fast_verify` module (the real `src/fast_verify.rs`, included by `#[path]`; its `mod dispatch;`
+carries its own `#[path]`, so it resolves from the driver too), and since round 8 also the real `src/api.rs`, so the probes enter
+through the public functions and the `_with` functions callers reach. The pre-set anchor in `checkct/run-select.sh` is the symbol
+`driver::cpu::AVX2`. Checked on the `src/`, driver and scripts of commit 428f6e2: the driver builds for riscv32imac, thumbv7em and
+x86_64 in every `run-select.sh` profile except the aarch64 ones (`default`, `nearcore`, `nearcore-novec`, `dispatch`,
+`nearcore-dispatch`, `avx2`, `nearcore-avx2`, `nearcore-exact`, `nearcore-exact-dispatch`, `nearcore-exact-novec`, and
+`ZEROIZE=1` and `EXPERIMENTS=1` builds; one cheap probe each, 30 of 30 cells `secure`), and the dispatch profiles find exactly one
+cache symbol to pre-set. `aarch64.sh` (with and without `NONEON=1`), `split-run.sh` and the `exact-novec-zeroize` build were not
+rerun this round (they compile the same driver sources; the `cpu.rs` stub they use is the one riscv32imac and thumbv7em build).
+A BINSEC smoke run of eight probes (the Sign pieces `signing_key_44`, `hint_step_1_44`, `response_1x1_44` and `make_hint_44`, the hashes
 `keygen_seed_hash` and `sign_rho_pp_hash`, and the controls `control_early_exit_44` and `control_prepared_branch_44`) gave the same
 verdict as the sweep in all 40 cells: 24 in the default profile (riscv32imac, thumbv7em, x86_64), 8 in `dispatch` and 8 in
-`nearcore-exact-dispatch` (x86_64; the cache pre-set found its symbol and applied). In the default profile and
-`nearcore-exact-dispatch` the instruction counts and check counts are identical to the sweep's; in `dispatch` the four Sign probes
-differ slightly in count (for example `signing_key_44`: 998423 instructions against 1000499), which is code layout after the
-cache moved. The controls and the `nearcore-exact-dispatch` `unknown` cells give the same verdicts as in the sweep. The full sweep was not
-rerun: Sign and KeyGen code is unchanged. Rows: `checkct/results/smoke-fast-verify/`.
+`nearcore-exact-dispatch` (x86_64; the cache pre-set found its symbol and applied). The `control_prepared_branch_44` cell on x86_64
+ended `unknown` at the 1800 s timeout while the box was busy (65173 of 65173 checks passed, 1 pending path) and gave the sweep's
+`insecure` when rerun alone at 5400 s. Against the sweep, counts are identical in 34 cells and differ slightly in 5: the four Sign
+probes in `dispatch` (for example `signing_key_44`: 998423 instructions against 1000499, code layout after the cache moved; the
+same counts as the previous smoke run on the `fast-verify` tree), and `control_prepared_branch_44` on riscv32imac (2230863 against 2230914; the
+previous smoke run had the sweep's count, so this one comes from the `_with` functions that the prepared-key probe now passes through). The controls and the
+`nearcore-exact-dispatch` `unknown` cells give the same verdicts as in the sweep. The full sweep was not rerun: no
+Sign or KeyGen code changed. Rows: `checkct/results/smoke-fast-verify/`.
 
 Full sweep at 1a72d9e (November 5–6, 2026; the tree with Sign's per-attempt wiping, in-place secret-key decoding and `sign::more_attempts`): 114 entrypoints per run (113 for the `nearcore`, `nearcore-dispatch` and `nearcore-exact*` profiles) plus two whole-Sign censuses, on x86_64 (checkct profile,
 `nearcore`, `avx2` dispatch, `nearcore-dispatch`, `nearcore-exact*`), thumbv7em, riscv32imac and AArch64 without NEON. BINSEC
