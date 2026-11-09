@@ -42,7 +42,9 @@
 #   readme-counts         the theorem counts in README.md against the theorem lists (scripts/check-readme-counts.py).
 #   ci-selftest           scripts/ci-selftest.sh: runs this script and scripts/lean-check.sh against stub gates and fails unless the
 #                         feature-independence check ran exactly when it should have (never skipped by `--only lean`, a SKIP or a
-#                         failure; not repeated after a pass), and unless the old unconditional flag is caught.
+#                         failure; not repeated after a pass), and unless the old unconditional flag is caught; then
+#                         `checkct/compare_code.py --self-test` (a header-only or truncated disassembly, or one without the driver's
+#                         entry points and probes, must be an error and never "COMPARE OK").
 # feature-independence (--lean only; needs the extraction tools of scripts/setup-tools.sh, no Lean) extracts the crate a second
 # time without the verify dispatch and diffs the generated Lean against lean/Impl, failing on any difference outside a
 # whitelist (scripts/check-feature-independence.sh). SKIP when the tools are missing.
@@ -351,7 +353,7 @@ step_lean() {
     env -u ML_DSA_FEATURE_INDEPENDENCE_DONE scripts/lean-check.sh
   fi
 }
-step_ci_selftest() { bash scripts/ci-selftest.sh; }
+step_ci_selftest() { bash scripts/ci-selftest.sh && python3 -I checkct/compare_code.py --self-test; }
 
 run_step test-default step_test_default
 run_step test-zeroize step_test_zeroize
