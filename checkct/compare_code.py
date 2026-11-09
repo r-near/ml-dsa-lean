@@ -16,7 +16,7 @@ way that matters) and not a constant-time result; it is a quick reason to expect
 A comparison only counts if both sides are real disassemblies. A missing binary, text that is not an objdump listing (a header
 only), a listing with fewer than MIN_FUNCTIONS functions or MIN_INSTRUCTIONS instructions, or one without the driver's entry
 points and probes (REQUIRED_SYMBOLS) is an error (exit 2, "COMPARE ERROR"), never "COMPARE OK": two empty maps used to compare
-equal. The self-test (run before every comparison, and by `--self-test`, which scripts/ci-selftest.sh runs in CI) holds the
+equal. The self-test (run before every comparison, and by `--self-test`, which the `ci-selftest` step of scripts/ci.sh runs in CI) holds the
 negative fixtures, among them the header-only listing.
 """
 import os
