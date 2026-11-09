@@ -2,8 +2,8 @@
 //!
 //! Allocation free. The one-shot functions are stateless: keys and signatures are fixed-size arrays, and each
 //! function is the literal algorithm. The prepared-key objects (`VerifyingKey*`, `SigningKey*`, below) are fixed-size
-//! structs built by one constructor each and then only read; the crate holds no other state (the opt-in `avx2`
-//! feature caches one CPU-feature flag). In every function below K = `p.k` and L = `p.l` of the named parameter set
+//! structs built by one constructor each and then only read; the crate holds no other state and detects nothing at run time.
+//! In every function below K = `p.k` and L = `p.l` of the named parameter set
 //! (44: 4, 4; 65: 6, 5; 87: 8, 7).
 //!
 //! The RNG stays above this API:
@@ -29,13 +29,15 @@
 //! are 28,768 / 48,224 / 80,992 bytes and contain secrets: keep them in a `Box`, do not copy them. With the
 //! `zeroize` feature, dropping one wipes ŝ1, ŝ2, t̂0 and K (the `Drop` impl is not part of the Lean model).
 //!
-//! Stack, worst case below the caller's frame in a release build (`tools/stack/`, measured on x86_64, thumbv7em,
-//! riscv32imac and wasm32, which agree within 4%; ML-DSA-44 / 65 / 87, in KB): `verifying_key_*` 31 / 52 / 26
-//! (the 87 figure relies on the compiler building Â in the result slot; 65 does the same on riscv32imac and wasm32, 22 KB) and
-//! `signing_key_*` 60 / 99 / 164, plus the returned key in the caller's frame (20.5 / 36.9 / 65.6 and 28.8 / 48.2 / 81.0);
-//! `verify_prepared_*` and `verify_internal_prepared_*` 34 / 45 / 59; `sign_prepared_*` and `sign_internal_prepared_*`
-//! 73 / 101 / 134. For comparison the one-shot `verify_*` take 50 / 76 / 115 (the key is built in
-//! place, `verify::prepare_vk_into`) and `sign_*` 116 / 168 / 240. Results vary by about 5% with the toolchain and inlining; `tools/stack/README.md` has the full tables.
+//! Stack, worst case below the caller's frame in a release build (`tools/stack/`, painted stack and static walk, x86_64,
+//! thumbv7em and riscv32imac agree within 4%; ML-DSA-44 / 65 / 87, in KB): the one-shot `verify_*` take 56 / 80 / 118
+//! (the key is built in place, `verify::prepare_vk_into_x4`, and verify always runs the 4-way ExpandA) and `verifying_key_*`
+//! 50 / 73 / 108, plus the returned key in the caller's frame (20.5 / 36.9 / 65.6); the 87 figure of `verifying_key_*` is
+//! the compiler keeping an extra copy of the key (the build-in-place figure is about 26 KB, which an older toolchain reached).
+//! `signing_key_*` 60 / 99 / 164, plus the returned key (28.8 / 48.2 / 81.0); `verify_prepared_*` and
+//! `verify_internal_prepared_*` 34 / 45 / 59; `sign_prepared_*` and `sign_internal_prepared_*` 73 / 101 / 134; `sign_*`
+//! 116 / 168 / 240. Results vary by about 5% with the toolchain and inlining, and by more for `verifying_key_*` and
+//! `verify_*` under LTO; `tools/stack/README.md` and `bench/results/2026-11-09-p12.md` have the full tables.
 //!
 //! Zeroize coverage (feature `zeroize`; outside the Lean model, which has no `Drop` and no volatile writes, so the
 //! theorems are about the code without it). What it wipes: dropping a `SigningKey*`; in `keygen_*`, `sign_*`,

@@ -82,37 +82,37 @@ structure verify.PreparedVk (K : Std.Usize) (L : Std.Usize) where
   tr : Array Std.U8 64#usize
 
 /-- [ml_dsa_lean::api::VerifyingKey44]
-    Source: 'src/api.rs', lines 165:0-167:1
+    Source: 'src/api.rs', lines 167:0-169:1
     Visibility: public -/
 structure api.VerifyingKey44 where
   inner : verify.PreparedVk 4#usize 4#usize
 
 /-- [ml_dsa_lean::api::SigningKey44]
-    Source: 'src/api.rs', lines 207:0-209:1
+    Source: 'src/api.rs', lines 209:0-211:1
     Visibility: public -/
 structure api.SigningKey44 where
   inner : sign.PreparedSk 4#usize 4#usize
 
 /-- [ml_dsa_lean::api::VerifyingKey65]
-    Source: 'src/api.rs', lines 352:0-354:1
+    Source: 'src/api.rs', lines 354:0-356:1
     Visibility: public -/
 structure api.VerifyingKey65 where
   inner : verify.PreparedVk 6#usize 5#usize
 
 /-- [ml_dsa_lean::api::SigningKey65]
-    Source: 'src/api.rs', lines 394:0-396:1
+    Source: 'src/api.rs', lines 396:0-398:1
     Visibility: public -/
 structure api.SigningKey65 where
   inner : sign.PreparedSk 6#usize 5#usize
 
 /-- [ml_dsa_lean::api::VerifyingKey87]
-    Source: 'src/api.rs', lines 539:0-541:1
+    Source: 'src/api.rs', lines 541:0-543:1
     Visibility: public -/
 structure api.VerifyingKey87 where
   inner : verify.PreparedVk 8#usize 7#usize
 
 /-- [ml_dsa_lean::api::SigningKey87]
-    Source: 'src/api.rs', lines 581:0-583:1
+    Source: 'src/api.rs', lines 583:0-585:1
     Visibility: public -/
 structure api.SigningKey87 where
   inner : sign.PreparedSk 8#usize 7#usize

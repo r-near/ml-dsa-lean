@@ -133,7 +133,7 @@ fn ntt_inverse_layer<const LEN: usize, const ITERATIONS: usize>(w: &mut [u32; 25
     }
 }
 
-/// Algorithm 41 NTT(w) in place, the shared body (see "Dispatch" below).
+/// Algorithm 41 NTT(w) in place, the one body (portable Rust; LLVM vectorizes it with the build's target features).
 fn ntt_body_mut(w: &mut [u32; 256]) {
     let mut m = 0;
     ntt_layer::<128, 1>(w, &mut m);
@@ -153,7 +153,7 @@ fn ntt_body(w: &[u32; 256]) -> [u32; 256] {
     o
 }
 
-/// Algorithm 42 NTT⁻¹(ŵ) in place, the shared body (see "Dispatch" below).
+/// Algorithm 42 NTT⁻¹(ŵ) in place, the one body (portable Rust; LLVM vectorizes it with the build's target features).
 fn ntt_inverse_body_mut(w: &mut [u32; 256]) {
     let mut m = 256;
     ntt_inverse_layer::<1, 128>(w, &mut m);

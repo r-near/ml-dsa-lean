@@ -576,8 +576,8 @@ mod boundary_tests {
     //! steered, so these build the interleaved state from chosen bytes and call the parse on it, and compare every case
     //! with the scalar `coeff_from_three_bytes`. They pin down, for example, the mutants `z < Q` → `z <= Q`,
     //! `& M23` → `& 0xFF_FFFF`, a wrong shift in `rej_ntt_cands8`, `j < 256` → `j <= 256` in `rej_ntt_lane_x4`, and an
-    //! off-by-one in `first_256`. The parse does not involve the permutation; the AVX2 compilation of the permutation is tested
-    //! against the scalar one in `tests/keccak4_avx2.rs` and on whole samplers in `tests/fast_verify.rs`.
+    //! off-by-one in `first_256`. The parse does not involve the permutation; the permutation compiled with AVX2 target features is
+    //! tested against the scalar one in `tests/keccak4_long.rs` and on whole samplers in `tests/fast_verify.rs`.
     extern crate std;
     use super::*;
     use std::vec::Vec;

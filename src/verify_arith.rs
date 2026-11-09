@@ -1,9 +1,9 @@
 //! Verify-only arithmetic on public data: the fused multiply-accumulate row for `Â ∘ NTT(z) − NTT(c) ∘ NTT(t1 · 2^d)`
 //! and the lazy-reduction NTT. Each is proved to compute exactly what the shared constant-time functions of `ntt.rs`
 //! compute (`Proofs/VerifyArith.lean`) and is called only on verify's path; signing and key generation keep the shared
-//! functions. They are plain integer code: no intrinsics, no `unsafe`. Where the build has the AVX2 dispatch they are
-//! `#[inline(always)]` so that they are compiled inside the `#[target_feature(enable = "avx2")]` verify wrapper
-//! (`fast_verify/dispatch.rs`), where LLVM vectorizes them.
+//! functions. They are plain integer code: no intrinsics, no `unsafe`. LLVM vectorizes them with
+//! the target features of the build (SSE2 by default, 256-bit code with `-C target-feature=+avx2`); nothing at run time
+//! chooses, and the compiled code computes the proved source either way.
 
 use crate::field::{mont_reduce, mul_shoup, small_reduce, Q};
 use crate::ntt::{F_SHOUP, ZETAS, ZETAS_NEG_SHOUP, ZETAS_SHOUP};

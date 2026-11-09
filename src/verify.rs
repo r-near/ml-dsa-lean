@@ -49,7 +49,7 @@ pub(crate) fn prefix_eq(a: &[u8; 64], b: &[u8; 64], len: usize) -> bool {
 /// Size: (K·L + K) KiB + 64 bytes (20,544 / 36,928 / 65,600 bytes for ML-DSA-44 / 65 / 87).
 ///
 /// `#[repr(align(32))]`: a function that owns one (`verify_internal_x4`, `verifying_key_*`) gets a 32-byte aligned stack
-/// frame from it in a build with AVX2, which keeps 256-bit spill slots from straddling a page boundary
+/// frame from it in a build with AVX2 target features, which keeps 256-bit spill slots from straddling a page boundary
 /// (`bench/results/2026-11-07-p6.md`). It changes no value (Aeneas ignores it).
 #[derive(Clone)]
 #[repr(align(32))]
@@ -71,7 +71,7 @@ impl<const K: usize, const L: usize> PreparedVk<K, L> {
 
 /// The working storage of steps 10-12 that `verify_core` owns: w′1 and its encoding. The type is `#[repr(align(32))]` and
 /// `verify_core` computes in it (it is not a pad), so a function that inlines `verify_core` (the prepared-key verify, which
-/// only borrows a `PreparedVk`) has a 32-byte aligned stack frame in a build with AVX2: the spills of 256-bit vectors cannot
+/// only borrows a `PreparedVk`) has a 32-byte aligned stack frame in a build with AVX2 target features: the spills of 256-bit vectors cannot
 /// then straddle a 4 KiB page (`bench/results/2026-11-07-p6.md`). Aeneas ignores `repr`; the field accesses are in the
 /// extraction and the proof (`Proofs/Verify.lean`).
 #[repr(align(32))]
