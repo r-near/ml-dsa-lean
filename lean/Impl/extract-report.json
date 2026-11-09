@@ -70,7 +70,7 @@
   "ml_dsa_lean::verify::prepare_vk_x4",
   "ml_dsa_lean::verify::verify_internal_x4"
  ],
- "extract_inputs_sha256": "48da7b5384953b3a222c0bac52b185af368f680410f6a691d8e38d925a5431e0",
+ "extract_inputs_sha256": "e8a7031fca1e22313fa04571e3684191aa8d99ded2c1446810695a322fbd8bc2",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -79,7 +79,7 @@
   "lean": "v4.31.0"
  },
  "rename_changes": 0,
- "llbc_fun_decls": 266,
+ "llbc_fun_decls": 271,
  "llbc_opaque_funs": [
   "core::array::{impl}::index",
   "core::array::{impl}::index_mut",
@@ -112,12 +112,12 @@
  "aeneas_name_clashes": 0,
  "impl_sha256": {
   "Types.lean": "952f275b72f1d9a7830b657c36e7a202d30c476f04f9f89e5e0ec1e6704c95de",
-  "Funs.lean": "3eb931ec44249b995a4a76723877c1a9486c2aa21216d7eecfd9d7f3da7b17a7",
+  "Funs.lean": "8e1a5d6fe85e6900998bc34203d9a4d837da4f3f3894b73a5ad3f896bb99b510",
   "FunsExternal_Template.lean": "e719f0705fad5b41344287034a88de59cc82954430390ecdee52b786501d7f6d",
   "FunsExternal.lean": "e719f0705fad5b41344287034a88de59cc82954430390ecdee52b786501d7f6d"
  },
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
  "external_axioms_removed": 4,
- "lean_defs": 478
+ "lean_defs": 483
 }

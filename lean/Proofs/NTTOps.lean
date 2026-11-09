@@ -228,7 +228,7 @@ theorem sub_poly_spec (a b : Array U32 256#usize) (A B : Poly) (ha : Repr a A) (
 @[step]
 theorem multiply_ntt_spec (a b : Array U32 256#usize) (A B : Poly) (ha : Repr a A) (hb : Repr b B) :
     ntt.multiply_ntt a b ⦃ r => Repr r (Spec.MultiplyNTT A B) ⦄ := by
-  unfold ntt.multiply_ntt ntt.multiply_ntt_body
+  unfold ntt.multiply_ntt ntt.dispatch.multiply_ntt ntt.multiply_ntt_body
   apply WP.spec_mono (multiply_ntt_loop_spec a b ha.canon hb.canon)
   rintro r ⟨hr1, hr2⟩
   exact ⟨hr1, by rw [hr2, MultiplyNTT_eq_fold, ha.eq, hb.eq]⟩

@@ -190,31 +190,57 @@ fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
     c
 }
 
+// The entry points below call the bodies through a plain safe module, `dispatch`. Since round 13 it holds no choice: each
+// function is one call of its body. The module is kept (it is what the crate had until round 11, minus the second
+// compilation of the bodies under `#[target_feature(enable = "avx2")]` and the run-time check that picked one) because the
+// call structure decides how rustc/LLVM inline the bodies into the callers on Sign's and KeyGen's secret-dependent path,
+// and with it the machine code that the BINSEC runs analyzed: with the module the default-build object code is identical
+// to round 11's (`checkct/compare-code.sh`); without it 185 of 233 functions on riscv32imac, 107 of 236 on thumbv7em and
+// 39 of 233 on x86_64 differed (docs/assurance.md, "Round 13").
+mod dispatch {
+    use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body, ntt_inverse_body_mut};
+    pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
+        ntt_body(w)
+    }
+    pub fn ntt_in_place(w: &mut [u32; 256]) {
+        ntt_body_mut(w)
+    }
+    pub fn ntt_inverse(w_hat: &[u32; 256]) -> [u32; 256] {
+        ntt_inverse_body(w_hat)
+    }
+    pub fn ntt_inverse_in_place(w: &mut [u32; 256]) {
+        ntt_inverse_body_mut(w)
+    }
+    pub fn multiply_ntt(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
+        multiply_ntt_body(a, b)
+    }
+}
+
 /// Algorithm 41 NTT(w).
 pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
-    ntt_body(w)
+    dispatch::ntt(w)
 }
 
 /// Algorithm 41 NTT(w), in place: `w` ← NTT(w). The same body as `ntt`, without the second 1 KiB buffer a by-value
 /// result needs, so a secret polynomial is transformed where it lies and no copy of the result is left behind.
 pub fn ntt_in_place(w: &mut [u32; 256]) {
-    ntt_body_mut(w)
+    dispatch::ntt_in_place(w)
 }
 
 /// Algorithm 42 NTT⁻¹(ŵ).
 pub fn ntt_inverse(w_hat: &[u32; 256]) -> [u32; 256] {
-    ntt_inverse_body(w_hat)
+    dispatch::ntt_inverse(w_hat)
 }
 
 /// Algorithm 42 NTT⁻¹(ŵ), in place: `w` ← NTT⁻¹(w). The same body as `ntt_inverse`, without the second 1 KiB buffer a
 /// by-value result needs (the counterpart of `ntt_in_place`).
 pub fn ntt_inverse_in_place(w: &mut [u32; 256]) {
-    ntt_inverse_body_mut(w)
+    dispatch::ntt_inverse_in_place(w)
 }
 
 /// Algorithm 45 MultiplyNTT(â, b̂).
 pub fn multiply_ntt(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
-    multiply_ntt_body(a, b)
+    dispatch::multiply_ntt(a, b)
 }
 
 /// Algorithm 44 AddNTT on one polynomial (coefficient-wise, same as Algorithm 46 AddVectorNTT row).
