@@ -38,7 +38,12 @@ env_scan() {
   libdir="$PWD/.lake/build/lib/lean"
   if [ ! -d "$libdir" ]; then echo "NODECLS FAIL (env): $libdir does not exist: build the Lean libraries first (scripts/lean-check.sh)"; return 1; fi
   for m in $(modules); do
-    if [ -f "$libdir/$(echo "$m" | tr . /).olean" ]; then built+=("$m"); else unbuilt+=("$m"); fi
+    if [ -f "$libdir/$(echo "$m" | tr . /).olean" ]; then built+=("$m")
+    # Impl/FunsExternal_Template.lean is the file Aeneas generates; extraction copies it to Impl/FunsExternal.lean, which is the
+    # module Funs.lean imports. Nothing imports the template, so it has no .olean; while it is byte-identical to the scanned
+    # FunsExternal it adds no constant the scan has not seen.
+    elif [ "$m" = Impl.FunsExternal_Template ] && cmp -s Impl/FunsExternal.lean Impl/FunsExternal_Template.lean; then :
+    else unbuilt+=("$m"); fi
   done
   if [ "${#unbuilt[@]}" -gt 0 ]; then
     if [ "$ALL_BUILT" -eq 1 ]; then
