@@ -51,7 +51,8 @@ input.
     positive executes a `#[target_feature(enable = "avx2")]` function on a CPU or OS that cannot run it, which is undefined
     behavior (SIGILL is one possible outcome, not a guaranteed one), and the equality theorems do not constrain it;
   - the 15 token-passing call lines `NAME_with(cpu::avx2(), ..)` in `src/api.rs`;
-  - the 3 `unsafe` calls of the wrappers in `src/fast_verify.rs` (one in each `_with` function);
+  - the 3 `unsafe` calls of the wrappers in `src/fast_verify/dispatch.rs` (:52, :67, :75; one in each of the three safe `_on` functions
+    that take the `Avx2` token; the `_with` functions of `src/fast_verify.rs` contain none);
   - the attributes `#[target_feature(enable = "avx2")]`, `#[repr(align(32))]` and `#[inline(always)]` (from `cfg_attr`), and
     rustc and LLVM compiling the three wrappers, which the proof does not see (that the compiler inlines and vectorizes is a
     performance property, and `scripts/check-avx2-inlining.sh` checks it); this is the ordinary compiler trust, applied to

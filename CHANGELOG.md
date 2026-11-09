@@ -16,12 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`bench/results/2026-11-07-p4.md`).
 - Lean theorems for the 4-way verify (`lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`), gated by
   `scripts/lean-check.sh`; `scripts/check-avx2-inlining.sh` and `bench/fast-verify.sh`.
+- Gates for the dispatch (`docs/assurance.md`, "Round 10"): a second extraction without the `avx2` feature diffed against `lean/Impl`
+  with an exact whitelist, `lean/Proofs/NoDispatch.lean` (the default build's `_with` functions are the scalar ones), a census of every
+  `cfg` site in `src/`, a walk of the Lean environment from the verify entry points (`scripts/reachable-defs.sh`), and a check of the
+  theorem counts in the README.
 
 ### Changed
 
 - Verify uses `poly_use_hint_pub` and `bit_unpack_pub`, plain-arithmetic versions of UseHint and the unpacking of `t1` and `z`,
   proved equal to the specification (5 more names in `lean/headline-theorems.txt`, 412 in all). The scalar verify is faster too.
 - The `avx2` CPU check moved to `src/cpu.rs`, shared by the NTT and verify dispatch.
+- The three `_with` functions of `src/fast_verify.rs` are one text in every build: `cpu::Avx2` is an uninhabited enum where the dispatch
+  does not exist, and the `unsafe` calls are in `src/fast_verify/dispatch.rs`. The default build still has no `unsafe`.
 - Verify uses verify-only arithmetic on its public data (`src/verify_arith.rs`, `rounding::vec_norm_lt_pub`,
   `encode::bit_pack_pub`): a lazy-reduction NTT and NTT⁻¹, one fused multiply-accumulate row for Â ∘ NTT(z) − NTT(c) ∘
   NTT(t₁·2^d), a norm check without constant-time masks and a fixed-width w1Encode, each proved equal to the specification

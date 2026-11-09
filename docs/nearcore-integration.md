@@ -24,7 +24,7 @@ build; with the opt-in `avx2` feature, verify runs a 4-way body that is proved e
 between the two is proved to make no difference to the result for either answer of the CPU check (`docs/assurance.md` §1.9). What
 is not proved, on the verify paths: the CPU detection and its cache (assumed: CPU and OS support AVX2 whenever it reports it; a
 false report is undefined behavior, not just a crash), the 15 token-passing call lines in `src/api.rs`, the 3 `unsafe` calls in
-`src/fast_verify.rs`, and the `target_feature`/`repr`/`inline` attributes under the ordinary compiler trust (`docs/assurance.md` §3),
+`src/fast_verify/dispatch.rs`, and the `target_feature`/`repr`/`inline` attributes under the ordinary compiler trust (`docs/assurance.md` §3),
 which matters for a consensus-critical verdict (§4, §5 item 6).
 
 ## 1. Key and signature representation today
@@ -195,7 +195,7 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   and key generation use), and the verify it runs is the proved 4-way body, with the dispatch proved equal to the scalar verify for
   every answer of the CPU check. Outside the proof, on the verify paths: the CPU detection and its cache (`src/cpu.rs`; "CPU and OS
   support AVX2 whenever it reports it" is an assumption, and a false report is undefined behavior), the 15 token-passing call lines
-  in `src/api.rs`, the 3 `unsafe` calls in `src/fast_verify.rs`, and the `target_feature`/`repr`/`inline` attributes, under the
+  in `src/api.rs`, the 3 `unsafe` calls in `src/fast_verify/dispatch.rs`, and the `target_feature`/`repr`/`inline` attributes, under the
   ordinary compiler trust (`docs/assurance.md` §1.9, §3, FV-1 in §7). Because the dispatch depends on the CPU, two validators with and without AVX2
   would run different compiled code for the same transaction; the two functions are proved equal at source level, and the
   compiled code is tested equal (`tests/fast_verify.rs`: ACVP, Wycheproof and random inputs). `scripts/ci.sh` runs the
@@ -254,7 +254,7 @@ What would need to stabilize, as options rather than recommendations:
 6. **Feature semantics.** `avx2` dispatches the NTT, `verify_NN` and `verifying_key_NN` at run time on a cached CPUID check and
    contains the only `unsafe`; its verify and the dispatch to it are proved equal to the scalar verify at source level, with the CPU
    detection (an assumption: a false report is undefined behavior), the 15 call lines in `src/api.rs`, the 3 `unsafe` calls in
-   `src/fast_verify.rs` and the `target_feature`/`repr`/`inline` attributes outside the proof (`docs/assurance.md` §3); `zeroize` changes `Drop` behavior; Cargo
+   `src/fast_verify/dispatch.rs` and the `target_feature`/`repr`/`inline` attributes outside the proof (`docs/assurance.md` §3); `zeroize` changes `Drop` behavior; Cargo
    unifies features across a dependency graph, so enabling `internals` anywhere in the graph exposes panicking internals (E-1 in `docs/assurance.md` §7).
 7. **Behavior contracts.** Verify returns `false` for malformed hint encodings and `ctx.len() > 255` (it equals the verdict of the Lean
    transcription of FIPS 204's Verify on every input on which either returns, `docs/assurance.md` §1.1); the possible non-termination of ExpandA/SampleInBall on adversarial input (probability
@@ -336,7 +336,7 @@ never cheaper than not caching. Options: (a) no cache, one-shot `verify_65` only
   shape nearcore's own benches probe (`core/crypto/benches/ml_dsa_worst_case.rs`); our numbers (section 6) used the benchmark
   inputs (256 messages of 64 bytes), not worst-case shapes.
 - Whether to enable the `avx2` feature, given that its CPU detection (assumed correct; a false report is undefined behavior), the 15
-  call lines in `src/api.rs`, the 3 `unsafe` calls in `src/fast_verify.rs` and the compilation of its wrappers are outside the proof
+  call lines in `src/api.rs`, the 3 `unsafe` calls in `src/fast_verify/dispatch.rs` and the compilation of its wrappers are outside the proof
   (section 4), and that validators with and without AVX2 then run different compiled code for the same input.
 - Frames above the call on the real threads (section 3), and whether any signature check runs on a reduced stack.
 - If nearcore keeps aws-lc for 65 and wants 44 or 87: aws-lc-rs 1.18.2 supports all three sets, so adding sets does not

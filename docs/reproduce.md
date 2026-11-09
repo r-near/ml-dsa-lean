@@ -56,9 +56,13 @@ and `avx2`; thumbv7em and wasm32 builds; MSRV 1.86; a build and tests under the 
 `cargo deny`. It installs missing toolchains and targets with rustup, and `cargo-deny` into `$HOME/.cache/ml-dsa-lean-ci/tools`
 (`CI_TOOLS` overrides that). It needs `cargo-fuzz` and a nightly toolchain for the fuzz steps and reports a SKIP if they are
 missing; `--strict` turns a SKIP into a failure. Run `bash scripts/ci.sh --help` for options such as `--only`. A cold run
-takes tens of minutes. It also runs two checks that need no Rust or Lean: `extract-hash` (the digests of the extraction inputs and of
-`lean/Impl` against `lean/Impl/extract-report.json`, section 2.2) `axiom-gate-selftest` (`scripts/check-axioms.sh` must fail on a missing
-or empty list) and `no-decls-text` (the text half of `scripts/check-no-decls.sh`). Last recorded result: see assurance.md, section 0.
+takes tens of minutes. It also runs checks that need no Rust or Lean: `extract-hash` (the digests of the extraction inputs and of
+`lean/Impl` against `lean/Impl/extract-report.json`, section 2.2), `axiom-gate-selftest` (`scripts/check-axioms.sh` must fail on a missing
+or empty list), `no-decls-text` (the text half of `scripts/check-no-decls.sh`), `cfg-inventory` (`scripts/cfg_inventory.py`: every
+`#[cfg(..)]`, `#[cfg_attr(..)]` and `cfg!` site in `src/` against the justified whitelist `scripts/cfg-inventory.txt`; a new or changed
+cfg site fails until it is listed with a reason) and `readme-counts` (`scripts/check-readme-counts.py`: the theorem counts the README
+states against `lean/*-theorems.txt`). With `--lean` it also runs `feature-independence` (`scripts/check-feature-independence.sh`, section 2.2).
+Last recorded result: see assurance.md, section 0.
 
 The longer differentials, fuzzing and benchmarks:
 
@@ -136,6 +140,16 @@ diff -r lean/Impl "$out"                    # no output: every file, including e
 
 To regenerate `lean/Impl` after changing `src/`, run `python3 scripts/extract.py` (it refuses an output directory that holds
 symlinks or files it does not write), then `python3 -I scripts/extract_hash.py check`, and commit `lean/Impl`.
+
+The extraction sees the crate with the `avx2` feature (the dispatch build, under `--cfg miri`). To check that the default build (no
+`avx2` feature) has the same verify code, run `bash scripts/check-feature-independence.sh`: it extracts a second time with
+`--no-default-features` (still `--cfg miri`) and compares the generated Lean with `lean/Impl`. Every difference must be one of the 7
+entries of the commented whitelist in `scripts/feature_independence.py` (the `cpu.Avx2` type, the three `fast_verify.dispatch.*_on`
+entry points, which are `match t {}` in that build, and the three `*_avx2` functions, which exist only in the dispatch build), and
+seven declarations must be byte-identical in both, among them the three `_with` functions. It also checks that
+`lean/Proofs/NoDispatch.lean`, which proves the default build's `_with` functions equal to the scalar ones, is the file generated from
+the second extraction. `python3 -I scripts/cfg_inventory.py` is the Rust-side census of every `cfg` site in `src/` against
+`scripts/cfg-inventory.txt`.
 
 `scripts/setup-tools.sh` needs `rustup`, `curl`, `zstd`, `sha256sum` and an x86_64 Linux machine. It downloads cargo-hax and
 elan from tagged releases and checks recorded SHA-256 values. On every run it checks the installed cargo-hax binary and the
