@@ -8,7 +8,7 @@
    references from a type. A missing root, and a mentioned constant that the environment cannot find, are errors.
 
    A "declaration" is a `def` (including `abbrev`s, instances and loop bodies) or a type (`structure`, `inductive`) of `Impl`;
-   the constants Lean derives from one (constructors, projections, recursors, matchers, equation lemmas, `proof_n`) are walked
+   the constants Lean derives from one (constructors, field projections, recursors, matchers, equation lemmas, `proof_n`) are walked
    through but not counted. -/
 import Lean
 open Lean
@@ -19,9 +19,10 @@ def verifyRoots : List Name :=
   ["verify", "verify_internal", "verifying_key", "verify_prepared", "verify_internal_prepared"].flatMap fun op =>
     ["44", "65", "87"].map fun nn => Name.mkStr (Name.mkStr `Impl "api") s!"{op}_{nn}"
 
-/-- Whether `n` is a name Lean generated for a declaration rather than a declaration of the extraction. -/
+/-- Whether `n` is a name Lean generated for a declaration rather than a declaration of the extraction: an internal name, a
+matcher, or the projection function of a structure field. -/
 def isAuxiliary (env : Environment) (n : Name) : Bool :=
-  n.isInternal || n.isInternalDetail || Lean.Meta.isMatcherCore env n
+  n.isInternal || n.isInternalDetail || Lean.Meta.isMatcherCore env n || env.isProjectionFn n
 
 def inImpl (n : Name) : Bool := n.getRoot == `Impl
 

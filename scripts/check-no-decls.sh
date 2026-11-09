@@ -132,7 +132,7 @@ LEAN
   printf 'axiom zzRootAxiom : False\ndef zzProofsRoot := 1\n' > "$fx/Proofs.lean"
   echo 'partial def zzUnbuilt (n : Nat) : Nat := zzUnbuilt n' > "$fx/Proofs/Unbuilt.lean"
   for r in Impl Spec Proofs; do
-    lake env lean -o "$fx/lib/$r.olean" "$fx/$r.lean" > .lake/no-decls-selftest.out 2>&1 || { cat .lake/no-decls-selftest.out; echo "SELF-TEST FAIL: could not compile the fixture root $r"; exit 1; }
+    lake env lean -R "$fx" -o "$fx/lib/$r.olean" "$fx/$r.lean" > .lake/no-decls-selftest.out 2>&1 || { cat .lake/no-decls-selftest.out; echo "SELF-TEST FAIL: could not compile the fixture root $r"; exit 1; }
   done
   BASE="$fx"; LIBDIR="$fx/lib"
   [ "$(modules | tr '\n' ' ')" = "Impl Spec Proofs Proofs.Unbuilt " ] || { echo "SELF-TEST FAIL: the module inventory of the fixture is: $(modules | tr '\n' ' ')"; rc=1; }
