@@ -7673,7 +7673,7 @@ def verify.verify_internal_x4
         verify.verify_decoded p vk1 m_prefix m c_tilde z h
 
 /-- [ml_dsa_lean::fast_verify::dispatch::verify_internal_avx2]:
-    Source: 'src/fast_verify/dispatch.rs', lines 22:0-30:1 -/
+    Source: 'src/fast_verify/dispatch.rs', lines 44:0-52:1 -/
 def fast_verify.dispatch.verify_internal_avx2
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
   (m_prefix : Slice Std.U8) (m : Slice Std.U8) (sig : Slice Std.U8) :
@@ -7783,7 +7783,7 @@ def verify.prepare_vk
   ok { a_hat, t1_2d_hat, tr }
 
 /-- [ml_dsa_lean::fast_verify::dispatch::prepare_vk_avx2]:
-    Source: 'src/fast_verify/dispatch.rs', lines 53:0-57:1 -/
+    Source: 'src/fast_verify/dispatch.rs', lines 76:0-80:1 -/
 def fast_verify.dispatch.prepare_vk_avx2
   (K : Std.Usize) (L : Std.Usize) (pk : Slice Std.U8) :
   RustM (verify.PreparedVk K L)
@@ -7841,14 +7841,20 @@ def verify.verify_prepared_internal
       let (c_tilde, z, h) := parts
       verify.verify_decoded p vk m_prefix m c_tilde z h
 
+/-- [ml_dsa_lean::fast_verify::dispatch::align_frame]:
+    Source: 'src/fast_verify/dispatch.rs', lines 39:0-39:19 -/
+def fast_verify.dispatch.align_frame : RustM Unit := do
+  ok ()
+
 /-- [ml_dsa_lean::fast_verify::dispatch::verify_prepared_avx2]:
-    Source: 'src/fast_verify/dispatch.rs', lines 37:0-45:1 -/
+    Source: 'src/fast_verify/dispatch.rs', lines 59:0-68:1 -/
 def fast_verify.dispatch.verify_prepared_avx2
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
   (sig : Slice Std.U8) :
   RustM Bool
   := do
+  fast_verify.dispatch.align_frame
   verify.verify_prepared_internal p vk m_prefix m sig
 
 /-- [ml_dsa_lean::fast_verify::verify_prepared_internal_with]:
