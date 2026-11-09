@@ -1,0 +1,254 @@
+### run 1: PROFILE unset, TARGETS=riscv32imac-unknown-none-elf thumbv7em-none-eabihf x86_64-unknown-linux-gnu, ONLY=7 probes without control_prepared_branch_44, TIMEOUT=1800, JOBS=4, CT_MEMORY=64g (default)
+toolchain for PROFILE=default (checkct/rust-toolchain.toml: channel = "nightly-2026-10-06", RUSTC_BOOTSTRAP=unset):
+  rustc 1.101.0-nightly (ea137335b 2026-10-05)
+  binary: rustc
+  commit-hash: ea137335b78829b4514bf1b4c16302f74fab8581
+  commit-date: 2026-10-05
+  host: x86_64-unknown-linux-gnu
+  release: 1.101.0-nightly
+  LLVM version: 23.1.3
+x86_64 rustflags: (checkct/.cargo/config.toml); CARGO_PROFILE_RELEASE_*: 
+driver .comment (x86_64-unknown-linux-gnu): rustc version 1.101.0-nightly (ea137335b 2026-10-05)|Linker: LLD 23.1.3 (/checkout/src/llvm-project/llvm aab11ee0ea5ea9a1d462ad0bc1fae9d9bb643019)|
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset x86_64-unknown-linux-gnu: PROFILE=default: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
+selected 21 probes
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::extra::control_early_exit_44  insecure
+      0x01fbbc has control flow leak (0.043s)
+      stat: pending paths                    0
+      stat: branching points                 15020
+      stat: visited instructions (unrolled)  109829
+      stat: [checkct:info] 20167 / 20168 control flow checks pass
+      stat: [checkct:info] 38808 / 38808 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::extra::keygen_seed_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 286
+      stat: visited instructions (unrolled)  19397
+      stat: [checkct:info] 374 / 374 control flow checks pass
+      stat: [checkct:info] 7895 / 7895 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sign_rho_pp_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 291
+      stat: visited instructions (unrolled)  20010
+      stat: [checkct:info] 575 / 575 control flow checks pass
+      stat: [checkct:info] 8088 / 8088 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::signing_key_44  secure
+      stat: pending paths                    0
+      stat: branching points                 110854
+      stat: visited instructions (unrolled)  2267295
+      stat: [checkct:info] 116240 / 116240 control flow checks pass
+      stat: [checkct:info] 740493 / 740493 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::make_hint_44  secure
+      stat: pending paths                    0
+      stat: branching points                 2
+      stat: visited instructions (unrolled)  351
+      stat: [checkct:info] 31 / 31 control flow checks pass
+      stat: [checkct:info] 76 / 76 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 5545
+      stat: visited instructions (unrolled)  142830
+      stat: [checkct:info] 12759 / 12759 control flow checks pass
+      stat: [checkct:info] 30307 / 30307 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 11351
+      stat: visited instructions (unrolled)  194454
+      stat: [checkct:info] 22185 / 22185 control flow checks pass
+      stat: [checkct:info] 42519 / 42519 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::control_early_exit_44  insecure
+      0x02f416 has control flow leak (0.139s)
+      0x02f57c has control flow leak (1.941s)
+      0x02f6e6 has control flow leak (7.044s)
+      0x02f848 has control flow leak (15.752s)
+      0x02f9ae has control flow leak (28.043s)
+      0x02fb12 has control flow leak (44.133s)
+      0x02fc78 has control flow leak (64.031s)
+      0x02fdde has control flow leak (87.715s)
+      stat: pending paths                    0
+      stat: branching points                 10857
+      stat: visited instructions (unrolled)  83238
+      stat: [checkct:info] 13432 / 13440 control flow checks pass
+      stat: [checkct:info] 36050 / 36050 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::extra::keygen_seed_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 200
+      stat: visited instructions (unrolled)  17592
+      stat: [checkct:info] 244 / 244 control flow checks pass
+      stat: [checkct:info] 9026 / 9026 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sign_rho_pp_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 208
+      stat: visited instructions (unrolled)  17837
+      stat: [checkct:info] 349 / 349 control flow checks pass
+      stat: [checkct:info] 9132 / 9132 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::signing_key_44  secure
+      stat: pending paths                    0
+      stat: branching points                 60249
+      stat: visited instructions (unrolled)  1995749
+      stat: [checkct:info] 62936 / 62936 control flow checks pass
+      stat: [checkct:info] 851857 / 851857 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::make_hint_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  176
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 50 / 50 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 2244
+      stat: visited instructions (unrolled)  87855
+      stat: [checkct:info] 5590 / 5590 control flow checks pass
+      stat: [checkct:info] 22433 / 22433 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 4285
+      stat: visited instructions (unrolled)  126356
+      stat: [checkct:info] 9436 / 9436 control flow checks pass
+      stat: [checkct:info] 32019 / 32019 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::control_early_exit_44  insecure
+      0x215b5d has control flow leak (0.087s)
+      0x215bfd has control flow leak (4.997s)
+      0x215c8d has control flow leak (20.328s)
+      0x215d1d has control flow leak (46.834s)
+      0x215dad has control flow leak (86.040s)
+      0x215e3d has control flow leak (136.336s)
+      0x215ecd has control flow leak (199.407s)
+      0x215f50 has control flow leak (279.082s)
+      stat: pending paths                    0
+      stat: branching points                 13214
+      stat: visited instructions (unrolled)  76541
+      stat: [checkct:info] 15799 / 15807 control flow checks pass
+      stat: [checkct:info] 28912 / 28912 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::keygen_seed_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 140
+      stat: visited instructions (unrolled)  7112
+      stat: [checkct:info] 180 / 180 control flow checks pass
+      stat: [checkct:info] 3161 / 3161 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::sign_rho_pp_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 165
+      stat: visited instructions (unrolled)  7545
+      stat: [checkct:info] 302 / 302 control flow checks pass
+      stat: [checkct:info] 3511 / 3511 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::signing_key_44  secure
+      stat: pending paths                    0
+      stat: branching points                 66081
+      stat: visited instructions (unrolled)  993157
+      stat: [checkct:info] 68808 / 68808 control flow checks pass
+      stat: [checkct:info] 325186 / 325186 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::make_hint_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  173
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 45 / 45 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 2858
+      stat: visited instructions (unrolled)  75636
+      stat: [checkct:info] 6212 / 6212 control flow checks pass
+      stat: [checkct:info] 17402 / 17402 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 5839
+      stat: visited instructions (unrolled)  102678
+      stat: [checkct:info] 11011 / 11011 control flow checks pass
+      stat: [checkct:info] 27349 / 27349 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+### run 2: control_prepared_branch_44 alone on the three targets, TIMEOUT=5400, JOBS=3
+toolchain for PROFILE=default (checkct/rust-toolchain.toml: channel = "nightly-2026-10-06", RUSTC_BOOTSTRAP=unset):
+  rustc 1.101.0-nightly (ea137335b 2026-10-05)
+  binary: rustc
+  commit-hash: ea137335b78829b4514bf1b4c16302f74fab8581
+  commit-date: 2026-10-05
+  host: x86_64-unknown-linux-gnu
+  release: 1.101.0-nightly
+  LLVM version: 23.1.3
+x86_64 rustflags: (checkct/.cargo/config.toml); CARGO_PROFILE_RELEASE_*: 
+driver .comment (x86_64-unknown-linux-gnu): rustc version 1.101.0-nightly (ea137335b 2026-10-05)|Linker: LLD 23.1.3 (/checkout/src/llvm-project/llvm aab11ee0ea5ea9a1d462ad0bc1fae9d9bb643019)|
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset x86_64-unknown-linux-gnu: PROFILE=default: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
+selected 3 probes
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::prepared::control_prepared_branch_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 103612
+      stat: visited instructions (unrolled)  2230863
+      stat: [checkct:info] 108951 / 108951 control flow checks pass
+      stat: [checkct:info] 726087 / 726087 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (5400.809)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::prepared::control_prepared_branch_44  secure
+      stat: pending paths                    0
+      stat: branching points                 58392
+      stat: visited instructions (unrolled)  1971930
+      stat: [checkct:info] 61064 / 61064 control flow checks pass
+      stat: [checkct:info] 837119 / 837119 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::control_prepared_branch_44  insecure
+      0x2199dd has control flow leak (2.250s)
+      stat: pending paths                    0
+      stat: branching points                 62475
+      stat: visited instructions (unrolled)  989292
+      stat: [checkct:info] 65175 / 65176 control flow checks pass
+      stat: [checkct:info] 317929 / 317929 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+### run 3: control_prepared_branch_44 on riscv32imac-unknown-none-elf alone, TIMEOUT=10800, JOBS=1 (rerun after run 2 ended unknown there; this row is used in verdicts.tsv)
+toolchain for PROFILE=default (checkct/rust-toolchain.toml: channel = "nightly-2026-10-06", RUSTC_BOOTSTRAP=unset):
+  rustc 1.101.0-nightly (ea137335b 2026-10-05)
+  binary: rustc
+  commit-hash: ea137335b78829b4514bf1b4c16302f74fab8581
+  commit-date: 2026-10-05
+  host: x86_64-unknown-linux-gnu
+  release: 1.101.0-nightly
+  LLVM version: 23.1.3
+x86_64 rustflags: (checkct/.cargo/config.toml); CARGO_PROFILE_RELEASE_*: 
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+selected 1 probes
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::prepared::control_prepared_branch_44  insecure
+      0x0240c4 has control flow leak (0.885s)
+      stat: pending paths                    0
+      stat: branching points                 103613
+      stat: visited instructions (unrolled)  2230914
+      stat: [checkct:info] 108953 / 108954 control flow checks pass
+      stat: [checkct:info] 726111 / 726111 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0

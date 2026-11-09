@@ -2,7 +2,7 @@ profile	target	probe	verdict	instructions	control-flow checks	sweep verdict	swee
 default	riscv32imac-unknown-none-elf	control_early_exit_44	insecure	109829	20167/20168	insecure	109829	20167/20168	verdict and counts equal
 default	riscv32imac-unknown-none-elf	keygen_seed_hash	secure	19397	374/374	secure	19397	374/374	verdict and counts equal
 default	riscv32imac-unknown-none-elf	sign_rho_pp_hash	secure	20010	575/575	secure	20010	575/575	verdict and counts equal
-default	riscv32imac-unknown-none-elf	control_prepared_branch_44	insecure	2230863	108951/108952	insecure	2230914	108953/108954	verdict equal, counts differ
+default	riscv32imac-unknown-none-elf	control_prepared_branch_44	insecure	2230914	108953/108954	insecure	2230914	108953/108954	verdict and counts equal (first run, three targets in parallel at TIMEOUT=5400: unknown, 1 pending path, 2230863 instructions, 108951/108951 checks, no leak found in 5400 s; rerun alone at TIMEOUT=10800: leak at 0.885 s, counts as in this row)
 default	riscv32imac-unknown-none-elf	signing_key_44	secure	2267295	116240/116240	secure	2267295	116240/116240	verdict and counts equal
 default	riscv32imac-unknown-none-elf	make_hint_44	secure	351	31/31	secure	351	31/31	verdict and counts equal
 default	riscv32imac-unknown-none-elf	hint_step_1_44	secure	142830	12759/12759	secure	142830	12759/12759	verdict and counts equal
@@ -18,7 +18,7 @@ default	thumbv7em-none-eabihf	response_1x1_44	secure	126356	9436/9436	secure	126
 default	x86_64-unknown-linux-gnu	control_early_exit_44	insecure	76541	15799/15807	insecure	76541	15799/15807	verdict and counts equal
 default	x86_64-unknown-linux-gnu	keygen_seed_hash	secure	7112	180/180	secure	7112	180/180	verdict and counts equal
 default	x86_64-unknown-linux-gnu	sign_rho_pp_hash	secure	7545	302/302	secure	7545	302/302	verdict and counts equal
-default	x86_64-unknown-linux-gnu	control_prepared_branch_44	insecure	989265	65173/65174	insecure	989292	65175/65176	verdict equal, counts differ (first run at 1800 s ended unknown with 1 pending path; rerun alone at 5400 s found the leak at 3924 s)
+default	x86_64-unknown-linux-gnu	control_prepared_branch_44	insecure	989292	65175/65176	insecure	989292	65175/65176	verdict and counts equal
 default	x86_64-unknown-linux-gnu	signing_key_44	secure	993157	68808/68808	secure	993157	68808/68808	verdict and counts equal
 default	x86_64-unknown-linux-gnu	make_hint_44	secure	173	14/14	secure	173	14/14	verdict and counts equal
 default	x86_64-unknown-linux-gnu	hint_step_1_44	secure	75636	6212/6212	secure	75636	6212/6212	verdict and counts equal

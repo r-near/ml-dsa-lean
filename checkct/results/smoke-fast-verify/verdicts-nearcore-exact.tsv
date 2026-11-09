@@ -1,0 +1,9 @@
+profile	target	probe	verdict	instructions	control-flow checks	sweep verdict	sweep instructions	sweep control-flow checks	match
+nearcore-exact	x86_64-unknown-linux-gnu	control_early_exit_44	insecure	76540	15799/15807	insecure	76540	15799/15807	verdict and counts equal
+nearcore-exact	x86_64-unknown-linux-gnu	keygen_seed_hash	secure	5364	224/224	secure	5364	224/224	verdict and counts equal
+nearcore-exact	x86_64-unknown-linux-gnu	sign_rho_pp_hash	secure	5813	352/352	secure	5813	352/352	verdict and counts equal
+nearcore-exact	x86_64-unknown-linux-gnu	control_prepared_branch_44	unknown	82051	18754/18754	unknown	82051	18754/18754	verdict and counts equal
+nearcore-exact	x86_64-unknown-linux-gnu	signing_key_44	unknown	82052	18754/18754	unknown	82052	18754/18754	verdict and counts equal
+nearcore-exact	x86_64-unknown-linux-gnu	make_hint_44	secure	198	19/19	secure	198	19/19	verdict and counts equal
+nearcore-exact	x86_64-unknown-linux-gnu	hint_step_1_44	unknown	22232	4376/4376	unknown	22232	4376/4376	verdict and counts equal
+nearcore-exact	x86_64-unknown-linux-gnu	response_1x1_44	unknown	36821	7601/7601	unknown	36821	7601/7601	verdict and counts equal

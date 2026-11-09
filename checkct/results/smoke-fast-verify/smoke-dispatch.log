@@ -1,0 +1,97 @@
+### run 1: PROFILE=dispatch, TARGETS=x86_64-unknown-linux-gnu, ONLY=7 probes without control_prepared_branch_44, TIMEOUT=1800, JOBS=4
+toolchain for PROFILE=dispatch (checkct/rust-toolchain.toml: channel = "nightly-2026-10-06", RUSTC_BOOTSTRAP=unset):
+  rustc 1.101.0-nightly (ea137335b 2026-10-05)
+  binary: rustc
+  commit-hash: ea137335b78829b4514bf1b4c16302f74fab8581
+  commit-date: 2026-10-05
+  host: x86_64-unknown-linux-gnu
+  release: 1.101.0-nightly
+  LLVM version: 23.1.3
+x86_64 rustflags: (checkct/.cargo/config.toml); CARGO_PROFILE_RELEASE_*: 
+driver .comment (x86_64-unknown-linux-gnu): rustc version 1.101.0-nightly (ea137335b 2026-10-05)|Linker: LLD 23.1.3 (/checkout/src/llvm-project/llvm aab11ee0ea5ea9a1d462ad0bc1fae9d9bb643019)|
+preset x86_64-unknown-linux-gnu: PROFILE=dispatch: dispatch compiled in, AVX2 cache static at 0x00000000002616e8; every script gets @[0x..., 1] := 1
+selected 7 probes
+Summary:
+  driver  x86_64-unknown-linux-gnu  driver::extra::control_early_exit_44  insecure
+      0x25c7ad has control flow leak (0.088s)
+      0x25c84d has control flow leak (5.015s)
+      0x25c8dd has control flow leak (20.132s)
+      0x25c96d has control flow leak (46.068s)
+      0x25c9fd has control flow leak (84.170s)
+      0x25ca8d has control flow leak (133.785s)
+      0x25cb1d has control flow leak (196.633s)
+      0x25cba0 has control flow leak (272.054s)
+      stat: pending paths                    0
+      stat: branching points                 13214
+      stat: visited instructions (unrolled)  76541
+      stat: [checkct:info] 15799 / 15807 control flow checks pass
+      stat: [checkct:info] 28912 / 28912 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::keygen_seed_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 140
+      stat: visited instructions (unrolled)  7112
+      stat: [checkct:info] 180 / 180 control flow checks pass
+      stat: [checkct:info] 3161 / 3161 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::sign_rho_pp_hash  secure
+      stat: pending paths                    0
+      stat: branching points                 165
+      stat: visited instructions (unrolled)  7545
+      stat: [checkct:info] 302 / 302 control flow checks pass
+      stat: [checkct:info] 3511 / 3511 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::signing_key_44  secure
+      stat: pending paths                    0
+      stat: branching points                 71266
+      stat: visited instructions (unrolled)  998423
+      stat: [checkct:info] 73995 / 73995 control flow checks pass
+      stat: [checkct:info] 331893 / 331893 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::make_hint_44  secure
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  173
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 45 / 45 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 2598
+      stat: visited instructions (unrolled)  72276
+      stat: [checkct:info] 5692 / 5692 control flow checks pass
+      stat: [checkct:info] 14840 / 14840 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_1x1_44  secure
+      stat: pending paths                    0
+      stat: branching points                 5450
+      stat: visited instructions (unrolled)  101989
+      stat: [checkct:info] 10616 / 10616 control flow checks pass
+      stat: [checkct:info] 26442 / 26442 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+### run 2: PROFILE=dispatch, control_prepared_branch_44 alone, TIMEOUT=5400, JOBS=3
+toolchain for PROFILE=dispatch (checkct/rust-toolchain.toml: channel = "nightly-2026-10-06", RUSTC_BOOTSTRAP=unset):
+  rustc 1.101.0-nightly (ea137335b 2026-10-05)
+  binary: rustc
+  commit-hash: ea137335b78829b4514bf1b4c16302f74fab8581
+  commit-date: 2026-10-05
+  host: x86_64-unknown-linux-gnu
+  release: 1.101.0-nightly
+  LLVM version: 23.1.3
+x86_64 rustflags: (checkct/.cargo/config.toml); CARGO_PROFILE_RELEASE_*: 
+driver .comment (x86_64-unknown-linux-gnu): rustc version 1.101.0-nightly (ea137335b 2026-10-05)|Linker: LLD 23.1.3 (/checkout/src/llvm-project/llvm aab11ee0ea5ea9a1d462ad0bc1fae9d9bb643019)|
+preset x86_64-unknown-linux-gnu: PROFILE=dispatch: dispatch compiled in, AVX2 cache static at 0x00000000002616e8; every script gets @[0x..., 1] := 1
+selected 1 probes
+Summary:
+  driver  x86_64-unknown-linux-gnu  driver::prepared::control_prepared_branch_44  insecure
+      0x21998d has control flow leak (3.026s)
+      stat: pending paths                    0
+      stat: branching points                 69693
+      stat: visited instructions (unrolled)  996858
+      stat: [checkct:info] 72422 / 72423 control flow checks pass
+      stat: [checkct:info] 328822 / 328822 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
