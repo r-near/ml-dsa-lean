@@ -15,6 +15,12 @@ crate's workspace and the main `Cargo.toml` needed no `exclude`. `src/` is not e
 > its one recorded `error` (a census) and the discarded attempts that ended `error` were each matched to a kernel OOM kill
 > (`results/sweep-1a72d9e/oom-kills.txt`).
 
+> **Round 12 (the dispatch is gone).** The sweep tables below are for the tree of 1a72d9e and the profiles it had, including `dispatch` and
+> `nearcore-dispatch`, which no longer exist. Removing the NTT dispatch changed the compiled NTT callers of Sign and KeyGen in the default build
+> (`results/smoke-p12/compare-code.txt`), so the verdicts of this tree are in `results/smoke-p12/`: the NTT probes (`select-ntt-default.log`: 81 of
+> 84 cells `secure`, the rest the whole-Sign census) and the smoke of eight probes on three targets (`smoke-default.log`, `verdicts.tsv`, against round 10's counts).
+> `docs/assurance.md` section 4, "Round 12", reads them.
+
 ## Running
 
 Linux only (BINSEC), via Docker:

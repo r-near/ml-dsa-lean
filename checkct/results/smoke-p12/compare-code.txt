@@ -1,0 +1,19 @@
+# checkct/compare-code.sh compare (default release profile, addresses and symbol hashes masked). p11 = fv-p11 (1a8d3e2); p12mid = 4a67f78 (the verify dispatch removed, NTT dispatch still there); p12 = a0292a3 (the NTT dispatch removed; the tree the BINSEC runs in this directory used, `src/` without the later `#[inline(always)]` commit); p12c = fv-p12 at 06cbdef (final src).
+
+## p11 against p12mid
+none  riscv32imac-unknown-none-elf   functions 234 / 234: identical 234, differ 0, only in A 0, only in B 0
+none  thumbv7em-none-eabihf          functions 239 / 239: identical 239, differ 0, only in A 0, only in B 0
+none  x86_64-unknown-linux-gnu       functions 234 / 234: identical 234, differ 0, only in A 0, only in B 0
+COMPARE OK: every function of all 3 binaries is identical after masking
+
+## p11 against p12c
+none  riscv32imac-unknown-none-elf   functions 234 / 233: identical 48, differ 185, only in A 1, only in B 0
+none  thumbv7em-none-eabihf          functions 239 / 236: identical 129, differ 107, only in A 3, only in B 0
+none  x86_64-unknown-linux-gnu       functions 234 / 233: identical 194, differ 39, only in A 1, only in B 0
+COMPARE DIFFERENCES: 336
+
+## p12 against p12c
+none  riscv32imac-unknown-none-elf   functions 233 / 233: identical 233, differ 0, only in A 0, only in B 0
+none  thumbv7em-none-eabihf          functions 236 / 236: identical 236, differ 0, only in A 0, only in B 0
+none  x86_64-unknown-linux-gnu       functions 233 / 233: identical 233, differ 0, only in A 0, only in B 0
+COMPARE OK: every function of all 3 binaries is identical after masking

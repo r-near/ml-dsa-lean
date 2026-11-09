@@ -1,0 +1,150 @@
+done riscv32imac-unknown-none-elf driver::signing::hint_step_44 secure
+done riscv32imac-unknown-none-elf driver::signing::hint_step_65 secure
+done riscv32imac-unknown-none-elf driver::extra::compute_t_65 secure
+done riscv32imac-unknown-none-elf driver::signing::response_44 secure
+done riscv32imac-unknown-none-elf driver::signing::hint_step_87 secure
+done riscv32imac-unknown-none-elf driver::signing::response_65 secure
+done thumbv7em-none-eabihf driver::extra::compute_t_1x1 secure
+done thumbv7em-none-eabihf driver::extra::matrix_vector_ntt_1x1 secure
+done riscv32imac-unknown-none-elf driver::signing::response_87 secure
+done thumbv7em-none-eabihf driver::extra::compute_t_44 secure
+done thumbv7em-none-eabihf driver::extra::matrix_vector_ntt_44 secure
+done thumbv7em-none-eabihf driver::extra::compute_t_65 secure
+done thumbv7em-none-eabihf driver::extra::matrix_vector_ntt_65 secure
+done thumbv7em-none-eabihf driver::probes::field_mont_reduce secure
+done thumbv7em-none-eabihf driver::probes::field_mul secure
+done thumbv7em-none-eabihf driver::extra::ntt_vec_44 secure
+done thumbv7em-none-eabihf driver::probes::field_mul_mont secure
+done thumbv7em-none-eabihf driver::extra::scalar_vector_ntt_inverse_1 secure
+done thumbv7em-none-eabihf driver::probes::field_mul_shoup secure
+done thumbv7em-none-eabihf driver::probes::multiply_ntt secure
+done thumbv7em-none-eabihf driver::extra::matrix_vector_ntt_87 secure
+done thumbv7em-none-eabihf driver::extra::compute_t_87 secure
+done thumbv7em-none-eabihf driver::probes::ntt secure
+done thumbv7em-none-eabihf driver::probes::ntt_inverse secure
+done thumbv7em-none-eabihf driver::signing::hint_step_1_44 secure
+done thumbv7em-none-eabihf driver::signing::hint_step_1_65 secure
+done riscv32imac-unknown-none-elf driver::extra::compute_t_87 secure
+done thumbv7em-none-eabihf driver::signing::hint_step_44 secure
+done thumbv7em-none-eabihf driver::signing::response_1x1_44 secure
+done thumbv7em-none-eabihf driver::signing::response_1x1_65 secure
+done thumbv7em-none-eabihf driver::signing::hint_step_65 secure
+done thumbv7em-none-eabihf driver::signing::hint_step_87 secure
+done thumbv7em-none-eabihf driver::signing::response_44 secure
+done x86_64-unknown-linux-gnu driver::extra::compute_t_1x1 secure
+done thumbv7em-none-eabihf driver::signing::response_65 secure
+done x86_64-unknown-linux-gnu driver::extra::matrix_vector_ntt_1x1 secure
+done thumbv7em-none-eabihf driver::signing::response_87 secure
+done x86_64-unknown-linux-gnu driver::extra::matrix_vector_ntt_44 secure
+done x86_64-unknown-linux-gnu driver::extra::compute_t_44 secure
+done x86_64-unknown-linux-gnu driver::extra::matrix_vector_ntt_65 secure
+done x86_64-unknown-linux-gnu driver::extra::ntt_vec_44 secure
+done x86_64-unknown-linux-gnu driver::probes::field_mont_reduce secure
+done x86_64-unknown-linux-gnu driver::extra::scalar_vector_ntt_inverse_1 secure
+done x86_64-unknown-linux-gnu driver::probes::field_mul secure
+done x86_64-unknown-linux-gnu driver::probes::field_mul_mont secure
+done x86_64-unknown-linux-gnu driver::extra::compute_t_65 secure
+done x86_64-unknown-linux-gnu driver::probes::field_mul_shoup secure
+done x86_64-unknown-linux-gnu driver::probes::multiply_ntt secure
+done x86_64-unknown-linux-gnu driver::extra::matrix_vector_ntt_87 secure
+done x86_64-unknown-linux-gnu driver::probes::ntt secure
+done x86_64-unknown-linux-gnu driver::probes::ntt_inverse secure
+done x86_64-unknown-linux-gnu driver::signing::hint_step_1_44 secure
+done x86_64-unknown-linux-gnu driver::signing::hint_step_1_65 secure
+done x86_64-unknown-linux-gnu driver::extra::compute_t_87 secure
+done x86_64-unknown-linux-gnu driver::signing::hint_step_44 secure
+done x86_64-unknown-linux-gnu driver::signing::response_1x1_44 secure
+done x86_64-unknown-linux-gnu driver::signing::hint_step_65 secure
+done x86_64-unknown-linux-gnu driver::signing::response_1x1_65 secure
+done x86_64-unknown-linux-gnu driver::signing::hint_step_87 secure
+done x86_64-unknown-linux-gnu driver::signing::response_44 secure
+done x86_64-unknown-linux-gnu driver::signing::response_65 secure
+done x86_64-unknown-linux-gnu driver::signing::response_87 secure
+done thumbv7em-none-eabihf driver::extra::census_sign_internal_44 error
+done x86_64-unknown-linux-gnu driver::extra::census_sign_internal_44 error
+done riscv32imac-unknown-none-elf driver::extra::census_sign_internal_44 unknown
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::extra::census_sign_internal_44  unknown
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_1x1  secure
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_44  secure
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_65  secure
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_87  secure
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_1x1  secure
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_44  secure
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_65  secure
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_87  secure
+  driver  riscv32imac-unknown-none-elf  driver::extra::ntt_vec_44  secure
+  driver  riscv32imac-unknown-none-elf  driver::extra::scalar_vector_ntt_inverse_1  secure
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mont_reduce  secure
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mul  secure
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mul_mont  secure
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mul_shoup  secure
+  driver  riscv32imac-unknown-none-elf  driver::probes::multiply_ntt  secure
+  driver  riscv32imac-unknown-none-elf  driver::probes::ntt  secure
+  driver  riscv32imac-unknown-none-elf  driver::probes::ntt_inverse  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_1_44  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_1_65  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_44  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_65  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_87  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_1x1_44  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_1x1_65  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_44  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_65  secure
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_87  secure
+  driver  thumbv7em-none-eabihf  driver::extra::census_sign_internal_44  error
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_1x1  secure
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_44  secure
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_65  secure
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_87  secure
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_1x1  secure
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_44  secure
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_65  secure
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_87  secure
+  driver  thumbv7em-none-eabihf  driver::extra::ntt_vec_44  secure
+  driver  thumbv7em-none-eabihf  driver::extra::scalar_vector_ntt_inverse_1  secure
+  driver  thumbv7em-none-eabihf  driver::probes::field_mont_reduce  secure
+  driver  thumbv7em-none-eabihf  driver::probes::field_mul  secure
+  driver  thumbv7em-none-eabihf  driver::probes::field_mul_mont  secure
+  driver  thumbv7em-none-eabihf  driver::probes::field_mul_shoup  secure
+  driver  thumbv7em-none-eabihf  driver::probes::multiply_ntt  secure
+  driver  thumbv7em-none-eabihf  driver::probes::ntt  secure
+  driver  thumbv7em-none-eabihf  driver::probes::ntt_inverse  secure
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_1_44  secure
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_1_65  secure
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_44  secure
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_65  secure
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_87  secure
+  driver  thumbv7em-none-eabihf  driver::signing::response_1x1_44  secure
+  driver  thumbv7em-none-eabihf  driver::signing::response_1x1_65  secure
+  driver  thumbv7em-none-eabihf  driver::signing::response_44  secure
+  driver  thumbv7em-none-eabihf  driver::signing::response_65  secure
+  driver  thumbv7em-none-eabihf  driver::signing::response_87  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::census_sign_internal_44  error
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_1x1  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_44  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_65  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_87  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_1x1  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_44  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_65  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_87  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::ntt_vec_44  secure
+  driver  x86_64-unknown-linux-gnu  driver::extra::scalar_vector_ntt_inverse_1  secure
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mont_reduce  secure
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mul  secure
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mul_mont  secure
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mul_shoup  secure
+  driver  x86_64-unknown-linux-gnu  driver::probes::multiply_ntt  secure
+  driver  x86_64-unknown-linux-gnu  driver::probes::ntt  secure
+  driver  x86_64-unknown-linux-gnu  driver::probes::ntt_inverse  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_1_44  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_1_65  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_44  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_65  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_87  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_1x1_44  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_1x1_65  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_44  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_65  secure
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_87  secure

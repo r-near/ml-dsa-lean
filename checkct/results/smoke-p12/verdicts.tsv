@@ -1,0 +1,25 @@
+profile	target	probe	verdict	instructions	control-flow checks	round 10 verdict	round 10 instructions	round 10 control-flow checks
+default	riscv32imac-unknown-none-elf	control_early_exit_44	insecure	109829	20167/20168	insecure	109829	20167/20168
+default	riscv32imac-unknown-none-elf	control_prepared_branch_44	insecure	2230914	108953/108954	insecure	2230914	108953/108954
+default	riscv32imac-unknown-none-elf	hint_step_1_44	secure	142830	12759/12759	secure	142830	12759/12759
+default	riscv32imac-unknown-none-elf	keygen_seed_hash	secure	19397	374/374	secure	19397	374/374
+default	riscv32imac-unknown-none-elf	make_hint_44	secure	351	31/31	secure	351	31/31
+default	riscv32imac-unknown-none-elf	response_1x1_44	secure	194454	22185/22185	secure	194454	22185/22185
+default	riscv32imac-unknown-none-elf	sign_rho_pp_hash	secure	20010	575/575	secure	20010	575/575
+default	riscv32imac-unknown-none-elf	signing_key_44	secure	2267295	116240/116240	secure	2267295	116240/116240
+default	thumbv7em-none-eabihf	control_early_exit_44	insecure	83238	13432/13440	insecure	83238	13432/13440
+default	thumbv7em-none-eabihf	control_prepared_branch_44	secure	1971930	61064/61064	secure	1971930	61064/61064
+default	thumbv7em-none-eabihf	hint_step_1_44	secure	87855	5590/5590	secure	87855	5590/5590
+default	thumbv7em-none-eabihf	keygen_seed_hash	secure	17592	244/244	secure	17592	244/244
+default	thumbv7em-none-eabihf	make_hint_44	secure	176	14/14	secure	176	14/14
+default	thumbv7em-none-eabihf	response_1x1_44	secure	126356	9436/9436	secure	126356	9436/9436
+default	thumbv7em-none-eabihf	sign_rho_pp_hash	secure	17837	349/349	secure	17837	349/349
+default	thumbv7em-none-eabihf	signing_key_44	secure	1995749	62936/62936	secure	1995749	62936/62936
+default	x86_64-unknown-linux-gnu	control_early_exit_44	insecure	76541	15799/15807	insecure	76541	15799/15807
+default	x86_64-unknown-linux-gnu	control_prepared_branch_44	unknown	989265	65173/65173	insecure	989292	65175/65176
+default	x86_64-unknown-linux-gnu	hint_step_1_44	secure	75636	6212/6212	secure	75636	6212/6212
+default	x86_64-unknown-linux-gnu	keygen_seed_hash	secure	7112	180/180	secure	7112	180/180
+default	x86_64-unknown-linux-gnu	make_hint_44	secure	173	14/14	secure	173	14/14
+default	x86_64-unknown-linux-gnu	response_1x1_44	secure	102678	11011/11011	secure	102678	11011/11011
+default	x86_64-unknown-linux-gnu	sign_rho_pp_hash	secure	7545	302/302	secure	7545	302/302
+default	x86_64-unknown-linux-gnu	signing_key_44	secure	993157	68808/68808	secure	993157	68808/68808

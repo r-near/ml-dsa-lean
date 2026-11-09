@@ -1,0 +1,250 @@
+driver .comment (x86_64-unknown-linux-gnu): rustc version 1.101.0-nightly (ea137335b 2026-10-05)|Linker: LLD 23.1.3 (/checkout/src/llvm-project/llvm aab11ee0ea5ea9a1d462ad0bc1fae9d9bb643019)|
+selected 24 probes
+done riscv32imac-unknown-none-elf driver::extra::keygen_seed_hash secure
+done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
+done riscv32imac-unknown-none-elf driver::probes::make_hint_44 secure
+done riscv32imac-unknown-none-elf driver::signing::hint_step_1_44 secure
+done riscv32imac-unknown-none-elf driver::signing::response_1x1_44 secure
+done riscv32imac-unknown-none-elf driver::prepared::signing_key_44 secure
+done thumbv7em-none-eabihf driver::extra::keygen_seed_hash secure
+done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
+done thumbv7em-none-eabihf driver::prepared::control_prepared_branch_44 secure
+done thumbv7em-none-eabihf driver::prepared::signing_key_44 secure
+done thumbv7em-none-eabihf driver::probes::make_hint_44 secure
+done thumbv7em-none-eabihf driver::signing::hint_step_1_44 secure
+done thumbv7em-none-eabihf driver::signing::response_1x1_44 secure
+done riscv32imac-unknown-none-elf driver::extra::control_early_exit_44 insecure
+done x86_64-unknown-linux-gnu driver::extra::keygen_seed_hash secure
+done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
+done thumbv7em-none-eabihf driver::extra::control_early_exit_44 insecure
+done x86_64-unknown-linux-gnu driver::prepared::signing_key_44 secure
+done x86_64-unknown-linux-gnu driver::probes::make_hint_44 secure
+done x86_64-unknown-linux-gnu driver::signing::hint_step_1_44 secure
+done x86_64-unknown-linux-gnu driver::signing::response_1x1_44 secure
+done x86_64-unknown-linux-gnu driver::extra::control_early_exit_44 insecure
+done riscv32imac-unknown-none-elf driver::prepared::control_prepared_branch_44 insecure
+done x86_64-unknown-linux-gnu driver::prepared::control_prepared_branch_44 unknown
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::extra::control_early_exit_44  insecure
+      sha256: elf b997b949cac2836cbd6124f04c9790208b2e0f7e9a5694aa35ee881241b7da1a script 849cd57eabf31bc6ea715c69612009ffa005bd7300378fdb22ae804f8e348e5a
+      0x01fe60 has control flow leak (0.042s)
+      stat: pending paths                    0
+      stat: branching points                 15020
+      stat: visited instructions (unrolled)  109829
+      stat: [checkct:info] 20167 / 20168 control flow checks pass
+      stat: [checkct:info] 38808 / 38808 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::extra::keygen_seed_hash  secure
+      sha256: elf b997b949cac2836cbd6124f04c9790208b2e0f7e9a5694aa35ee881241b7da1a script 78324b0d9f06998674b163d2e816a114210eebc3170a65721641f3139560d83a
+      stat: pending paths                    0
+      stat: branching points                 286
+      stat: visited instructions (unrolled)  19397
+      stat: [checkct:info] 374 / 374 control flow checks pass
+      stat: [checkct:info] 7895 / 7895 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sign_rho_pp_hash  secure
+      sha256: elf b997b949cac2836cbd6124f04c9790208b2e0f7e9a5694aa35ee881241b7da1a script 5114d16a021634fe718a8bce5f126fa25c85f7f7cc9164e872d9f7b0ddca2a58
+      stat: pending paths                    0
+      stat: branching points                 291
+      stat: visited instructions (unrolled)  20010
+      stat: [checkct:info] 575 / 575 control flow checks pass
+      stat: [checkct:info] 8088 / 8088 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::control_prepared_branch_44  insecure
+      sha256: elf b997b949cac2836cbd6124f04c9790208b2e0f7e9a5694aa35ee881241b7da1a script f70605dff1bacf7414949d7b410a3212c5f08e8fd8e40c80bf88fcba4c1dea43
+      0x024368 has control flow leak (0.876s)
+      stat: pending paths                    0
+      stat: branching points                 103613
+      stat: visited instructions (unrolled)  2230914
+      stat: [checkct:info] 108953 / 108954 control flow checks pass
+      stat: [checkct:info] 726111 / 726111 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::signing_key_44  secure
+      sha256: elf b997b949cac2836cbd6124f04c9790208b2e0f7e9a5694aa35ee881241b7da1a script 95be42ded65ff90b0fb718fe4dd658ed1a8f6ee2c69d3da166a1903b01aecfca
+      stat: pending paths                    0
+      stat: branching points                 110854
+      stat: visited instructions (unrolled)  2267295
+      stat: [checkct:info] 116240 / 116240 control flow checks pass
+      stat: [checkct:info] 740493 / 740493 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::make_hint_44  secure
+      sha256: elf b997b949cac2836cbd6124f04c9790208b2e0f7e9a5694aa35ee881241b7da1a script c15acb48ab404f8f6dc5695bd7d794eb65056ba6bf5debf9dcad955e8e325079
+      stat: pending paths                    0
+      stat: branching points                 2
+      stat: visited instructions (unrolled)  351
+      stat: [checkct:info] 31 / 31 control flow checks pass
+      stat: [checkct:info] 76 / 76 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_1_44  secure
+      sha256: elf b997b949cac2836cbd6124f04c9790208b2e0f7e9a5694aa35ee881241b7da1a script d3e7f6b7ca3d8d1ebe656e82c19e8fcbae6ea2dec7152d1e92750df55c3c5a28
+      stat: pending paths                    0
+      stat: branching points                 5545
+      stat: visited instructions (unrolled)  142830
+      stat: [checkct:info] 12759 / 12759 control flow checks pass
+      stat: [checkct:info] 30307 / 30307 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_1x1_44  secure
+      sha256: elf b997b949cac2836cbd6124f04c9790208b2e0f7e9a5694aa35ee881241b7da1a script d87b3d5e62f4fb5c5729b591ecf076c8ac21d7daef4c4a4979f24f1057fa3d6d
+      stat: pending paths                    0
+      stat: branching points                 11351
+      stat: visited instructions (unrolled)  194454
+      stat: [checkct:info] 22185 / 22185 control flow checks pass
+      stat: [checkct:info] 42519 / 42519 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::control_early_exit_44  insecure
+      sha256: elf 70d0e95118c54b05caf7a10af731aabdf6b07e7bcb67517057c4542dcd410c1c script 642dc521440dc3a8841b6d47199a5565448928eeda1fd769c27955df57b87785
+      0x0303e8 has control flow leak (0.135s)
+      0x03054e has control flow leak (1.963s)
+      0x0306b8 has control flow leak (7.219s)
+      0x03081a has control flow leak (16.143s)
+      0x030980 has control flow leak (28.760s)
+      0x030ae4 has control flow leak (45.129s)
+      0x030c4a has control flow leak (65.624s)
+      0x030db0 has control flow leak (90.253s)
+      stat: pending paths                    0
+      stat: branching points                 10857
+      stat: visited instructions (unrolled)  83238
+      stat: [checkct:info] 13432 / 13440 control flow checks pass
+      stat: [checkct:info] 36050 / 36050 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::extra::keygen_seed_hash  secure
+      sha256: elf 70d0e95118c54b05caf7a10af731aabdf6b07e7bcb67517057c4542dcd410c1c script 2e2be493904d0323f291d6dee096b31c0497f6da7d5bd882ec3aad6a6ff8141e
+      stat: pending paths                    0
+      stat: branching points                 200
+      stat: visited instructions (unrolled)  17592
+      stat: [checkct:info] 244 / 244 control flow checks pass
+      stat: [checkct:info] 9026 / 9026 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sign_rho_pp_hash  secure
+      sha256: elf 70d0e95118c54b05caf7a10af731aabdf6b07e7bcb67517057c4542dcd410c1c script caba1efc7c9f346471a98bcd84ac710ce763f76b5edf0d0fbe72478f5b7406b4
+      stat: pending paths                    0
+      stat: branching points                 208
+      stat: visited instructions (unrolled)  17837
+      stat: [checkct:info] 349 / 349 control flow checks pass
+      stat: [checkct:info] 9132 / 9132 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::control_prepared_branch_44  secure
+      sha256: elf 70d0e95118c54b05caf7a10af731aabdf6b07e7bcb67517057c4542dcd410c1c script e2d6f2bac0bdc7da9858a2f207503242fd041c2191466c32f88cd8bba22bc2ed
+      stat: pending paths                    0
+      stat: branching points                 58392
+      stat: visited instructions (unrolled)  1971930
+      stat: [checkct:info] 61064 / 61064 control flow checks pass
+      stat: [checkct:info] 837119 / 837119 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::signing_key_44  secure
+      sha256: elf 70d0e95118c54b05caf7a10af731aabdf6b07e7bcb67517057c4542dcd410c1c script 77d2407695712a6686f3edf57914c2ee6d067466fc21622e02bdf8b99309e8b3
+      stat: pending paths                    0
+      stat: branching points                 60249
+      stat: visited instructions (unrolled)  1995749
+      stat: [checkct:info] 62936 / 62936 control flow checks pass
+      stat: [checkct:info] 851857 / 851857 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::make_hint_44  secure
+      sha256: elf 70d0e95118c54b05caf7a10af731aabdf6b07e7bcb67517057c4542dcd410c1c script b513c2797433a4dad2e1ec860a466cf094d6ad8821e1573061c35276f1dde2ed
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  176
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 50 / 50 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_1_44  secure
+      sha256: elf 70d0e95118c54b05caf7a10af731aabdf6b07e7bcb67517057c4542dcd410c1c script b3921c991ea2febcbb41c096473355cbf3b26d9d81a4ad7d243f19aaa59bea9a
+      stat: pending paths                    0
+      stat: branching points                 2244
+      stat: visited instructions (unrolled)  87855
+      stat: [checkct:info] 5590 / 5590 control flow checks pass
+      stat: [checkct:info] 22433 / 22433 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_1x1_44  secure
+      sha256: elf 70d0e95118c54b05caf7a10af731aabdf6b07e7bcb67517057c4542dcd410c1c script 06e5f1b4861a7d278138136a8b63cdc39685095bea5313e7eb99f2c52b7f285b
+      stat: pending paths                    0
+      stat: branching points                 4285
+      stat: visited instructions (unrolled)  126356
+      stat: [checkct:info] 9436 / 9436 control flow checks pass
+      stat: [checkct:info] 32019 / 32019 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::control_early_exit_44  insecure
+      sha256: elf 270fe443e5c86e933d5c5f90b6acef0a214d839fe3156b9b193723088ec28fb6 script ca3aab9e4b94fb58dbadd11eb2308e1811120cbe3c0e29f692f6acc31f405af7
+      0x215e9d has control flow leak (0.088s)
+      0x215f3d has control flow leak (5.065s)
+      0x215fcd has control flow leak (20.027s)
+      0x21605d has control flow leak (45.392s)
+      0x2160ed has control flow leak (82.426s)
+      0x21617d has control flow leak (130.394s)
+      0x21620d has control flow leak (191.147s)
+      0x216290 has control flow leak (264.038s)
+      stat: pending paths                    0
+      stat: branching points                 13214
+      stat: visited instructions (unrolled)  76541
+      stat: [checkct:info] 15799 / 15807 control flow checks pass
+      stat: [checkct:info] 28912 / 28912 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::keygen_seed_hash  secure
+      sha256: elf 270fe443e5c86e933d5c5f90b6acef0a214d839fe3156b9b193723088ec28fb6 script fdefd221c96503f2407deed4b594754087130087cf6fea3f8d1535fea761e6ed
+      stat: pending paths                    0
+      stat: branching points                 140
+      stat: visited instructions (unrolled)  7112
+      stat: [checkct:info] 180 / 180 control flow checks pass
+      stat: [checkct:info] 3161 / 3161 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::sign_rho_pp_hash  secure
+      sha256: elf 270fe443e5c86e933d5c5f90b6acef0a214d839fe3156b9b193723088ec28fb6 script caee5178772e50680cdc29aed91b4862ad34e7168b8d796b79b605e36be58735
+      stat: pending paths                    0
+      stat: branching points                 165
+      stat: visited instructions (unrolled)  7545
+      stat: [checkct:info] 302 / 302 control flow checks pass
+      stat: [checkct:info] 3511 / 3511 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::control_prepared_branch_44  unknown
+      sha256: elf 270fe443e5c86e933d5c5f90b6acef0a214d839fe3156b9b193723088ec28fb6 script c8fe6cb26f4b2d6d7d80d36820fa5625e32eac01f528a4dc3c8e7a0bb2094adf
+      stat: pending paths                    1
+      stat: branching points                 62474
+      stat: visited instructions (unrolled)  989265
+      stat: [checkct:info] 65173 / 65173 control flow checks pass
+      stat: [checkct:info] 317909 / 317909 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.030)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::prepared::signing_key_44  secure
+      sha256: elf 270fe443e5c86e933d5c5f90b6acef0a214d839fe3156b9b193723088ec28fb6 script 86490b6e1b60fbd89b343bd9bc57c37f0730ebfd9135cb1ef3cefd7032f7b0d8
+      stat: pending paths                    0
+      stat: branching points                 66081
+      stat: visited instructions (unrolled)  993157
+      stat: [checkct:info] 68808 / 68808 control flow checks pass
+      stat: [checkct:info] 325186 / 325186 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::make_hint_44  secure
+      sha256: elf 270fe443e5c86e933d5c5f90b6acef0a214d839fe3156b9b193723088ec28fb6 script fb2820541b2156c74d8d6ea8329cb1ddd57765af267ceb4af3211eb1c7908013
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  173
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 45 / 45 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_1_44  secure
+      sha256: elf 270fe443e5c86e933d5c5f90b6acef0a214d839fe3156b9b193723088ec28fb6 script 8589f9a945adfb2019dffb53ca8dd665640960420300b49724e2f50d7dedc5c9
+      stat: pending paths                    0
+      stat: branching points                 2858
+      stat: visited instructions (unrolled)  75636
+      stat: [checkct:info] 6212 / 6212 control flow checks pass
+      stat: [checkct:info] 17402 / 17402 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_1x1_44  secure
+      sha256: elf 270fe443e5c86e933d5c5f90b6acef0a214d839fe3156b9b193723088ec28fb6 script 30075b5595cedb25b8a746181f00dce032fdf9f38a52488cfc96981e358362f2
+      stat: pending paths                    0
+      stat: branching points                 5839
+      stat: visited instructions (unrolled)  102678
+      stat: [checkct:info] 11011 / 11011 control flow checks pass
+      stat: [checkct:info] 27349 / 27349 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
