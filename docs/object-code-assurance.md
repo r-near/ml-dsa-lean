@@ -309,8 +309,10 @@ bodies `ntt_body`, `ntt_inverse_body` and `multiply_ntt_body`. Extraction runs w
 public entry points are the bodies themselves: the proved model contains no dispatch, no atomic and no `unsafe`. In a normal
 build the dispatch picks one of two compilations of that same body: the crate's baseline target features, or a
 `#[target_feature(enable = "avx2")]` wrapper in which LLVM vectorizes the 32 x 32 -> 64 bit butterflies. The shim (CPUID leaf 1 XSAVE/OSXSAVE/AVX,
-leaf 7 AVX2, XCR0 bits 1 and 2, a relaxed `AtomicU8` cache; `src/cpu.rs`, shared with the verify dispatch, and in `src/ntt.rs` when the sweep recorded here ran) is outside the proof. It reads only the CPU model. A wrong answer cannot change a result (both copies compute the same
-function); it can only cause SIGILL (AVX2 reported but unusable) or a slower run. `tests/dispatch.rs` compares the two
+leaf 7 AVX2, XCR0 bits 1 and 2, a relaxed `AtomicU8` cache; `src/cpu.rs`, shared with the verify dispatch, and in `src/ntt.rs` when the sweep recorded here ran) is outside the proof. It reads only the CPU model. A false negative (AVX2 present, not reported) only selects the portable copy
+(slower, same result: both copies compute the same function). A false positive (AVX2 reported on a CPU or OS that cannot run it) executes a
+`#[target_feature]` function there, which is undefined behavior (SIGILL is one possible outcome); "the CPU and OS support AVX2 whenever the shim
+reports it" is an assumption. `tests/dispatch.rs` compares the two
 compilations on random and edge polynomials. What stays assumed is that LLVM compiles both copies faithfully. That assumption is made for the
 portable copy too, but the AVX2 copy is a separate vectorizer run over the whole arithmetic core with less evidence behind it:
 no BINSEC verdict, and functional evidence from `tests/dispatch.rs` and the KAT suites run with `--features avx2` only.

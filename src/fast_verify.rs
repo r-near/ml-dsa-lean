@@ -12,18 +12,22 @@
 //! call of the proved 4-way function (`verify::verify_internal_x4`, `prepare_vk_into_x4`) or of the scalar function
 //! (`verify_prepared_internal`). Nothing in this module or in the wrappers is compiled differently from what the Lean
 //! extraction sees, except the CPU check that makes the token (`cpu.rs`: under extraction, `cpu::avx2()` is the stub
-//! `None`) and `align_frame()` in the prepared-key wrapper (empty under extraction; a value-free stack-alignment anchor
-//! otherwise, see `dispatch.rs`). `Proofs/Dispatch.lean` proves, for every value of the token argument (so for whatever the CPU check
+//! `None`). `Proofs/Dispatch.lean` proves, for every value of the token argument (so for whatever the CPU check
 //! returns), that each `_with` function equals the scalar function it replaces, as `RustM` values including
 //! divergence; `api.rs` has the same for the public functions. The `_with` functions are crate-private: they are
 //! reachable only with a token, and only `cpu::avx2()` makes one, after it found AVX2.
 //!
 //! What is not proved: that rustc/LLVM translate the 4-way functions inside a wrapper faithfully (the same trust as for
-//! every other function), and the CPU check itself, which only decides whether the wrapper may run. That LLVM
+//! every other function), and the CPU check itself, which decides whether the wrapper may run. The CPU check is an
+//! assumption, not a proof obligation with a harmless failure: when it reports AVX2 on a CPU or OS that cannot run it,
+//! the `#[target_feature]` function executes there, which is undefined behavior (SIGILL is one possible outcome; the
+//! equality theorem says nothing about it). When it misses AVX2, the scalar function runs. That LLVM
 //! vectorizes the Keccak loop is a performance property, checked by `scripts/check-avx2-inlining.sh`, not a
 //! correctness assumption.
 //!
-//! The `unsafe` is one call in each `_with` function; it needs the token, and the token needs the CPU check.
+//! The `unsafe` calls: in production there is one in each of the three `_with` functions below, each needing the
+//! token, and the token needing the CPU check. The `internals` hooks (`fast_verify/hooks.rs`, for tests and benchmarks)
+//! have their own calls, each behind its own `has_avx2()` check.
 
 use crate::cpu::Avx2;
 use crate::params::Params;

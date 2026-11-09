@@ -5,8 +5,11 @@
 //! reached without this check having found AVX2: the type, not a convention, carries the precondition of the
 //! `unsafe` call. Which of the two functions runs is the only thing the token changes. Both compute the same value
 //! (`Proofs/Dispatch.lean`: `verify_internal_with` and its two siblings are equal to the scalar functions for every
-//! token value, including `None`), so a wrong answer from this module can cause a crash on a CPU without AVX2 but
-//! never a wrong result.
+//! token value, including `None`), so a false negative (AVX2 present, not reported) only selects the scalar path. A
+//! false positive (AVX2 reported on a CPU or OS that cannot run it) is not covered: it executes a
+//! `#[target_feature(enable = "avx2")]` function there, which is undefined behavior (SIGILL is one possible outcome,
+//! not a guaranteed one), and the equality theorem does not constrain it. "The CPU and OS support AVX2 whenever
+//! `detect_avx2` reports it" is an assumption of the dispatch.
 //!
 //! Outside the Lean proof, and not extracted. Under extraction (`--cfg miri`, scripts/extract.py) and in every build
 //! that has no dispatch (feature `avx2` off, or not x86_64) `avx2()` is the one-line stub `None`. The real detector
@@ -53,9 +56,11 @@ static AVX2: AtomicU8 = AtomicU8::new(0);
 /// CPUID/XGETBV and the answer is cached in an atomic (about 2 ns per cached call; CPUID alone is about 0.9 µs on a KVM
 /// guest).
 ///
-/// A wrong answer can only be "AVX2 reported but unusable" (SIGILL) or "AVX2 usable but not reported" (the scalar path,
-/// slower); it cannot change a result, because the AVX2 path computes the same function as the scalar path it
-/// replaces (`Proofs/Dispatch.lean`; `tests/fast_verify.rs`, `tests/dispatch.rs` compare the compiled code).
+/// A wrong answer is one of two things. "AVX2 usable but not reported" selects the scalar path (slower, same result:
+/// the AVX2 path computes the same function as the scalar path it replaces, `Proofs/Dispatch.lean`). "AVX2 reported but
+/// unusable" executes a `#[target_feature]` function on a CPU or OS that cannot run it: undefined behavior, which the
+/// equality theorem does not cover. `tests/fast_verify.rs` and `tests/dispatch.rs` compare the compiled code and the
+/// detector with the standard library's detection on the machines they run on.
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 #[inline]
 pub(crate) fn has_avx2() -> bool {

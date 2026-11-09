@@ -216,9 +216,11 @@ fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
 //     functional check is `tests/dispatch.rs` (random and edge inputs against the portable copy) plus the KAT
 //     suites run with `--features avx2` on an AVX2 machine. The choice is a function of the CPU only, never of
 //     secret data.
-//   * A wrong answer from the check can only be "AVX2 reported but unusable" (SIGILL) or "AVX2 usable but not
-//     reported" (portable body, slower); it cannot change a result, because both copies compute the same
-//     function. `tests/dispatch.rs` compares them on random and edge inputs.
+//   * A wrong answer from the check is one of two things. "AVX2 usable but not reported" runs the portable body
+//     (slower, same result: both copies compute the same function; `tests/dispatch.rs` compares them on random
+//     and edge inputs). "AVX2 reported but unusable" executes a `#[target_feature]` function on a CPU or OS that
+//     cannot run it, which is undefined behavior (SIGILL is one possible outcome, not a guaranteed one). "The CPU
+//     and OS support AVX2 whenever `has_avx2` reports it" is an assumption.
 //   * A build with `-C target-feature=+avx2` (or `-C target-cpu=x86-64-v3`) takes the first arm below: the whole
 //     crate is already compiled for AVX2, so there is no detection and no second copy.
 // docs/object-code-assurance.md ("AVX2 dispatch") has the BINSEC coverage argument.
@@ -273,8 +275,8 @@ mod dispatch {
 
     // `has_avx2` (src/cpu.rs, shared with src/fast_verify.rs) is the one place that establishes the contract of every
     // `unsafe` call below: the CPU and the OS support AVX2. The `*_avx2` functions are the same bodies as the portable
-    // ones, compiled with AVX2 enabled, so a wrong answer from `has_avx2` can cost speed or raise SIGILL but cannot
-    // change a result. Any new caller of an `*_avx2` function must go through `has_avx2` too.
+    // ones, compiled with AVX2 enabled, so a missed AVX2 only costs speed; a false report is undefined behavior
+    // (see the notes above). Any new caller of an `*_avx2` function must go through `has_avx2` too.
 
     pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
         if has_avx2() {
