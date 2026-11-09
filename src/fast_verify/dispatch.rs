@@ -8,35 +8,17 @@
 //! the values are those of the called function.
 //!
 //! Stack frames. The spills of 256-bit vectors in a wrapper want 32-byte alignment (a spill at 16 mod 32 that crosses a
-//! 4 KiB page costs about 30 cycles on Zen 4; `bench/results/2026-11-07-p6.md`). `PreparedVk` is
-//! `#[repr(align(32))]`: a wrapper that owns one (`verify_internal_avx2`, `prepare_vk_avx2`) gets a 32-byte aligned
-//! frame from it, with no code that exists only for that purpose. `verify_prepared_avx2` only borrows a key, so the type
-//! does not help it, and `bench/stackscan.sh` does not show the cost; the interleaved A/B does: the prepared-key verify
-//! is 2-8% slower without a realigned frame (`bench/results/2026-11-08-p8.md`; the mechanism was not isolated further).
-//! Its wrapper therefore calls `align_frame()`, a 32-byte aligned local passed to `black_box`. Besides the CPU check
-//! this is the one piece of code on a verify path that exists only under `cfg(not(miri))`; it reads and writes no value
-//! (`scripts/check-avx2-inlining.sh` requires the realignment in all nine wrapper instantiations).
+//! 4 KiB page costs about 30 cycles on Zen 4; `bench/results/2026-11-07-p6.md`). Every wrapper gets a 32-byte aligned
+//! frame from a `#[repr(align(32))]` object that the proved code computes in, with no code that exists only for that
+//! purpose: `PreparedVk` for the two wrappers that own one (`verify_internal_avx2`, `prepare_vk_avx2`) and
+//! `verify::VerifyScratch` (w′1 and its encoding, the working storage of `verify_core`) for all three, in particular for
+//! `verify_prepared_avx2`, which only borrows a key. Without that the prepared-key verify is 2-8% slower
+//! (`bench/results/2026-11-08-p8.md`; the earlier fix was a `black_box` anchor that exists only in the compiled
+//! build, which is gone). The asm gate `scripts/check-avx2-inlining.sh` requires the realignment in all nine wrapper
+//! instantiations, because LLVM could split or drop an aligned aggregate.
 
 use crate::params::Params;
 use crate::verify::{self, prepare_vk_into_x4, verify_internal_x4, PreparedVk};
-
-/// A 32-byte aligned object for `align_frame` (its contents are never read).
-#[cfg(not(miri))]
-#[repr(align(32))]
-struct Align32([u8; 32]);
-
-/// Makes the calling function realign its stack frame to 32 bytes: the local is aligned, and passing it to `black_box`
-/// keeps LLVM from removing it. No value is read or written. Under Miri (so in the extraction) it is the empty function,
-/// as `field::opaque_u32` is the identity there.
-#[cfg(not(miri))]
-#[inline(always)]
-fn align_frame() {
-    let anchor = Align32([0; 32]);
-    core::hint::black_box(&anchor);
-}
-#[cfg(miri)]
-#[inline(always)]
-fn align_frame() {}
 
 /// The 4-way verify body. `verify_internal_x4` is `#[inline(always)]` (and so are the kernel and the functions below it), so
 /// the whole chain down to `keccak4::keccak_f1600_x4` is compiled inside this function, with AVX2 enabled.
@@ -63,7 +45,6 @@ pub(super) fn verify_prepared_avx2<const K: usize, const L: usize>(
     m: &[u8],
     sig: &[u8],
 ) -> bool {
-    align_frame();
     verify::verify_prepared_internal::<K, L>(p, vk, m_prefix, m, sig)
 }
 

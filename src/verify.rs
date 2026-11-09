@@ -67,6 +67,19 @@ impl<const K: usize, const L: usize> PreparedVk<K, L> {
     }
 }
 
+/// The working storage of steps 10-12 that `verify_core` owns: w′1 and its encoding. The type is `#[repr(align(32))]` and
+/// `verify_core` computes in it (it is not a pad), so a function that inlines `verify_core` (`verify_prepared_avx2` in
+/// `fast_verify/dispatch.rs`, which only borrows a `PreparedVk`) has a 32-byte aligned stack frame: the spills of 256-bit
+/// vectors cannot then straddle a 4 KiB page. Aeneas ignores `repr`; the field accesses are in the extraction and the
+/// proof (`Proofs/Verify.lean`).
+#[repr(align(32))]
+struct VerifyScratch<const K: usize> {
+    /// w′1, one polynomial per row.
+    w1: [[u32; 256]; K],
+    /// w1Encode(w′1), the first `K · 32 · w1_bits` bytes.
+    w1_enc: [u8; 8 * 192],
+}
+
 /// Step 7: tr ← H(pk, 64).
 fn hash_pk(pk: &[u8]) -> [u8; 64] {
     let mut tr = [0u8; 64];
@@ -203,22 +216,21 @@ fn verify_core<const K: usize, const L: usize>(
     // 10: w′_Approx ← NTT⁻¹(Â ∘ NTT(z) − NTT(c) ∘ NTT(t1 · 2^d))
     let z_hat = ntt_vec_pub(z);
     let c_hat = ntt_pub(c);
-    let mut w1 = [[0u32; 256]; K];
+    let mut scratch = VerifyScratch::<K> { w1: [[0u32; 256]; K], w1_enc: [0u8; 8 * 192] };
     let mut i = 0;
     while i < K {
         let w_hat = mac_row_pub::<L>(&vk.a_hat[i], &z_hat, &c_hat, &vk.t1_2d_hat[i]);
         let w_approx = ntt_inverse_pub(&w_hat);
         // 11: w′1 ← UseHint(h, w′_Approx)
-        w1[i] = poly_use_hint_pub(p, &h[i], &w_approx);
+        scratch.w1[i] = poly_use_hint_pub(p, &h[i], &w_approx);
         i += 1;
     }
     // 12: c̃′ ← H(μ ‖ w1Encode(w′1), λ/4)
-    let mut w1_enc = [0u8; 8 * 192];
-    w1_encode_pub(p, &w1, &mut w1_enc);
+    w1_encode_pub(p, &scratch.w1, &mut scratch.w1_enc);
     let mut c_tilde_prime = [0u8; 64];
     let mut hash = Shake::shake256();
     hash.absorb(mu);
-    hash.absorb(&w1_enc[..K * 32 * p.w1_bits]);
+    hash.absorb(&scratch.w1_enc[..K * 32 * p.w1_bits]);
     hash.finalize();
     hash.squeeze(&mut c_tilde_prime[..p.c_tilde_len]);
     // 13: return ‖z‖∞ < γ1 − β and c̃ = c̃′

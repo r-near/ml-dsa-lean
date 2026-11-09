@@ -76,11 +76,13 @@ if echo "$perm" | grep -q '^SCALAR'; then
 fi
 # Every verify wrapper must realign its stack frame to 32 bytes: with the frame 32-byte aligned, no 32-byte spill slot or array
 # can straddle a 4 KiB page (a page-split access costs about 30 cycles, and a call at the wrong stack offset used to take up to
-# 12 us longer; bench/results/2026-11-07-p6.md). The wrappers that own a `PreparedVk` (verify_internal_avx2, prepare_vk_avx2)
-# get it from the type's `#[repr(align(32))]` (src/verify.rs); verify_prepared_avx2 only borrows a key, so it calls
-# `align_frame()` (src/fast_verify/dispatch.rs), without which the prepared-key verify is 2-8% slower in the interleaved
-# A/B (bench/results/2026-11-08-p8.md). Either way the prologue of each of the nine instantiations (K = 4, 6, 8 of the three
-# wrappers) must hold `andq $-32` (or a stronger mask) on %rsp before its first `subq`; this is the regression guard across
+# 12 us longer; bench/results/2026-11-07-p6.md). The alignment comes from `#[repr(align(32))]` objects that the proved code
+# computes in: `PreparedVk` (src/verify.rs) for the wrappers that own one (verify_internal_avx2, prepare_vk_avx2) and
+# `VerifyScratch` (w1 and its encoding, owned by `verify_core`) for the three, in particular verify_prepared_avx2, which only
+# borrows a key and without a realigned frame is 2-8% slower in the interleaved A/B (bench/results/2026-11-08-p8.md,
+# 2026-11-09-p9.md). LLVM may split or drop an aligned aggregate (SROA, dead-store elimination), and nothing in the source can
+# prevent that, so this stays an object-code check: the prologue of each of the nine instantiations (K = 4, 6, 8 of the three
+# wrappers) must hold `andq $-32` (or a stronger mask) on %rsp before its first `subq`. It is the regression guard across
 # compiler versions.
 realign="$(awk '
   /^[^ .#][^:]*(verify_internal_avx2|verify_prepared_avx2|prepare_vk_avx2)[^:]*:/ { name=$0; inbody=1; seen[name]=0; line=0; next }
@@ -92,7 +94,7 @@ echo "stack-realigning wrappers (1 = realigned, symbol):"
 echo "$realign"
 if [ "$(echo "$realign" | grep -c .)" -lt 9 ]; then echo "FAIL: expected nine wrapper instantiations (verify_internal_avx2, verify_prepared_avx2, prepare_vk_avx2 for K = 4, 6, 8)"; exit 1; fi
 if echo "$realign" | grep -q '^0 '; then
-  echo "FAIL: a verify wrapper does not realign its stack frame to 32 bytes (the repr(align(32)) of PreparedVk or align_frame was dropped, or the compiler no longer honors it)"
+  echo "FAIL: a verify wrapper does not realign its stack frame to 32 bytes (the repr(align(32)) of PreparedVk or of VerifyScratch was dropped, an aligned object stopped being used by the computation, or the compiler no longer honors it)"
   exit 1
 fi
 echo "OK: 4-way permutation vectorized in every wrapper; verify-only arithmetic fully inlined; verify wrappers realign their frames; $ymm lines of ymm code"
