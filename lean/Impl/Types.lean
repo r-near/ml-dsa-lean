@@ -68,9 +68,15 @@ structure encode.SecretKey (K : Std.Usize) (L : Std.Usize) where
   t0 : Array (Array Std.U32 256#usize) K
 
 /-- [ml_dsa_lean::cpu::Avx2]
-    Source: 'src/cpu.rs', lines 22:0-22:27 -/
+    Source: 'src/cpu.rs', lines 25:0-25:27 -/
 @[reducible]
 def cpu.Avx2 := Unit
+
+/-- [ml_dsa_lean::verify::VerifyScratch]
+    Source: 'src/verify.rs', lines 76:0-81:1 -/
+structure verify.VerifyScratch (K : Std.Usize) where
+  w1 : Array (Array Std.U32 256#usize) K
+  w1_enc : Array Std.U8 1536#usize
 
 /-- [ml_dsa_lean::verify::PreparedVk]
     Source: 'src/verify.rs', lines 54:0-61:1

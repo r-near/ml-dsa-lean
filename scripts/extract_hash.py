@@ -56,8 +56,10 @@ import tempfile
 import tomllib
 from pathlib import Path
 
-# Output file name in lean/Impl -> name of the file Aeneas generates (extract.py copies the template to FunsExternal.lean,
-# because no external axiom is referenced).
+# Output file name in lean/Impl -> name of the file Aeneas generates (extract.py copies the cleaned template to
+# FunsExternal.lean, because no external axiom is referenced). The two FunsExternal files are not byte copies of what Aeneas
+# wrote: clean_external removes the unreferenced `axiom` declarations first (see there), so their recorded hashes are those of
+# the cleaned text.
 IMPL_FILES = {
     'Types.lean': 'Types.lean',
     'Funs.lean': 'Funs.lean',
@@ -72,6 +74,39 @@ MACROS = re.compile(r'\b(?:env|option_env|include|include_str|include_bytes)\s*!
 # Pins that go into hax.toml (and so into the digest of the extraction inputs).
 AENEAS_PIN, CHARON_PIN = 'build-183e4f0', 'nightly-2026.09.02'
 LEAN_PIN, HAX_LEAN_LIB_PIN = 'leanprover/lean4:v4.31.0', 'v0.3.30'
+
+
+# One `axiom` declaration of Aeneas's external-functions template: an optional doc comment, an optional attribute line,
+# and the `axiom` line with its continuation lines, up to the next blank line.
+_AXIOM_BLOCK = re.compile(r'(?:/--(?:(?!-/).)*?-/\n)?(?:@\[[^\n]*\]\n)?axiom [^\n]*\n(?:[ \t][^\n]*\n)*', re.S)
+
+
+# An axiom or opaque declaration at the start of a line, with any modifiers.
+_DECL = re.compile(r'(?m)^[ \t]*(?:(?:private|protected|noncomputable|unsafe|partial)[ \t]+)*(?:axiom|opaque)\b')
+
+
+def clean_external(text, referenced=()):
+    """TEXT, the external-functions template Aeneas generated, without its `axiom` declarations. Aeneas declares one axiom per
+    external function it knows a name pattern for, whether or not the extracted code uses it; the policy is that lean/Impl
+    declares no axiom, so extraction removes them (and fails first if Funs.lean refers to one: REFERENCED names those).
+    Deterministic: the header and `open` lines are untouched, and each axiom block (its doc comment and attribute line
+    included) is dropped. Raises ValueError if REFERENCED is non-empty, or if an `axiom` is left over because it does not have
+    the shape the pattern expects (never silently keep or half-remove one)."""
+    if referenced:
+        raise ValueError(f'external axioms referenced from Funs.lean: {sorted(referenced)}')
+    out = []
+    for chunk in text.split('\n\n'):
+        body = chunk if chunk.endswith('\n') else chunk + '\n'
+        if _DECL.search(body):
+            if not _AXIOM_BLOCK.fullmatch(body):
+                raise ValueError(f'an external axiom block has an unexpected shape: {chunk[:200]!r}')
+            continue
+        out.append(chunk)
+    result = '\n\n'.join(out)
+    result = result.rstrip('\n') + '\n'
+    if _DECL.search(result):
+        raise ValueError('an axiom or opaque declaration is left in the external-functions file after cleaning')
+    return result
 
 
 def file_sha256(path):
@@ -221,9 +256,41 @@ _ACCEPT = ('[package]\nname = "s"\nversion = "0.1.0"\nrust-version = "1.86"\n\n[
            '[package]\nname = "s"\nversion = "0.0.0"\nrust-version = "1.86"\n\n[dependencies]\nz = { version = "1" }\n\n')
 
 
-def normalizer_selftest():
-    """Errors (a list of strings) if the Cargo.toml normalization accepts a manifest it must reject or mangles one."""
+_EXT_HEADER = '-- header\nimport Aeneas\nopen Impl\n\n'
+_EXT_AXIOM = ('/-- [core::iter::range::Step::forward]:\n    Source: \'x.rs\'\n    Visibility: public -/\n'
+              '@[trait_default, rust_fun "core::iter::range::Step::forward"]\naxiom core.iter.range.Step.forward.default\n'
+              '  {Self : Type} (StepInst : core.iter.range.Step Self) :\n  Self → Std.Usize → RustM Self\n')
+
+
+def clean_external_selftest():
+    """Errors if clean_external keeps an axiom, keeps anything else out, accepts a referenced axiom or an axiom of an
+    unexpected shape."""
     errors = []
+    want = _EXT_HEADER.rstrip('\n') + '\n'
+    for text in (_EXT_HEADER + _EXT_AXIOM, _EXT_HEADER + _EXT_AXIOM + '\n' + _EXT_AXIOM.replace('forward', 'backward'), _EXT_HEADER):
+        try:
+            if clean_external(text) != want:
+                errors.append('clean_external self-test: wrong output')
+        except ValueError as e:
+            errors.append(f'clean_external self-test: rejected a template: {e}')
+    try:
+        clean_external(_EXT_HEADER + _EXT_AXIOM, ['core.iter.range.Step.forward.default'])
+        errors.append('clean_external self-test: accepted a referenced axiom')
+    except ValueError:
+        pass
+    for odd in (_EXT_HEADER + 'axiom a : Type\n  -- trailing\nstuff\n', _EXT_HEADER + 'private axiom a : Type\n'):
+        try:
+            clean_external(odd)
+            errors.append(f'clean_external self-test: accepted an unexpected axiom shape {odd!r}')
+        except ValueError:
+            pass
+    return errors
+
+
+def normalizer_selftest():
+    """Errors (a list of strings) if the Cargo.toml normalization accepts a manifest it must reject or mangles one, or if
+    clean_external misbehaves."""
+    errors = clean_external_selftest()
     for name, text in _REJECT.items():
         try:
             normalize_version(strip_dev_dependencies(text))
@@ -290,10 +357,21 @@ def output_dir_problems(out):
     return problems + [f'{rel} is not a file extraction writes' for rel in sorted(set(files) - set(IMPL_FILES) - {REPORT})]
 
 
-def generated_sha256s(gen_dir):
-    """Hashes of the files Aeneas generated in GEN_DIR, keyed by their name in lean/Impl (missing files are left out)."""
+def impl_texts(gen_dir):
+    """What extraction writes to lean/Impl, keyed by the name in lean/Impl: the files Aeneas generated in GEN_DIR, with the
+    external-functions template cleaned by clean_external (missing files are left out). Raises ValueError as clean_external."""
     gen_dir = Path(gen_dir)
-    return {out: file_sha256(gen_dir / gen) for out, gen in IMPL_FILES.items() if (gen_dir / gen).exists()}
+    texts = {}
+    for out, gen in IMPL_FILES.items():
+        if (gen_dir / gen).exists():
+            text = (gen_dir / gen).read_text(encoding='utf-8')
+            texts[out] = clean_external(text) if gen == 'FunsExternal_Template.lean' else text
+    return texts
+
+
+def generated_sha256s(gen_dir):
+    """Hashes of the files extraction writes (impl_texts), keyed by their name in lean/Impl."""
+    return {out: hashlib.sha256(text.encode('utf-8')).hexdigest() for out, text in impl_texts(gen_dir).items()}
 
 
 def repo_inputs_sha256(repo):
@@ -347,6 +425,14 @@ def check(repo):
             if file_sha256(present[name]) != impl[name]:
                 errors.append(f'lean/Impl/{name} differs from the extraction that was recorded (hand edit?): '
                               'run scripts/extract.py and commit lean/Impl')
+    for name in ('FunsExternal.lean', 'FunsExternal_Template.lean'):
+        if name in present:
+            text = present[name].read_text(encoding='utf-8')
+            try:
+                if clean_external(text) != text:
+                    errors.append(f'lean/Impl/{name} still declares axioms: run scripts/extract.py and commit lean/Impl')
+            except ValueError as e:
+                errors.append(f'lean/Impl/{name}: {e}')
     if report.get('roots') != read_roots(repo / 'scripts/extract-roots.txt'):
         errors.append('scripts/extract-roots.txt differs from the roots in extract-report.json: '
                       'run scripts/extract.py and commit lean/Impl')

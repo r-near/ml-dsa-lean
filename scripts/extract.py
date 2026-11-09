@@ -8,7 +8,8 @@ Usage: scripts/extract.py [--src DIR] [--roots FILE] [--work DIR] [--out DIR]
            temporary directory outside the checkout, so no ancestor .cargo/config.toml applies
   --out    destination for Types.lean/Funs.lean/FunsExternal*.lean/extract-report.json (default: lean/Impl)
 
-Records extract_inputs_sha256 (digest of src/, Cargo.toml without dev-dependencies and with the package version
+Writes the external-functions files without Aeneas's unreferenced `axiom` declarations (extract_hash.clean_external), so
+lean/Impl declares no axiom; records extract_inputs_sha256 (digest of src/, Cargo.toml without dev-dependencies and with the package version
 normalized to 0.0.0, the roots and the tool pins) and impl_sha256
 (hash of each file written to --out) in extract-report.json; the `extract-hash` step of scripts/ci.sh
 (scripts/extract_hash.py) fails if either no longer matches the tree. --out must be absent or hold only files this script writes (no
@@ -16,7 +17,7 @@ symlinks, no other files): it is not emptied. To compare with the committed dire
 
 Needs the tools from scripts/setup-tools.sh (ML_DSA_TOOLS overrides their location, default ~/hax-tools). Exits non-zero on any gate failure; --out is only touched on success.
 """
-import argparse, copy, json, os, re, shutil, subprocess, sys, tempfile
+import argparse, copy, hashlib, json, os, re, shutil, subprocess, sys, tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -168,8 +169,16 @@ else:
         referenced = [x for x in axioms if re.search(r'(?<![\w.])' + re.escape(x) + r'(?![\w])', funs_txt)]
         if referenced:
             fail(f'external axioms referenced from Funs.lean: {referenced}')
-        record['impl_sha256'] = extract_hash.generated_sha256s(lean)
+        # Aeneas declares an axiom for every external function it has a name pattern for, used or not. None is referenced
+        # (gated above), and the policy is that lean/Impl declares no axiom, so the cleaned text is what is written and hashed.
+        try:
+            impl_out = extract_hash.impl_texts(lean)
+        except ValueError as e:
+            fail(f'cleaning the external-functions file: {e}')
+            impl_out = {}
+        record['impl_sha256'] = {n: hashlib.sha256(t.encode('utf-8')).hexdigest() for n, t in impl_out.items()}
         record.update(external_axioms_declared=len(axioms), external_axioms_referenced=len(referenced),
+                      external_axioms_removed=len(axioms),
                       lean_defs=len(re.findall(r'^(?:divergent )?def ', funs_txt, re.M)))
 
 # Never commit machine-specific absolute paths.
@@ -182,12 +191,10 @@ print(json.dumps({k: record.get(k) for k in ['aeneas_exit_code', 'llbc_fun_decls
 if failures:
     sys.exit(f'extraction FAILED ({len(failures)} gate failure(s)); {out} untouched')
 out.mkdir(parents=True, exist_ok=True)
-for f in ['Types.lean', 'Funs.lean', 'FunsExternal_Template.lean']:
-    s = work / 'lean' / NS / f
-    if s.exists():
-        shutil.copy2(s, out / f)
-# No external axioms are referenced (gated above), so the template is the module Funs.lean imports.
-shutil.copy2(out / 'FunsExternal_Template.lean', out / 'FunsExternal.lean')
+# Types.lean and Funs.lean as Aeneas wrote them; the external-functions template without its (unreferenced) axiom
+# declarations, as FunsExternal_Template.lean and, since Funs.lean imports Impl.FunsExternal, as FunsExternal.lean.
+for name, text in impl_out.items():
+    (out / name).write_text(text, encoding='utf-8')
 shutil.copy2(work / 'extract-report.json', out / 'extract-report.json')
 shutil.rmtree(crate, ignore_errors=True)
 print(f'extraction OK -> {out}')

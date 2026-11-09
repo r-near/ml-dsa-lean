@@ -22,12 +22,17 @@ to them. All of these are extracted and proved here:
   `none` arm; these theorems extend them to every flag value, including `Some _`, which the real CPU check returns on a
   machine with AVX2.
 
-What is *not* a theorem and is not claimed: that `cpu::avx2()` returns `Some(_)` only when the CPU has AVX2 (it is the
-single `unsafe` justification: only `cpu::avx2()` constructs an `Avx2` token, and it does so after
-`is_x86_feature_detected!("avx2")`); that the compiler's code for the `#[target_feature]` wrappers computes the Rust
-function (the compiler is trusted as for the rest of the crate; the `checkct` and BINSEC runs and the differential tests
-look at the compiled code); and that LLVM vectorizes the loops (a performance property checked by
-`scripts/check-avx2-inlining.sh`, not a correctness assumption).
+What is *not* a theorem and is not claimed: that `cpu::avx2()` returns `Some(_)` only when the CPU and OS can execute AVX2
+(it is the single `unsafe` justification: only `cpu::avx2()` constructs an `Avx2` token, and it does so after `detect_avx2`
+of `src/cpu.rs`, which tests that CPUID's maximum basic leaf is at least 7, leaf 1 ECX bits 26 to 28 (XSAVE, OSXSAVE, AVX),
+XCR0 bits 1 and 2 (the OS saves XMM and YMM state) and leaf 7 subleaf 0 EBX bit 5 (AVX2), and caches the answer, unless the
+build already enables AVX2 statically). "CPU and OS support AVX2 whenever the detector reports it" is an assumption. A false
+negative only selects the scalar function, which is proved to be the same function. A false positive executes a
+`#[target_feature(enable = "avx2")]` function on a CPU or OS that cannot run it, which is undefined behavior: SIGILL is
+one possible outcome, not a guaranteed one, and the equality theorems do not constrain it. Also not a theorem: that the
+compiler's code for the `#[target_feature]` wrappers computes the Rust function (the compiler is trusted as for the rest of
+the crate; the `checkct` and BINSEC runs and the differential tests look at the compiled code), and that LLVM vectorizes
+the loops (a performance property checked by `scripts/check-avx2-inlining.sh`, not a correctness assumption).
 -/
 
 open Aeneas Aeneas.Std RustM
