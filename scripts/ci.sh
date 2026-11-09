@@ -21,9 +21,9 @@
 # Steps: test-default, test-zeroize, test-zeroize-release, test-avx2, avx2-inlining, thumbv7em, msrv-1.86, nearcore-build,
 # nearcore-test, nearcore-test-avx2, nearcore-test-zeroize, wasm32, wasm32-zeroize, diff-awslc,
 # fuzz-<target> (one per target in fuzz/fuzz_targets), deny, extract-hash, axiom-gate-selftest, no-decls-text, cfg-inventory,
-# readme-counts, feature-independence (with --lean), lean.
+# readme-counts, ci-selftest, feature-independence (with --lean), lean.
 #
-# extract-hash, axiom-gate-selftest, no-decls-text, cfg-inventory and readme-counts need no Rust and no Lean:
+# extract-hash, axiom-gate-selftest, no-decls-text, cfg-inventory, readme-counts and ci-selftest need no Rust and no Lean:
 #   extract-hash          fails if the extraction inputs (every file under src/, Cargo.toml with its package version normalized
 #                         to 0.0.0 so a release bump does not count, the roots, the tool pins), any file
 #                         under lean/Impl (recursively) or scripts/extract-roots.txt no longer match what
@@ -40,6 +40,9 @@
 #                         scripts/cfg-inventory.txt (scripts/cfg_inventory.py): a new or changed cfg-split body fails until a
 #                         reviewer writes it into the whitelist.
 #   readme-counts         the theorem counts in README.md against the theorem lists (scripts/check-readme-counts.py).
+#   ci-selftest           scripts/ci-selftest.sh: runs this script and scripts/lean-check.sh against stub gates and fails unless the
+#                         feature-independence check ran exactly when it should have (never skipped by `--only lean`, a SKIP or a
+#                         failure; not repeated after a pass), and unless the old unconditional flag is caught.
 # feature-independence (--lean only; needs the extraction tools of scripts/setup-tools.sh, no Lean) extracts the crate a second
 # time without the verify dispatch and diffs the generated Lean against lean/Impl, failing on any difference outside a
 # whitelist (scripts/check-feature-independence.sh). SKIP when the tools are missing.
@@ -80,7 +83,7 @@ done
 # Known step names; --only must name only these (a typo must not turn the run into a silent no-op).
 KNOWN_STEPS=(test-default test-zeroize test-zeroize-release test-avx2 avx2-inlining thumbv7em msrv-1.86 nearcore-build nearcore-test
              nearcore-test-avx2 nearcore-test-zeroize wasm32 wasm32-zeroize diff-awslc deny extract-hash axiom-gate-selftest no-decls-text
-             cfg-inventory readme-counts feature-independence lean)
+             cfg-inventory readme-counts ci-selftest feature-independence lean)
 for f in fuzz/fuzz_targets/*.rs; do KNOWN_STEPS+=("fuzz-$(basename "$f" .rs)"); done
 if [ -n "$ONLY" ]; then
   IFS=',' read -r -a _only <<< "${ONLY#,}"
@@ -100,6 +103,9 @@ NEARCORE_RUSTFLAGS="-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+
 CI_TOOLS="${CI_TOOLS:-$HOME/.cache/ml-dsa-lean-ci/tools}"
 
 NAMES=(); RESULTS=(); TIMES=(); ZEROIZE_SKIPPED=0
+# 1 once the feature-independence step of THIS invocation has run and passed (a SKIP or a FAIL does not set it); step_lean tells
+# scripts/lean-check.sh to leave out its own copy of the check only then.
+FI_PASSED=0
 want() { [ -z "$ONLY" ] || [[ "$ONLY" == *",$1,"* ]]; }
 record() { NAMES+=("$1"); RESULTS+=("$2"); TIMES+=("$3"); echo "STEP-RESULT $1 $2 (${3}s)"; }
 
@@ -112,7 +118,7 @@ run_step() {
   "$@" || rc=$?
   local dt=$((SECONDS - t0))
   case "$rc" in
-    0) record "$name" PASS "$dt" ;;
+    0) record "$name" PASS "$dt"; [ "$name" = feature-independence ] && FI_PASSED=1 ;;
     77) record "$name" SKIP "$dt" ;;
     *) echo "STEP $name FAILED with exit code $rc"; record "$name" FAIL "$dt" ;;
   esac
@@ -334,8 +340,18 @@ step_feature_independence() {
   if [ ! -x "${ML_DSA_TOOLS:-$HOME/hax-tools}/bin/cargo-hax" ]; then echo "SKIP: the extraction tools are not installed (scripts/setup-tools.sh)"; return 77; fi
   scripts/check-feature-independence.sh
 }
-# lean-check.sh runs the feature-independence gate itself unless told not to; this script has already run it as its own step.
-step_lean() { ML_DSA_FEATURE_INDEPENDENCE_DONE=1 scripts/lean-check.sh; }
+# lean-check.sh runs the feature-independence gate itself unless told that this invocation already ran it. The flag is set only
+# after the feature-independence step of this very invocation passed (FI_PASSED); with `--only lean`, with a SKIP, or after a
+# failure it is not set, and any value inherited from the caller's environment is removed, so lean-check.sh runs the check.
+# scripts/ci-selftest.sh runs this path against stub gates.
+step_lean() {
+  if [ "$FI_PASSED" -eq 1 ]; then
+    ML_DSA_FEATURE_INDEPENDENCE_DONE=1 scripts/lean-check.sh
+  else
+    env -u ML_DSA_FEATURE_INDEPENDENCE_DONE scripts/lean-check.sh
+  fi
+}
+step_ci_selftest() { bash scripts/ci-selftest.sh; }
 
 run_step test-default step_test_default
 run_step test-zeroize step_test_zeroize
@@ -361,6 +377,7 @@ run_step axiom-gate-selftest step_axiom_gate_selftest
 run_step no-decls-text step_no_decls_text
 run_step cfg-inventory step_cfg_inventory
 run_step readme-counts step_readme_counts
+run_step ci-selftest step_ci_selftest
 if [ "$LEAN" -eq 1 ] || [[ "$ONLY" == *",feature-independence,"* ]]; then run_step feature-independence step_feature_independence; fi
 if [ "$LEAN" -eq 1 ] || [[ "$ONLY" == *",lean,"* ]]; then run_step lean step_lean; fi
 

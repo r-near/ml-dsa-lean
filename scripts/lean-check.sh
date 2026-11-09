@@ -10,6 +10,7 @@ mkdir -p .lake
 # LEAN_PACKAGES_SEED: optional directory of already built lake packages (same Aeneas rev) used to seed .lake/packages.
 SEED="${LEAN_PACKAGES_SEED:-}"
 if [ ! -d .lake/packages ] && [ -n "$SEED" ] && [ -d "$SEED" ]; then cp -a "$SEED" .lake/packages; fi
+# Best effort: a failed cache download only means the libraries are built from source; it cannot turn a failing check into a pass.
 lake exe cache get >/dev/null 2>&1 || true
 rc=0
 timeout 3000 lake build "$@" 2>&1 | tee .lake/check-build.log || rc=$?
@@ -32,6 +33,16 @@ scripts/check-no-decls.sh --self-test
 scripts/reachable-defs.sh
 # Feature independence (needs the extraction tools): the crate extracted a second time without the verify dispatch, compared with
 # lean/Impl, and lean/Proofs/NoDispatch.lean (built above) is what that extraction generates. Only for a full run (no module
-# arguments), and not again when scripts/ci.sh has just run it as its own step.
-if [ $# -eq 0 ] && [ -z "${ML_DSA_FEATURE_INDEPENDENCE_DONE:-}" ]; then scripts/check-feature-independence.sh; fi
-echo "LEAN CHECK OK: $*"
+# arguments). scripts/ci.sh sets ML_DSA_FEATURE_INDEPENDENCE_DONE=1 for this script only after its own feature-independence step
+# passed in the same invocation; without that flag this script runs the check itself. A run with module arguments does not run
+# it at all, and says so in the last line: only a full run's "LEAN CHECK OK: " (nothing after the colon) is the done-gate.
+if [ $# -eq 0 ]; then
+  if [ -n "${ML_DSA_FEATURE_INDEPENDENCE_DONE:-}" ]; then
+    echo "feature independence: already checked by scripts/ci.sh in this invocation"
+  else
+    scripts/check-feature-independence.sh
+  fi
+  echo "LEAN CHECK OK: $*"
+else
+  echo "LEAN CHECK OK (PARTIAL: the named modules only; the feature-independence gate was not run, so this is not the done-gate): $*"
+fi

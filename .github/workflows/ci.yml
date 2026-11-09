@@ -78,7 +78,7 @@ jobs:
         # --strict: a SKIP (missing tool or toolchain) fails the job instead of passing silently.
         run: bash scripts/ci.sh --strict --only "$STEP"
 
-  # No Rust and no Lean: scripts/extract_hash.py, the axiom-gate self-test, the text half of the no-declarations scan, the cfg inventory of src/ and the README theorem counts (see the header of scripts/ci.sh).
+  # No Rust and no Lean: scripts/extract_hash.py, the axiom-gate self-test, the text half of the no-declarations scan, the cfg inventory of src/, the README theorem counts and the self-test of the ci.sh/lean-check.sh feature-independence flag (see the header of scripts/ci.sh).
   repo-checks:
     name: ${{ matrix.step }}
     runs-on: ubuntu-latest
@@ -92,6 +92,7 @@ jobs:
           - no-decls-text
           - cfg-inventory
           - readme-counts
+          - ci-selftest
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
