@@ -19,15 +19,48 @@
 # There are no intrinsics in the crate, so the old guard against out-of-line `_mm256_*` wrappers is gone.
 # The nearcore flags (-Ctarget-feature=+sse2,...,+movbe,+pclmulqdq, no AVX2) are what make this matter, so the check
 # builds with them unless NEARCORE_RUSTFLAGS is set to something else.
+#
+# What this gate is, and is not. It is a PERFORMANCE check: it fails when the compiled AVX2 verify is slower than designed
+# because an inlining or vectorization step did not happen. It is not a correctness check (the values the wrappers compute
+# are those of the proved functions; `Proofs/Dispatch.lean`, and the compiler is trusted as for the rest of the crate), and
+# it is not a constant-time check either: verify takes only public data (public key, message, signature), so there is no
+# secret-dependent timing to preserve on this path, and nothing here says anything about Sign or KeyGen.
+#
+# Which assembly is inspected. The file is written by the rustc invocation of this very build, to a path that exists only
+# for this run (`--emit=asm=$OUT/lib.s`, $OUT a fresh temporary directory); it is not looked up in target/ afterwards, where
+# the newest matching file could come from another configuration. Because the path is part of the rustc arguments, cargo
+# and the build cache cannot treat the unit as fresh, and the JSON messages that cargo prints for the same invocation are
+# checked: the library unit was compiled by this run (`fresh` false) with the `avx2` feature. The target directory is
+# cargo's (mbx-managed): CARGO_TARGET_DIR, --target-dir and build.target-dir are not set here.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 FLAGS="${NEARCORE_RUSTFLAGS:--Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+bmi2,+lzcnt,+movbe,+pclmulqdq}"
 OUT="$(mktemp -d)"
 trap 'rm -rf "$OUT"' EXIT
+ASM="$OUT/lib.s"
 # One codegen unit so that every instantiation lands in one file; --emit=asm only for the library.
-RUSTFLAGS="$FLAGS" cargo ${TOOLCHAIN:+"+$TOOLCHAIN"} rustc --release --lib --features avx2 -- --emit=asm -Ccodegen-units=1 -Cdebuginfo=0 || { echo "build failed"; exit 1; }
-ASM="$(ls -t target/release/deps/ml_dsa_lean-*.s 2>/dev/null | head -n 1)"
-[ -n "$ASM" ] || { echo "no assembly file found under target/release/deps"; exit 1; }
+RUSTFLAGS="$FLAGS" cargo ${TOOLCHAIN:+"+$TOOLCHAIN"} rustc --release --lib --features avx2 --message-format=json -- \
+  "--emit=asm=$ASM" -Ccodegen-units=1 -Cdebuginfo=0 > "$OUT/cargo.json" || { echo "build failed"; exit 1; }
+python3 -I - "$OUT/cargo.json" <<'PY' || { echo "FAIL: the build that wrote the assembly is not the AVX2 library built by this run"; exit 1; }
+import json, sys
+units = []
+for line in open(sys.argv[1], encoding='utf-8'):
+    try:
+        m = json.loads(line)
+    except ValueError:
+        continue
+    if m.get('reason') == 'compiler-artifact' and m['target']['name'] == 'ml_dsa_lean' and 'lib' in m['target']['kind']:
+        units.append(m)
+if len(units) != 1:
+    sys.exit(f'expected one library artifact message, found {len(units)}')
+u = units[0]
+if u.get('fresh'):
+    sys.exit('the library unit was fresh: cargo did not run rustc, so the assembly file is not from this build')
+if 'avx2' not in u.get('features', []):
+    sys.exit(f'the library unit was built without the avx2 feature: {u.get("features")}')
+print('cargo built the library unit in this run with features', u['features'])
+PY
+[ -s "$ASM" ] || { echo "no assembly was written to the path given to rustc for this build"; exit 1; }
 echo "assembly: $ASM ($(wc -l < "$ASM") lines)"
 ymm="$(grep -c 'ymm' "$ASM")"
 echo "lines mentioning ymm registers: $ymm"
