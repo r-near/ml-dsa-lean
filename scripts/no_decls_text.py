@@ -3,9 +3,16 @@
 constructs the project's axiom policy forbids, ignoring comments and string literals (a doc comment may say "no sorry").
 
 Forbidden: a declaration `axiom` or `opaque` (with modifiers), the terms/tactics `sorry`, `admit` and `native_decide`
-(also `decide +native`, `Lean.ofReduceBool`), and the attributes `implemented_by`, `extern` and `export`.
+(also `decide +native`, `Lean.ofReduceBool`), the attributes `implemented_by`, `extern` and `export`, and the syntax that
+makes an opaque or unsafe declaration or adds one while elaborating: `partial` (a `partial def` becomes an `opaque`
+constant, which the environment scan also finds, but only in a module that was built), `unsafe`, `initialize`,
+`builtin_initialize`, `run_cmd`, `run_elab`, `run_meta`, `addDecl`, `addAndCompile`. The existing sources use none of them
+outside comments; a proof that needs one is a conversation, not a gate exception.
 
-Usage: python3 -I scripts/no_decls_text.py [--self-test] DIR...      exit 0 if clean, 1 on a finding, 2 on usage error
+Each argument is a directory (every .lean file under it, recursively) or a single .lean file; the gate passes the three
+directories and their root modules (Impl.lean, Spec.lean, Proofs.lean), which no directory scan sees.
+
+Usage: python3 -I scripts/no_decls_text.py [--self-test] PATH...      exit 0 if clean, 1 on a finding, 2 on usage error
 """
 import re
 import sys
@@ -16,6 +23,9 @@ TOKENS = re.compile(r'(?<![\w.\'!?])(sorry|admit|native_decide|ofReduceBool)(?![
 DECIDE_NATIVE = re.compile(r'\bdecide\s*\+\s*native\b')
 ATTR = re.compile(r'@\[([^\]]*)\]')
 ATTR_BAD = re.compile(r'(?<![\w.])(implemented_by|extern|export)(?![\w])')
+# Syntax that produces an opaque or unsafe constant, or declares one while elaborating.
+OPAQUE_SYNTAX = re.compile(r"(?<![\w.'!?])(partial|unsafe|initialize|builtin_initialize|run_cmd|run_elab|run_meta)(?![\w'!?])|"
+                           r"(?<![\w'!?])(?:[\w]+\.)*(addDecl|addAndCompile)(?![\w'!?])")
 
 
 def strip_lean(text):
@@ -55,6 +65,8 @@ def findings(text):
         add(m, f'{m.group(1)} declaration')
     for m in TOKENS.finditer(s):
         add(m, m.group(1))
+    for m in OPAQUE_SYNTAX.finditer(s):
+        add(m, f'{m.group(1) or m.group(2)} (makes or adds an opaque/unsafe declaration)')
     for m in DECIDE_NATIVE.finditer(s):
         add(m, 'decide +native')
     for m in ATTR.finditer(s):
@@ -69,15 +81,22 @@ SELF_CASES = {
     'sorry': 'theorem t : 1 = 2 := by\n  sorry\n', 'admit': 'theorem t : 1 = 2 := by admit\n',
     'native_decide': 'example : 1 + 1 = 2 := by native_decide\n', 'decide +native': 'example : 1 + 1 = 2 := by decide +native\n',
     'implemented_by': '@[implemented_by g] def f := 1\n', 'extern': '@[extern "c"] opaque f : Nat\n',
+    'partial def': 'partial def f (n : Nat) : Nat := f n\n', 'private partial def': 'private partial def f (n : Nat) : Nat := f n\n',
+    'attributed partial def': '@[inline] partial def f (n : Nat) : Nat := f n\n', 'unsafe def': 'unsafe def f : Nat := 1\n',
+    'initialize': 'initialize r : IO.Ref Nat <- IO.mkRef 0\n', 'run_cmd': 'run_cmd Lean.logInfo "x"\n',
+    'addDecl': 'def f : Lean.CoreM Unit := Lean.addDecl d\n',
 }
 SELF_CLEAN = [
     '/-- No sorry, no axiom, no native_decide here. -/\ntheorem t : True := trivial\n',
     '-- axiom opaque sorry\ndef opaque_u32 := 1\ndef x := "an axiom and a sorry"\n',
     '/- nested /- sorry -/ axiom -/\ndef f := core.extern.go\n',
+    '/-- A partial proof, partial correctness; an unsafe-looking `unsafeCast` is not used. -/\ntheorem partial_correct : True := trivial\n',
+    'def isPartial := 1\ndef partial_sum := 2\n',
 ]
 
 
 def self_test():
+    import tempfile
     errs = []
     for name, src in SELF_CASES.items():
         if not findings(src):
@@ -85,6 +104,18 @@ def self_test():
     for src in SELF_CLEAN:
         if findings(src):
             errs.append(f'self-test: false positive on {src!r}: {findings(src)}')
+    # Scan paths: a root module given as a file is scanned, and so is a module nobody imports (the scan is textual).
+    with tempfile.TemporaryDirectory() as d:
+        root = Path(d)
+        (root / 'Proofs').mkdir()
+        (root / 'Proofs.lean').write_text('axiom zzRootAxiom : False\n')
+        (root / 'Proofs' / 'Unbuilt.lean').write_text('partial def zzUnbuilt (n : Nat) : Nat := zzUnbuilt n\n')
+        (root / 'Ok.lean').write_text('theorem t : True := trivial\n')
+        for name, args, want in (('a root module given as a file', [str(root / 'Proofs.lean')], 1),
+                                 ('an unbuilt module with a partial def, found by directory', [str(root / 'Proofs')], 1),
+                                 ('a clean file', [str(root / 'Ok.lean')], 0)):
+            if scan_paths(args)[0] != want:
+                errs.append(f'self-test: {name}: wrong verdict')
     return errs
 
 
@@ -103,25 +134,34 @@ def main(argv):
     if not args:
         print(__doc__, file=sys.stderr)
         return 2
+    rc, lines, nfiles = scan_paths(args)
+    for l in lines:
+        print(l)
+    if rc == 0:
+        print(f'no-decls text scan: {nfiles} files, 0 forbidden constructs')
+    return rc
+
+
+def scan_paths(paths):
+    """(exit code, output lines, files scanned) for the files and directories PATHS."""
     bad, nfiles = [], 0
-    for d in args:
+    for d in paths:
         root = Path(d)
-        if not root.is_dir():
-            print(f'NODECLS FAIL: {d} is not a directory', file=sys.stderr)
-            return 1
-        for p in sorted(root.rglob('*.lean')):
+        if root.is_file():
+            files = [root]
+        elif root.is_dir():
+            files = sorted(root.rglob('*.lean'))
+        else:
+            return 1, [f'NODECLS FAIL: {d} is not a directory or a file'], 0
+        for p in files:
             nfiles += 1
             for line, what in findings(p.read_text(encoding='utf-8')):
                 bad.append(f'{p}:{line}: {what}')
     if nfiles == 0:
-        print('NODECLS FAIL: no .lean files found', file=sys.stderr)
-        return 1
+        return 1, ['NODECLS FAIL: no .lean files found'], 0
     if bad:
-        for b in bad[:50]:
-            print(f'NODECLS FAIL (text): {b}')
-        return 1
-    print(f'no-decls text scan: {nfiles} files, 0 forbidden constructs')
-    return 0
+        return 1, [f'NODECLS FAIL (text): {b}' for b in bad[:50]], nfiles
+    return 0, [], nfiles
 
 
 if __name__ == '__main__':
