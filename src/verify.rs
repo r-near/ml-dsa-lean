@@ -173,6 +173,7 @@ pub fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L>
 /// run-time choice between them and the scalar functions above. The scalar functions stay as the reference that the `X4`
 /// functions are proved equal to. Whether the build's target features turn the 4-way Keccak loop into AVX2 code is decided
 /// when the crate is compiled (`-C target-feature=+avx2`).
+#[inline(always)]
 pub fn prepare_vk_into_x4<const K: usize, const L: usize>(pk: &[u8], out: &mut PreparedVk<K, L>) {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
@@ -187,6 +188,7 @@ pub fn prepare_vk_into_x4<const K: usize, const L: usize>(pk: &[u8], out: &mut P
 /// `prepare_vk_x4_zeroed_bind`), so that the 57 KB matrix of ML-DSA-87 is not also a local of the caller's frame that is
 /// then copied into the result (`bench/results/2026-11-07-p6.md`). Used by tests and proofs.
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]
+#[inline(always)]
 pub fn prepare_vk_x4<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
@@ -213,6 +215,7 @@ fn hash_mu(tr: &[u8; 64], m_prefix: &[u8], m: &[u8]) -> [u8; 64] {
 /// Steps 10–13 of Algorithm 8 once c = SampleInBall(c̃) is known: w′_Approx, UseHint, c̃′ and the comparison.
 ///
 /// Precondition: `p` matches `K` and `L`; `c_tilde[..p.c_tilde_len]` is the signature's c̃.
+#[inline(always)]
 fn verify_core<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,
@@ -256,6 +259,7 @@ fn verify_core<const K: usize, const L: usize>(
 ///
 /// Precondition: `p` is the parameter set matching `K` and `L`, and `c_tilde[..p.c_tilde_len]` is the
 /// signature's c̃ (as returned by `sig_decode`).
+#[inline(always)]
 fn verify_decoded<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,
@@ -314,6 +318,7 @@ pub fn verify_internal<const K: usize, const L: usize>(
 /// (`Proofs/FastVerify.lean`); `api::verify_*` and `api::verify_internal_*` run this function.
 ///
 /// Precondition: as for `verify_internal`.
+#[inline(always)]
 pub fn verify_internal_x4<const K: usize, const L: usize>(
     p: &Params,
     pk: &[u8],
@@ -342,6 +347,7 @@ pub fn verify_internal_x4<const K: usize, const L: usize>(
 /// A `sig` whose length is not `sig_len(p)` returns false.
 ///
 /// Precondition: `p` matches `K` and `L`, as for `verify_internal`.
+#[inline(always)]
 pub fn verify_prepared_internal<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,

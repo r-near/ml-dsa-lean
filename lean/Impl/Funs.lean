@@ -115,7 +115,7 @@ def field.sub (a : Std.U32) (b : Std.U32) : RustM Std.U32 := do
   field.small_reduce i1
 
 /-- [ml_dsa_lean::sampling::coeff_from_half_byte]:
-    Source: 'src/sampling.rs', lines 481:0-489:1
+    Source: 'src/sampling.rs', lines 501:0-509:1
     Visibility: public -/
 def sampling.coeff_from_half_byte
   (p : params.Params) (b : Std.U8) : RustM (Option Std.U32) := do
@@ -726,7 +726,7 @@ def keccak.Shake.shake256 : RustM keccak.Shake := do
   ok { state := a, pos := 0#usize, rate := 136#usize }
 
 /-- [ml_dsa_lean::sampling::rej_bounded_poly]: loop body 0:
-    Source: 'src/sampling.rs', lines 501:4-520:5
+    Source: 'src/sampling.rs', lines 521:4-540:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.rej_bounded_poly_loop.body
@@ -766,7 +766,7 @@ def sampling.rej_bounded_poly_loop.body
   else ok (done a)
 
 /-- [ml_dsa_lean::sampling::rej_bounded_poly]: loop 0:
-    Source: 'src/sampling.rs', lines 501:4-520:5
+    Source: 'src/sampling.rs', lines 521:4-540:5
     Visibility: public -/
 @[rust_loop]
 def sampling.rej_bounded_poly_loop
@@ -779,7 +779,7 @@ def sampling.rej_bounded_poly_loop
     (a, ctx, j)
 
 /-- [ml_dsa_lean::sampling::rej_bounded_poly]:
-    Source: 'src/sampling.rs', lines 492:0-526:1
+    Source: 'src/sampling.rs', lines 512:0-546:1
     Visibility: public -/
 def sampling.rej_bounded_poly
   (p : params.Params) (rho : Array Std.U8 66#usize) :
@@ -793,7 +793,7 @@ def sampling.rej_bounded_poly
   sampling.rej_bounded_poly_loop p a ctx2 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop body 0:
-    Source: 'src/sampling.rs', lines 538:4-541:5
+    Source: 'src/sampling.rs', lines 558:4-561:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_s_loop0.body
@@ -811,7 +811,7 @@ def sampling.expand_s_loop0.body
   else ok (done seed)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop 0:
-    Source: 'src/sampling.rs', lines 538:4-541:5
+    Source: 'src/sampling.rs', lines 558:4-561:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_s_loop0
@@ -824,7 +824,7 @@ def sampling.expand_s_loop0
     (seed, b)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop body 1:
-    Source: 'src/sampling.rs', lines 544:4-549:5
+    Source: 'src/sampling.rs', lines 564:4-569:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_s_loop1.body
@@ -846,7 +846,7 @@ def sampling.expand_s_loop1.body
   else ok (done (s1, seed))
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop 1:
-    Source: 'src/sampling.rs', lines 544:4-549:5
+    Source: 'src/sampling.rs', lines 564:4-569:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_s_loop1
@@ -859,7 +859,7 @@ def sampling.expand_s_loop1
     (s1, seed, r)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop body 2:
-    Source: 'src/sampling.rs', lines 552:4-557:5
+    Source: 'src/sampling.rs', lines 572:4-577:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_s_loop2.body
@@ -882,7 +882,7 @@ def sampling.expand_s_loop2.body
   else ok (done s2)
 
 /-- [ml_dsa_lean::sampling::expand_s]: loop 2:
-    Source: 'src/sampling.rs', lines 552:4-557:5
+    Source: 'src/sampling.rs', lines 572:4-577:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_s_loop2
@@ -896,7 +896,7 @@ def sampling.expand_s_loop2
     (s2, seed, r)
 
 /-- [ml_dsa_lean::sampling::expand_s]:
-    Source: 'src/sampling.rs', lines 530:0-569:1
+    Source: 'src/sampling.rs', lines 550:0-589:1
     Visibility: public -/
 def sampling.expand_s
   (K : Std.Usize) (L : Std.Usize) (p : params.Params)
@@ -1973,7 +1973,7 @@ def rounding.power2round (r : Std.U32) : RustM (Std.U32 × Std.U32) := do
   ok (r1, r0)
 
 /-- [ml_dsa_lean::rounding::poly_power2round]: loop body 0:
-    Source: 'src/rounding.rs', lines 227:4-232:5
+    Source: 'src/rounding.rs', lines 232:4-237:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_power2round_loop.body
@@ -1993,7 +1993,7 @@ def rounding.poly_power2round_loop.body
   else ok (done (t1, t0))
 
 /-- [ml_dsa_lean::rounding::poly_power2round]: loop 0:
-    Source: 'src/rounding.rs', lines 227:4-232:5
+    Source: 'src/rounding.rs', lines 232:4-237:5
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_power2round_loop
@@ -2006,7 +2006,7 @@ def rounding.poly_power2round_loop
     (t1, t0, j)
 
 /-- [ml_dsa_lean::rounding::poly_power2round]:
-    Source: 'src/rounding.rs', lines 223:0-234:1
+    Source: 'src/rounding.rs', lines 228:0-239:1
     Visibility: public -/
 def rounding.poly_power2round
   (t : Array Std.U32 256#usize) :
@@ -2144,7 +2144,7 @@ def encode.bit_pack
   encode.bit_pack_loop0 w c out 0#u64 0#usize 0#usize 0#usize
 
 /-- [ml_dsa_lean::encode::pack_signed]: loop body 0:
-    Source: 'src/encode.rs', lines 122:4-125:5 -/
+    Source: 'src/encode.rs', lines 123:4-126:5 -/
 @[rust_loop_body]
 def encode.pack_signed_loop.body
   (w : Array Std.U32 256#usize) (b : Std.U32) (t : Array Std.U32 256#usize)
@@ -2162,7 +2162,7 @@ def encode.pack_signed_loop.body
   else ok (done t)
 
 /-- [ml_dsa_lean::encode::pack_signed]: loop 0:
-    Source: 'src/encode.rs', lines 122:4-125:5 -/
+    Source: 'src/encode.rs', lines 123:4-126:5 -/
 @[rust_loop]
 def encode.pack_signed_loop
   (w : Array Std.U32 256#usize) (b : Std.U32) (t : Array Std.U32 256#usize)
@@ -2174,7 +2174,7 @@ def encode.pack_signed_loop
     (t, i)
 
 /-- [ml_dsa_lean::encode::pack_signed]:
-    Source: 'src/encode.rs', lines 119:0-127:1 -/
+    Source: 'src/encode.rs', lines 120:0-128:1 -/
 def encode.pack_signed
   (w : Array Std.U32 256#usize) (b : Std.U32) (c : Std.Usize)
   (out : Slice Std.U8) :
@@ -2185,7 +2185,7 @@ def encode.pack_signed
   encode.bit_pack t1 c out
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop body 0:
-    Source: 'src/encode.rs', lines 417:4-421:5
+    Source: 'src/encode.rs', lines 420:4-424:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop0.body
@@ -2205,7 +2205,7 @@ def encode.sk_encode_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop 0:
-    Source: 'src/encode.rs', lines 417:4-421:5
+    Source: 'src/encode.rs', lines 420:4-424:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop0
@@ -2218,7 +2218,7 @@ def encode.sk_encode_loop0
     (out, i)
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop body 1:
-    Source: 'src/encode.rs', lines 423:4-426:5
+    Source: 'src/encode.rs', lines 426:4-429:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop1.body
@@ -2235,7 +2235,7 @@ def encode.sk_encode_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop 1:
-    Source: 'src/encode.rs', lines 423:4-426:5
+    Source: 'src/encode.rs', lines 426:4-429:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop1
@@ -2247,7 +2247,7 @@ def encode.sk_encode_loop1
     (out, i)
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop body 2:
-    Source: 'src/encode.rs', lines 431:4-435:5
+    Source: 'src/encode.rs', lines 434:4-438:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop2.body
@@ -2272,7 +2272,7 @@ def encode.sk_encode_loop2.body
   else ok (done (out, o))
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop 2:
-    Source: 'src/encode.rs', lines 431:4-435:5
+    Source: 'src/encode.rs', lines 434:4-438:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop2
@@ -2286,7 +2286,7 @@ def encode.sk_encode_loop2
     (out, o, i2)
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop body 3:
-    Source: 'src/encode.rs', lines 438:4-442:5
+    Source: 'src/encode.rs', lines 441:4-445:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop3.body
@@ -2311,7 +2311,7 @@ def encode.sk_encode_loop3.body
   else ok (done (out, o))
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop 3:
-    Source: 'src/encode.rs', lines 438:4-442:5
+    Source: 'src/encode.rs', lines 441:4-445:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop3
@@ -2325,7 +2325,7 @@ def encode.sk_encode_loop3
     (out, o, i2)
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop body 4:
-    Source: 'src/encode.rs', lines 445:4-449:5
+    Source: 'src/encode.rs', lines 448:4-452:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_encode_loop4.body
@@ -2349,7 +2349,7 @@ def encode.sk_encode_loop4.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::sk_encode]: loop 4:
-    Source: 'src/encode.rs', lines 445:4-449:5
+    Source: 'src/encode.rs', lines 448:4-452:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_encode_loop4
@@ -2362,7 +2362,7 @@ def encode.sk_encode_loop4
     (out, o, i)
 
 /-- [ml_dsa_lean::encode::sk_encode]:
-    Source: 'src/encode.rs', lines 405:0-450:1
+    Source: 'src/encode.rs', lines 408:0-453:1
     Visibility: public -/
 def encode.sk_encode
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -2382,7 +2382,7 @@ def encode.sk_encode
   encode.sk_encode_loop4 t0 out4 o1 0#usize
 
 /-- [ml_dsa_lean::encode::pk_encode]: loop body 0:
-    Source: 'src/encode.rs', lines 375:4-378:5
+    Source: 'src/encode.rs', lines 378:4-381:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.pk_encode_loop0.body
@@ -2398,7 +2398,7 @@ def encode.pk_encode_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::pk_encode]: loop 0:
-    Source: 'src/encode.rs', lines 375:4-378:5
+    Source: 'src/encode.rs', lines 378:4-381:5
     Visibility: public -/
 @[rust_loop]
 def encode.pk_encode_loop0
@@ -2410,7 +2410,7 @@ def encode.pk_encode_loop0
     (out, i)
 
 /-- [ml_dsa_lean::encode::pk_encode]: loop body 1:
-    Source: 'src/encode.rs', lines 381:4-384:5
+    Source: 'src/encode.rs', lines 384:4-387:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.pk_encode_loop1.body
@@ -2436,7 +2436,7 @@ def encode.pk_encode_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::pk_encode]: loop 1:
-    Source: 'src/encode.rs', lines 381:4-384:5
+    Source: 'src/encode.rs', lines 384:4-387:5
     Visibility: public -/
 @[rust_loop]
 def encode.pk_encode_loop1
@@ -2449,7 +2449,7 @@ def encode.pk_encode_loop1
     (out, i)
 
 /-- [ml_dsa_lean::encode::pk_encode]:
-    Source: 'src/encode.rs', lines 372:0-385:1
+    Source: 'src/encode.rs', lines 375:0-388:1
     Visibility: public -/
 def encode.pk_encode
   {K : Std.Usize} (rho : Array Std.U8 32#usize)
@@ -3151,7 +3151,7 @@ def encode.bit_unpack
   encode.bit_unpack_loop0 v c w 0#u64 0#usize 0#usize mask 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop body 1:
-    Source: 'src/sampling.rs', lines 459:8-462:9
+    Source: 'src/sampling.rs', lines 479:8-482:9
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_mask_loop0_loop0.body
@@ -3172,7 +3172,7 @@ def sampling.expand_mask_loop0_loop0.body
   else ok (done y)
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop 1:
-    Source: 'src/sampling.rs', lines 459:8-462:9
+    Source: 'src/sampling.rs', lines 479:8-482:9
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_mask_loop0_loop0
@@ -3185,7 +3185,7 @@ def sampling.expand_mask_loop0_loop0
     (y, i1)
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop body 0:
-    Source: 'src/sampling.rs', lines 449:4-471:5
+    Source: 'src/sampling.rs', lines 469:4-491:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_mask_loop0.body
@@ -3227,7 +3227,7 @@ def sampling.expand_mask_loop0.body
   else ok (done y)
 
 /-- [ml_dsa_lean::sampling::expand_mask]: loop 0:
-    Source: 'src/sampling.rs', lines 449:4-471:5
+    Source: 'src/sampling.rs', lines 469:4-491:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_mask_loop0
@@ -3242,7 +3242,7 @@ def sampling.expand_mask_loop0
     (y, v, r)
 
 /-- [ml_dsa_lean::sampling::expand_mask]:
-    Source: 'src/sampling.rs', lines 444:0-478:1
+    Source: 'src/sampling.rs', lines 464:0-498:1
     Visibility: public -/
 def sampling.expand_mask
   (L : Std.Usize) (p : params.Params) (rho : Array Std.U8 64#usize)
@@ -3511,7 +3511,7 @@ def rounding.poly_high_bits
   rounding.poly_high_bits_loop p w out 0#usize
 
 /-- [ml_dsa_lean::encode::w1_encode]: loop body 0:
-    Source: 'src/encode.rs', lines 197:4-200:5
+    Source: 'src/encode.rs', lines 199:4-202:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.w1_encode_loop.body
@@ -3535,7 +3535,7 @@ def encode.w1_encode_loop.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::w1_encode]: loop 0:
-    Source: 'src/encode.rs', lines 197:4-200:5
+    Source: 'src/encode.rs', lines 199:4-202:5
     Visibility: public -/
 @[rust_loop]
 def encode.w1_encode_loop
@@ -3548,7 +3548,7 @@ def encode.w1_encode_loop
     (out, i1)
 
 /-- [ml_dsa_lean::encode::w1_encode]:
-    Source: 'src/encode.rs', lines 194:0-201:1
+    Source: 'src/encode.rs', lines 196:0-203:1
     Visibility: public -/
 def encode.w1_encode
   {K : Std.Usize} (p : params.Params) (w1 : Array (Array Std.U32 256#usize) K)
@@ -3665,7 +3665,7 @@ def sign.attempt
            else ok (some (c_tilde1, z, hint))
 
 /-- [ml_dsa_lean::encode::hint_bit_pack]: loop body 0:
-    Source: 'src/encode.rs', lines 216:4-219:5
+    Source: 'src/encode.rs', lines 219:4-222:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.hint_bit_pack_loop0.body
@@ -3682,7 +3682,7 @@ def encode.hint_bit_pack_loop0.body
   else ok (done (p.omega, out))
 
 /-- [ml_dsa_lean::encode::hint_bit_pack]: loop 0:
-    Source: 'src/encode.rs', lines 216:4-219:5
+    Source: 'src/encode.rs', lines 219:4-222:5
     Visibility: public -/
 @[rust_loop]
 def encode.hint_bit_pack_loop0
@@ -3694,7 +3694,7 @@ def encode.hint_bit_pack_loop0
     (out, i)
 
 /-- [ml_dsa_lean::encode::hint_bit_pack]: loop body 2:
-    Source: 'src/encode.rs', lines 224:8-230:9
+    Source: 'src/encode.rs', lines 227:8-233:9
     Visibility: public -/
 @[rust_loop_body]
 def encode.hint_bit_pack_loop1_loop0.body
@@ -3721,7 +3721,7 @@ def encode.hint_bit_pack_loop1_loop0.body
   else ok (done (out, index))
 
 /-- [ml_dsa_lean::encode::hint_bit_pack]: loop 2:
-    Source: 'src/encode.rs', lines 224:8-230:9
+    Source: 'src/encode.rs', lines 227:8-233:9
     Visibility: public -/
 @[rust_loop]
 def encode.hint_bit_pack_loop1_loop0
@@ -3735,7 +3735,7 @@ def encode.hint_bit_pack_loop1_loop0
     (out, index, j)
 
 /-- [ml_dsa_lean::encode::hint_bit_pack]: loop body 1:
-    Source: 'src/encode.rs', lines 222:4-233:5
+    Source: 'src/encode.rs', lines 225:4-236:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.hint_bit_pack_loop1.body
@@ -3755,7 +3755,7 @@ def encode.hint_bit_pack_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::hint_bit_pack]: loop 1:
-    Source: 'src/encode.rs', lines 222:4-233:5
+    Source: 'src/encode.rs', lines 225:4-236:5
     Visibility: public -/
 @[rust_loop]
 def encode.hint_bit_pack_loop1
@@ -3769,7 +3769,7 @@ def encode.hint_bit_pack_loop1
     (out, index, i1)
 
 /-- [ml_dsa_lean::encode::hint_bit_pack]:
-    Source: 'src/encode.rs', lines 214:0-234:1
+    Source: 'src/encode.rs', lines 217:0-237:1
     Visibility: public -/
 def encode.hint_bit_pack
   {K : Std.Usize} (p : params.Params) (h : Array (Array Bool 256#usize) K)
@@ -3780,7 +3780,7 @@ def encode.hint_bit_pack
   encode.hint_bit_pack_loop1 i h out1 0#usize 0#usize
 
 /-- [ml_dsa_lean::encode::sig_encode]: loop body 0:
-    Source: 'src/encode.rs', lines 358:4-361:5
+    Source: 'src/encode.rs', lines 361:4-364:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sig_encode_loop0.body
@@ -3797,7 +3797,7 @@ def encode.sig_encode_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::sig_encode]: loop 0:
-    Source: 'src/encode.rs', lines 358:4-361:5
+    Source: 'src/encode.rs', lines 361:4-364:5
     Visibility: public -/
 @[rust_loop]
 def encode.sig_encode_loop0
@@ -3810,7 +3810,7 @@ def encode.sig_encode_loop0
     (out, i)
 
 /-- [ml_dsa_lean::encode::sig_encode]: loop body 1:
-    Source: 'src/encode.rs', lines 364:4-367:5
+    Source: 'src/encode.rs', lines 367:4-370:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sig_encode_loop1.body
@@ -3837,7 +3837,7 @@ def encode.sig_encode_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::sig_encode]: loop 1:
-    Source: 'src/encode.rs', lines 364:4-367:5
+    Source: 'src/encode.rs', lines 367:4-370:5
     Visibility: public -/
 @[rust_loop]
 def encode.sig_encode_loop1
@@ -3851,7 +3851,7 @@ def encode.sig_encode_loop1
     (out, i2)
 
 /-- [ml_dsa_lean::encode::sig_encode]:
-    Source: 'src/encode.rs', lines 349:0-369:1
+    Source: 'src/encode.rs', lines 352:0-372:1
     Visibility: public -/
 def encode.sig_encode
   {K : Std.Usize} {L : Std.Usize} (p : params.Params) (c_tilde : Slice Std.U8)
@@ -4007,7 +4007,7 @@ def ntt.ntt_vec_into
   ntt.ntt_vec_into_loop v out1 0#usize
 
 /-- [ml_dsa_lean::encode::unpack_signed_into]: loop body 0:
-    Source: 'src/encode.rs', lines 137:4-140:5 -/
+    Source: 'src/encode.rs', lines 138:4-141:5 -/
 @[rust_loop_body]
 def encode.unpack_signed_into_loop.body
   (b : Std.U32) (z : Array Std.U32 256#usize) (w : Array Std.U32 256#usize)
@@ -4025,7 +4025,7 @@ def encode.unpack_signed_into_loop.body
   else ok (done w)
 
 /-- [ml_dsa_lean::encode::unpack_signed_into]: loop 0:
-    Source: 'src/encode.rs', lines 137:4-140:5 -/
+    Source: 'src/encode.rs', lines 138:4-141:5 -/
 @[rust_loop]
 def encode.unpack_signed_into_loop
   (b : Std.U32) (w : Array Std.U32 256#usize) (z : Array Std.U32 256#usize)
@@ -4037,7 +4037,7 @@ def encode.unpack_signed_into_loop
     (w, i)
 
 /-- [ml_dsa_lean::encode::unpack_signed_into]:
-    Source: 'src/encode.rs', lines 133:0-146:1 -/
+    Source: 'src/encode.rs', lines 134:0-147:1 -/
 def encode.unpack_signed_into
   (v : Slice Std.U8) (b : Std.U32) (c : Std.Usize)
   (w : Array Std.U32 256#usize) :
@@ -4047,7 +4047,7 @@ def encode.unpack_signed_into
   encode.unpack_signed_into_loop b w z 0#usize
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop body 0:
-    Source: 'src/encode.rs', lines 251:4-255:5
+    Source: 'src/encode.rs', lines 254:4-258:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_decode_into_loop0.body
@@ -4068,7 +4068,7 @@ def encode.sk_decode_into_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop 0:
-    Source: 'src/encode.rs', lines 251:4-255:5
+    Source: 'src/encode.rs', lines 254:4-258:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_decode_into_loop0
@@ -4081,7 +4081,7 @@ def encode.sk_decode_into_loop0
     (out, i)
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop body 1:
-    Source: 'src/encode.rs', lines 257:4-260:5
+    Source: 'src/encode.rs', lines 260:4-263:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_decode_into_loop1.body
@@ -4100,7 +4100,7 @@ def encode.sk_decode_into_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop 1:
-    Source: 'src/encode.rs', lines 257:4-260:5
+    Source: 'src/encode.rs', lines 260:4-263:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_decode_into_loop1
@@ -4113,7 +4113,7 @@ def encode.sk_decode_into_loop1
     (out, i)
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop body 2:
-    Source: 'src/encode.rs', lines 264:4-268:5
+    Source: 'src/encode.rs', lines 267:4-271:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_decode_into_loop2.body
@@ -4137,7 +4137,7 @@ def encode.sk_decode_into_loop2.body
   else ok (done (out, o))
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop 2:
-    Source: 'src/encode.rs', lines 264:4-268:5
+    Source: 'src/encode.rs', lines 267:4-271:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_decode_into_loop2
@@ -4152,7 +4152,7 @@ def encode.sk_decode_into_loop2
     (out, o, i2)
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop body 3:
-    Source: 'src/encode.rs', lines 270:4-274:5
+    Source: 'src/encode.rs', lines 273:4-277:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_decode_into_loop3.body
@@ -4176,7 +4176,7 @@ def encode.sk_decode_into_loop3.body
   else ok (done (out, o))
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop 3:
-    Source: 'src/encode.rs', lines 270:4-274:5
+    Source: 'src/encode.rs', lines 273:4-277:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_decode_into_loop3
@@ -4191,7 +4191,7 @@ def encode.sk_decode_into_loop3
     (out, o, i2)
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop body 4:
-    Source: 'src/encode.rs', lines 276:4-280:5
+    Source: 'src/encode.rs', lines 279:4-283:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_decode_into_loop4.body
@@ -4215,7 +4215,7 @@ def encode.sk_decode_into_loop4.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::sk_decode_into]: loop 4:
-    Source: 'src/encode.rs', lines 276:4-280:5
+    Source: 'src/encode.rs', lines 279:4-283:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_decode_into_loop4
@@ -4228,7 +4228,7 @@ def encode.sk_decode_into_loop4
     (out, o, i)
 
 /-- [ml_dsa_lean::encode::sk_decode_into]:
-    Source: 'src/encode.rs', lines 249:0-281:1
+    Source: 'src/encode.rs', lines 252:0-284:1
     Visibility: public -/
 def encode.sk_decode_into
   {K : Std.Usize} {L : Std.Usize} (p : params.Params) (sk : Slice Std.U8)
@@ -4345,7 +4345,7 @@ def api.sign_44
     else ok none
 
 /-- [ml_dsa_lean::verify_arith::shoup_lazy]:
-    Source: 'src/verify_arith.rs', lines 38:0-41:1 -/
+    Source: 'src/verify_arith.rs', lines 40:0-43:1 -/
 def verify_arith.shoup_lazy
   (z : Std.U32) (zp : Std.U32) (x : Std.U32) : RustM Std.U32 := do
   let i ← lift (UScalar.cast .U64 x)
@@ -4358,7 +4358,7 @@ def verify_arith.shoup_lazy
   ok (core.num.U32.wrapping_sub i4 i5)
 
 /-- [ml_dsa_lean::verify_arith::ntt_inverse_lazy_layer]: loop body 1:
-    Source: 'src/verify_arith.rs', lines 114:8-120:9 -/
+    Source: 'src/verify_arith.rs', lines 122:8-128:9 -/
 @[rust_loop_body]
 def verify_arith.ntt_inverse_lazy_layer_loop0_loop0.body
   (LEN : Std.Usize) (b : Std.U32) (start : Std.Usize) (z : Std.U32)
@@ -4383,7 +4383,7 @@ def verify_arith.ntt_inverse_lazy_layer_loop0_loop0.body
   else ok (done w)
 
 /-- [ml_dsa_lean::verify_arith::ntt_inverse_lazy_layer]: loop 1:
-    Source: 'src/verify_arith.rs', lines 114:8-120:9 -/
+    Source: 'src/verify_arith.rs', lines 122:8-128:9 -/
 @[rust_loop]
 def verify_arith.ntt_inverse_lazy_layer_loop0_loop0
   (LEN : Std.Usize) (w : Array Std.U32 256#usize) (b : Std.U32)
@@ -4396,7 +4396,7 @@ def verify_arith.ntt_inverse_lazy_layer_loop0_loop0
     (w, j)
 
 /-- [ml_dsa_lean::verify_arith::ntt_inverse_lazy_layer]: loop body 0:
-    Source: 'src/verify_arith.rs', lines 108:4-122:5 -/
+    Source: 'src/verify_arith.rs', lines 116:4-130:5 -/
 @[rust_loop_body]
 def verify_arith.ntt_inverse_lazy_layer_loop0.body
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (b : Std.U32)
@@ -4419,7 +4419,7 @@ def verify_arith.ntt_inverse_lazy_layer_loop0.body
   else ok (done (w, m))
 
 /-- [ml_dsa_lean::verify_arith::ntt_inverse_lazy_layer]: loop 0:
-    Source: 'src/verify_arith.rs', lines 108:4-122:5 -/
+    Source: 'src/verify_arith.rs', lines 116:4-130:5 -/
 @[rust_loop]
 def verify_arith.ntt_inverse_lazy_layer_loop0
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -4432,7 +4432,7 @@ def verify_arith.ntt_inverse_lazy_layer_loop0
     (w, m, i)
 
 /-- [ml_dsa_lean::verify_arith::ntt_inverse_lazy_layer]:
-    Source: 'src/verify_arith.rs', lines 106:0-123:1 -/
+    Source: 'src/verify_arith.rs', lines 114:0-131:1 -/
 @[reducible]
 def verify_arith.ntt_inverse_lazy_layer
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -4442,7 +4442,7 @@ def verify_arith.ntt_inverse_lazy_layer
   verify_arith.ntt_inverse_lazy_layer_loop0 LEN ITERATIONS w m b 0#usize
 
 /-- [ml_dsa_lean::verify_arith::ntt_inverse_pub_in_place]: loop body 0:
-    Source: 'src/verify_arith.rs', lines 138:4-141:5
+    Source: 'src/verify_arith.rs', lines 147:4-150:5
     Visibility: public -/
 @[rust_loop_body]
 def verify_arith.ntt_inverse_pub_in_place_loop.body
@@ -4460,7 +4460,7 @@ def verify_arith.ntt_inverse_pub_in_place_loop.body
   else ok (done w)
 
 /-- [ml_dsa_lean::verify_arith::ntt_inverse_pub_in_place]: loop 0:
-    Source: 'src/verify_arith.rs', lines 138:4-141:5
+    Source: 'src/verify_arith.rs', lines 147:4-150:5
     Visibility: public -/
 @[rust_loop]
 def verify_arith.ntt_inverse_pub_in_place_loop
@@ -4472,7 +4472,7 @@ def verify_arith.ntt_inverse_pub_in_place_loop
     (w, j)
 
 /-- [ml_dsa_lean::verify_arith::ntt_inverse_pub_in_place]:
-    Source: 'src/verify_arith.rs', lines 126:0-142:1
+    Source: 'src/verify_arith.rs', lines 135:0-151:1
     Visibility: public -/
 def verify_arith.ntt_inverse_pub_in_place
   (w : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
@@ -4501,14 +4501,14 @@ def verify_arith.ntt_inverse_pub_in_place
   verify_arith.ntt_inverse_pub_in_place_loop w8 0#usize
 
 /-- [ml_dsa_lean::verify_arith::ntt_inverse_pub]:
-    Source: 'src/verify_arith.rs', lines 145:0-149:1
+    Source: 'src/verify_arith.rs', lines 155:0-159:1
     Visibility: public -/
 def verify_arith.ntt_inverse_pub
   (w_hat : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
   verify_arith.ntt_inverse_pub_in_place w_hat
 
 /-- [ml_dsa_lean::verify_arith::reduce_lazy]:
-    Source: 'src/verify_arith.rs', lines 64:0-66:1 -/
+    Source: 'src/verify_arith.rs', lines 68:0-70:1 -/
 def verify_arith.reduce_lazy (x : Std.U32) : RustM Std.U32 := do
   let i ← x >>> 23#i32
   let i1 ← lift (core.num.U32.wrapping_mul i field.Q)
@@ -4516,7 +4516,7 @@ def verify_arith.reduce_lazy (x : Std.U32) : RustM Std.U32 := do
   field.small_reduce i2
 
 /-- [ml_dsa_lean::verify_arith::ntt_lazy_layer]: loop body 1:
-    Source: 'src/verify_arith.rs', lines 52:8-58:9 -/
+    Source: 'src/verify_arith.rs', lines 55:8-61:9 -/
 @[rust_loop_body]
 def verify_arith.ntt_lazy_layer_loop0_loop0.body
   (LEN : Std.Usize) (start : Std.Usize) (z : Std.U32) (zp : Std.U32)
@@ -4542,7 +4542,7 @@ def verify_arith.ntt_lazy_layer_loop0_loop0.body
   else ok (done w)
 
 /-- [ml_dsa_lean::verify_arith::ntt_lazy_layer]: loop 1:
-    Source: 'src/verify_arith.rs', lines 52:8-58:9 -/
+    Source: 'src/verify_arith.rs', lines 55:8-61:9 -/
 @[rust_loop]
 def verify_arith.ntt_lazy_layer_loop0_loop0
   (LEN : Std.Usize) (w : Array Std.U32 256#usize) (start : Std.Usize)
@@ -4555,7 +4555,7 @@ def verify_arith.ntt_lazy_layer_loop0_loop0
     (w, j)
 
 /-- [ml_dsa_lean::verify_arith::ntt_lazy_layer]: loop body 0:
-    Source: 'src/verify_arith.rs', lines 46:4-60:5 -/
+    Source: 'src/verify_arith.rs', lines 49:4-63:5 -/
 @[rust_loop_body]
 def verify_arith.ntt_lazy_layer_loop0.body
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -4576,7 +4576,7 @@ def verify_arith.ntt_lazy_layer_loop0.body
   else ok (done (w, m))
 
 /-- [ml_dsa_lean::verify_arith::ntt_lazy_layer]: loop 0:
-    Source: 'src/verify_arith.rs', lines 46:4-60:5 -/
+    Source: 'src/verify_arith.rs', lines 49:4-63:5 -/
 @[rust_loop]
 def verify_arith.ntt_lazy_layer_loop0
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -4589,7 +4589,7 @@ def verify_arith.ntt_lazy_layer_loop0
     (w, m, i)
 
 /-- [ml_dsa_lean::verify_arith::ntt_lazy_layer]:
-    Source: 'src/verify_arith.rs', lines 44:0-61:1 -/
+    Source: 'src/verify_arith.rs', lines 47:0-64:1 -/
 @[reducible]
 def verify_arith.ntt_lazy_layer
   (LEN : Std.Usize) (ITERATIONS : Std.Usize) (w : Array Std.U32 256#usize)
@@ -4599,7 +4599,7 @@ def verify_arith.ntt_lazy_layer
   verify_arith.ntt_lazy_layer_loop0 LEN ITERATIONS w m 0#usize
 
 /-- [ml_dsa_lean::verify_arith::ntt_pub_in_place]: loop body 0:
-    Source: 'src/verify_arith.rs', lines 80:4-83:5
+    Source: 'src/verify_arith.rs', lines 85:4-88:5
     Visibility: public -/
 @[rust_loop_body]
 def verify_arith.ntt_pub_in_place_loop.body
@@ -4617,7 +4617,7 @@ def verify_arith.ntt_pub_in_place_loop.body
   else ok (done w)
 
 /-- [ml_dsa_lean::verify_arith::ntt_pub_in_place]: loop 0:
-    Source: 'src/verify_arith.rs', lines 80:4-83:5
+    Source: 'src/verify_arith.rs', lines 85:4-88:5
     Visibility: public -/
 @[rust_loop]
 def verify_arith.ntt_pub_in_place_loop
@@ -4629,7 +4629,7 @@ def verify_arith.ntt_pub_in_place_loop
     (w, j)
 
 /-- [ml_dsa_lean::verify_arith::ntt_pub_in_place]:
-    Source: 'src/verify_arith.rs', lines 69:0-84:1
+    Source: 'src/verify_arith.rs', lines 74:0-89:1
     Visibility: public -/
 def verify_arith.ntt_pub_in_place
   (w : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
@@ -4644,14 +4644,14 @@ def verify_arith.ntt_pub_in_place
   verify_arith.ntt_pub_in_place_loop w8 0#usize
 
 /-- [ml_dsa_lean::verify_arith::ntt_pub]:
-    Source: 'src/verify_arith.rs', lines 87:0-91:1
+    Source: 'src/verify_arith.rs', lines 93:0-97:1
     Visibility: public -/
 def verify_arith.ntt_pub
   (w : Array Std.U32 256#usize) : RustM (Array Std.U32 256#usize) := do
   verify_arith.ntt_pub_in_place w
 
 /-- [ml_dsa_lean::verify_arith::ntt_vec_pub]: loop body 0:
-    Source: 'src/verify_arith.rs', lines 97:4-100:5
+    Source: 'src/verify_arith.rs', lines 104:4-107:5
     Visibility: public -/
 @[rust_loop_body]
 def verify_arith.ntt_vec_pub_loop.body
@@ -4670,7 +4670,7 @@ def verify_arith.ntt_vec_pub_loop.body
   else ok (done out)
 
 /-- [ml_dsa_lean::verify_arith::ntt_vec_pub]: loop 0:
-    Source: 'src/verify_arith.rs', lines 97:4-100:5
+    Source: 'src/verify_arith.rs', lines 104:4-107:5
     Visibility: public -/
 @[rust_loop]
 def verify_arith.ntt_vec_pub_loop
@@ -4683,7 +4683,7 @@ def verify_arith.ntt_vec_pub_loop
     (out, i)
 
 /-- [ml_dsa_lean::verify_arith::ntt_vec_pub]:
-    Source: 'src/verify_arith.rs', lines 94:0-102:1
+    Source: 'src/verify_arith.rs', lines 101:0-109:1
     Visibility: public -/
 def verify_arith.ntt_vec_pub
   {N : Std.Usize} (v : Array (Array Std.U32 256#usize) N) :
@@ -4706,7 +4706,7 @@ def verify_arith.QQ : RustM Std.U64 := do
 @[global_simps, irreducible] def verify_arith.R2 : Std.U64 := 2365951#u64
 
 /-- [ml_dsa_lean::verify_arith::mac_row_pub]: loop body 1:
-    Source: 'src/verify_arith.rs', lines 25:8-28:9
+    Source: 'src/verify_arith.rs', lines 26:8-29:9
     Visibility: public -/
 @[rust_loop_body]
 def verify_arith.mac_row_pub_loop0_loop0.body
@@ -4730,7 +4730,7 @@ def verify_arith.mac_row_pub_loop0_loop0.body
   else ok (done s)
 
 /-- [ml_dsa_lean::verify_arith::mac_row_pub]: loop 1:
-    Source: 'src/verify_arith.rs', lines 25:8-28:9
+    Source: 'src/verify_arith.rs', lines 26:8-29:9
     Visibility: public -/
 @[rust_loop]
 def verify_arith.mac_row_pub_loop0_loop0
@@ -4744,7 +4744,7 @@ def verify_arith.mac_row_pub_loop0_loop0
     (s, l)
 
 /-- [ml_dsa_lean::verify_arith::mac_row_pub]: loop body 0:
-    Source: 'src/verify_arith.rs', lines 22:4-32:5
+    Source: 'src/verify_arith.rs', lines 23:4-33:5
     Visibility: public -/
 @[rust_loop_body]
 def verify_arith.mac_row_pub_loop0.body
@@ -4776,7 +4776,7 @@ def verify_arith.mac_row_pub_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_lean::verify_arith::mac_row_pub]: loop 0:
-    Source: 'src/verify_arith.rs', lines 22:4-32:5
+    Source: 'src/verify_arith.rs', lines 23:4-33:5
     Visibility: public -/
 @[rust_loop]
 def verify_arith.mac_row_pub_loop0
@@ -4791,7 +4791,7 @@ def verify_arith.mac_row_pub_loop0
     (out, j)
 
 /-- [ml_dsa_lean::verify_arith::mac_row_pub]:
-    Source: 'src/verify_arith.rs', lines 19:0-34:1
+    Source: 'src/verify_arith.rs', lines 20:0-35:1
     Visibility: public -/
 def verify_arith.mac_row_pub
   {L : Std.Usize} (a : Array (Array Std.U32 256#usize) L)
@@ -4842,14 +4842,14 @@ def verify.prefix_eq
   ok (diff = 0#u8)
 
 /-- [ml_dsa_lean::rounding::low_is_positive]:
-    Source: 'src/rounding.rs', lines 150:0-152:1 -/
+    Source: 'src/rounding.rs', lines 152:0-154:1 -/
 def rounding.low_is_positive (t : Std.U32) : RustM Bool := do
   let i ← lift (core.num.U32.wrapping_sub t 1#u32)
   let i1 ← field.Q >>> 1#i32
   ok (i < i1)
 
 /-- [ml_dsa_lean::rounding::use_hint_g88]:
-    Source: 'src/rounding.rs', lines 170:0-186:1 -/
+    Source: 'src/rounding.rs', lines 174:0-190:1 -/
 def rounding.use_hint_g88 (h : Bool) (r : Std.U32) : RustM Std.U32 := do
   let i ← lift (core.num.U32.wrapping_add r 127#u32)
   let a ← i >>> 7#i32
@@ -4877,7 +4877,7 @@ def rounding.use_hint_g88 (h : Bool) (r : Std.U32) : RustM Std.U32 := do
   else ok r11
 
 /-- [ml_dsa_lean::rounding::use_hint_g32]:
-    Source: 'src/rounding.rs', lines 157:0-166:1 -/
+    Source: 'src/rounding.rs', lines 160:0-169:1 -/
 def rounding.use_hint_g32 (h : Bool) (r : Std.U32) : RustM Std.U32 := do
   let i ← lift (core.num.U32.wrapping_add r 127#u32)
   let a ← i >>> 7#i32
@@ -4901,7 +4901,7 @@ def rounding.use_hint_g32 (h : Bool) (r : Std.U32) : RustM Std.U32 := do
   else ok r1
 
 /-- [ml_dsa_lean::rounding::poly_use_hint_pub]: loop body 0:
-    Source: 'src/rounding.rs', lines 197:8-200:9
+    Source: 'src/rounding.rs', lines 202:8-205:9
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_use_hint_pub_loop0.body
@@ -4921,7 +4921,7 @@ def rounding.poly_use_hint_pub_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_lean::rounding::poly_use_hint_pub]: loop 0:
-    Source: 'src/rounding.rs', lines 197:8-200:9
+    Source: 'src/rounding.rs', lines 202:8-205:9
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_use_hint_pub_loop0
@@ -4934,7 +4934,7 @@ def rounding.poly_use_hint_pub_loop0
     (out, j)
 
 /-- [ml_dsa_lean::rounding::poly_use_hint_pub]: loop body 1:
-    Source: 'src/rounding.rs', lines 202:8-205:9
+    Source: 'src/rounding.rs', lines 207:8-210:9
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_use_hint_pub_loop1.body
@@ -4954,7 +4954,7 @@ def rounding.poly_use_hint_pub_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_lean::rounding::poly_use_hint_pub]: loop 1:
-    Source: 'src/rounding.rs', lines 202:8-205:9
+    Source: 'src/rounding.rs', lines 207:8-210:9
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_use_hint_pub_loop1
@@ -4967,7 +4967,7 @@ def rounding.poly_use_hint_pub_loop1
     (out, j)
 
 /-- [ml_dsa_lean::rounding::poly_use_hint_pub]:
-    Source: 'src/rounding.rs', lines 193:0-208:1
+    Source: 'src/rounding.rs', lines 198:0-213:1
     Visibility: public -/
 def rounding.poly_use_hint_pub
   (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)
@@ -4980,7 +4980,7 @@ def rounding.poly_use_hint_pub
   else rounding.poly_use_hint_pub_loop1 h r out 0#usize
 
 /-- [ml_dsa_lean::rounding::vec_norm_lt_pub]: loop body 1:
-    Source: 'src/rounding.rs', lines 115:8-119:9
+    Source: 'src/rounding.rs', lines 116:8-120:9
     Visibility: public -/
 @[rust_loop_body]
 def rounding.vec_norm_lt_pub_loop0_loop0.body
@@ -5000,7 +5000,7 @@ def rounding.vec_norm_lt_pub_loop0_loop0.body
   else ok (done bad)
 
 /-- [ml_dsa_lean::rounding::vec_norm_lt_pub]: loop 1:
-    Source: 'src/rounding.rs', lines 115:8-119:9
+    Source: 'src/rounding.rs', lines 116:8-120:9
     Visibility: public -/
 @[rust_loop]
 def rounding.vec_norm_lt_pub_loop0_loop0
@@ -5014,7 +5014,7 @@ def rounding.vec_norm_lt_pub_loop0_loop0
     (bad, j)
 
 /-- [ml_dsa_lean::rounding::vec_norm_lt_pub]: loop body 0:
-    Source: 'src/rounding.rs', lines 113:4-121:5
+    Source: 'src/rounding.rs', lines 114:4-122:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.vec_norm_lt_pub_loop0.body
@@ -5030,7 +5030,7 @@ def rounding.vec_norm_lt_pub_loop0.body
   else ok (done bad)
 
 /-- [ml_dsa_lean::rounding::vec_norm_lt_pub]: loop 0:
-    Source: 'src/rounding.rs', lines 113:4-121:5
+    Source: 'src/rounding.rs', lines 114:4-122:5
     Visibility: public -/
 @[rust_loop]
 def rounding.vec_norm_lt_pub_loop0
@@ -5043,7 +5043,7 @@ def rounding.vec_norm_lt_pub_loop0
     (bad, i)
 
 /-- [ml_dsa_lean::rounding::vec_norm_lt_pub]:
-    Source: 'src/rounding.rs', lines 110:0-123:1
+    Source: 'src/rounding.rs', lines 111:0-124:1
     Visibility: public -/
 def rounding.vec_norm_lt_pub
   {N : Std.Usize} (w : Array (Array Std.U32 256#usize) N) (bound : Std.U32) :
@@ -5053,7 +5053,7 @@ def rounding.vec_norm_lt_pub
   ok (bad = 0#u32)
 
 /-- [ml_dsa_lean::encode::bit_pack_pub]: loop body 0:
-    Source: 'src/encode.rs', lines 170:8-173:9
+    Source: 'src/encode.rs', lines 172:8-175:9
     Visibility: public -/
 @[rust_loop_body]
 def encode.bit_pack_pub_loop0.body
@@ -5075,7 +5075,7 @@ def encode.bit_pack_pub_loop0.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::bit_pack_pub]: loop 0:
-    Source: 'src/encode.rs', lines 170:8-173:9
+    Source: 'src/encode.rs', lines 172:8-175:9
     Visibility: public -/
 @[rust_loop]
 def encode.bit_pack_pub_loop0
@@ -5087,7 +5087,7 @@ def encode.bit_pack_pub_loop0
     (out, g)
 
 /-- [ml_dsa_lean::encode::bit_pack_pub]: loop body 1:
-    Source: 'src/encode.rs', lines 178:8-187:9
+    Source: 'src/encode.rs', lines 180:8-189:9
     Visibility: public -/
 @[rust_loop_body]
 def encode.bit_pack_pub_loop1.body
@@ -5126,7 +5126,7 @@ def encode.bit_pack_pub_loop1.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::bit_pack_pub]: loop 1:
-    Source: 'src/encode.rs', lines 178:8-187:9
+    Source: 'src/encode.rs', lines 180:8-189:9
     Visibility: public -/
 @[rust_loop]
 def encode.bit_pack_pub_loop1
@@ -5138,7 +5138,7 @@ def encode.bit_pack_pub_loop1
     (out, g)
 
 /-- [ml_dsa_lean::encode::bit_pack_pub]:
-    Source: 'src/encode.rs', lines 165:0-191:1
+    Source: 'src/encode.rs', lines 167:0-193:1
     Visibility: public -/
 def encode.bit_pack_pub
   (w : Array Std.U32 256#usize) (c : Std.Usize) (out : Slice Std.U8) :
@@ -5164,7 +5164,7 @@ def encode.bit_pack_pub
     else encode.bit_pack w c out
 
 /-- [ml_dsa_lean::encode::w1_encode_pub]: loop body 0:
-    Source: 'src/encode.rs', lines 207:4-210:5
+    Source: 'src/encode.rs', lines 210:4-213:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.w1_encode_pub_loop.body
@@ -5188,7 +5188,7 @@ def encode.w1_encode_pub_loop.body
   else ok (done out)
 
 /-- [ml_dsa_lean::encode::w1_encode_pub]: loop 0:
-    Source: 'src/encode.rs', lines 207:4-210:5
+    Source: 'src/encode.rs', lines 210:4-213:5
     Visibility: public -/
 @[rust_loop]
 def encode.w1_encode_pub_loop
@@ -5201,7 +5201,7 @@ def encode.w1_encode_pub_loop
     (out, i1)
 
 /-- [ml_dsa_lean::encode::w1_encode_pub]:
-    Source: 'src/encode.rs', lines 204:0-211:1
+    Source: 'src/encode.rs', lines 207:0-214:1
     Visibility: public -/
 def encode.w1_encode_pub
   {K : Std.Usize} (p : params.Params) (w1 : Array (Array Std.U32 256#usize) K)
@@ -5212,7 +5212,7 @@ def encode.w1_encode_pub
   encode.w1_encode_pub_loop p.w1_bits w1 out n 0#usize
 
 /-- [ml_dsa_lean::verify::verify_core]: loop body 0:
-    Source: 'src/verify.rs', lines 233:4-239:5 -/
+    Source: 'src/verify.rs', lines 236:4-242:5 -/
 @[rust_loop_body]
 def verify.verify_core_loop.body
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -5236,7 +5236,7 @@ def verify.verify_core_loop.body
   else ok (done w1)
 
 /-- [ml_dsa_lean::verify::verify_core]: loop 0:
-    Source: 'src/verify.rs', lines 233:4-239:5 -/
+    Source: 'src/verify.rs', lines 236:4-242:5 -/
 @[rust_loop]
 def verify.verify_core_loop
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -5250,7 +5250,7 @@ def verify.verify_core_loop
     (w1, i)
 
 /-- [ml_dsa_lean::verify::verify_core]:
-    Source: 'src/verify.rs', lines 216:0-252:1 -/
+    Source: 'src/verify.rs', lines 219:0-255:1 -/
 def verify.verify_core
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (mu : Array Std.U8 64#usize)
@@ -5294,7 +5294,7 @@ def verify.verify_core
   else ok false
 
 /-- [ml_dsa_lean::verify::hash_mu]:
-    Source: 'src/verify.rs', lines 202:0-211:1 -/
+    Source: 'src/verify.rs', lines 204:0-213:1 -/
 def verify.hash_mu
   (tr : Array Std.U8 64#usize) (m_prefix : Slice Std.U8) (m : Slice Std.U8) :
   RustM (Array Std.U8 64#usize)
@@ -5311,7 +5311,7 @@ def verify.hash_mu
   ok (to_slice_mut_back s2)
 
 /-- [ml_dsa_lean::verify::verify_decoded]:
-    Source: 'src/verify.rs', lines 259:0-274:1 -/
+    Source: 'src/verify.rs', lines 263:0-278:1 -/
 def verify.verify_decoded
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
@@ -5405,7 +5405,7 @@ def verify.scale_vec_by_2d
   verify.scale_vec_by_2d_loop t1 out 0#usize
 
 /-- [ml_dsa_lean::sampling::tr_groups]:
-    Source: 'src/sampling.rs', lines 394:0-398:1 -/
+    Source: 'src/sampling.rs', lines 413:0-417:1 -/
 def sampling.tr_groups (n : Std.Usize) (q : Std.Usize) : RustM Std.Usize := do
   let i ← q + 5#usize
   let want ← i / 5#usize
@@ -5419,7 +5419,7 @@ def sampling.tr_groups (n : Std.Usize) (q : Std.Usize) : RustM Std.Usize := do
   else ok want
 
 /-- [ml_dsa_lean::sampling::squeeze64]: loop body 0:
-    Source: 'src/sampling.rs', lines 360:4-363:5 -/
+    Source: 'src/sampling.rs', lines 377:4-380:5 -/
 @[rust_loop_body]
 def sampling.squeeze64_loop.body
   (s : Array Std.U64 25#usize) (out : Array Std.U8 64#usize) (j : Std.Usize) :
@@ -5440,7 +5440,7 @@ def sampling.squeeze64_loop.body
   else ok (done out)
 
 /-- [ml_dsa_lean::sampling::squeeze64]: loop 0:
-    Source: 'src/sampling.rs', lines 360:4-363:5 -/
+    Source: 'src/sampling.rs', lines 377:4-380:5 -/
 @[rust_loop]
 def sampling.squeeze64_loop
   (s : Array Std.U64 25#usize) (out : Array Std.U8 64#usize) (j : Std.Usize) :
@@ -5451,18 +5451,18 @@ def sampling.squeeze64_loop
     (out, j)
 
 /-- [ml_dsa_lean::sampling::squeeze64]:
-    Source: 'src/sampling.rs', lines 357:0-365:1 -/
+    Source: 'src/sampling.rs', lines 374:0-382:1 -/
 def sampling.squeeze64
   (s : Array Std.U64 25#usize) : RustM (Array Std.U8 64#usize) := do
   let out := Array.repeat 64#usize 0#u8
   sampling.squeeze64_loop s out 0#usize
 
 /-- [ml_dsa_lean::sampling::RATE256]
-    Source: 'src/sampling.rs', lines 255:0-255:27 -/
+    Source: 'src/sampling.rs', lines 266:0-266:27 -/
 @[global_simps, irreducible] def sampling.RATE256 : Std.Usize := 136#usize
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop body 1:
-    Source: 'src/sampling.rs', lines 375:8-378:9 -/
+    Source: 'src/sampling.rs', lines 393:8-396:9 -/
 @[rust_loop_body]
 def sampling.tr_finish_scalar_loop0_loop0.body
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -5489,7 +5489,7 @@ def sampling.tr_finish_scalar_loop0_loop0.body
   else ok (done s)
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop 1:
-    Source: 'src/sampling.rs', lines 375:8-378:9 -/
+    Source: 'src/sampling.rs', lines 393:8-396:9 -/
 @[rust_loop]
 def sampling.tr_finish_scalar_loop0_loop0
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -5502,7 +5502,7 @@ def sampling.tr_finish_scalar_loop0_loop0
     (s, k)
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop body 0:
-    Source: 'src/sampling.rs', lines 373:4-381:5 -/
+    Source: 'src/sampling.rs', lines 391:4-399:5 -/
 @[rust_loop_body]
 def sampling.tr_finish_scalar_loop0.body
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -5519,7 +5519,7 @@ def sampling.tr_finish_scalar_loop0.body
   else ok (done s)
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]: loop 0:
-    Source: 'src/sampling.rs', lines 373:4-381:5 -/
+    Source: 'src/sampling.rs', lines 391:4-399:5 -/
 @[rust_loop]
 def sampling.tr_finish_scalar_loop0
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -5531,7 +5531,7 @@ def sampling.tr_finish_scalar_loop0
     (s, t)
 
 /-- [ml_dsa_lean::sampling::tr_finish_scalar]:
-    Source: 'src/sampling.rs', lines 370:0-383:1 -/
+    Source: 'src/sampling.rs', lines 388:0-401:1 -/
 def sampling.tr_finish_scalar
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
   (trs : Array Std.U64 25#usize) (t0 : Std.Usize) :
@@ -5541,7 +5541,7 @@ def sampling.tr_finish_scalar
   sampling.squeeze64 s
 
 /-- [ml_dsa_lean::sampling::set_lane3]: loop body 0:
-    Source: 'src/sampling.rs', lines 299:4-302:5 -/
+    Source: 'src/sampling.rs', lines 314:4-317:5 -/
 @[rust_loop_body]
 def sampling.set_lane3_loop.body
   (s : Array Std.U64 25#usize) (st : Array (Array Std.U64 4#usize) 25#usize)
@@ -5560,7 +5560,7 @@ def sampling.set_lane3_loop.body
   else ok (done st)
 
 /-- [ml_dsa_lean::sampling::set_lane3]: loop 0:
-    Source: 'src/sampling.rs', lines 299:4-302:5 -/
+    Source: 'src/sampling.rs', lines 314:4-317:5 -/
 @[rust_loop]
 def sampling.set_lane3_loop
   (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize)
@@ -5572,7 +5572,7 @@ def sampling.set_lane3_loop
     (st, k)
 
 /-- [ml_dsa_lean::sampling::set_lane3]:
-    Source: 'src/sampling.rs', lines 297:0-303:1 -/
+    Source: 'src/sampling.rs', lines 312:0-318:1 -/
 @[reducible]
 def sampling.set_lane3
   (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize) :
@@ -5581,7 +5581,7 @@ def sampling.set_lane3
   sampling.set_lane3_loop st s 0#usize
 
 /-- [ml_dsa_lean::sampling::lane3_state]: loop body 0:
-    Source: 'src/sampling.rs', lines 289:4-292:5 -/
+    Source: 'src/sampling.rs', lines 303:4-306:5 -/
 @[rust_loop_body]
 def sampling.lane3_state_loop.body
   (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize)
@@ -5599,7 +5599,7 @@ def sampling.lane3_state_loop.body
   else ok (done s)
 
 /-- [ml_dsa_lean::sampling::lane3_state]: loop 0:
-    Source: 'src/sampling.rs', lines 289:4-292:5 -/
+    Source: 'src/sampling.rs', lines 303:4-306:5 -/
 @[rust_loop]
 def sampling.lane3_state_loop
   (st : Array (Array Std.U64 4#usize) 25#usize) (s : Array Std.U64 25#usize)
@@ -5611,7 +5611,7 @@ def sampling.lane3_state_loop
     (s, k)
 
 /-- [ml_dsa_lean::sampling::lane3_state]:
-    Source: 'src/sampling.rs', lines 286:0-294:1 -/
+    Source: 'src/sampling.rs', lines 300:0-308:1 -/
 def sampling.lane3_state
   (st : Array (Array Std.U64 4#usize) 25#usize) :
   RustM (Array Std.U64 25#usize)
@@ -5620,7 +5620,7 @@ def sampling.lane3_state
   sampling.lane3_state_loop st s 0#usize
 
 /-- [ml_dsa_lean::sampling::absorb_block_lane3]: loop body 0:
-    Source: 'src/sampling.rs', lines 278:4-282:5 -/
+    Source: 'src/sampling.rs', lines 291:4-295:5 -/
 @[rust_loop_body]
 def sampling.absorb_block_lane3_loop.body
   (pk : Slice Std.U8) (tail : Array Std.U64 17#usize) (q : Std.Usize)
@@ -5651,7 +5651,7 @@ def sampling.absorb_block_lane3_loop.body
   else ok (done st)
 
 /-- [ml_dsa_lean::sampling::absorb_block_lane3]: loop 0:
-    Source: 'src/sampling.rs', lines 278:4-282:5 -/
+    Source: 'src/sampling.rs', lines 291:4-295:5 -/
 @[rust_loop]
 def sampling.absorb_block_lane3_loop
   (st : Array (Array Std.U64 4#usize) 25#usize) (pk : Slice Std.U8)
@@ -5664,7 +5664,7 @@ def sampling.absorb_block_lane3_loop
     (st, k)
 
 /-- [ml_dsa_lean::sampling::absorb_block_lane3]:
-    Source: 'src/sampling.rs', lines 276:0-283:1 -/
+    Source: 'src/sampling.rs', lines 289:0-296:1 -/
 @[reducible]
 def sampling.absorb_block_lane3
   (st : Array (Array Std.U64 4#usize) 25#usize) (pk : Slice Std.U8)
@@ -5674,7 +5674,7 @@ def sampling.absorb_block_lane3
   sampling.absorb_block_lane3_loop st pk tail q t 0#usize
 
 /-- [ml_dsa_lean::sampling::first_256]: loop body 0:
-    Source: 'src/sampling.rs', lines 167:4-170:5 -/
+    Source: 'src/sampling.rs', lines 173:4-176:5 -/
 @[rust_loop_body]
 def sampling.first_256_loop.body
   (a : Array Std.U32 312#usize) (r : Array Std.U32 256#usize) (k : Std.Usize) :
@@ -5690,7 +5690,7 @@ def sampling.first_256_loop.body
   else ok (done r)
 
 /-- [ml_dsa_lean::sampling::first_256]: loop 0:
-    Source: 'src/sampling.rs', lines 167:4-170:5 -/
+    Source: 'src/sampling.rs', lines 173:4-176:5 -/
 @[rust_loop]
 def sampling.first_256_loop
   (a : Array Std.U32 312#usize) (r : Array Std.U32 256#usize) (k : Std.Usize) :
@@ -5701,14 +5701,14 @@ def sampling.first_256_loop
     (r, k)
 
 /-- [ml_dsa_lean::sampling::first_256]:
-    Source: 'src/sampling.rs', lines 164:0-172:1 -/
+    Source: 'src/sampling.rs', lines 170:0-178:1 -/
 def sampling.first_256
   (a : Array Std.U32 312#usize) : RustM (Array Std.U32 256#usize) := do
   let r := Array.repeat 256#usize 0#u32
   sampling.first_256_loop a r 0#usize
 
 /-- [ml_dsa_lean::sampling::push_candidate]:
-    Source: 'src/sampling.rs', lines 95:0-98:1 -/
+    Source: 'src/sampling.rs', lines 96:0-99:1 -/
 def sampling.push_candidate
   (a : Array Std.U32 312#usize) (j : Std.Usize) (z : Std.U32) :
   RustM (Std.Usize × (Array Std.U32 312#usize))
@@ -5723,7 +5723,7 @@ def sampling.push_candidate
 @[global_simps, irreducible] def sampling.M23 : Std.U64 := 8388607#u64
 
 /-- [ml_dsa_lean::sampling::rej_ntt_cands8]:
-    Source: 'src/sampling.rs', lines 103:0-112:1 -/
+    Source: 'src/sampling.rs', lines 105:0-114:1 -/
 def sampling.rej_ntt_cands8
   (w0 : Std.U64) (w1 : Std.U64) (w2 : Std.U64) (a : Array Std.U32 312#usize)
   (j : Std.Usize) :
@@ -5766,7 +5766,7 @@ def sampling.rej_ntt_cands8
   sampling.push_candidate a7 j7 i26
 
 /-- [ml_dsa_lean::sampling::rej_ntt_block_x4]: loop body 0:
-    Source: 'src/sampling.rs', lines 123:4-126:5 -/
+    Source: 'src/sampling.rs', lines 126:4-129:5 -/
 @[rust_loop_body]
 def sampling.rej_ntt_block_x4_loop.body
   (st : Array (Array Std.U64 4#usize) 25#usize) (i : Std.Usize)
@@ -5791,7 +5791,7 @@ def sampling.rej_ntt_block_x4_loop.body
   else ok (done (j, a))
 
 /-- [ml_dsa_lean::sampling::rej_ntt_block_x4]: loop 0:
-    Source: 'src/sampling.rs', lines 123:4-126:5 -/
+    Source: 'src/sampling.rs', lines 126:4-129:5 -/
 @[rust_loop]
 def sampling.rej_ntt_block_x4_loop
   (st : Array (Array Std.U64 4#usize) 25#usize) (i : Std.Usize)
@@ -5803,7 +5803,7 @@ def sampling.rej_ntt_block_x4_loop
     (a, j, g)
 
 /-- [ml_dsa_lean::sampling::rej_ntt_block_x4]:
-    Source: 'src/sampling.rs', lines 120:0-128:1 -/
+    Source: 'src/sampling.rs', lines 123:0-131:1 -/
 @[reducible]
 def sampling.rej_ntt_block_x4
   (st : Array (Array Std.U64 4#usize) 25#usize) (i : Std.Usize)
@@ -5813,7 +5813,7 @@ def sampling.rej_ntt_block_x4
   sampling.rej_ntt_block_x4_loop st i a j 0#usize
 
 /-- [ml_dsa_lean::sampling::rej_ntt_lane_x4]:
-    Source: 'src/sampling.rs', lines 159:0-161:1 -/
+    Source: 'src/sampling.rs', lines 164:0-166:1 -/
 def sampling.rej_ntt_lane_x4
   (st : Array (Array Std.U64 4#usize) 25#usize) (i : Std.Usize)
   (a : Array Std.U32 312#usize) (j : Std.Usize) :
@@ -5824,7 +5824,7 @@ def sampling.rej_ntt_lane_x4
   else ok (j, a)
 
 /-- [ml_dsa_lean::sampling::init_state_x4]:
-    Source: 'src/sampling.rs', lines 133:0-155:1 -/
+    Source: 'src/sampling.rs', lines 137:0-159:1 -/
 def sampling.init_state_x4
   (rho : Array Std.U8 32#usize) (s : Array Std.U8 4#usize)
   (r : Array Std.U8 4#usize) :
@@ -5890,7 +5890,7 @@ def sampling.init_state_x4
        ] : Array Std.U64 4#usize)
 
 /-- [ml_dsa_lean::keccak4::round25]:
-    Source: 'src/keccak4.rs', lines 28:0-114:1 -/
+    Source: 'src/keccak4.rs', lines 29:0-115:1 -/
 def keccak4.round25
   (a : Array Std.U64 25#usize) (rc : Std.U64) :
   RustM (Array Std.U64 25#usize)
@@ -6140,7 +6140,7 @@ def keccak4.round25
       ])
 
 /-- [ml_dsa_lean::keccak4::lane_rounds2]:
-    Source: 'src/keccak4.rs', lines 118:0-147:1 -/
+    Source: 'src/keccak4.rs', lines 120:0-149:1 -/
 def keccak4.lane_rounds2
   (s : Array (Array Std.U64 4#usize) 25#usize) (i : Std.Usize) (rc0 : Std.U64)
   (rc1 : Std.U64) :
@@ -6305,7 +6305,7 @@ def keccak4.lane_rounds2
   ok (index_mut_back24 a74)
 
 /-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop body 1:
-    Source: 'src/keccak4.rs', lines 156:8-159:9
+    Source: 'src/keccak4.rs', lines 159:8-162:9
     Visibility: public -/
 @[rust_loop_body]
 def keccak4.keccak_f1600_x4_loop0_loop0.body
@@ -6325,7 +6325,7 @@ def keccak4.keccak_f1600_x4_loop0_loop0.body
   else ok (done s)
 
 /-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop 1:
-    Source: 'src/keccak4.rs', lines 156:8-159:9
+    Source: 'src/keccak4.rs', lines 159:8-162:9
     Visibility: public -/
 @[rust_loop]
 def keccak4.keccak_f1600_x4_loop0_loop0
@@ -6338,7 +6338,7 @@ def keccak4.keccak_f1600_x4_loop0_loop0
     (s, i)
 
 /-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop body 0:
-    Source: 'src/keccak4.rs', lines 154:4-161:5
+    Source: 'src/keccak4.rs', lines 157:4-164:5
     Visibility: public -/
 @[rust_loop_body]
 def keccak4.keccak_f1600_x4_loop0.body
@@ -6354,7 +6354,7 @@ def keccak4.keccak_f1600_x4_loop0.body
   else ok (done s)
 
 /-- [ml_dsa_lean::keccak4::keccak_f1600_x4]: loop 0:
-    Source: 'src/keccak4.rs', lines 154:4-161:5
+    Source: 'src/keccak4.rs', lines 157:4-164:5
     Visibility: public -/
 @[rust_loop]
 def keccak4.keccak_f1600_x4_loop0
@@ -6366,7 +6366,7 @@ def keccak4.keccak_f1600_x4_loop0
     (s, r)
 
 /-- [ml_dsa_lean::keccak4::keccak_f1600_x4]:
-    Source: 'src/keccak4.rs', lines 152:0-162:1
+    Source: 'src/keccak4.rs', lines 155:0-165:1
     Visibility: public -/
 @[reducible]
 def keccak4.keccak_f1600_x4
@@ -6376,7 +6376,7 @@ def keccak4.keccak_f1600_x4
   keccak4.keccak_f1600_x4_loop0 s 0#usize
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x3_tr]: loop body 0:
-    Source: 'src/sampling.rs', lines 334:4-349:5
+    Source: 'src/sampling.rs', lines 350:4-365:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.rej_ntt_poly_x3_tr_loop.body
@@ -6424,7 +6424,7 @@ def sampling.rej_ntt_poly_x3_tr_loop.body
   else ok (done (st, trs, t, p0, p1, p2))
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x3_tr]: loop 0:
-    Source: 'src/sampling.rs', lines 334:4-349:5
+    Source: 'src/sampling.rs', lines 350:4-365:5
     Visibility: public -/
 @[rust_loop]
 def sampling.rej_ntt_poly_x3_tr_loop
@@ -6444,7 +6444,7 @@ def sampling.rej_ntt_poly_x3_tr_loop
     (st, trs, t, p0, p1, p2, j0, j1, j2, more)
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x3_tr]:
-    Source: 'src/sampling.rs', lines 313:0-354:1
+    Source: 'src/sampling.rs', lines 329:0-370:1
     Visibility: public -/
 def sampling.rej_ntt_poly_x3_tr
   (rho : Array Std.U8 32#usize) (s : Array Std.U8 4#usize)
@@ -6471,7 +6471,7 @@ def sampling.rej_ntt_poly_x3_tr
   ok (Array.make 3#usize [ a, a1, a2 ], trs1, t)
 
 /-- [ml_dsa_lean::sampling::tr_tail_lanes]: loop body 0:
-    Source: 'src/sampling.rs', lines 265:4-268:5 -/
+    Source: 'src/sampling.rs', lines 277:4-280:5 -/
 @[rust_loop_body]
 def sampling.tr_tail_lanes_loop.body
   (pk : Slice Std.U8) (base : Std.Usize) (rem : Std.Usize)
@@ -6496,7 +6496,7 @@ def sampling.tr_tail_lanes_loop.body
   else ok (done w)
 
 /-- [ml_dsa_lean::sampling::tr_tail_lanes]: loop 0:
-    Source: 'src/sampling.rs', lines 265:4-268:5 -/
+    Source: 'src/sampling.rs', lines 277:4-280:5 -/
 @[rust_loop]
 def sampling.tr_tail_lanes_loop
   (pk : Slice Std.U8) (base : Std.Usize) (rem : Std.Usize)
@@ -6508,7 +6508,7 @@ def sampling.tr_tail_lanes_loop
     (w, i)
 
 /-- [ml_dsa_lean::sampling::tr_tail_lanes]:
-    Source: 'src/sampling.rs', lines 260:0-272:1 -/
+    Source: 'src/sampling.rs', lines 272:0-284:1 -/
 def sampling.tr_tail_lanes
   (pk : Slice Std.U8) : RustM (Array Std.U64 17#usize) := do
   let i := Slice.len pk
@@ -6530,7 +6530,7 @@ def sampling.tr_tail_lanes
   Array.update w2 16#usize i10
 
 /-- [ml_dsa_lean::sampling::entry_x4]:
-    Source: 'src/sampling.rs', lines 207:0-209:1 -/
+    Source: 'src/sampling.rs', lines 215:0-217:1 -/
 def sampling.entry_x4
   (first : Std.Usize) (l : Std.Usize) (n : Std.Usize) : RustM Std.Usize := do
   let i ← first + l
@@ -6539,7 +6539,7 @@ def sampling.entry_x4
   else n - 1#usize
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x4]: loop body 0:
-    Source: 'src/sampling.rs', lines 193:4-200:5
+    Source: 'src/sampling.rs', lines 200:4-207:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.rej_ntt_poly_x4_loop.body
@@ -6575,7 +6575,7 @@ def sampling.rej_ntt_poly_x4_loop.body
   else ok (done (p0, p1, p2, p3))
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x4]: loop 0:
-    Source: 'src/sampling.rs', lines 193:4-200:5
+    Source: 'src/sampling.rs', lines 200:4-207:5
     Visibility: public -/
 @[rust_loop]
 def sampling.rej_ntt_poly_x4_loop
@@ -6593,7 +6593,7 @@ def sampling.rej_ntt_poly_x4_loop
     (st, p0, p1, p2, p3, j0, j1, j2, j3, more)
 
 /-- [ml_dsa_lean::sampling::rej_ntt_poly_x4]:
-    Source: 'src/sampling.rs', lines 181:0-202:1
+    Source: 'src/sampling.rs', lines 188:0-209:1
     Visibility: public -/
 def sampling.rej_ntt_poly_x4
   (rho : Array Std.U8 32#usize) (s : Array Std.U8 4#usize)
@@ -6615,7 +6615,7 @@ def sampling.rej_ntt_poly_x4
   ok (Array.make 4#usize [ a, a1, a2, a3 ])
 
 /-- [ml_dsa_lean::sampling::expand_a_from_x4]: loop body 0:
-    Source: 'src/sampling.rs', lines 228:4-243:5
+    Source: 'src/sampling.rs', lines 238:4-253:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_a_from_x4_loop.body
@@ -6670,7 +6670,7 @@ def sampling.expand_a_from_x4_loop.body
   else ok (done a)
 
 /-- [ml_dsa_lean::sampling::expand_a_from_x4]: loop 0:
-    Source: 'src/sampling.rs', lines 228:4-243:5
+    Source: 'src/sampling.rs', lines 238:4-253:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_a_from_x4_loop
@@ -6684,7 +6684,7 @@ def sampling.expand_a_from_x4_loop
     (a, first)
 
 /-- [ml_dsa_lean::sampling::expand_a_from_x4]:
-    Source: 'src/sampling.rs', lines 221:0-244:1
+    Source: 'src/sampling.rs', lines 231:0-254:1
     Visibility: public -/
 def sampling.expand_a_from_x4
   {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
@@ -6695,7 +6695,7 @@ def sampling.expand_a_from_x4
   sampling.expand_a_from_x4_loop rho a n first0
 
 /-- [ml_dsa_lean::sampling::expand_a_tr_into_x4]: loop body 0:
-    Source: 'src/sampling.rs', lines 417:4-438:5
+    Source: 'src/sampling.rs', lines 437:4-458:5
     Visibility: public -/
 @[rust_loop_body]
 def sampling.expand_a_tr_into_x4_loop.body
@@ -6753,7 +6753,7 @@ def sampling.expand_a_tr_into_x4_loop.body
   else ok (done (a, trs, t, first))
 
 /-- [ml_dsa_lean::sampling::expand_a_tr_into_x4]: loop 0:
-    Source: 'src/sampling.rs', lines 417:4-438:5
+    Source: 'src/sampling.rs', lines 437:4-458:5
     Visibility: public -/
 @[rust_loop]
 def sampling.expand_a_tr_into_x4_loop
@@ -6771,7 +6771,7 @@ def sampling.expand_a_tr_into_x4_loop
     (a, trs, t, first, g)
 
 /-- [ml_dsa_lean::sampling::expand_a_tr_into_x4]:
-    Source: 'src/sampling.rs', lines 404:0-441:1
+    Source: 'src/sampling.rs', lines 424:0-461:1
     Visibility: public -/
 def sampling.expand_a_tr_into_x4
   {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
@@ -6793,7 +6793,7 @@ def sampling.expand_a_tr_into_x4
   ok (a3, a2)
 
 /-- [ml_dsa_lean::encode::bit_unpack_pub]: loop body 0:
-    Source: 'src/encode.rs', lines 61:8-71:9
+    Source: 'src/encode.rs', lines 62:8-72:9
     Visibility: public -/
 @[rust_loop_body]
 def encode.bit_unpack_pub_loop0.body
@@ -6837,7 +6837,7 @@ def encode.bit_unpack_pub_loop0.body
   else ok (done w)
 
 /-- [ml_dsa_lean::encode::bit_unpack_pub]: loop 0:
-    Source: 'src/encode.rs', lines 61:8-71:9
+    Source: 'src/encode.rs', lines 62:8-72:9
     Visibility: public -/
 @[rust_loop]
 def encode.bit_unpack_pub_loop0
@@ -6849,7 +6849,7 @@ def encode.bit_unpack_pub_loop0
     (w, g)
 
 /-- [ml_dsa_lean::encode::bit_unpack_pub]: loop body 1:
-    Source: 'src/encode.rs', lines 77:8-93:9
+    Source: 'src/encode.rs', lines 78:8-94:9
     Visibility: public -/
 @[rust_loop_body]
 def encode.bit_unpack_pub_loop1.body
@@ -6921,7 +6921,7 @@ def encode.bit_unpack_pub_loop1.body
   else ok (done w)
 
 /-- [ml_dsa_lean::encode::bit_unpack_pub]: loop 1:
-    Source: 'src/encode.rs', lines 77:8-93:9
+    Source: 'src/encode.rs', lines 78:8-94:9
     Visibility: public -/
 @[rust_loop]
 def encode.bit_unpack_pub_loop1
@@ -6933,7 +6933,7 @@ def encode.bit_unpack_pub_loop1
     (w, g)
 
 /-- [ml_dsa_lean::encode::bit_unpack_pub]: loop body 2:
-    Source: 'src/encode.rs', lines 99:8-111:9
+    Source: 'src/encode.rs', lines 100:8-112:9
     Visibility: public -/
 @[rust_loop_body]
 def encode.bit_unpack_pub_loop2.body
@@ -6985,7 +6985,7 @@ def encode.bit_unpack_pub_loop2.body
   else ok (done w)
 
 /-- [ml_dsa_lean::encode::bit_unpack_pub]: loop 2:
-    Source: 'src/encode.rs', lines 99:8-111:9
+    Source: 'src/encode.rs', lines 100:8-112:9
     Visibility: public -/
 @[rust_loop]
 def encode.bit_unpack_pub_loop2
@@ -6997,7 +6997,7 @@ def encode.bit_unpack_pub_loop2
     (w, g)
 
 /-- [ml_dsa_lean::encode::bit_unpack_pub]:
-    Source: 'src/encode.rs', lines 55:0-116:1
+    Source: 'src/encode.rs', lines 56:0-117:1
     Visibility: public -/
 def encode.bit_unpack_pub
   (v : Slice Std.U8) (c : Std.Usize) : RustM (Array Std.U32 256#usize) := do
@@ -7028,7 +7028,7 @@ def encode.bit_unpack_pub
       else encode.bit_unpack v c
 
 /-- [ml_dsa_lean::encode::pk_decode]: loop body 0:
-    Source: 'src/encode.rs', lines 391:4-394:5
+    Source: 'src/encode.rs', lines 394:4-397:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.pk_decode_loop0.body
@@ -7045,7 +7045,7 @@ def encode.pk_decode_loop0.body
   else ok (done rho)
 
 /-- [ml_dsa_lean::encode::pk_decode]: loop 0:
-    Source: 'src/encode.rs', lines 391:4-394:5
+    Source: 'src/encode.rs', lines 394:4-397:5
     Visibility: public -/
 @[rust_loop]
 def encode.pk_decode_loop0
@@ -7057,7 +7057,7 @@ def encode.pk_decode_loop0
     (rho, i)
 
 /-- [ml_dsa_lean::encode::pk_decode]: loop body 1:
-    Source: 'src/encode.rs', lines 397:4-400:5
+    Source: 'src/encode.rs', lines 400:4-403:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.pk_decode_loop1.body
@@ -7082,7 +7082,7 @@ def encode.pk_decode_loop1.body
   else ok (done t1)
 
 /-- [ml_dsa_lean::encode::pk_decode]: loop 1:
-    Source: 'src/encode.rs', lines 397:4-400:5
+    Source: 'src/encode.rs', lines 400:4-403:5
     Visibility: public -/
 @[rust_loop]
 def encode.pk_decode_loop1
@@ -7095,7 +7095,7 @@ def encode.pk_decode_loop1
     (t1, i)
 
 /-- [ml_dsa_lean::encode::pk_decode]:
-    Source: 'src/encode.rs', lines 388:0-402:1
+    Source: 'src/encode.rs', lines 391:0-405:1
     Visibility: public -/
 def encode.pk_decode
   (K : Std.Usize) (pk : Slice Std.U8) :
@@ -7109,7 +7109,7 @@ def encode.pk_decode
   ok (rho1, t11)
 
 /-- [ml_dsa_lean::verify::prepare_vk_into_x4]:
-    Source: 'src/verify.rs', lines 176:0-183:1
+    Source: 'src/verify.rs', lines 177:0-184:1
     Visibility: public -/
 def verify.prepare_vk_into_x4
   {K : Std.Usize} {L : Std.Usize} (pk : Slice Std.U8)
@@ -7153,7 +7153,7 @@ def params.pk_len (p : params.Params) : RustM Std.Usize := do
   32#usize + i
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack_padding]: loop body 0:
-    Source: 'src/encode.rs', lines 499:4-506:1 -/
+    Source: 'src/encode.rs', lines 502:4-509:1 -/
 @[rust_loop_body]
 def encode.hint_bit_unpack_padding_loop.body
   (p : params.Params) (y : Slice Std.U8) (j : Std.Usize) :
@@ -7169,7 +7169,7 @@ def encode.hint_bit_unpack_padding_loop.body
   else ok (done true)
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack_padding]: loop 0:
-    Source: 'src/encode.rs', lines 499:4-506:1 -/
+    Source: 'src/encode.rs', lines 502:4-509:1 -/
 @[rust_loop]
 def encode.hint_bit_unpack_padding_loop
   (p : params.Params) (y : Slice Std.U8) (j : Std.Usize) : RustM Bool := do
@@ -7178,14 +7178,14 @@ def encode.hint_bit_unpack_padding_loop
     j
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack_padding]:
-    Source: 'src/encode.rs', lines 497:0-506:1 -/
+    Source: 'src/encode.rs', lines 500:0-509:1 -/
 @[reducible]
 def encode.hint_bit_unpack_padding
   (p : params.Params) (y : Slice Std.U8) (index : Std.Usize) : RustM Bool := do
   encode.hint_bit_unpack_padding_loop p y index
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack_row]: loop body 0:
-    Source: 'src/encode.rs', lines 459:4-469:1 -/
+    Source: 'src/encode.rs', lines 462:4-472:1 -/
 @[rust_loop_body]
 def encode.hint_bit_unpack_row_loop.body
   (y : Slice Std.U8) (first : Std.Usize) («end» : Std.Usize)
@@ -7216,7 +7216,7 @@ def encode.hint_bit_unpack_row_loop.body
   else ok (done (true, row))
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack_row]: loop 0:
-    Source: 'src/encode.rs', lines 459:4-469:1 -/
+    Source: 'src/encode.rs', lines 462:4-472:1 -/
 @[rust_loop]
 def encode.hint_bit_unpack_row_loop
   (y : Slice Std.U8) (first : Std.Usize) («end» : Std.Usize)
@@ -7229,7 +7229,7 @@ def encode.hint_bit_unpack_row_loop
     (row, index)
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack_row]:
-    Source: 'src/encode.rs', lines 455:0-469:1 -/
+    Source: 'src/encode.rs', lines 458:0-472:1 -/
 @[reducible]
 def encode.hint_bit_unpack_row
   (y : Slice Std.U8) (first : Std.Usize) («end» : Std.Usize)
@@ -7239,7 +7239,7 @@ def encode.hint_bit_unpack_row
   encode.hint_bit_unpack_row_loop y first «end» row first
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack_rows]: loop body 0:
-    Source: 'src/encode.rs', lines 480:4-494:1 -/
+    Source: 'src/encode.rs', lines 483:4-497:1 -/
 @[rust_loop_body]
 def encode.hint_bit_unpack_rows_loop.body
   {K : Std.Usize} (p : params.Params) (y : Slice Std.U8)
@@ -7270,7 +7270,7 @@ def encode.hint_bit_unpack_rows_loop.body
   else ok (done (some index, h))
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack_rows]: loop 0:
-    Source: 'src/encode.rs', lines 480:4-494:1 -/
+    Source: 'src/encode.rs', lines 483:4-497:1 -/
 @[rust_loop]
 def encode.hint_bit_unpack_rows_loop
   {K : Std.Usize} (p : params.Params) (y : Slice Std.U8)
@@ -7283,7 +7283,7 @@ def encode.hint_bit_unpack_rows_loop
     (h, index, i)
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack_rows]:
-    Source: 'src/encode.rs', lines 474:0-494:1 -/
+    Source: 'src/encode.rs', lines 477:0-497:1 -/
 @[reducible]
 def encode.hint_bit_unpack_rows
   {K : Std.Usize} (p : params.Params) (y : Slice Std.U8)
@@ -7293,7 +7293,7 @@ def encode.hint_bit_unpack_rows
   encode.hint_bit_unpack_rows_loop p y h 0#usize 0#usize
 
 /-- [ml_dsa_lean::encode::hint_bit_unpack]:
-    Source: 'src/encode.rs', lines 511:0-524:1
+    Source: 'src/encode.rs', lines 514:0-527:1
     Visibility: public -/
 def encode.hint_bit_unpack
   (K : Std.Usize) (p : params.Params) (y : Slice Std.U8) :
@@ -7311,7 +7311,7 @@ def encode.hint_bit_unpack
     else ok none
 
 /-- [ml_dsa_lean::encode::unpack_signed]: loop body 0:
-    Source: 'src/encode.rs', lines 153:4-156:5 -/
+    Source: 'src/encode.rs', lines 154:4-157:5 -/
 @[rust_loop_body]
 def encode.unpack_signed_loop.body
   (b : Std.U32) (z : Array Std.U32 256#usize) (w : Array Std.U32 256#usize)
@@ -7329,7 +7329,7 @@ def encode.unpack_signed_loop.body
   else ok (done w)
 
 /-- [ml_dsa_lean::encode::unpack_signed]: loop 0:
-    Source: 'src/encode.rs', lines 153:4-156:5 -/
+    Source: 'src/encode.rs', lines 154:4-157:5 -/
 @[rust_loop]
 def encode.unpack_signed_loop
   (b : Std.U32) (z : Array Std.U32 256#usize) (w : Array Std.U32 256#usize)
@@ -7341,7 +7341,7 @@ def encode.unpack_signed_loop
     (w, i)
 
 /-- [ml_dsa_lean::encode::unpack_signed]:
-    Source: 'src/encode.rs', lines 149:0-158:1 -/
+    Source: 'src/encode.rs', lines 150:0-159:1 -/
 def encode.unpack_signed
   (v : Slice Std.U8) (b : Std.U32) (c : Std.Usize) :
   RustM (Array Std.U32 256#usize)
@@ -7351,7 +7351,7 @@ def encode.unpack_signed
   encode.unpack_signed_loop b z w 0#usize
 
 /-- [ml_dsa_lean::encode::sig_decode]: loop body 0:
-    Source: 'src/encode.rs', lines 536:4-539:5
+    Source: 'src/encode.rs', lines 539:4-542:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sig_decode_loop0.body
@@ -7369,7 +7369,7 @@ def encode.sig_decode_loop0.body
   else ok (done c_tilde)
 
 /-- [ml_dsa_lean::encode::sig_decode]: loop 0:
-    Source: 'src/encode.rs', lines 536:4-539:5
+    Source: 'src/encode.rs', lines 539:4-542:5
     Visibility: public -/
 @[rust_loop]
 def encode.sig_decode_loop0
@@ -7382,7 +7382,7 @@ def encode.sig_decode_loop0
     (c_tilde, i)
 
 /-- [ml_dsa_lean::encode::sig_decode]: loop body 1:
-    Source: 'src/encode.rs', lines 543:4-546:5
+    Source: 'src/encode.rs', lines 546:4-549:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sig_decode_loop1.body
@@ -7408,7 +7408,7 @@ def encode.sig_decode_loop1.body
   else ok (done z)
 
 /-- [ml_dsa_lean::encode::sig_decode]: loop 1:
-    Source: 'src/encode.rs', lines 543:4-546:5
+    Source: 'src/encode.rs', lines 546:4-549:5
     Visibility: public -/
 @[rust_loop]
 def encode.sig_decode_loop1
@@ -7422,7 +7422,7 @@ def encode.sig_decode_loop1
     (z, i2)
 
 /-- [ml_dsa_lean::encode::sig_decode]:
-    Source: 'src/encode.rs', lines 529:0-551:1
+    Source: 'src/encode.rs', lines 532:0-554:1
     Visibility: public -/
 def encode.sig_decode
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (sig : Slice Std.U8) :
@@ -7447,7 +7447,7 @@ def encode.sig_decode
   | some h => ok (some (c_tilde1, z1, h))
 
 /-- [ml_dsa_lean::verify::verify_internal_x4]:
-    Source: 'src/verify.rs', lines 317:0-339:1
+    Source: 'src/verify.rs', lines 322:0-344:1
     Visibility: public -/
 def verify.verify_internal_x4
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
@@ -7540,7 +7540,7 @@ def api.verifying_key_44
   ok { inner := vk1 }
 
 /-- [ml_dsa_lean::verify::verify_prepared_internal]:
-    Source: 'src/verify.rs', lines 345:0-362:1
+    Source: 'src/verify.rs', lines 351:0-368:1
     Visibility: public -/
 def verify.verify_prepared_internal
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -7655,7 +7655,7 @@ def api.sign_internal_prepared_44
   else ok none
 
 /-- [ml_dsa_lean::encode::poly_eta_bad]: loop body 0:
-    Source: 'src/encode.rs', lines 308:4-312:5 -/
+    Source: 'src/encode.rs', lines 311:4-315:5 -/
 @[rust_loop_body]
 def encode.poly_eta_bad_loop.body
   (w : Array Std.U32 256#usize) (eta : Std.U32) (lo : Std.U32) (bad : Std.U32)
@@ -7676,7 +7676,7 @@ def encode.poly_eta_bad_loop.body
   else ok (done bad)
 
 /-- [ml_dsa_lean::encode::poly_eta_bad]: loop 0:
-    Source: 'src/encode.rs', lines 308:4-312:5 -/
+    Source: 'src/encode.rs', lines 311:4-315:5 -/
 @[rust_loop]
 def encode.poly_eta_bad_loop
   (w : Array Std.U32 256#usize) (eta : Std.U32) (lo : Std.U32) (bad : Std.U32)
@@ -7688,14 +7688,14 @@ def encode.poly_eta_bad_loop
     (bad, i)
 
 /-- [ml_dsa_lean::encode::poly_eta_bad]:
-    Source: 'src/encode.rs', lines 304:0-314:1 -/
+    Source: 'src/encode.rs', lines 307:0-317:1 -/
 def encode.poly_eta_bad
   (w : Array Std.U32 256#usize) (eta : Std.U32) : RustM Std.U32 := do
   let lo ← field.Q - eta
   encode.poly_eta_bad_loop w eta lo 0#u32 0#usize
 
 /-- [ml_dsa_lean::encode::eta_block_bad]:
-    Source: 'src/encode.rs', lines 318:0-329:1 -/
+    Source: 'src/encode.rs', lines 321:0-332:1 -/
 def encode.eta_block_bad
   (p : params.Params) (v : Slice Std.U8) : RustM Std.U32 := do
   let w := Array.repeat 256#usize 0#u32
@@ -7703,7 +7703,7 @@ def encode.eta_block_bad
   encode.poly_eta_bad w1 p.eta
 
 /-- [ml_dsa_lean::encode::sk_is_well_formed]: loop body 0:
-    Source: 'src/encode.rs', lines 340:4-344:5
+    Source: 'src/encode.rs', lines 343:4-347:5
     Visibility: public -/
 @[rust_loop_body]
 def encode.sk_is_well_formed_loop.body
@@ -7747,7 +7747,7 @@ def encode.sk_is_well_formed_loop.body
   else ok (done bad)
 
 /-- [ml_dsa_lean::encode::sk_is_well_formed]: loop 0:
-    Source: 'src/encode.rs', lines 340:4-344:5
+    Source: 'src/encode.rs', lines 343:4-347:5
     Visibility: public -/
 @[rust_loop]
 def encode.sk_is_well_formed_loop
@@ -7765,7 +7765,7 @@ def encode.sk_is_well_formed_loop
     (o, bad, i15)
 
 /-- [ml_dsa_lean::encode::sk_is_well_formed]:
-    Source: 'src/encode.rs', lines 335:0-346:1
+    Source: 'src/encode.rs', lines 338:0-349:1
     Visibility: public -/
 def encode.sk_is_well_formed
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (sk : Slice Std.U8) :
@@ -8451,7 +8451,7 @@ def api.pk_from_sk_87
   else ok none
 
 /-- [ml_dsa_lean::encode::sk_decode]:
-    Source: 'src/encode.rs', lines 286:0-297:1
+    Source: 'src/encode.rs', lines 289:0-300:1
     Visibility: public -/
 def encode.sk_decode
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (sk : Slice Std.U8) :
@@ -8517,7 +8517,7 @@ def ntt.scalar_vector_ntt_inverse
   ntt.scalar_vector_ntt_inverse_into c_hat v_hat out
 
 /-- [ml_dsa_lean::rounding::use_hint]:
-    Source: 'src/rounding.rs', lines 127:0-144:1
+    Source: 'src/rounding.rs', lines 128:0-145:1
     Visibility: public -/
 def rounding.use_hint
   (p : params.Params) (h : Bool) (r : Std.U32) : RustM Std.U32 := do
@@ -8542,7 +8542,7 @@ def rounding.use_hint
   else ok r1
 
 /-- [ml_dsa_lean::rounding::poly_use_hint]: loop body 0:
-    Source: 'src/rounding.rs', lines 215:4-218:5
+    Source: 'src/rounding.rs', lines 220:4-223:5
     Visibility: public -/
 @[rust_loop_body]
 def rounding.poly_use_hint_loop.body
@@ -8562,7 +8562,7 @@ def rounding.poly_use_hint_loop.body
   else ok (done out)
 
 /-- [ml_dsa_lean::rounding::poly_use_hint]: loop 0:
-    Source: 'src/rounding.rs', lines 215:4-218:5
+    Source: 'src/rounding.rs', lines 220:4-223:5
     Visibility: public -/
 @[rust_loop]
 def rounding.poly_use_hint_loop
@@ -8575,7 +8575,7 @@ def rounding.poly_use_hint_loop
     (out, j)
 
 /-- [ml_dsa_lean::rounding::poly_use_hint]:
-    Source: 'src/rounding.rs', lines 212:0-220:1
+    Source: 'src/rounding.rs', lines 217:0-225:1
     Visibility: public -/
 def rounding.poly_use_hint
   (p : params.Params) (h : Array Bool 256#usize) (r : Array Std.U32 256#usize)
@@ -8586,7 +8586,7 @@ def rounding.poly_use_hint
   rounding.poly_use_hint_loop p h r out 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_a_into_x4]:
-    Source: 'src/sampling.rs', lines 215:0-217:1
+    Source: 'src/sampling.rs', lines 224:0-226:1
     Visibility: public -/
 def sampling.expand_a_into_x4
   {K : Std.Usize} {L : Std.Usize} (rho : Array Std.U8 32#usize)
@@ -8596,7 +8596,7 @@ def sampling.expand_a_into_x4
   sampling.expand_a_from_x4 rho a 0#usize
 
 /-- [ml_dsa_lean::sampling::expand_a_x4]:
-    Source: 'src/sampling.rs', lines 248:0-252:1
+    Source: 'src/sampling.rs', lines 259:0-263:1
     Visibility: public -/
 def sampling.expand_a_x4
   (K : Std.Usize) (L : Std.Usize) (rho : Array Std.U8 32#usize) :
@@ -8754,7 +8754,7 @@ def verify.prepare_vk
   ok { a_hat, t1_2d_hat, tr }
 
 /-- [ml_dsa_lean::verify::prepare_vk_x4]:
-    Source: 'src/verify.rs', lines 190:0-199:1
+    Source: 'src/verify.rs', lines 192:0-201:1
     Visibility: public -/
 def verify.prepare_vk_x4
   (K : Std.Usize) (L : Std.Usize) (pk : Slice Std.U8) :
@@ -8770,7 +8770,7 @@ def verify.prepare_vk_x4
   ok { a_hat := a_hat1, t1_2d_hat, tr }
 
 /-- [ml_dsa_lean::verify::verify_internal]:
-    Source: 'src/verify.rs', lines 288:0-310:1
+    Source: 'src/verify.rs', lines 292:0-314:1
     Visibility: public -/
 def verify.verify_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)

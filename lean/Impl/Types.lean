@@ -57,7 +57,7 @@ structure sign.PreparedSk (K : Std.Usize) (L : Std.Usize) where
   tr : Array Std.U8 64#usize
 
 /-- [ml_dsa_lean::encode::SecretKey]
-    Source: 'src/encode.rs', lines 237:0-244:1
+    Source: 'src/encode.rs', lines 240:0-247:1
     Visibility: public -/
 structure encode.SecretKey (K : Std.Usize) (L : Std.Usize) where
   rho : Array Std.U8 32#usize

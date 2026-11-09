@@ -107,6 +107,7 @@ pub fn vec_infinity_norm<const N: usize>(w: &[[u32; 256]; N]) -> u32 {
 /// Whether `max_i |w_i mod± q| < bound` for the public vector `z` of verify: every entry `x < q` has `x < bound` or
 /// `x > q - bound`. Plain arithmetic (no mask or barrier), so the loop vectorizes; not for secret data
 /// (`vec_infinity_norm` is the constant-time one). Requires `0 < bound < q`.
+#[inline(always)]
 pub fn vec_norm_lt_pub<const N: usize>(w: &[[u32; 256]; N], bound: u32) -> bool {
     let mut bad = 0u32;
     let mut i = 0;
@@ -147,6 +148,7 @@ pub fn use_hint(p: &Params, h: bool, r: u32) -> u32 {
 /// non-edge `r` it is r0 itself (`−γ2 < r0 ≤ γ2`, so `t − 1 < (q−1)/2` as an unsigned number exactly when `r0 ≥ 1`); for
 /// the edge case (`r1` was 16 or 44 and was replaced by 0) it is `r > q − 1 − γ2 > (q−1)/2`, which is not positive,
 /// as in FIPS 204 where that case has r0 − 1 ≤ −1.
+#[inline(always)]
 fn low_is_positive(t: u32) -> bool {
     t.wrapping_sub(1) < (Q >> 1)
 }
@@ -154,6 +156,7 @@ fn low_is_positive(t: u32) -> bool {
 /// Algorithm 40 UseHint(h, r) for γ2 = (q−1)/32 (ML-DSA-65 and 87), r < q, public data: no constant-time selects.
 /// HighBits is the multiply-shift of the reference implementation: `r1 = ((⌊(r + 127)/128⌋ · 1025 + 2^21) / 2^22) mod 16`
 /// (the `mod 16` maps the edge case r1 = 16 to 0). All intermediate values fit in a u32 for r < q.
+#[inline(always)]
 fn use_hint_g32(h: bool, r: u32) -> u32 {
     let a = r.wrapping_add(127) >> 7;
     let r1 = (a.wrapping_mul(1025).wrapping_add(1 << 21) >> 22) & 15;
@@ -167,6 +170,7 @@ fn use_hint_g32(h: bool, r: u32) -> u32 {
 
 /// Algorithm 40 UseHint(h, r) for γ2 = (q−1)/88 (ML-DSA-44), r < q, public data. As `use_hint_g32` with
 /// `r1 = (⌊(r + 127)/128⌋ · 11275 + 2^23) / 2^24`, which is 44 only in the edge case (replaced by 0).
+#[inline(always)]
 fn use_hint_g88(h: bool, r: u32) -> u32 {
     let a = r.wrapping_add(127) >> 7;
     let r1 = a.wrapping_mul(11275).wrapping_add(1 << 23) >> 24;
@@ -190,6 +194,7 @@ fn use_hint_g88(h: bool, r: u32) -> u32 {
 /// two γ2 of the standard parameter sets (95232 and 261888) it returns exactly what `poly_use_hint` returns
 /// (`Proofs/Rounding.lean`, `poly_use_hint_pub_spec`; `tests/leaf.rs` checks all `r < q`). Not for secret data:
 /// the constant-time `poly_use_hint` stays what signing-side code would call.
+#[inline(always)]
 pub fn poly_use_hint_pub(p: &Params, h: &[bool; 256], r: &[u32; 256]) -> [u32; 256] {
     let mut out = [0u32; 256];
     let mut j = 0;

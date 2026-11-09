@@ -14,6 +14,7 @@ Usage: python3 scripts/gen_keccak4_round.py            print the block
 import sys
 from pathlib import Path
 
+INLINE = '#[inline(always)]'
 RHO = [0, 1, 62, 28, 27, 36, 44, 6, 55, 20, 3, 10, 43, 25, 39, 41, 45, 15, 21, 8, 18, 2, 61, 56, 14]
 out = []
 w = out.append
@@ -26,6 +27,7 @@ def rot(v, r, paren=True):
 
 
 w("#[allow(clippy::manual_rotate)] // explicit shifts: they are what the extraction and the proof are about")
+w(INLINE)
 w("fn round25(a: &[u64; 25], rc: u64) -> [u64; 25] {")
 for x in range(5):
     w(f"    let c{x} = a[{x}] ^ a[{x + 5}] ^ a[{x + 10}] ^ a[{x + 15}] ^ a[{x + 20}];")
@@ -51,6 +53,7 @@ w("}")
 w("")
 w("/// Two rounds (`rc0` then `rc1`) on state `i` of the 4-way state `s`: lane `k` of state `i` is `s[k][i]`, and the other three")
 w("/// states are untouched. Requires `i < 4`.")
+w(INLINE)
 w("fn lane_rounds2(s: &mut [[u64; 4]; 25], i: usize, rc0: u64, rc1: u64) {")
 w("    let a = [" + ", ".join(f"s[{k}][i]" for k in range(25)) + "];")
 w("    let m = round25(&a, rc0);")

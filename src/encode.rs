@@ -52,6 +52,7 @@ pub fn bit_unpack(v: &[u8], c: usize) -> [u32; 256] {
 /// `v` must hold `32·c` bytes (as for `bit_unpack`; a shorter `v` panics). Equal to `bit_unpack` for every `v`
 /// (`Proofs/Encode.lean`, `bit_unpack_pub_core` and `bit_unpack_pub_spec_repr`; `tests/leaf.rs` compares them on random and extreme inputs).
 /// Not for secret data (the generic one is what the secret-key decoders use).
+#[inline(always)]
 pub fn bit_unpack_pub(v: &[u8], c: usize) -> [u32; 256] {
     let mut w = [0u32; 256];
     if c == 20 {
@@ -162,6 +163,7 @@ fn unpack_signed(v: &[u8], b: u32, c: usize) -> [u32; 256] {
 /// at a time with constant shifts, so that no bit accumulator runs through the loop and the compiler can vectorize it.
 /// Any other `c` takes the generic `bit_pack`. `out` must hold `32·c` bytes. Equal to `bit_pack` whenever all values
 /// are below `2^c` (`Proofs/VerifyArith.lean`, `bit_pack_pub_spec`). Not for secret data.
+#[inline(always)]
 pub fn bit_pack_pub(w: &[u32; 256], c: usize, out: &mut [u8]) {
     if c == 4 {
         // two values per byte
@@ -201,6 +203,7 @@ pub fn w1_encode<const K: usize>(p: &Params, w1: &[[u32; 256]; K], out: &mut [u8
 }
 
 /// `w1_encode` with `bit_pack_pub`, for verify: w1 is public and every entry is below `2^w1_bits`.
+#[inline(always)]
 pub fn w1_encode_pub<const K: usize>(p: &Params, w1: &[[u32; 256]; K], out: &mut [u8]) {
     let n = 32 * p.w1_bits;
     let mut i = 0;

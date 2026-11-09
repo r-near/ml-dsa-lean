@@ -25,6 +25,7 @@ use crate::keccak::RC;
 // `a[k]`. The shared generated code below is `scripts/gen_keccak4_round.py`'s output (`--check` compares).
 // BEGIN GENERATED
 #[allow(clippy::manual_rotate)] // explicit shifts: they are what the extraction and the proof are about
+#[inline(always)]
 fn round25(a: &[u64; 25], rc: u64) -> [u64; 25] {
     let c0 = a[0] ^ a[5] ^ a[10] ^ a[15] ^ a[20];
     let c1 = a[1] ^ a[6] ^ a[11] ^ a[16] ^ a[21];
@@ -115,6 +116,7 @@ fn round25(a: &[u64; 25], rc: u64) -> [u64; 25] {
 
 /// Two rounds (`rc0` then `rc1`) on state `i` of the 4-way state `s`: lane `k` of state `i` is `s[k][i]`, and the other three
 /// states are untouched. Requires `i < 4`.
+#[inline(always)]
 fn lane_rounds2(s: &mut [[u64; 4]; 25], i: usize, rc0: u64, rc1: u64) {
     let a = [s[0][i], s[1][i], s[2][i], s[3][i], s[4][i], s[5][i], s[6][i], s[7][i], s[8][i], s[9][i], s[10][i], s[11][i], s[12][i], s[13][i], s[14][i], s[15][i], s[16][i], s[17][i], s[18][i], s[19][i], s[20][i], s[21][i], s[22][i], s[23][i], s[24][i]];
     let m = round25(&a, rc0);
@@ -149,6 +151,7 @@ fn lane_rounds2(s: &mut [[u64; 4]; 25], i: usize, rc0: u64, rc1: u64) {
 
 /// Keccak-f[1600] on four states at once, lane `i` of every `s[k]` being state `i`: state `i` of the result is the
 /// permutation of state `i` of the input.
+#[inline(always)]
 pub fn keccak_f1600_x4(s: &mut [[u64; 4]; 25]) {
     let mut r = 0;
     while r < 24 {

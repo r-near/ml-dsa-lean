@@ -30,9 +30,9 @@
 //! `zeroize` feature, dropping one wipes ŝ1, ŝ2, t̂0 and K (the `Drop` impl is not part of the Lean model).
 //!
 //! Stack, worst case below the caller's frame in a release build (`tools/stack/`, painted stack and static walk, x86_64,
-//! thumbv7em and riscv32imac agree within 4%; ML-DSA-44 / 65 / 87, in KB): the one-shot `verify_*` take 56 / 80 / 118
+//! thumbv7em and riscv32imac agree within 4%; ML-DSA-44 / 65 / 87, in KB): the one-shot `verify_*` take 64 / 90 / 132
 //! (the key is built in place, `verify::prepare_vk_into_x4`, and verify always runs the 4-way ExpandA) and `verifying_key_*`
-//! 50 / 73 / 108, plus the returned key in the caller's frame (20.5 / 36.9 / 65.6); the 87 figure of `verifying_key_*` is
+//! 50 / 74 / 111, plus the returned key in the caller's frame (20.5 / 36.9 / 65.6); the 87 figure of `verifying_key_*` is
 //! the compiler keeping an extra copy of the key (the build-in-place figure is about 26 KB, which an older toolchain reached).
 //! `signing_key_*` 60 / 99 / 164, plus the returned key (28.8 / 48.2 / 81.0); `verify_prepared_*` and
 //! `verify_internal_prepared_*` 34 / 45 / 59; `sign_prepared_*` and `sign_internal_prepared_*` 73 / 101 / 134; `sign_*`
