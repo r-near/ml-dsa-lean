@@ -140,12 +140,40 @@ to it. Earlier runs of the Lean gates on older trees of the same branch (5f638b7
 | `bench/stackscan.sh check` (257 paddings; nine instantiations; rustc 1.99.1 only, 1.95.0 not rerun) | `STACK SCAN OK`; largest padding over the median 1.03 (ML-DSA-87 `verifying_key`), none above 1.1. The scan cannot see the prepared-key anchor of 1.9; the A/B does | 428f6e2 |
 | Interleaved A/B against `fast-verify` and `fv-vec` (`bench/results/2026-11-08-p8.md`) | 44/65/87 one-shot, `verifying_key` and prepared verify at paddings 0, 672 and 2752: all 27 cells within 0.9% of `fast-verify` and within about 1.3% of `fv-vec` | 428f6e2 |
 
+Round 9 (branch `fv-p9`; 1.9) is a later tree again. `align_frame()` and its `cfg(miri)` twin are gone: `verify_core` computes w′1 and its
+encoding in a `#[repr(align(32))]` `VerifyScratch` (`src/verify.rs`) that it owns, which gives `verify_prepared_avx2` its aligned frame.
+`lean/Impl` is re-extracted: `align_frame` is removed, `Types.lean` gains the `VerifyScratch` structure, `verify_core` is the same
+function with renamed locals (Aeneas splits the local struct into its fields, and the row loop runs on a borrow of the `w1` field, so
+`verify_core_loop` keeps its signature), and `FunsExternal.lean` and `FunsExternal_Template.lean` no longer declare the four unreferenced
+`core.iter.range.Step.*.default` axioms (extraction removes them, section 0 pins). **No theorem statement changed**: no name in
+`lean/headline-theorems.txt` (412 names), `lean/keccak4-theorems.txt` (6) or `lean/fast-verify-theorems.txt`
+(102) changed its statement or gained a hypothesis, and no proof had to be edited: `git diff fv-p8 -- lean/Proofs lean/*.txt` is one docstring in
+`Proofs/Dispatch.lean`. The checked count of the first axiom gate is 925 (was 926: `align_frame` was an extracted definition). The new
+whole-environment scan (`scripts/check-no-decls.sh`) is part of both Lean gates. Every Lean gate below ran on the Linux build box on
+2026-11-09 on the tree of the commit named in the last column; the commits between them (7356bef, f93e94b, 4a3820a) change only
+`scripts/check-no-decls.sh` and `scripts/witness-check.sh` (`git diff ff2469d 4a3820a -- src lean` is empty); the commits that add this table and the
+result file change documentation, benchmark files and the A/B table script only (`git diff 4a3820a -- src lean scripts checkct tests Cargo.toml` is empty).
+
+| Gate | Result | Run on |
+|---|---|---|
+| `scripts/lean-check.sh` | `LEAN CHECK OK`: `Build completed successfully (3337 jobs)`; axiom gate over the extracted definitions and the names in `lean/headline-theorems.txt`, 925 checked, then over the 6 names of `lean/keccak4-theorems.txt` and the 102 of `lean/fast-verify-theorems.txt`; each `AXIOM GATE OK`, axioms used: `propext`, `Classical.choice`, `Quot.sound`. Then `no-decls text scan: 96 files, 0 forbidden constructs`; `no-decls env scan: 76 modules, 13913 constants, 0 violations` / `NODECLS ENV OK` / `NO-DECLS GATE OK`; `no-decls self-test OK: the Lean scan reported axiom, opaque, implemented_by, extern, sorry and native_decide in an injected Impl module; the text scan named it` | f93e94b |
+| `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`: `Build completed successfully (3324 jobs)`, 146 names checked, axioms `propext`, `Classical.choice`, `Quot.sound`, `AXIOM GATE OK` (f93e94b); on 4a3820a, which also builds the default targets so that the scan covers every module: `Build completed successfully (3337 jobs)`, `no-decls env scan: 95 modules, 14391 constants, 0 violations`, `NO-DECLS GATE OK`, `WITNESS CHECK OK` | f93e94b, 4a3820a |
+| `scripts/ci.sh --lean` | `CI SUMMARY: 22 passed, 0 failed, 0 skipped` (every step, including `test-avx2`, `avx2-inlining`, `thumbv7em`, `msrv-1.86`, `diff-awslc`, the three fuzz targets at 60 s, `extract-hash`, `axiom-gate-selftest`, the new `no-decls-text` and `lean` with `LEAN CHECK OK`) | 4a3820a |
+| `scripts/check-avx2-inlining.sh` | rustc 1.99.1: `OK: 4-way permutation vectorized in every wrapper; verify-only arithmetic fully inlined; verify wrappers realign their frames; 57462 lines of ymm code`; the three `verify_prepared_avx2` instantiations hold 4076, 4965 and 5512 lines of ymm code, and all nine wrappers show `andq $-32` (`1 ` in the realign table). rustc 1.95.0: the same `OK` line, 59012 lines, instantiations 4081, 4977 and 5524 | 7356bef |
+| `ML_DSA_REQUIRE_AVX2=1 cargo test --release --features avx2,internals` | 27 result lines (26 test binaries and the doc-tests), 122 tests passed, 0 failed, 1 ignored (the timing test of `tests/keccak4.rs`) | 7356bef |
+| `cargo +1.86.0 build --features avx2` | builds (the declared MSRV) | 7356bef |
+| README example test (`cargo test --test readme_example`) | 2 passed | 7356bef |
+| `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (extraction inputs sha256 3c19e744ca3e8138cfe48b7dc5839b167b4d917bb52d49a9444b3209959c60c1; the recorded hashes are those of the cleaned `FunsExternal*.lean`) | 7356bef, 4a3820a (ci) |
+| checkct driver | builds (release, `-p driver`, nightly-2026-10-06) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`: 6 of 6 cells. BINSEC smoke: not rerun, see section 4 (every function of the driver binaries is identical to fv-p8's after address masking, in all 12 binaries) | f93e94b |
+| `bench/stackscan.sh check` (257 paddings; nine instantiations) | rustc 1.99.1 and 1.95.0 (nearcore profile and flags, `OPS=verify,vk,prepared`, sets 44, 65, 87): `STACK SCAN OK` on both; no padding above 1.1 x the median in any of the nine cells (0/257 each); the largest padding over the median is 1.06 (ML-DSA-65 `prepared`, 1.95.0) | 4a3820a |
+| Interleaved A/B against `fast-verify` (3b79427) and fv-p8 (40ee0de) (`bench/results/2026-11-09-p9.md`) | 4 interleaved passes at pads 0, 672 and 2752, 27 cells (3 sets, one-shot, `verifying_key`, prepared-key verify): the final tree is within -1.0% to +1.2% of fv-p8 and `fast-verify` is within 0.83%; the prepared-key verify is within -0.6% to +1.2% of fv-p8 (the largest cell, ML-DSA-87 at pad 672, has a run spread of 2.6%); the spread of a cell over the passes is at most 2.6% of its median. The first formulation of the scratch (6e330b0) measured within 1.3% in the same way | 4a3820a |
+
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
 
 What ties the shipped Rust to the proved Lean (the proofs are about `lean/Impl`, the extraction of `src/`):
 
-- Every push and pull request (`ci.yml`, job `repo-checks`, steps `extract-hash` and `axiom-gate-selftest` of `scripts/ci.sh`):
+- Every push and pull request (`ci.yml`, job `repo-checks`, steps `extract-hash`, `axiom-gate-selftest` and `no-decls-text` of `scripts/ci.sh`):
   `extract-hash` fails if the digest of the extraction inputs (every file under `src/`, `Cargo.toml` without its
   dev-dependencies and with its package `version` replaced by `0.0.0` (so a release version bump does not change the digest), the roots, the Charon and Aeneas pins; file names are part of the digest), the set and contents of the files in
   `lean/Impl` (recursively), or the roots in `scripts/extract-roots.txt` no longer match what `lean/Impl/extract-report.json`
@@ -153,7 +181,7 @@ What ties the shipped Rust to the proved Lean (the proofs are about `lean/Impl`,
   `src/` or `lean/Impl`, a build script, an `env!`/`include!`-style macro in `src/`, a root `.cargo` directory or toolchain
   file, or a file name with a control character (inputs the extraction does not see, or that make the manifest ambiguous). It checks that committed files agree with each other and does not re-run the extraction, so editing
   `lean/Impl` and the report together passes it. The self-test runs `scripts/check-axioms.sh` on a missing, an empty and a
-  declaration-free list and requires it to fail.
+  declaration-free list and requires it to fail. `no-decls-text` runs the text half of `scripts/check-no-decls.sh` (its self-test, then a scan of every `.lean` file under `lean/Impl`, `lean/Spec` and `lean/Proofs` for `axiom`, `opaque`, `sorry`, `admit`, `native_decide`, `implemented_by` and `extern`, comments and strings excluded); the Lean half, which walks the environment's constants, runs in `lean-check.sh`.
 - Manual and weekly, on the large runner (`lean.yml`, before `lean-check.sh`): `scripts/setup-tools.sh`, then the fast check, then
   `scripts/extract.py` into a new empty directory, and the job fails unless every file there is identical to the committed
   `lean/Impl` and neither has files the other lacks (`diff -r`). This is the check that a coordinated edit of `lean/Impl` and the
@@ -177,7 +205,7 @@ Pins and decisions:
 | M′ | `sign_internal(p, sk, m_prefix, m, rnd, sig)` and `verify_internal(p, pk, m_prefix, m, sig)`, with M′ = `m_prefix ‖ m` absorbed in two calls | the external API builds 0 ‖ \|ctx\| ‖ ctx (≤ 257 bytes) on the stack, no alloc; the proof needs one sponge lemma (absorbing two slices = absorbing their concatenation) |
 | Charon | generic (no `--monomorphize`) | 0 external axioms; `--monomorphize` adds 9 unmodeled index axioms |
 | Extraction toolchain | Charon nightly-2026.09.02, Aeneas build-183e4f0, cargo-hax 0.4.2, elan v4.2.4, Rust nightly-2026-08-18, Lean v4.31.0 | pinned in `scripts/setup-tools.sh` and `lean/lean-toolchain`; the cargo-hax and elan downloads are tagged releases checked against recorded SHA-256 values; on every run the installed cargo-hax binary and the whole Aeneas and Charon tool directories (including `hax-metadata.toml`, which names the executables cargo-hax runs) are checked against recorded digests, and the executables must have the execute bit and run (the nightly and the Lean toolchain are fetched and verified by rustup and elan) |
-| Extraction gate | Aeneas exit 0, no `[Error]`/`[Warning]`, no local opaque function, no referenced external axiom, every extracted def on standard axioms only | any failure is fixed in the Rust code, not worked around |
+| Extraction gate | Aeneas exit 0, no `[Error]`/`[Warning]`, no local opaque function, no referenced external axiom (and the unreferenced ones Aeneas declares are removed, `extract_hash.clean_external`, so `lean/Impl` declares none), every extracted def on standard axioms only, and no `axiom`/`opaque`/`sorry`/`admit`/`native_decide`/`implemented_by`/`extern` anywhere in `lean/Impl`, `lean/Spec`, `lean/Proofs` (`scripts/check-no-decls.sh`) | any failure is fixed in the Rust code, not worked around |
 | Out of scope | HashML-DSA (Algorithms 4/5) and external μ | no differential oracle for the first; the second is an allowed variant of Algorithms 7/8 that would need its own spec entry and theorems (deferred, not ruled out) |
 
 ## 1. What is proved
@@ -451,7 +479,7 @@ equalities of `RustM` values (so including divergence):
 
 So, on a build with the dispatch, the two arms are the same function: what the API returns does not depend on the answer of the CPU
 check, and the theorems of 1.1 to 1.4 apply to both. What remains outside the proof is listed exactly in 2, item 5 and in the audit
-of section 3 (the CPU check itself, which can only make a wrong answer a crash, and the compilation of the proved source).
+of section 3 (the CPU detection, an assumption whose failure in one direction is undefined behavior, the dispatch glue lines, and the compilation of the proved source).
 
 - **Portable build:** the code that ships is exactly the extracted code, and 1.1 applies to it.
 - **AVX2 build:** the shipped functions are the extracted `_with` functions with the token of `cpu::avx2()`. Both arms are proved to
@@ -467,19 +495,22 @@ of section 3 (the CPU check itself, which can only make a wrong answer a crash, 
   paths, for all three sets; `tests/dispatch.rs` checks `has_avx2` against the standard library's detection. The parse has its own
   boundary tests (`src/sampling.rs`, `boundary_tests`). `ML_DSA_REQUIRE_AVX2=1` turns "this machine has no AVX2" from a printed note
   into a failure.
-- **Stack frames.** `PreparedVk` is `#[repr(align(32))]` (`src/verify.rs`). A wrapper that owns one (`verify_internal_avx2`,
-  `prepare_vk_avx2`) therefore has a 32-byte aligned stack frame, with no code that exists only for that purpose; the attribute
-  changes no value (Aeneas ignores it). Without a realigned frame LLVM spills 256-bit vectors to 16-byte aligned slots and accesses
-  them unaligned, and at about one stack offset in seven a slot straddles a 4 KiB page, which made one-shot verify and
-  `verifying_key_NN` up to 7, 13 and 24 µs above the median at that offset (`bench/results/2026-11-07-p6.md`).
-  `verify_prepared_avx2` only borrows a key, so the type does not help it. The stack-offset scan (`bench/stackscan.sh`, nine
-  instantiations, largest padding within 1.03 of the median) does not show a cost there, but the interleaved A/B does: without a
-  realigned frame the prepared-key verify was 2 to 8 % slower than on fv-vec at all three paddings (`bench/results/2026-11-08-p8.md`),
-  and calling the old `align_frame()` in that wrapper alone brought it back to fv-vec's time. So that one wrapper keeps
-  `align_frame()` (a 32-byte aligned local passed to `core::hint::black_box`; it reads and writes no value). It is the only code on a
-  verify path, besides the CPU check, that is compiled differently from the extraction: under `--cfg miri` it is the empty function
-  (as `field::opaque_u32` is the identity there). The mechanism was not isolated further. `scripts/check-avx2-inlining.sh` requires
-  `andq $-32, %rsp` in all nine wrapper instantiations.
+- **Stack frames.** Every wrapper gets a 32-byte aligned stack frame from a `#[repr(align(32))]` object that the proved code
+  computes in, with no code that exists only for that purpose. `PreparedVk` (`src/verify.rs`) is one: a wrapper that owns a key
+  (`verify_internal_avx2`, `prepare_vk_avx2`) has the frame from it. `VerifyScratch` (`src/verify.rs`) is the other: `verify_core` creates
+  one and computes in it (w′1 is its `w1` field, written by the row loop and read by `w1_encode_pub`; the encoding is its `w1_enc`
+  field, written by `w1_encode_pub` and read by the SHAKE256 absorb), so every wrapper that inlines `verify_core` has it, in
+  particular `verify_prepared_avx2`, which only borrows a key. Aeneas ignores `repr`; the struct and its field accesses are in the
+  extraction and in the proofs (`Proofs/Verify.lean`: `verify_loop_spec`, `verify_core_spec`), which is the point: the object is
+  used by the computation, so LLVM has no reason to drop it, and no code exists only under `cfg(not(miri))`. Without a realigned
+  frame LLVM spills 256-bit vectors to 16-byte aligned slots and accesses them unaligned, and at about one stack offset in seven a
+  slot straddles a 4 KiB page, which made one-shot verify and `verifying_key_NN` up to 7, 13 and 24 µs above the median at that
+  offset (`bench/results/2026-11-07-p6.md`). The stack-offset scan (`bench/stackscan.sh`) does not show the cost for the prepared-key
+  verify, but the interleaved A/B does: with no realigned frame it was 2 to 9 % slower than on fv-vec (`bench/results/2026-11-08-p8.md`);
+  with `VerifyScratch` it is at parity with fv-p8 and `fast-verify` (`bench/results/2026-11-09-p9.md`). The mechanism was not isolated
+  further. LLVM may split or drop an aligned aggregate (scalar replacement, dead-store elimination), which nothing in the source
+  prevents, so `scripts/check-avx2-inlining.sh` stays an object-code check: it requires `andq $-32, %rsp` in all nine wrapper
+  instantiations (it passes on rustc 1.99.1 and 1.95.0, section 0). The black_box anchor `align_frame()` of fv-p8 is gone from `src/`.
 - **Performance, not correctness:** that every link of the chain is `#[inline(always)]` into the wrapper (the check fails if a
   verify-only arithmetic function is defined out of line), that LLVM vectorizes the loops (the check requires a `vpsllq` for every
   permutation rotation amount in each wrapper, and ymm code in each `verify_prepared_avx2`), and that the wrapper's frame is aligned.
@@ -492,28 +523,41 @@ of section 3 (the CPU check itself, which can only make a wrong answer a crash, 
 1. **Spec fidelity** of `lean/Spec` against FIPS 204/202. Evidence is the list in 1.8 (internal reviews, test vectors, and
    equivalence to other transcriptions); none of it is a proof that the spec is the standard.
 2. **Charon/Aeneas translation** (pins in section 0). Extraction runs with `--cfg miri`, so the proved code is the source with
-   the `cfg(miri)` variants: `field::opaque_u32` and the RISC-V `black_box` are the identity there, and the AVX2 dispatch is
-   absent (CT-1, CT-2 below; `docs/object-code-assurance.md` §3.5). Evidence: the extracted code compiled and run against the
+   the `cfg(miri)` variants: `field::opaque_u32` and the RISC-V `black_box` are the identity there, and the `ntt.rs` AVX2
+   dispatch (`ntt::dispatch`, used by signing and key generation; verify does not reach it) is absent, so the extraction sees the
+   portable NTT bodies only (CT-1, CT-2 below; `docs/object-code-assurance.md` §3.5). The verify dispatch (`fast_verify.rs`) is not
+   absent: it is extracted, and only the CPU detection under it is replaced, by the stub `None`. Evidence: the extracted code compiled and run against the
    native Rust on 345,360 cases (Keccak, field, NTT, rounding, samplers, codecs and the full public API incl. 225 ACVP-derived
    cases), 100% agreement; 4 injected bugs all detected (`scripts/impl-eval.sh`, `lean/SpecTests/ImplEval.lean`).
 3. **rustc/LLVM** compile the source faithfully. The theorems are about source semantics, not object code. The compiled code
    differs from the proved code by the `black_box` barriers of item 2 (they are on no verify path) and, with the `avx2` feature,
-   by the CPU check and the compilation of the `#[target_feature]` wrappers (item 5); `black_box` is trusted to be the identity on
-   values.
+   by the CPU detection (item 5); `black_box` is trusted to be the identity on values. The compilation of the `#[target_feature]`
+   wrappers is the same trust, applied to code that carries those attributes (item 5).
 4. **The Lean kernel** with `propext`, `Classical.choice`, `Quot.sound`.
 
-5. **With the `avx2` feature only** (x86_64): (a) the CPU check, `src/cpu.rs` (the real `cpu::avx2()` and `has_avx2`, which the
-   extraction replaces by the stub `None`) and the 15 lines of `src/api.rs` that call it. The dispatch itself is proved (1.9,
-   `Proofs/Dispatch.lean`: for every token value the `_with` functions are the scalar functions), so a wrong answer of the check can
-   make a CPU without AVX2 execute AVX2 code (SIGILL), or leave a CPU with AVX2 on the scalar path (slower); it cannot change a
-   result. What justifies the one `unsafe` call per wrapper is the type: only `cpu::avx2()` makes an `Avx2` token, and it does so
-   after `has_avx2()`, which is trusted to report AVX2 only when CPU and OS can run it (checked against the standard library's
-   detection by `tests/dispatch.rs`). (b) `align_frame()` in the prepared-key wrapper (a value-free stack-alignment anchor, 1.9), and (c) rustc and LLVM compiling the three `#[target_feature(enable = "avx2")]` wrappers
-   (`verify_internal_avx2`, `prepare_vk_avx2`, `verify_prepared_avx2`: each a call of one proved function, the last one after
-   `align_frame()`, with the proved callees inlined into it) to code that computes what the source says, besides the same trust in item 3. The compilation is
-   exercised by the AVX2-versus-scalar tests of 1.9, not proved. That the compiler vectorizes the loops is a performance property
-   (`scripts/check-avx2-inlining.sh`), not a premise. The NTT's AVX2 copy (`src/ntt.rs`, used by signing and key generation, **not
-   reachable from verify**) rests on `tests/dispatch.rs` (section 3).
+5. **With the `avx2` feature only** (x86_64), on the verify paths. The residual is exactly this (references are to the tree of
+   section 0; section 3 has the audit that nothing else is outside the proof):
+   (a) the CPU detection and its cache, `src/cpu.rs` (`detect_avx2` :31, the `AVX2` atomic :52, `has_avx2` :66, `avx2` :84;
+   the extraction replaces `avx2` by the stub `None`, :92). `detect_avx2` reports AVX2 when CPUID's maximum basic leaf is at least 7,
+   leaf 1 ECX bits 26 to 28 (XSAVE, OSXSAVE, AVX) are all set, XCR0 bits 1 and 2 (the OS saves XMM and YMM state) are set, and leaf 7
+   subleaf 0 EBX bit 5 (AVX2) is set; `has_avx2` skips the check when the build enables AVX2 statically. **The assumption: the CPU
+   and OS can execute AVX2 whenever this reports it.** A false negative only selects the scalar function, which is proved to be the
+   same function. A false positive executes a `#[target_feature(enable = "avx2")]` function on a CPU or OS that cannot run it, which is
+   undefined behavior: SIGILL is one possible outcome, not a guaranteed one, and the equality theorems do not constrain it;
+   (b) the 15 token-passing call lines `NAME_with(cpu::avx2(), ..)` in `src/api.rs` (:137, :162, :191, :203, :219 for 44; :352, :377,
+   :406, :418, :434 for 65; :567, :592, :621, :633, :649 for 87), which the extraction sees with the stub; the dispatch below them is
+   proved (`Proofs/Dispatch.lean`: for every token value the `_with` functions are the scalar functions);
+   (c) the 3 `unsafe` calls of the wrappers in `src/fast_verify.rs` (:67, :86, :97, one in each `_with` function). What justifies them
+   is the type: only `cpu::avx2()` makes an `Avx2` token, and it does so after `has_avx2()`;
+   (d) the attributes that steer code generation and no value: `#[target_feature(enable = "avx2")]` on the three wrappers
+   (`src/fast_verify/dispatch.rs`), `#[repr(align(32))]` on `PreparedVk` and `VerifyScratch` (`src/verify.rs`) and the
+   `#[inline(always)]` that `cfg_attr` adds to the functions the wrappers inline, and rustc and LLVM compiling the three wrappers
+   (`verify_internal_avx2`, `prepare_vk_avx2`, `verify_prepared_avx2`: each a call of one proved function with the proved callees inlined
+   into it) to code that computes what the source says. That is the same trust as item 3, on code with these attributes. The
+   compilation is exercised by the AVX2-versus-scalar tests of 1.9, not proved. That the compiler vectorizes the loops, inlines the
+   chain and realigns the frames is a performance property (`scripts/check-avx2-inlining.sh`), not a premise. The NTT's AVX2 copy
+   (`src/ntt.rs`, used by signing and key generation, **not reachable from verify**) rests on `tests/dispatch.rs` (section 3).
+   There is no `align_frame()` and no other code compiled differently from the extraction on a verify path, besides (a).
 
 Zeroize, the opt-in AVX2 code (its status is item 5) and anything above `api` are outside the proof.
 
@@ -533,17 +577,18 @@ See also section 7 (known limitations).
   for verify, `verifying_key` and the prepared verify (1.9): the 4-way body is proved equal to the scalar verify and the dispatch
   between them is proved for every CPU-check answer. **Exactly what is not proved on those paths** (the audit that `Proofs/Dispatch.lean`
   is meant to leave nothing else): with the feature on x86_64, every Rust line reachable from `api::verify_*`, `api::verify_internal_*`,
-  `api::verifying_key_*`, `api::verify_prepared_*` and `api::verify_internal_prepared_*` is in an extracted function (267 extracted
-  definitions are reachable; no `ntt::*` function, including the `ntt::dispatch` family, is among them: only the tables `ZETAS`,
-  `ZETAS_SHOUP`, `ZETAS_NEG_SHOUP` and `F_SHOUP` are read), except (i) `src/cpu.rs` as compiled (`detect_avx2`, the `AVX2` cache,
-  `has_avx2`, `avx2`; the extraction sees the one-line stub), (ii) the 15 call lines `NAME_with(cpu::avx2(), ..)` in `src/api.rs`,
-  (iii) `align_frame()` in `src/fast_verify/dispatch.rs`, the value-free stack-alignment anchor of `verify_prepared_avx2` (the
-  extraction sees the empty function that `cfg(miri)` selects; the real one is an aligned local passed to `black_box`), and (iv)
-  attributes that steer code generation and no value: the three `#[target_feature(enable = "avx2")]` lines of
-  `src/fast_verify/dispatch.rs`, `#[repr(align(32))]` on `PreparedVk`, and the `#[inline(always)]` that `cfg_attr` adds to the
-  functions the wrappers inline. The code in `src/fast_verify/hooks.rs`, `keccak4::avx2_checked` and `cpu::has_avx2_cached` exists
+  `api::verifying_key_*`, `api::verify_prepared_*` and `api::verify_internal_prepared_*` is in an extracted function (the extraction report
+  of section 0 counts the reachable definitions; no `ntt::*` function, including the `ntt::dispatch` family, is among them: only the tables `ZETAS`,
+  `ZETAS_SHOUP`, `ZETAS_NEG_SHOUP` and `F_SHOUP` are read), except the residual of section 2, item 5: (i) `src/cpu.rs` as compiled
+  (`detect_avx2`, the `AVX2` cache, `has_avx2`, `avx2`; the extraction sees the one-line stub), (ii) the 15 call lines
+  `NAME_with(cpu::avx2(), ..)` in `src/api.rs`, (iii) the 3 `unsafe` calls in `src/fast_verify.rs`, and (iv) attributes that steer code
+  generation and no value: the three `#[target_feature(enable = "avx2")]` lines of `src/fast_verify/dispatch.rs`, `#[repr(align(32))]` on
+  `PreparedVk` and `VerifyScratch`, and the `#[inline(always)]` that `cfg_attr` adds to the functions the wrappers inline, under the
+  ordinary compiler trust. "CPU and OS support AVX2 whenever `detect_avx2` reports it" is an assumption (section 2, item 5(a)); a false
+  report is undefined behavior. The code in `src/fast_verify/hooks.rs`, `keccak4::avx2_checked` and `cpu::has_avx2_cached` exists
   only with the `internals` feature, for tests and benchmarks, and no `api` function reaches it. The `black_box` of
-  `field::opaque_u32`, `barrier_u32` and `barrier_u64` (identity under extraction) is on no verify path. The AVX2 copy of the NTT is
+  `field::opaque_u32`, `barrier_u32` and `barrier_u64` (identity under extraction) is on no verify path, and no `black_box` is on a
+  verify path at all since `align_frame()` was removed. The AVX2 copy of the NTT is
   covered by `tests/dispatch.rs`, the KAT suites run with the feature and a static scan, not by BINSEC
   (`docs/object-code-assurance.md` §3.5). **The `zeroize` feature** is outside the proof. `-C target-cpu=x86-64-v3`
   has no `unsafe` and no dispatch, but the binary then requires AVX2 and BINSEC cannot lift its vector code either; for verify it
@@ -594,6 +639,15 @@ same counts as the previous smoke run on the `fast-verify` tree), and `control_p
 previous smoke run had the sweep's counts in these two cells, so the change is code layout after the probe's path moved through the `_with` functions (the verdict is unchanged). The controls and the
 `nearcore-exact-dispatch` `unknown` cells give the same verdicts as in the sweep. The full sweep was not rerun: no
 Sign or KeyGen code changed. Rows: `checkct/results/smoke-fast-verify/`.
+
+Round 9 (fv-p9: `VerifyScratch`, no `align_frame`, an extraction without axiom declarations) changed no Sign or KeyGen source, and the
+smoke run was not repeated. Instead the checkct driver of the fv-p8 tree (40ee0de) and of the fv-p9 tree were built in the default release profile
+for riscv32imac, thumbv7em and x86_64, each with and without `avx2` (12 binaries), and every function of each pair was compared after
+removing addresses and symbol hashes (`llvm-objdump -d`, immediates that look like addresses and `<symbol>` operands replaced): 234, 234,
+239, 239, 234 and 235 functions respectively, all identical, none added or removed. So the machine code that BINSEC would analyze for
+the Sign and KeyGen probes is the code of the tree the smoke run covered (the verify probes of the driver are in those functions
+too). This is a comparison of the instruction streams with addresses masked, not a BINSEC verdict; the profiles with nearcore's flags were
+not compared.
 
 Full sweep at 1a72d9e (November 5–6, 2026; the tree with Sign's per-attempt wiping, in-place secret-key decoding and `sign::more_attempts`): 114 entrypoints per run (113 for the `nearcore`, `nearcore-dispatch` and `nearcore-exact*` profiles) plus two whole-Sign censuses, on x86_64 (checkct profile,
 `nearcore`, `avx2` dispatch, `nearcore-dispatch`, `nearcore-exact*`), thumbv7em, riscv32imac and AArch64 without NEON. BINSEC
@@ -652,7 +706,7 @@ Three real leaks were found and fixed (CT-1, CT-2, CT-3 in section 6). Limits:
 - **The `nearcore-exact` CT profile is nearcore's exact release build for the crate in isolation** (`overflow-checks = true`,
   nearcore's x86_64 target features, Rust 1.95.0, read from nearcore cd5a94457). It is not nearcore's binary: callers, allocator,
   glibc `memcpy` and the prebuilt `core` differ (`checkct/README.md`, "What this does and does not show").
-- **AVX2 and NEON code:** the AVX2 NTT copy is covered by a static scan only, and the AVX2 lane operations of the fast verify have
+- **AVX2 and NEON code:** the AVX2 NTT copy is covered by a static scan only, and the AVX2-compiled wrappers of the fast verify have
   no BINSEC coverage (verify is public data; BINSEC 0.11.3 could not lift them either); AArch64 builds with NEON cannot be lifted, so macOS and Apple Silicon builds have no BINSEC coverage.
 - **Other builds:** verdicts depend on code shape and hold for the builds measured. The sweep's binaries are built without the
   `zeroize` feature. A separate run built the x86_64 default profile and `nearcore-exact-novec` with it (`ZEROIZE=1`; all probes,
