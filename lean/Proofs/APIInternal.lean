@@ -55,9 +55,39 @@ def verifyInternalAPI (n N : Usize) (K L : Usize) (P : RustM params.Params) (pk 
   let s2 ← lift (Array.to_slice sig)
   verify.verify_internal K L p s s1 m s2
 
-theorem verify_internal_44_eq : api.verify_internal_44 = verifyInternalAPI 1312#usize 2420#usize 4#usize 4#usize params.ML_DSA_44 := rfl
-theorem verify_internal_65_eq : api.verify_internal_65 = verifyInternalAPI 1952#usize 3309#usize 6#usize 5#usize params.ML_DSA_65 := rfl
-theorem verify_internal_87_eq : api.verify_internal_87 = verifyInternalAPI 2592#usize 4627#usize 8#usize 7#usize params.ML_DSA_87 := rfl
+/-- The body of `api.verify_internal_NN`: the public function calls the 4-way verifier `verify.verify_internal_x4`. -/
+def verifyInternalX4API (n N : Usize) (K L : Usize) (P : RustM params.Params) (pk : Array U8 n) (m : Slice U8)
+    (sig : Array U8 N) : RustM Bool := do
+  let p ← P
+  let s ← lift (Array.to_slice pk)
+  let s1 ← lift (Array.to_slice (Std.Array.empty Std.U8))
+  let s2 ← lift (Array.to_slice sig)
+  verify.verify_internal_x4 K L p s s1 m s2
+
+theorem verifyInternalX4API_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (n N : Usize) (pk : Array U8 n) (m : Slice U8) (sig : Array U8 N) :
+    verifyInternalX4API n N K L (ok ip) pk m sig = verifyInternalAPI n N K L (ok ip) pk m sig := by
+  simp only [verifyInternalX4API, verifyInternalAPI, Std.bind_tc_ok]
+  exact verify_internal_x4_eq hp ip _ _ _ _
+
+theorem verify_internal_44_eq : api.verify_internal_44 = verifyInternalAPI 1312#usize 2420#usize 4#usize 4#usize params.ML_DSA_44 := by
+  obtain ⟨ip, hip, hp⟩ := ML_DSA_44_std
+  funext pk m sig
+  have h1 : api.verify_internal_44 pk m sig =
+      verifyInternalX4API 1312#usize 2420#usize 4#usize 4#usize params.ML_DSA_44 pk m sig := rfl
+  rw [h1, hip, verifyInternalX4API_eq hp]
+theorem verify_internal_65_eq : api.verify_internal_65 = verifyInternalAPI 1952#usize 3309#usize 6#usize 5#usize params.ML_DSA_65 := by
+  obtain ⟨ip, hip, hp⟩ := ML_DSA_65_std
+  funext pk m sig
+  have h1 : api.verify_internal_65 pk m sig =
+      verifyInternalX4API 1952#usize 3309#usize 6#usize 5#usize params.ML_DSA_65 pk m sig := rfl
+  rw [h1, hip, verifyInternalX4API_eq hp]
+theorem verify_internal_87_eq : api.verify_internal_87 = verifyInternalAPI 2592#usize 4627#usize 8#usize 7#usize params.ML_DSA_87 := by
+  obtain ⟨ip, hip, hp⟩ := ML_DSA_87_std
+  funext pk m sig
+  have h1 : api.verify_internal_87 pk m sig =
+      verifyInternalX4API 2592#usize 4627#usize 8#usize 7#usize params.ML_DSA_87 pk m sig := rfl
+  rw [h1, hip, verifyInternalX4API_eq hp]
 
 /-- The empty prefix buffer contributes no bytes. -/
 theorem bytesA_empty : bytesA (Std.Array.empty Std.U8) = [] := by

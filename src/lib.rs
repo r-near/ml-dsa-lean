@@ -5,11 +5,10 @@
 //! free functions only: no iterator adapters, closures, operator-trait impls, `hybrid-array` or
 //! `module-lattice`. Parameter sets are a `Params` value plus `K`/`L` const generics.
 #![no_std]
-// The only `unsafe` is the optional AVX2 code (feature `avx2`, x86_64): the NTT dispatch (`mod dispatch` in src/ntt.rs), the CPU
-// check (src/cpu.rs), and the verify dispatch (src/fast_verify/dispatch.rs, three blocks); each carries its own `allow`. There are no
-// intrinsics: the AVX2 code is the proved plain-Rust code, compiled inside `#[target_feature(enable = "avx2")]` functions. Without the
-// feature the crate forbids `unsafe` outright, and the three verify `_with` functions (src/fast_verify.rs) are the same text as in the
-// extraction: the dispatch exists in every build, with an uninhabited `cpu::Avx2` token where it cannot run.
+// The only `unsafe` is the NTT dispatch of the opt-in `avx2` feature (x86_64): the `#[target_feature(enable = "avx2")]` copies of the
+// NTT bodies in src/ntt.rs and the CPU check in src/cpu.rs, each with its own `allow`. Verify, `verifying_key` and the prepared
+// verify have no dispatch and no `unsafe` (round 12): they call the 4-way functions directly, and the build's target features
+// decide what LLVM emits. Without the feature the crate forbids `unsafe` outright.
 #![cfg_attr(not(feature = "avx2"), forbid(unsafe_code))]
 #![cfg_attr(feature = "avx2", deny(unsafe_code))]
 #![allow(clippy::many_single_char_names, clippy::needless_range_loop)]
@@ -23,20 +22,13 @@ pub mod api;
 pub mod encode;
 #[cfg(not(feature = "internals"))]
 mod encode;
-// The CPU check and the `Avx2` token (see `cpu.rs`). It exists in every build: without the dispatch it is the stub
-// `avx2() -> None`.
+// The CPU check of the NTT dispatch (`cpu.rs`); it exists only with the `avx2` feature on x86_64.
 #[cfg(feature = "internals")]
 #[cfg_attr(feature = "avx2", allow(unsafe_code))]
 pub mod cpu;
 #[cfg(not(feature = "internals"))]
 #[cfg_attr(feature = "avx2", allow(unsafe_code))]
 mod cpu;
-// `fast_verify` always exists: `api.rs` calls its `_with` functions, which choose between the scalar function and the
-// AVX2 wrapper by an `Option<cpu::Avx2>` argument. Without the dispatch they are the scalar functions.
-#[cfg(feature = "internals")]
-pub mod fast_verify;
-#[cfg(not(feature = "internals"))]
-mod fast_verify;
 #[cfg(feature = "internals")]
 pub mod field;
 #[cfg(not(feature = "internals"))]

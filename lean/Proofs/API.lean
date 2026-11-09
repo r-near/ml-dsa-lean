@@ -4,6 +4,7 @@ import Proofs.KeyGen
 import Proofs.Verify
 import Proofs.Sign
 import Proofs.Steps
+import Proofs.FastVerifyCore
 
 /-!
 # The public API (Algorithms 1, 2 and 3)
@@ -96,9 +97,45 @@ def verifyAPI (n N : Usize) (K L : Usize) (P : RustM params.Params) (pk : Array 
     let s2 ← lift (Array.to_slice sig)
     verify.verify_internal K L p s s1 m s2
 
-theorem verify_44_eq : api.verify_44 = verifyAPI 1312#usize 2420#usize 4#usize 4#usize params.ML_DSA_44 := rfl
-theorem verify_65_eq : api.verify_65 = verifyAPI 1952#usize 3309#usize 6#usize 5#usize params.ML_DSA_65 := rfl
-theorem verify_87_eq : api.verify_87 = verifyAPI 2592#usize 4627#usize 8#usize 7#usize params.ML_DSA_87 := rfl
+/-- The body of `api.verify_NN`: the public function calls the 4-way verifier `verify.verify_internal_x4`. -/
+def verifyAPIX4 (n N : Usize) (K L : Usize) (P : RustM params.Params) (pk : Array U8 n) (m ctx : Slice U8)
+    (sig : Array U8 N) : RustM Bool := do
+  let o ← api.ctx_prefix ctx
+  match o with
+  | none => ok false
+  | some b =>
+    let p ← P
+    let s ← lift (Array.to_slice pk)
+    let i := Slice.len ctx
+    let i1 ← 2#usize + i
+    let s1 ←
+      core.array.Array.index (core.ops.index.IndexSlice
+        (core.slice.index.SliceIndexRangeToUsizeSlice Std.U8)) b
+        { «end» := i1 }
+    let s2 ← lift (Array.to_slice sig)
+    verify.verify_internal_x4 K L p s s1 m s2
+
+/-- The 4-way body is the scalar body (`verify_internal_x4_eq`, `Proofs/FastVerifyCore.lean`). -/
+theorem verifyAPIX4_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Params}
+    (hp : Params.Std ip K L sp) (n N : Usize) (pk : Array U8 n) (m ctx : Slice U8) (sig : Array U8 N) :
+    verifyAPIX4 n N K L (ok ip) pk m ctx sig = verifyAPI n N K L (ok ip) pk m ctx sig := by
+  simp only [verifyAPIX4, verifyAPI, verify_internal_x4_eq hp]
+
+theorem verify_44_eq : api.verify_44 = verifyAPI 1312#usize 2420#usize 4#usize 4#usize params.ML_DSA_44 := by
+  obtain ⟨ip, hip, hp⟩ := ML_DSA_44_std
+  funext pk m ctx sig
+  have h1 : api.verify_44 pk m ctx sig = verifyAPIX4 1312#usize 2420#usize 4#usize 4#usize params.ML_DSA_44 pk m ctx sig := rfl
+  rw [h1, hip, verifyAPIX4_eq hp]
+theorem verify_65_eq : api.verify_65 = verifyAPI 1952#usize 3309#usize 6#usize 5#usize params.ML_DSA_65 := by
+  obtain ⟨ip, hip, hp⟩ := ML_DSA_65_std
+  funext pk m ctx sig
+  have h1 : api.verify_65 pk m ctx sig = verifyAPIX4 1952#usize 3309#usize 6#usize 5#usize params.ML_DSA_65 pk m ctx sig := rfl
+  rw [h1, hip, verifyAPIX4_eq hp]
+theorem verify_87_eq : api.verify_87 = verifyAPI 2592#usize 4627#usize 8#usize 7#usize params.ML_DSA_87 := by
+  obtain ⟨ip, hip, hp⟩ := ML_DSA_87_std
+  funext pk m ctx sig
+  have h1 : api.verify_87 pk m ctx sig = verifyAPIX4 2592#usize 4627#usize 8#usize 7#usize params.ML_DSA_87 pk m ctx sig := rfl
+  rw [h1, hip, verifyAPIX4_eq hp]
 
 /-! ## Length facts about the spec's key encodings -/
 

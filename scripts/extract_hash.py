@@ -173,13 +173,22 @@ def read_roots(path):
     return [l.strip() for l in Path(path).read_text().splitlines() if l.strip() and not l.lstrip().startswith('#')]
 
 
-def hax_toml(roots, features=('avx2',)):
-    """The hax.toml of the extraction. FEATURES is the cargo feature list the crate is extracted with: `('avx2',)` for the
-    extraction that lean/Impl and the proofs are built from, `()` for the second, feature-independence extraction
-    (scripts/check-feature-independence.sh), which scripts/extract.py runs with --features ''. Only the first is digested
-    into extract_inputs_sha256 of the report."""
+# The rustc flags of every extraction: `--cfg miri` makes the crate's own `cfg(miri)` items the ones the extraction sees.
+RUSTFLAGS_BASE = '--cfg miri'
+# The flags that the second extraction of the feature-independence gate adds (scripts/check-feature-independence.sh): the
+# target features of an AVX2 build. The gate extracts the crate with and without them and requires the same Lean.
+RUSTFLAGS_AVX2 = '-C target-feature=+avx,+avx2'
+
+
+def hax_toml(roots, features=(), extra_rustflags=''):
+    """The hax.toml of the extraction. FEATURES is the cargo feature list the crate is extracted with (none: the crate has no
+    feature that changes what is extracted). EXTRA_RUSTFLAGS is appended to RUSTFLAGS_BASE: empty for the extraction that
+    lean/Impl and the proofs are built from, RUSTFLAGS_AVX2 for the second, feature-independence extraction
+    (scripts/check-feature-independence.sh, which runs scripts/extract.py with --rustflags). Only the first is digested into
+    extract_inputs_sha256 of the report."""
     include = ', '.join(json.dumps(r) for r in roots)
     feats = ', '.join(json.dumps(f) for f in features)
+    rustflags = (RUSTFLAGS_BASE + ' ' + extra_rustflags).strip()
     return f'''[tools]
 aeneas = "{AENEAS_PIN}"
 charon = "{CHARON_PIN}"
@@ -192,7 +201,7 @@ include = [{include}]
 no-default-features = true
 features = [{feats}]
 charon-args = []
-env = {{ RUSTFLAGS = "--cfg miri" }}
+env = {{ RUSTFLAGS = {json.dumps(rustflags)} }}
 '''
 
 
@@ -394,7 +403,7 @@ def normalizer_selftest():
     return errors
 
 
-def stage_crate(repo, roots, dest, features=('avx2',)):
+def stage_crate(repo, roots, dest, features=(), extra_rustflags=''):
     """Write the extraction inputs of the crate at REPO into the new directory DEST: src/ (regular files only),
     Cargo.toml without [dev-dependencies] (a test-only oracle) and with the package version normalized to 0.0.0, and
     hax.toml. Returns the digest of what was written.
@@ -422,7 +431,7 @@ def stage_crate(repo, roots, dest, features=('avx2',)):
     cargo = strip_dev_dependencies(cargo)
     cargo = normalize_version(cargo)
     (dest / 'Cargo.toml').write_text(cargo)
-    (dest / 'hax.toml').write_text(hax_toml(roots, features))
+    (dest / 'hax.toml').write_text(hax_toml(roots, features, extra_rustflags))
     return inputs_sha256(dest)
 
 
@@ -626,6 +635,9 @@ def check(repo):
                     errors.append(f'lean/Impl/{name} still declares axioms: run scripts/extract.py and commit lean/Impl')
             except ValueError as e:
                 errors.append(f'lean/Impl/{name}: {e}')
+    if report.get('rustflags') != RUSTFLAGS_BASE:
+        errors.append(f'extract-report.json records rustflags {report.get("rustflags")!r}, not {RUSTFLAGS_BASE!r}: lean/Impl must be '
+                      'the extraction with no extra flags (scripts/extract.py without --rustflags)')
     if report.get('roots') != read_roots(repo / 'scripts/extract-roots.txt'):
         errors.append('scripts/extract-roots.txt differs from the roots in extract-report.json: '
                       'run scripts/extract.py and commit lean/Impl')

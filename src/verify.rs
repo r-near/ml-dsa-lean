@@ -43,35 +43,37 @@ pub(crate) fn prefix_eq(a: &[u8; 64], b: &[u8; 64], len: usize) -> bool {
 
 /// The part of Algorithm 8 that depends on the public key alone: Â (step 6), tr (step 7) and
 /// NTT(t1 · 2^d) (the key-dependent half of step 10). Verifying many signatures against one key computes it
-/// once. The fields are private to the crate; the `api` module wraps this type per parameter set.
+/// once. The module is private without the `internals` feature (tests, benchmarks and fuzzing), and the `api` module wraps this
+/// type per parameter set in a struct with a private field; the fields are `pub` so that the tests can compare two keys.
 ///
 /// Size: (K·L + K) KiB + 64 bytes (20,544 / 36,928 / 65,600 bytes for ML-DSA-44 / 65 / 87).
 ///
-/// `#[repr(align(32))]`: the AVX2 wrappers that own one (`fast_verify/dispatch.rs`) get a 32-byte aligned stack frame
-/// from it, which keeps 256-bit spill slots from straddling a page boundary. It changes no value (Aeneas ignores it).
+/// `#[repr(align(32))]`: a function that owns one (`verify_internal_x4`, `verifying_key_*`) gets a 32-byte aligned stack
+/// frame from it in a build with AVX2, which keeps 256-bit spill slots from straddling a page boundary
+/// (`bench/results/2026-11-07-p6.md`). It changes no value (Aeneas ignores it).
 #[derive(Clone)]
 #[repr(align(32))]
 pub struct PreparedVk<const K: usize, const L: usize> {
     /// Â ← ExpandA(ρ), NTT domain.
-    pub(crate) a_hat: [[[u32; 256]; L]; K],
+    pub a_hat: [[[u32; 256]; L]; K],
     /// NTT(t1 · 2^d), one polynomial per row.
-    pub(crate) t1_2d_hat: [[u32; 256]; K],
+    pub t1_2d_hat: [[u32; 256]; K],
     /// tr ← H(pk, 64).
-    pub(crate) tr: [u8; 64],
+    pub tr: [u8; 64],
 }
 
 impl<const K: usize, const L: usize> PreparedVk<K, L> {
     /// The all-zero value: the destination `prepare_vk_into` fills in place. Not a valid key.
-    pub(crate) fn zeroed() -> PreparedVk<K, L> {
+    pub fn zeroed() -> PreparedVk<K, L> {
         PreparedVk { a_hat: [[[0u32; 256]; L]; K], t1_2d_hat: [[0u32; 256]; K], tr: [0u8; 64] }
     }
 }
 
 /// The working storage of steps 10-12 that `verify_core` owns: w′1 and its encoding. The type is `#[repr(align(32))]` and
-/// `verify_core` computes in it (it is not a pad), so a function that inlines `verify_core` (`verify_prepared_avx2` in
-/// `fast_verify/dispatch.rs`, which only borrows a `PreparedVk`) has a 32-byte aligned stack frame: the spills of 256-bit
-/// vectors cannot then straddle a 4 KiB page. Aeneas ignores `repr`; the field accesses are in the extraction and the
-/// proof (`Proofs/Verify.lean`).
+/// `verify_core` computes in it (it is not a pad), so a function that inlines `verify_core` (the prepared-key verify, which
+/// only borrows a `PreparedVk`) has a 32-byte aligned stack frame in a build with AVX2: the spills of 256-bit vectors cannot
+/// then straddle a 4 KiB page (`bench/results/2026-11-07-p6.md`). Aeneas ignores `repr`; the field accesses are in the
+/// extraction and the proof (`Proofs/Verify.lean`).
 #[repr(align(32))]
 struct VerifyScratch<const K: usize> {
     /// w′1, one polynomial per row.
@@ -81,6 +83,11 @@ struct VerifyScratch<const K: usize> {
 }
 
 /// Step 7: tr ← H(pk, 64).
+///
+/// (`hash_pk`, `expand_a_into`, `prepare_vk_into`, `prepare_vk` and `verify_internal` are the scalar reference: `api` runs the
+/// 4-way functions, which are proved equal to them (`Proofs/FastVerify.lean`). They are kept for that proof and for the tests,
+/// so a build without `internals` does not use them; hence the `allow(dead_code)`.)
+#[allow(dead_code)]
 fn hash_pk(pk: &[u8]) -> [u8; 64] {
     let mut tr = [0u8; 64];
     let mut hash = Shake::shake256();
@@ -93,6 +100,7 @@ fn hash_pk(pk: &[u8]) -> [u8; 64] {
 /// Step 6: Â ← ExpandA(ρ) (`sampling::expand_a`, Algorithm 32), written into `a` instead of returned, so that the
 /// 57 KB matrix of ML-DSA-87 is not also a temporary of this function's frame. The loops and the order of the SHAKE
 /// calls are those of `expand_a`; every entry of `a` is overwritten.
+#[allow(dead_code)]
 fn expand_a_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
     let mut r = 0;
     while r < K {
@@ -120,7 +128,8 @@ fn expand_a_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32;
 /// Precondition: `pk.len() == 32 + 320 * K` (the decoder indexes by `K`). Diverges exactly where ExpandA does
 /// (FIPS 204's rejection sampler has no bound).
 #[inline(never)]
-pub(crate) fn prepare_vk_into<const K: usize, const L: usize>(pk: &[u8], out: &mut PreparedVk<K, L>) {
+#[allow(dead_code)]
+pub fn prepare_vk_into<const K: usize, const L: usize>(pk: &[u8], out: &mut PreparedVk<K, L>) {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
     // 6: Â ← ExpandA(ρ)
@@ -144,7 +153,8 @@ pub(crate) fn prepare_vk_into<const K: usize, const L: usize>(pk: &[u8], out: &m
 /// temporaries (t1, the scaled copy, the NTT result; for `prepare_vk` the 57 KB Â temporary) become part of that
 /// caller's frame for its whole duration (measured: `verify_87` 132 KB instead of 115 KB).
 #[inline(never)]
-pub(crate) fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
+#[allow(dead_code)]
+pub fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
     // 6: Â ← ExpandA(ρ)
@@ -159,11 +169,10 @@ pub(crate) fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedV
 /// `prepare_vk_into` with the 4-way ExpandA (`sampling::expand_a_into_x4`): everything else is the same code. Proved
 /// equal to `prepare_vk_into` (`Proofs/FastVerify.lean`).
 ///
-/// The `X4` functions below are the "fast verify" body: a build with the `avx2` feature calls them from a
-/// `#[target_feature(enable = "avx2")]` wrapper. `inline(always)` (in builds that have the
-/// second compilation) lets the whole chain down to `keccak_f1600_x4` compile with AVX2 inside that wrapper.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-#[cfg_attr(not(feature = "internals"), allow(dead_code))]
+/// The `X4` functions below are what `api` runs for `verify_*`, `verifying_key_*` and `verify_internal_*`: there is no
+/// run-time choice between them and the scalar functions above. The scalar functions stay as the reference that the `X4`
+/// functions are proved equal to. Whether the build's target features turn the 4-way Keccak loop into AVX2 code is decided
+/// when the crate is compiled (`-C target-feature=+avx2`).
 pub fn prepare_vk_into_x4<const K: usize, const L: usize>(pk: &[u8], out: &mut PreparedVk<K, L>) {
     // 1: (ρ, t1) ← pkDecode(pk)
     let (rho, t1) = pk_decode::<K>(pk);
@@ -173,9 +182,10 @@ pub fn prepare_vk_into_x4<const K: usize, const L: usize>(pk: &[u8], out: &mut P
     out.t1_2d_hat = ntt_vec_pub(&scale_vec_by_2d(&t1));
 }
 
-/// `prepare_vk` with the 4-way ExpandA, returned by value (the prepared-key constructor of the fast path). Proved
-/// equal to `prepare_vk` (`Proofs/FastVerify.lean`).
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
+/// `prepare_vk` with the 4-way ExpandA, returned by value. Proved equal to `prepare_vk` (`Proofs/FastVerify.lean`).
+/// `api::verifying_key_*` builds the key in place instead (`zeroed` then `prepare_vk_into_x4`, which is this function:
+/// `prepare_vk_x4_zeroed_bind`), so that the 57 KB matrix of ML-DSA-87 is not also a local of the caller's frame that is
+/// then copied into the result (`bench/results/2026-11-07-p6.md`). Used by tests and proofs.
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]
 pub fn prepare_vk_x4<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
     // 1: (ρ, t1) ← pkDecode(pk)
@@ -203,7 +213,6 @@ fn hash_mu(tr: &[u8; 64], m_prefix: &[u8], m: &[u8]) -> [u8; 64] {
 /// Steps 10–13 of Algorithm 8 once c = SampleInBall(c̃) is known: w′_Approx, UseHint, c̃′ and the comparison.
 ///
 /// Precondition: `p` matches `K` and `L`; `c_tilde[..p.c_tilde_len]` is the signature's c̃.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn verify_core<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,
@@ -247,7 +256,6 @@ fn verify_core<const K: usize, const L: usize>(
 ///
 /// Precondition: `p` is the parameter set matching `K` and `L`, and `c_tilde[..p.c_tilde_len]` is the
 /// signature's c̃ (as returned by `sig_decode`).
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn verify_decoded<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,
@@ -276,6 +284,7 @@ fn verify_decoded<const K: usize, const L: usize>(
 ///
 /// Precondition: `p` is the parameter set matching `K` and `L` (`p.k == K`, `p.l == L`). The decoders index by
 /// `K`/`L`, so an inconsistent `p` can panic. The `api` functions always pass a consistent `p`.
+#[allow(dead_code)]
 pub fn verify_internal<const K: usize, const L: usize>(
     p: &Params,
     pk: &[u8],
@@ -302,11 +311,9 @@ pub fn verify_internal<const K: usize, const L: usize>(
 
 /// `verify_internal` with the 4-way ExpandA: the same code with `prepare_vk_into_x4::<K, L>` in place of
 /// `prepare_vk_into::<K, L>`. It is proved equal to `verify_internal` on every input, divergence included
-/// (`Proofs/FastVerify.lean`); the AVX2 build runs this same function from a `#[target_feature(enable = "avx2")]` wrapper.
+/// (`Proofs/FastVerify.lean`); `api::verify_*` and `api::verify_internal_*` run this function.
 ///
 /// Precondition: as for `verify_internal`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
-#[cfg_attr(not(feature = "internals"), allow(dead_code))]
 pub fn verify_internal_x4<const K: usize, const L: usize>(
     p: &Params,
     pk: &[u8],
@@ -335,7 +342,6 @@ pub fn verify_internal_x4<const K: usize, const L: usize>(
 /// A `sig` whose length is not `sig_len(p)` returns false.
 ///
 /// Precondition: `p` matches `K` and `L`, as for `verify_internal`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn verify_prepared_internal<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,

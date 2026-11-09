@@ -37,13 +37,13 @@ macro_rules! run {
     }};
 }
 
-/// Part of the diagnosis (needs `internals` and `avx2`): the 4-way permutation alone, 100 per call, on a state at byte
+/// Part of the diagnosis (needs `internals`): the 4-way permutation alone, 100 per call, on a state at byte
 /// offset `off` of an 8 KiB-aligned heap buffer (`k4`); the 4-way ExpandA of the set (`expanda`); and `tr = H(pk, 64)`
 /// as `verify::hash_pk` computes it, with the set's public key length (`hashpk`; it needs no AVX2).
-#[cfg(all(feature = "internals", feature = "avx2"))]
+#[cfg(feature = "internals")]
 fn diag(op: &str, set: u32, off: usize, rounds: usize, calls: usize) -> Vec<f64> {
-    use ml_dsa_lean::fast_verify::expand_a_x4_avx2_or_none;
-    use ml_dsa_lean::keccak4::avx2_checked;
+    use ml_dsa_lean::keccak4::keccak_f1600_x4;
+    use ml_dsa_lean::sampling::expand_a_x4;
     // 8 KiB-aligned heap buffer, allocated directly (a `Box<Buf>` with `repr(align(8192))` is built on the stack first, which
     // realigns main's frame and freezes the stack offset this scan is varying).
     const STATE_BYTES: usize = core::mem::size_of::<[[u64; 4]; 25]>();
@@ -85,13 +85,13 @@ fn diag(op: &str, set: u32, off: usize, rounds: usize, calls: usize) -> Vec<f64>
                     // 8-byte aligned with the state inside the buffer, and no other reference to it exists.
                     let s: &mut [[u64; 4]; 25] = unsafe { &mut *(base.add(off) as *mut [[u64; 4]; 25]) };
                     for _ in 0..100 {
-                        assert!(avx2_checked::keccak_f1600_x4(s));
+                        keccak_f1600_x4(s);
                     }
                 }
                 _ => match set {
-                    44 => drop(std::hint::black_box(expand_a_x4_avx2_or_none::<4, 4>(std::hint::black_box(&rho)))),
-                    65 => drop(std::hint::black_box(expand_a_x4_avx2_or_none::<6, 5>(std::hint::black_box(&rho)))),
-                    _ => drop(std::hint::black_box(expand_a_x4_avx2_or_none::<8, 7>(std::hint::black_box(&rho)))),
+                    44 => drop(std::hint::black_box(expand_a_x4::<4, 4>(std::hint::black_box(&rho)))),
+                    65 => drop(std::hint::black_box(expand_a_x4::<6, 5>(std::hint::black_box(&rho)))),
+                    _ => drop(std::hint::black_box(expand_a_x4::<8, 7>(std::hint::black_box(&rho)))),
                 },
             }
         }
@@ -112,12 +112,12 @@ fn main() {
     let op = opt("--op").unwrap_or_else(|| "verify".into());
     let rounds: usize = opt("--rounds").map(|s| s.parse().unwrap()).unwrap_or(9);
     let calls: usize = opt("--calls").map(|s| s.parse().unwrap()).unwrap_or(200);
-    #[cfg_attr(not(all(feature = "internals", feature = "avx2")), allow(unused_variables))]
+    #[cfg_attr(not(feature = "internals"), allow(unused_variables))]
     let off: usize = opt("--off").map(|s| s.parse().unwrap()).unwrap_or(0);
     let marker = 0u8;
     let sp = (std::hint::black_box(&marker) as *const u8 as usize) & 0xfff;
     let op_s: &str = &op;
-    #[cfg(all(feature = "internals", feature = "avx2"))]
+    #[cfg(feature = "internals")]
     if op == "k4" || op == "expanda" || op == "hashpk" {
         let mut times = diag(&op, set, off, rounds, calls);
         times.sort_by(|a, b| a.partial_cmp(b).unwrap());

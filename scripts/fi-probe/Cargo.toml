@@ -1,0 +1,10 @@
+# The positive control of scripts/check-feature-independence.sh: a one-function crate whose extraction depends on the target
+# features. It is named like the real crate so that scripts/extract.py (which names roots `ml_dsa_lean::...`) extracts it unchanged.
+# Never published or built by cargo directly; scripts/extract.py stages a copy.
+[package]
+name = "ml-dsa-lean"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]

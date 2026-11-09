@@ -92,7 +92,6 @@ const M23: u64 = 0x7F_FFFF;
 
 /// One candidate of Algorithm 30's loop, branchless: `z` is written to `a[j]` and `j` advances only when `z < q`, so a
 /// rejected candidate's word is overwritten by the next one. Requires `j < 312`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn push_candidate(a: &mut [u32; 312], j: usize, z: u32) -> usize {
     a[j] = z;
     j + (z < Q) as usize
@@ -101,7 +100,6 @@ fn push_candidate(a: &mut [u32; 312], j: usize, z: u32) -> usize {
 /// The eight three-byte candidates in 24 consecutive rate bytes, which are three whole lanes `w0, w1, w2` (little-endian
 /// bytes): candidate `t` is bits `24t .. 24t+22` of the 192-bit value `w0 + 2^64 w1 + 2^128 w2`, taken from the lanes by
 /// shifts and masks instead of byte by byte. Candidates 2 and 5 straddle a lane boundary. Requires `j + 7 < 312`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn rej_ntt_cands8(w0: u64, w1: u64, w2: u64, a: &mut [u32; 312], j: usize) -> usize {
     let j = push_candidate(a, j, (w0 & M23) as u32);
     let j = push_candidate(a, j, ((w0 >> 24) & M23) as u32);
@@ -119,7 +117,6 @@ fn rej_ntt_cands8(w0: u64, w1: u64, w2: u64, a: &mut [u32; 312], j: usize) -> us
 /// 256 coefficients for that, and the words from index `min(j, 256)` on are unspecified (the caller keeps only the
 /// first 256 words, and only blocks entered with `j < 256` are parsed). Returns the new `j`. Requires `i < 4` and
 /// `j < 256` (so every write index is at most 255 + 55 = 310).
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn rej_ntt_block_x4(st: &[[u64; 4]; 25], i: usize, a: &mut [u32; 312], j: usize) -> usize {
     let mut j = j;
     let mut g = 0;
@@ -133,7 +130,6 @@ fn rej_ntt_block_x4(st: &[[u64; 4]; 25], i: usize, a: &mut [u32; 312], j: usize)
 /// The four SHAKE128 states `SHAKE128.Init(); Absorb(ρ ‖ s[i] ‖ r[i])` just before their first permutation, i.e.
 /// with the SHAKE padding in place (`0x1F` after the 34-byte message, `0x80` as the last byte of the 168-byte
 /// block), as one interleaved 4-way state. Lane `k` of state `i` is `s[k][i]`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn init_state_x4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u64; 4]; 25] {
     let mut st = [[0u64; 4]; 25];
     // Bytes 0..32 of the message are ρ, the same in all four states.
@@ -160,13 +156,11 @@ fn init_state_x4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u64; 4]; 25] {
 
 /// One lane's step of the 4-way sampler: parses the lane's block into its 312-word scratch while it still needs
 /// coefficients (`j < 256`), and does nothing once it has 256.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn rej_ntt_lane_x4(st: &[[u64; 4]; 25], i: usize, a: &mut [u32; 312], j: usize) -> usize {
     if j < 256 { rej_ntt_block_x4(st, i, a, j) } else { j }
 }
 
 /// The first 256 words of a lane's 312-word scratch.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn first_256(a: &[u32; 312]) -> [u32; 256] {
     let mut r = [0u32; 256];
     let mut k = 0;
@@ -184,7 +178,6 @@ fn first_256(a: &[u32; 312]) -> [u32; 256] {
 /// `rej_ntt_poly` does).
 ///
 /// The result for seed `i` is `rej_ntt_poly(ρ ‖ s[i] ‖ r[i])` (proved equal, `Proofs/Sample4.lean`).
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn rej_ntt_poly_x4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
     let mut st = init_state_x4(rho, s, r);
     let mut p0 = [0u32; 312];
@@ -211,7 +204,6 @@ pub fn rej_ntt_poly_x4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4
 /// The matrix entry (flattened `r * L + s`) that lane `l` of the group starting at `first` computes: `first + l`,
 /// or the last entry `n - 1` for a lane past the end (its polynomial is the last entry's again, written twice).
 /// Requires `first < n`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn entry_x4(first: usize, l: usize, n: usize) -> usize {
     if first + l < n { first + l } else { n - 1 }
 }
@@ -219,7 +211,6 @@ fn entry_x4(first: usize, l: usize, n: usize) -> usize {
 /// Algorithm 32 ExpandA(ρ) written into `a` (every entry is overwritten), four entries per call of the 4-way
 /// sampler: the entries are taken in the flattened order `e = r * L + s`, in groups of four; a last group with fewer
 /// than four real entries repeats the last entry.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]
 pub fn expand_a_into_x4<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
     expand_a_from_x4::<K, L>(rho, a, 0)
@@ -227,7 +218,6 @@ pub fn expand_a_into_x4<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut 
 
 /// The group loop of `expand_a_into_x4`, starting at entry `first0`: entries `first0, first0 + 1, ...` (flattened as
 /// there) in groups of four until all `K * L` are done. Entries before `first0` are not touched.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn expand_a_from_x4<const K: usize, const L: usize>(
     rho: &[u8; 32],
     a: &mut [[[u32; 256]; L]; K],
@@ -254,7 +244,6 @@ pub fn expand_a_from_x4<const K: usize, const L: usize>(
 }
 
 /// Algorithm 32 ExpandA(ρ) with the 4-way sampler, returned by value (`expand_a_into_x4` on a zero matrix).
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 #[cfg_attr(not(feature = "internals"), allow(dead_code))]
 pub fn expand_a_x4<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
     let mut a = [[[0u32; 256]; L]; K];
@@ -268,7 +257,6 @@ const RATE256: usize = 136;
 /// The last block of `SHAKE256.Absorb(pk)` with the padding in place, as 17 little-endian lanes: the `pk.len() % 136`
 /// bytes of `pk` after its last whole block, then the domain byte `0x1F` and the final padding bit `0x80` (`pad10*1`
 /// of FIPS 202; they share a byte, as XOR, only when a single byte is left).
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn tr_tail_lanes(pk: &[u8]) -> [u64; 17] {
     let base = RATE256 * (pk.len() / RATE256);
     let rem = pk.len() - base;
@@ -285,7 +273,6 @@ fn tr_tail_lanes(pk: &[u8]) -> [u64; 17] {
 
 /// XORs block `t` of the padded `pk` (17 lanes: whole block `t` of `pk` when `t < q`, else the padded `tail`) into
 /// lane 3 of the 4-way state. Requires `q = pk.len() / 136`; lanes 0 to 2 and rate-external words are untouched.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn absorb_block_lane3(st: &mut [[u64; 4]; 25], pk: &[u8], tail: &[u64; 17], q: usize, t: usize) {
     let mut k = 0;
     while k < 17 {
@@ -296,7 +283,6 @@ fn absorb_block_lane3(st: &mut [[u64; 4]; 25], pk: &[u8], tail: &[u64; 17], q: u
 }
 
 /// Lane 3 of the 4-way state, as a scalar Keccak state.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn lane3_state(st: &[[u64; 4]; 25]) -> [u64; 25] {
     let mut s = [0u64; 25];
     let mut k = 0;
@@ -308,7 +294,6 @@ fn lane3_state(st: &[[u64; 4]; 25]) -> [u64; 25] {
 }
 
 /// Replaces lane 3 of the 4-way state by the scalar state `s`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn set_lane3(st: &mut [[u64; 4]; 25], s: &[u64; 25]) {
     let mut k = 0;
     while k < 25 {
@@ -325,7 +310,6 @@ fn set_lane3(st: &mut [[u64; 4]; 25], s: &[u64; 25]) {
 /// `t <= q`) and so advances the sponge by one block. Returns the three polynomials and the sponge's `(trs, t)` after the call (`t`
 /// grows by one per permutation until it reaches `q + 1`, where `trs` is the sponge state after its last permutation
 /// and later permutations of the group no longer matter). Requires `q = pk.len() / 136` and `tail = tr_tail_lanes(pk)`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn rej_ntt_poly_x3_tr(
     rho: &[u8; 32],
     s: [u8; 4],
@@ -370,7 +354,6 @@ pub fn rej_ntt_poly_x3_tr(
 }
 
 /// The first 64 bytes of the sponge state, little-endian: `SHAKE256.Squeeze(ctx, 64)` right after the last permutation.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn squeeze64(s: &[u64; 25]) -> [u8; 64] {
     let mut out = [0u8; 64];
     let mut j = 0;
@@ -384,7 +367,6 @@ fn squeeze64(s: &[u64; 25]) -> [u8; 64] {
 /// The scalar rest of the SHAKE256 absorb of `pk`: from the sponge state `trs` after `t` permutations (`t <= q + 1`), absorbs
 /// the remaining blocks of the padded `pk` (block `t` and on) with the scalar permutation and returns the first 64 bytes of the
 /// final state, `H(pk, 64)`. Requires `q = pk.len() / 136` and `tail = tr_tail_lanes(pk)`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn tr_finish_scalar(pk: &[u8], tail: &[u64; 17], q: usize, trs: [u64; 25], t0: usize) -> [u8; 64] {
     let mut s = trs;
     let mut t = t0;
@@ -409,7 +391,6 @@ fn tr_finish_scalar(pk: &[u8], tail: &[u64; 17], q: usize, trs: [u64; 25], t0: u
 /// (about 2.7 µs) hosts up to four hashing groups and pays when it hosts at least two (5 scalar permutations, about 1.85 µs,
 /// each). So: `spare` groups when `want` is just one more (ML-DSA-65: the third hashing group would cost an extra group
 /// for 1.85 µs), else all `want`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn tr_groups(n: usize, q: usize) -> usize {
     let want = (q + 5) / 5;
     let spare = 4 * ((n + 3) / 4) - n;
@@ -420,7 +401,6 @@ fn tr_groups(n: usize, q: usize) -> usize {
 /// `tr_groups` groups take three entries each and run the SHAKE256 absorb of `pk` in the fourth lane
 /// (`rej_ntt_poly_x3_tr`), the rest are groups of four as in `expand_a_into_x4`, and whatever of the hash the lane did
 /// not reach (for ML-DSA-65 the last five permutations) is finished with the scalar permutation.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn expand_a_tr_into_x4<const K: usize, const L: usize>(
     rho: &[u8; 32],
     pk: &[u8],

@@ -1,66 +1,71 @@
 #!/usr/bin/env python3
-"""The Lean half of the feature-independence gate (scripts/check-feature-independence.sh).
+"""The Lean half of the target-feature-independence gate (scripts/check-feature-independence.sh).
 
-The crate is extracted twice, both times with `--cfg miri` and both from the same src/:
+Since round 12 the crate has no run-time choice between code paths: `api::verify_*`, `verifying_key_*` and the prepared verify
+call the 4-way functions, and a build that wants AVX2 code says so at compile time (`-C target-feature=+avx2`). The Lean proofs
+are about one extraction of the crate. This gate checks that the extraction does not depend on the target features, by
+extracting the crate twice from the same src/, both times with `--cfg miri` (which scripts/extract.py always sets):
 
-  main   feature `avx2`   -> lean/Impl            the extraction every proof is built from
-  alt    no features      -> a scratch directory  the extraction of a build WITHOUT the verify dispatch
+  main   rustflags `--cfg miri`                                   -> lean/Impl            the extraction every proof is built from
+  alt    rustflags `--cfg miri -C target-feature=+avx,+avx2`      -> a scratch directory  the extraction of an AVX2 build
 
-(A default build, and any build that is not x86_64, compiles the alt configuration of every `cfg` that mentions `avx2`
-and `target_arch = "x86_64"`; the only `cfg` the extraction itself decides is `miri`, set in both.) This script compares the
-two generated Lean trees declaration by declaration and fails on any difference that is not in the whitelist below. The
-whitelist is exact in both directions: a listed difference that disappears is also an error, so the list cannot go stale.
+and requires the two generated Lean trees to be the same, declaration by declaration. The whitelist of differences is EMPTY: the
+crate has no `cfg` that reads `target_feature` (scripts/cfg_inventory.py fails on one), so any difference would be a new,
+unreviewed dependence of the proved code on the build's target features.
+
+An empty comparison could pass without the second extraction having seen the flags (a typo in a flag, a stripped environment, the
+same flags twice). Three checks stop that:
+  * `compare` reads the `rustflags` that each extraction recorded in its extract-report.json, and fails unless they are exactly the
+    two strings above (so the two runs were configured differently, and as intended), and unless their input digests differ;
+  * `probe-check` compares two extractions of scripts/fi-probe, a one-function crate whose body is `cfg!(target_feature = "avx2")`:
+    it must come out as `false` in main and `true` in alt. That is a positive control: if the flags did not reach the compiler
+    the probe would be identical in both and the gate fails;
+  * `compare` also requires that the verify-path declarations (MUST_BE_PRESENT) exist in both extractions, so the comparison
+    covered the code the gate is about.
 
 Usage: python3 -I scripts/feature_independence.py compare MAIN_DIR ALT_DIR
-       python3 -I scripts/feature_independence.py gen-lean ALT_DIR            print lean/Proofs/NoDispatch.lean
-       python3 -I scripts/feature_independence.py check-lean ALT_DIR FILE     fail unless FILE is what gen-lean prints
+       python3 -I scripts/feature_independence.py probe-check PROBE_MAIN_DIR PROBE_ALT_DIR
        python3 -I scripts/feature_independence.py --self-test
 
-`compare` also runs the self-test first.
-
-`gen-lean` copies the alt declarations that differ (the `cpu.Avx2` type and the three `dispatch::*_on` functions) and the
-three `fast_verify::*_with` functions (text-identical to main, but elaborated against the alt `Avx2`) into a Lean file in the
-namespace `Impl.NoDispatch`, and appends the theorems that the alt `_with` functions equal the scalar functions for every
-token value. The names it does not copy resolve to `Impl.*`, where the same declarations exist (the diff proves that they have
-the same text). The file is part of the default build (`Proofs.NoDispatch`), so the alt declarations are elaborated and the
-theorems checked by the same Lean run as every other proof.
+`compare` and `probe-check` run the self-test first.
 """
+import json
 import re
 import sys
 from pathlib import Path
 
 FILES = ['Types.lean', 'Funs.lean', 'FunsExternal.lean', 'FunsExternal_Template.lean']
+REPORT = 'extract-report.json'
 
-# Expected differences, keyed (file, declaration key). `differs`: present in both, different text. `main-only` /
-# `alt-only`: the declaration exists in one extraction only. Nothing else may differ. Each entry says why it is allowed.
-WHITELIST = {
-    ('Types.lean', '[ml_dsa_lean::cpu::Avx2]'): (
-        'differs', 'the token: an inhabited struct where the dispatch exists, an uninhabited enum elsewhere (src/cpu.rs)'),
-    ('Funs.lean', '[ml_dsa_lean::fast_verify::dispatch::verify_internal_on]:'): (
-        'differs', 'dispatch entry point: one call of the AVX2 function, or `match t {}` (extracted as unreachable)'),
-    ('Funs.lean', '[ml_dsa_lean::fast_verify::dispatch::verify_prepared_on]:'): (
-        'differs', 'dispatch entry point: one call of the AVX2 function, or `match t {}` (extracted as unreachable)'),
-    ('Funs.lean', '[ml_dsa_lean::fast_verify::dispatch::prepare_vk_on]:'): (
-        'differs', 'dispatch entry point: one call of the AVX2 function, or `match t {}` (extracted as unreachable)'),
-    ('Funs.lean', '[ml_dsa_lean::fast_verify::dispatch::verify_internal_avx2]:'): (
-        'main-only', 'the #[target_feature(enable = "avx2")] function; it exists only where the dispatch does'),
-    ('Funs.lean', '[ml_dsa_lean::fast_verify::dispatch::verify_prepared_avx2]:'): (
-        'main-only', 'the #[target_feature(enable = "avx2")] function; it exists only where the dispatch does'),
-    ('Funs.lean', '[ml_dsa_lean::fast_verify::dispatch::prepare_vk_avx2]:'): (
-        'main-only', 'the #[target_feature(enable = "avx2")] function; it exists only where the dispatch does'),
-}
+# The rustflags of the two extractions, as scripts/extract_hash.py (RUSTFLAGS_BASE, RUSTFLAGS_AVX2) writes them into hax.toml and
+# scripts/extract.py records them in the report.
+FLAGS_MAIN = '--cfg miri'
+FLAGS_ALT = '--cfg miri -C target-feature=+avx,+avx2'
 
-# Declarations that must be byte-identical in both extractions (they are the point of the gate), checked on their own so a
-# future whitelist edit cannot silently cover them.
-MUST_MATCH = [
-    '[ml_dsa_lean::fast_verify::verify_internal_with]:',
-    '[ml_dsa_lean::fast_verify::verify_prepared_internal_with]:',
-    '[ml_dsa_lean::fast_verify::prepare_vk_with]:',
+# Expected differences, keyed (file, declaration key) -> (kind, why). `differs`: present in both, different text. `main-only` /
+# `alt-only`: the declaration exists in one extraction only. EMPTY: nothing may differ. An entry would have to say why the proved
+# code may depend on the target features, and the gate fails if an entry matches nothing.
+WHITELIST = {}
+
+# Declarations that must exist in both extractions (and, since the whitelist is empty, be byte-identical): the verify path that the
+# AVX2 build changes the code generation of. A rename or removal makes the gate fail rather than silently narrow its scope.
+MUST_BE_PRESENT = [
+    '[ml_dsa_lean::api::verify_44]:',
+    '[ml_dsa_lean::api::verify_65]:',
+    '[ml_dsa_lean::api::verify_87]:',
+    '[ml_dsa_lean::api::verify_internal_65]:',
+    '[ml_dsa_lean::api::verifying_key_65]:',
+    '[ml_dsa_lean::api::verify_prepared_65]:',
+    '[ml_dsa_lean::api::verify_internal_prepared_65]:',
+    '[ml_dsa_lean::verify::verify_internal_x4]:',
+    '[ml_dsa_lean::verify::prepare_vk_into_x4]:',
+    '[ml_dsa_lean::verify::verify_prepared_internal]:',
     '[ml_dsa_lean::verify::verify_internal]:',
     '[ml_dsa_lean::verify::prepare_vk]:',
-    '[ml_dsa_lean::verify::verify_prepared_internal]:',
-    '[ml_dsa_lean::cpu::avx2]:',
+    '[ml_dsa_lean::sampling::expand_a_tr_into_x4]:',
 ]
+
+PROBE_KEY = '[ml_dsa_lean::probe::avx2_enabled]:'
 
 KEY = re.compile(r'^/-- (\[[^\]\n]+\])([^\n]*)')
 
@@ -95,9 +100,37 @@ def norm(block):
     return block.rstrip('\n') + '\n'
 
 
+def read_report(d):
+    p = Path(d) / REPORT
+    if not p.is_file():
+        return None
+    return json.loads(p.read_text(encoding='utf-8'))
+
+
+def check_reports(main_dir, alt_dir):
+    """Errors if the two extractions were not run with the intended, different rustflags."""
+    errors = []
+    rm, ra = read_report(main_dir), read_report(alt_dir)
+    if rm is None or ra is None:
+        return [f'{REPORT} is missing from the {"main" if rm is None else "alt"} extraction: cannot tell how it was run']
+    if rm.get('rustflags') != FLAGS_MAIN:
+        errors.append(f'the main extraction ran with rustflags {rm.get("rustflags")!r}, expected {FLAGS_MAIN!r}')
+    if ra.get('rustflags') != FLAGS_ALT:
+        errors.append(f'the alt extraction ran with rustflags {ra.get("rustflags")!r}, expected {FLAGS_ALT!r}')
+    if rm.get('rustflags') == ra.get('rustflags'):
+        errors.append('both extractions ran with the same rustflags: the comparison would be vacuous')
+    if rm.get('extract_inputs_sha256') == ra.get('extract_inputs_sha256'):
+        errors.append('both extractions have the same input digest (src/, Cargo.toml, hax.toml): the flags did not enter the inputs')
+    if rm.get('roots') != ra.get('roots'):
+        errors.append('the two extractions have different roots')
+    if rm.get('tools') != ra.get('tools'):
+        errors.append('the two extractions used different tools')
+    return errors
+
+
 def compare(main_dir, alt_dir):
-    """List of error strings; empty if the two extractions differ only as the whitelist says."""
-    errors, seen = [], set()
+    """List of error strings; empty if the two extractions were run as intended and differ only as the whitelist says."""
+    errors, seen = check_reports(main_dir, alt_dir), set()
     for f in FILES:
         pm, pa = Path(main_dir) / f, Path(alt_dir) / f
         if not pm.is_file() or not pa.is_file():
@@ -137,166 +170,120 @@ def compare(main_dir, alt_dir):
     for key in WHITELIST:
         if key not in seen:
             errors.append(f'{key[0]}: whitelist entry {key[1]} matches no declaration in either extraction')
-    # The point of the gate.
-    by_key = [{k: norm(b) for k, b in parse((Path(d) / 'Funs.lean').read_text(encoding='utf-8'))[1]}
-              for d in (main_dir, alt_dir)]
-    for k in MUST_MATCH:
+    # The comparison must have covered the verify path.
+    try:
+        by_key = [{k: norm(b) for k, b in parse((Path(d) / 'Funs.lean').read_text(encoding='utf-8'))[1]}
+                  for d in (main_dir, alt_dir)]
+    except OSError as e:
+        return errors + [f'Funs.lean: {e}']
+    for k in MUST_BE_PRESENT:
         if k not in by_key[0] or k not in by_key[1]:
-            errors.append(f'Funs.lean: {k} missing from an extraction')
+            errors.append(f'Funs.lean: {k} missing from an extraction (the gate must cover it)')
         elif by_key[0][k] != by_key[1][k]:
             errors.append(f'Funs.lean: {k} differs between the extractions (it must be the same text in every build)')
     return errors
 
 
-def alt_block(alt_dir, fname, key_prefix):
-    blocks = parse((Path(alt_dir) / fname).read_text(encoding='utf-8'))[1]
-    hits = [norm(b) for k, b in blocks if k == key_prefix]
-    if len(hits) != 1:
-        raise ValueError(f'{fname}: expected one declaration {key_prefix}, found {len(hits)}')
-    return hits[0]
+def probe_check(main_dir, alt_dir):
+    """Errors unless the probe crate (one function, `cfg!(target_feature = "avx2")`) extracted differently under the two flag
+    sets: false without the target features, true with them. This is the positive control of the gate."""
+    errors = check_reports(main_dir, alt_dir)
+    texts = []
+    for d in (main_dir, alt_dir):
+        try:
+            blocks = {k: norm(b) for k, b in parse((Path(d) / 'Funs.lean').read_text(encoding='utf-8'))[1]}
+        except OSError as e:
+            return errors + [f'probe Funs.lean: {e}']
+        if PROBE_KEY not in blocks:
+            return errors + [f'probe: {PROBE_KEY} is missing from an extraction of scripts/fi-probe']
+        texts.append(blocks[PROBE_KEY])
+    if texts[0] == texts[1]:
+        errors.append('the probe extracted identically with and without the AVX2 target features: the flags do not reach the '
+                      'compiler, so the main comparison proves nothing')
+    else:
+        if not re.search(r'\bok false\b', texts[0]) or not re.search(r'\bok true\b', texts[1]):
+            errors.append('the probe differs between the extractions but not as `false` without and `true` with the target '
+                          f'features:\n--- main\n{texts[0]}\n--- alt\n{texts[1]}')
+    return errors
 
 
-NAMES_TYPES = ['[ml_dsa_lean::cpu::Avx2]']
-NAMES_FUNS = ['[ml_dsa_lean::fast_verify::dispatch::verify_internal_on]:',
-              '[ml_dsa_lean::fast_verify::verify_internal_with]:',
-              '[ml_dsa_lean::fast_verify::dispatch::prepare_vk_on]:',
-              '[ml_dsa_lean::fast_verify::prepare_vk_with]:',
-              '[ml_dsa_lean::fast_verify::dispatch::verify_prepared_on]:',
-              '[ml_dsa_lean::fast_verify::verify_prepared_internal_with]:']
-
-LEAN_HEAD = '''import Impl.Funs
-
-/-!
-# The build without the verify dispatch is the scalar verify (generated; do not edit)
-
-Generated by `scripts/feature_independence.py gen-lean` from the second extraction of `scripts/check-feature-independence.sh`
-(`--features ''`: no `avx2`, still `--cfg miri`), which is what a default build, and any build that is not x86_64, compiles in
-place of the dispatch. In that build the CPU-check token `cpu::Avx2` is an uninhabited enum, and the dispatch entry points
-are `match t {{}}`. The gate proves that everything else in the two extractions is the same text (the declarations below are
-the whole difference, plus the three AVX2 functions that exist only with the dispatch); this file elaborates the declarations
-that differ, with the three `fast_verify::*_with` functions (which are text-identical to the ones `Proofs/Dispatch.lean` proves
-about), and proves them equal to the scalar functions for every `Option cpu.Avx2`: `none` is the scalar call, and `some` is
-impossible because `cpu.Avx2` has no value. The declarations live in `Impl.NoDispatch`; every other name they use is the
-`Impl` declaration, which the gate proved to be the same in the second extraction.
--/
-
-open Aeneas Aeneas.Std RustM ControlFlow Error
-set_option linter.dupNamespace false
-set_option linter.hashCommand false
-set_option linter.unusedVariables false
-set_option linter.style.whitespace false
-set_option linter.style.setOption false
-set_option linter.style.longLine false
-set_option maxHeartbeats 1000000
-set_option maxRecDepth 2048
-
-namespace Impl.NoDispatch
-
-'''
-
-LEAN_FOOT = '''end Impl.NoDispatch
-
-namespace Proofs.NoDispatch
-open Aeneas Aeneas.Std RustM
-
-theorem verify_internal_with_eq (K L : Std.Usize) (t : Option Impl.NoDispatch.cpu.Avx2) (p : Impl.params.Params)
-    (pk m_prefix m sig : Slice Std.U8) :
-    Impl.NoDispatch.fast_verify.verify_internal_with K L t p pk m_prefix m sig =
-      Impl.verify.verify_internal K L p pk m_prefix m sig := by
-  cases t with
-  | none => rfl
-  | some a => cases a
-
-theorem prepare_vk_with_eq (K L : Std.Usize) (t : Option Impl.NoDispatch.cpu.Avx2) (pk : Slice Std.U8) :
-    Impl.NoDispatch.fast_verify.prepare_vk_with K L t pk = Impl.verify.prepare_vk K L pk := by
-  cases t with
-  | none => rfl
-  | some a => cases a
-
-theorem verify_prepared_internal_with_eq {K L : Std.Usize} (t : Option Impl.NoDispatch.cpu.Avx2)
-    (p : Impl.params.Params) (vk : Impl.verify.PreparedVk K L) (m_prefix m sig : Slice Std.U8) :
-    Impl.NoDispatch.fast_verify.verify_prepared_internal_with t p vk m_prefix m sig =
-      Impl.verify.verify_prepared_internal p vk m_prefix m sig := by
-  cases t with
-  | none => rfl
-  | some a => cases a
-
-end Proofs.NoDispatch
-'''
-
-
-def gen_lean(alt_dir):
-    out = [LEAN_HEAD.replace('{{}}', '{}')]
-    for k in NAMES_TYPES:
-        out.append(alt_block(alt_dir, 'Types.lean', k))
-    for k in NAMES_FUNS:
-        out.append(alt_block(alt_dir, 'Funs.lean', k))
-    return '\n'.join(out) + '\n' + LEAN_FOOT
-
-
-_SELF_MAIN_T = '''-- header
-namespace Impl
-
-/-- [ml_dsa_lean::cpu::Avx2]
-    Source: 'x.rs', lines 1:0-1:1 -/
-def cpu.Avx2 := Unit
-
-end Impl
-'''
-_SELF_ALT_T = _SELF_MAIN_T.replace('def cpu.Avx2 := Unit', 'inductive cpu.Avx2 where')
-
+# ----------------------------------------------------------------------------------------------------------------------------
+# Self-test: synthetic extraction trees, to show that `compare` and `probe-check` reject what they must reject.
+# ----------------------------------------------------------------------------------------------------------------------------
 
 def _fun(name, body):
     return (f"/-- [ml_dsa_lean::{name}]:\n    Source: 'x.rs', lines 1:0-1:1 -/\ndef {name.replace('::', '.')}\n"
             f"  := do\n  {body}\n\n")
 
 
-def _selftest_trees(tmp, extra_main='', extra_alt='', with_main='ok 1', with_alt='ok 1', on_main='ok 2', on_alt='fail panic'):
-    names_with = ['fast_verify::verify_internal_with', 'fast_verify::verify_prepared_internal_with',
-                  'fast_verify::prepare_vk_with', 'verify::verify_internal', 'verify::prepare_vk',
-                  'verify::verify_prepared_internal', 'cpu::avx2']
-    ons = ['fast_verify::dispatch::verify_internal_on', 'fast_verify::dispatch::verify_prepared_on',
-           'fast_verify::dispatch::prepare_vk_on']
-    avx = ['fast_verify::dispatch::verify_internal_avx2', 'fast_verify::dispatch::verify_prepared_avx2',
-           'fast_verify::dispatch::prepare_vk_avx2']
-    def funs(main):
-        s = '-- header\nnamespace Impl\n\n'
-        s += ''.join(_fun(n, with_main if main else with_alt) for n in names_with)
-        s += ''.join(_fun(n, on_main if main else on_alt) for n in ons)
-        if main:
-            s += ''.join(_fun(n, 'ok 3') for n in avx)
-        s += extra_main if main else extra_alt
-        return s + 'end Impl\n'
-    for d, main in (('main', True), ('alt', False)):
-        (tmp / d).mkdir()
-        (tmp / d / 'Types.lean').write_text(_SELF_MAIN_T if main else _SELF_ALT_T)
-        (tmp / d / 'Funs.lean').write_text(funs(main))
-        (tmp / d / 'FunsExternal.lean').write_text('-- ext\nnamespace Impl\n\nend Impl\n')
+def _write_tree(d, funs, flags, digest, roots=('r',)):
+    d.mkdir()
+    (d / 'Types.lean').write_text('-- header\nnamespace Impl\n\nend Impl\n')
+    (d / 'Funs.lean').write_text('-- header\nnamespace Impl\n\n' + funs + 'end Impl\n')
+    (d / 'FunsExternal.lean').write_text('-- ext\nnamespace Impl\n\nend Impl\n')
+    (d / REPORT).write_text(json.dumps({'rustflags': flags, 'extract_inputs_sha256': digest, 'roots': list(roots),
+                                        'tools': {'aeneas': 'a'}}))
+
+
+def _must_funs(body='ok 1'):
+    return ''.join(_fun(k[len('[ml_dsa_lean::'):-len(']:')], body) for k in MUST_BE_PRESENT)
 
 
 def self_test():
-    """Errors if `compare` accepts a tree pair it must reject, or rejects the expected one."""
+    """Errors if `compare` or `probe_check` accept a tree pair they must reject, or reject the expected one."""
     import tempfile
     errs = []
-    def run(label, expect_ok, needle=None, **kw):
+
+    def run_compare(label, expect_ok, needle=None, main_funs=None, alt_funs=None, main_flags=FLAGS_MAIN, alt_flags=FLAGS_ALT,
+                    main_digest='d1', alt_digest='d2'):
         with tempfile.TemporaryDirectory() as t:
             t = Path(t)
-            _selftest_trees(t, **kw)
+            _write_tree(t / 'main', main_funs if main_funs is not None else _must_funs(), main_flags, main_digest)
+            _write_tree(t / 'alt', alt_funs if alt_funs is not None else _must_funs(), alt_flags, alt_digest)
             e = compare(t / 'main', t / 'alt')
-            if expect_ok and e:
-                errs.append(f'self-test {label}: unexpected errors {e}')
-            if not expect_ok:
-                if not e:
-                    errs.append(f'self-test {label}: the difference was not reported')
-                elif needle and not any(needle in x for x in e):
-                    errs.append(f'self-test {label}: no error mentions {needle!r}: {e}')
-    run('the expected differences only', True)
-    run('a declaration only in main', False, 'main only', extra_main=_fun('verify::new_helper', 'ok 4'))
-    run('a declaration only in alt', False, 'alt only', extra_alt=_fun('verify::new_helper', 'ok 4'))
-    run('a cfg-split ordinary function', False, 'differs',
-        extra_main=_fun('verify::cfg_split', 'ok 1'), extra_alt=_fun('verify::cfg_split', 'ok 2'))
-    run('a cfg-split _with body', False, 'differs', with_main='ok 1', with_alt='ok 9')
-    run('a whitelisted difference that vanished', False, 'agree', on_alt='ok 2')
+        if expect_ok and e:
+            errs.append(f'self-test {label}: unexpected errors {e}')
+        if not expect_ok:
+            if not e:
+                errs.append(f'self-test {label}: the problem was not reported')
+            elif needle and not any(needle in x for x in e):
+                errs.append(f'self-test {label}: no error mentions {needle!r}: {e}')
+
+    run_compare('identical trees from the intended flags', True)
+    # Vacuity: the same flags twice, even though the trees are identical.
+    run_compare('the same flags twice', False, 'same rustflags', alt_flags=FLAGS_MAIN)
+    run_compare('the same input digest twice', False, 'same input digest', alt_digest='d1')
+    run_compare('a typo in the alt flags', False, 'expected', alt_flags='--cfg miri -C target-feature=+avx2')
+    run_compare('flags missing from the report', False, 'expected', alt_flags=None)
+    extra = _fun('verify::new_helper', 'ok 4')
+    run_compare('a declaration only in main', False, 'main only', main_funs=_must_funs() + extra)
+    run_compare('a declaration only in alt', False, 'alt only', alt_funs=_must_funs() + extra)
+    run_compare('a target-feature-split function', False, 'differs',
+                main_funs=_must_funs() + _fun('verify::split', 'ok 1'), alt_funs=_must_funs() + _fun('verify::split', 'ok 2'))
+    run_compare('a verify-path function that differs', False, 'differs', alt_funs=_must_funs().replace('ok 1', 'ok 9', 1))
+    run_compare('a verify-path function missing from both', False, 'missing',
+                main_funs=_must_funs().replace('verify::verify_internal_x4', 'verify::other', 1),
+                alt_funs=_must_funs().replace('verify::verify_internal_x4', 'verify::other', 1))
+    if WHITELIST:
+        errs.append('self-test: the whitelist must be empty')
+
+    def run_probe(label, expect_ok, main_body, alt_body, needle=None):
+        with tempfile.TemporaryDirectory() as t:
+            t = Path(t)
+            _write_tree(t / 'main', _fun('probe::avx2_enabled', main_body), FLAGS_MAIN, 'd1')
+            _write_tree(t / 'alt', _fun('probe::avx2_enabled', alt_body), FLAGS_ALT, 'd2')
+            e = probe_check(t / 'main', t / 'alt')
+        if expect_ok and e:
+            errs.append(f'self-test probe {label}: unexpected errors {e}')
+        if not expect_ok:
+            if not e:
+                errs.append(f'self-test probe {label}: the problem was not reported')
+            elif needle and not any(needle in x for x in e):
+                errs.append(f'self-test probe {label}: no error mentions {needle!r}: {e}')
+
+    run_probe('false then true', True, 'ok false', 'ok true')
+    run_probe('identical (the flags did not reach the compiler)', False, 'ok false', 'ok false', 'do not reach')
+    run_probe('reversed', False, 'ok true', 'ok false', 'not as `false`')
     return errs
 
 
@@ -309,33 +296,26 @@ def main(argv):
         if not errs:
             print('feature_independence self-test OK')
         return 1 if errs else 0
-    if len(args) == 3 and args[0] == 'compare':
+    if len(args) == 3 and args[0] in ('compare', 'probe-check'):
         errs = self_test()
         if errs:
             for e in errs:
                 print(f'FEATURE-INDEPENDENCE FAIL (self-test): {e}', file=sys.stderr)
             return 1
-        errs = compare(args[1], args[2])
+        if args[0] == 'compare':
+            errs = compare(args[1], args[2])
+        else:
+            errs = probe_check(args[1], args[2])
         for e in errs:
             print(f'FEATURE-INDEPENDENCE FAIL: {e}', file=sys.stderr)
         if errs:
             return 1
-        print(f'feature independence: the two extractions agree except for {len(WHITELIST)} whitelisted declarations:')
-        for (f, k), (kind, why) in sorted(WHITELIST.items()):
-            print(f'  {f} {k} ({kind}): {why}')
-        print(f'  byte-identical, checked separately: {len(MUST_MATCH)} declarations ({MUST_MATCH[0]}, ...)')
-        return 0
-    if len(args) == 2 and args[0] == 'gen-lean':
-        sys.stdout.write(gen_lean(args[1]))
-        return 0
-    if len(args) == 3 and args[0] == 'check-lean':
-        want = gen_lean(args[1])
-        have = Path(args[2]).read_text(encoding='utf-8') if Path(args[2]).is_file() else None
-        if have != want:
-            print(f'FEATURE-INDEPENDENCE FAIL: {args[2]} is not what `gen-lean` prints from the second extraction '
-                  f'(regenerate it with scripts/check-feature-independence.sh --update)', file=sys.stderr)
-            return 1
-        print(f'{args[2]} matches the second extraction')
+        if args[0] == 'compare':
+            print(f'feature independence: the extractions with rustflags {FLAGS_MAIN!r} and {FLAGS_ALT!r} are the same Lean; '
+                  f'whitelist: {len(WHITELIST)} entries (empty); {len(MUST_BE_PRESENT)} verify-path declarations present and identical')
+        else:
+            print('probe: `cfg!(target_feature = "avx2")` extracted as false without and true with the target features '
+                  '(the flags reach the compiler)')
         return 0
     print(__doc__, file=sys.stderr)
     return 2

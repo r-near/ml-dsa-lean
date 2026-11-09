@@ -6,11 +6,10 @@
 //! The state layout makes the loop over states a unit-stride loop: `s[k]` is lane `k = x + 5y` of all four states,
 //! `s[k][i]` is lane `k` of state `i`, so iteration `i` loads and stores `s[0][i], s[1][i], ...`. LLVM's loop vectorizer
 //! turns that loop into 256-bit code (one state per vector lane, `vpxor`, `vpandn`, `vpsllq`/`vpsrlq`/`vpor`) when the
-//! function is compiled with AVX2, which is what `fast_verify::dispatch` does: it calls the proved code from
-//! `#[target_feature(enable = "avx2")]` wrappers after a CPU check. The same source compiled without AVX2 is the
-//! portable path (scalar, or SSE2 if LLVM finds it worthwhile). Whether LLVM vectorizes is a compiler heuristic that no
-//! proof can pin down: the result is always correct, and `scripts/check-avx2-inlining.sh` fails if the permutation stops
-//! being vector code.
+//! crate is built with AVX2 enabled (`-C target-feature=+avx2` or `-C target-cpu=x86-64-v3`; nothing at run time chooses).
+//! The same source built without AVX2 vectorizes with SSE2 where LLVM finds it worthwhile (or stays scalar), and on aarch64
+//! with NEON. Whether LLVM vectorizes is a compiler heuristic that no proof can pin down: the result is always correct,
+//! and `scripts/check-avx2-inlining.sh` fails if the permutation stops being vector code in a `+avx2` build.
 //!
 //! Why not `[u64; 4]` values with lane-wise helpers (the previous shape): LLVM's SLP vectorizer judges that code "not
 //! beneficial" and leaves it scalar. What stops it is the 64-bit rotates, which LLVM turns into funnel shifts before SLP
@@ -22,15 +21,10 @@
 
 use crate::keccak::RC;
 
-// `round25` and `lane_rounds2` are `inline(always)` only where the kernel is compiled inside a
-// `#[target_feature(enable = "avx2")]` wrapper: the loop in `keccak_f1600_x4` must see their bodies to vectorize it, and the
-// wrapper's AVX2 only reaches code inlined into it.
-//
 // `round25` is one Keccak-f[1600] round (θ, ρ, π, χ, ι with round constant `rc`) on a scalar state, lane `k = x + 5y` at
 // `a[k]`. The shared generated code below is `scripts/gen_keccak4_round.py`'s output (`--check` compares).
 // BEGIN GENERATED
 #[allow(clippy::manual_rotate)] // explicit shifts: they are what the extraction and the proof are about
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn round25(a: &[u64; 25], rc: u64) -> [u64; 25] {
     let c0 = a[0] ^ a[5] ^ a[10] ^ a[15] ^ a[20];
     let c1 = a[1] ^ a[6] ^ a[11] ^ a[16] ^ a[21];
@@ -121,7 +115,6 @@ fn round25(a: &[u64; 25], rc: u64) -> [u64; 25] {
 
 /// Two rounds (`rc0` then `rc1`) on state `i` of the 4-way state `s`: lane `k` of state `i` is `s[k][i]`, and the other three
 /// states are untouched. Requires `i < 4`.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 fn lane_rounds2(s: &mut [[u64; 4]; 25], i: usize, rc0: u64, rc1: u64) {
     let a = [s[0][i], s[1][i], s[2][i], s[3][i], s[4][i], s[5][i], s[6][i], s[7][i], s[8][i], s[9][i], s[10][i], s[11][i], s[12][i], s[13][i], s[14][i], s[15][i], s[16][i], s[17][i], s[18][i], s[19][i], s[20][i], s[21][i], s[22][i], s[23][i], s[24][i]];
     let m = round25(&a, rc0);
@@ -156,7 +149,6 @@ fn lane_rounds2(s: &mut [[u64; 4]; 25], i: usize, rc0: u64, rc1: u64) {
 
 /// Keccak-f[1600] on four states at once, lane `i` of every `s[k]` being state `i`: state `i` of the result is the
 /// permutation of state `i` of the input.
-#[cfg_attr(all(feature = "avx2", not(miri), target_arch = "x86_64"), inline(always))]
 pub fn keccak_f1600_x4(s: &mut [[u64; 4]; 25]) {
     let mut r = 0;
     while r < 24 {
@@ -166,30 +158,5 @@ pub fn keccak_f1600_x4(s: &mut [[u64; 4]; 25]) {
             i += 1;
         }
         r += 2;
-    }
-}
-
-/// The kernel compiled with AVX2, for the tests and benches (feature `internals`). It runs `cpu::has_avx2()` first and
-/// returns `false` (leaving `s` alone) without AVX2, so it cannot raise SIGILL; with AVX2 the result is exactly
-/// `keccak_f1600_x4`'s, computed by the code the dispatch wrappers run.
-#[cfg(all(feature = "avx2", feature = "internals", not(miri), target_arch = "x86_64"))]
-#[allow(unsafe_code)]
-pub mod avx2_checked {
-    use crate::cpu::has_avx2;
-
-    #[target_feature(enable = "avx2")]
-    fn keccak_f1600_x4_avx2(s: &mut [[u64; 4]; 25]) {
-        super::keccak_f1600_x4(s)
-    }
-
-    /// `keccak_f1600_x4` compiled with AVX2 on `s`; returns `false` (and leaves `s` alone) without AVX2.
-    pub fn keccak_f1600_x4(s: &mut [[u64; 4]; 25]) -> bool {
-        if has_avx2() {
-            // SAFETY: `has_avx2` just reported CPU and OS support for AVX2.
-            unsafe { keccak_f1600_x4_avx2(s) };
-            true
-        } else {
-            false
-        }
     }
 }

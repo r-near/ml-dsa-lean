@@ -136,29 +136,35 @@ theorem verifyInternalPreparedAPI_eq {ip : Impl.params.Params} {K L : Usize} {sp
 
 /-! ## `verifying_key_NN` -/
 
-/-- `api.verifying_key_44` is `prepare_vk` then the wrapper: `cpu.avx2` is the stub `ok none` in the extraction, and the
-`none` arm of `prepare_vk_with` is the scalar `prepare_vk`. (`Proofs/Dispatch.lean` shows the `some _` arm agrees.) -/
+/-- `api.verifying_key_44` is `prepare_vk` then the wrapper: the extracted function builds the key in place with the 4-way
+`prepare_vk_into_x4`, which `prepare_vk_x4_eq` (`Proofs/FastVerifyCore.lean`) proves equal to the scalar `prepare_vk`. -/
 theorem verifying_key_44_def (pk : Array U8 1312#usize) :
     api.verifying_key_44 pk = (do
       let s ← lift (Array.to_slice pk)
       let pv ← verify.prepare_vk 4#usize 4#usize s
-      ok ({ inner := pv } : api.VerifyingKey44)) := rfl
+      ok ({ inner := pv } : api.VerifyingKey44)) := by
+  obtain ⟨ip, hip, hp⟩ := ML_DSA_44_std
+  simp only [api.verifying_key_44, lift, Std.bind_tc_ok, prepare_vk_x4_zeroed_bind, prepare_vk_x4_eq hp]
 
-/-- `api.verifying_key_65` is `prepare_vk` then the wrapper: `cpu.avx2` is the stub `ok none` in the extraction, and the
-`none` arm of `prepare_vk_with` is the scalar `prepare_vk`. (`Proofs/Dispatch.lean` shows the `some _` arm agrees.) -/
+/-- `api.verifying_key_65` is `prepare_vk` then the wrapper: the extracted function builds the key in place with the 4-way
+`prepare_vk_into_x4`, which `prepare_vk_x4_eq` (`Proofs/FastVerifyCore.lean`) proves equal to the scalar `prepare_vk`. -/
 theorem verifying_key_65_def (pk : Array U8 1952#usize) :
     api.verifying_key_65 pk = (do
       let s ← lift (Array.to_slice pk)
       let pv ← verify.prepare_vk 6#usize 5#usize s
-      ok ({ inner := pv } : api.VerifyingKey65)) := rfl
+      ok ({ inner := pv } : api.VerifyingKey65)) := by
+  obtain ⟨ip, hip, hp⟩ := ML_DSA_65_std
+  simp only [api.verifying_key_65, lift, Std.bind_tc_ok, prepare_vk_x4_zeroed_bind, prepare_vk_x4_eq hp]
 
-/-- `api.verifying_key_87` is `prepare_vk` then the wrapper: `cpu.avx2` is the stub `ok none` in the extraction, and the
-`none` arm of `prepare_vk_with` is the scalar `prepare_vk`. (`Proofs/Dispatch.lean` shows the `some _` arm agrees.) -/
+/-- `api.verifying_key_87` is `prepare_vk` then the wrapper: the extracted function builds the key in place with the 4-way
+`prepare_vk_into_x4`, which `prepare_vk_x4_eq` (`Proofs/FastVerifyCore.lean`) proves equal to the scalar `prepare_vk`. -/
 theorem verifying_key_87_def (pk : Array U8 2592#usize) :
     api.verifying_key_87 pk = (do
       let s ← lift (Array.to_slice pk)
       let pv ← verify.prepare_vk 8#usize 7#usize s
-      ok ({ inner := pv } : api.VerifyingKey87)) := rfl
+      ok ({ inner := pv } : api.VerifyingKey87)) := by
+  obtain ⟨ip, hip, hp⟩ := ML_DSA_87_std
+  simp only [api.verifying_key_87, lift, Std.bind_tc_ok, prepare_vk_x4_zeroed_bind, prepare_vk_x4_eq hp]
 
 
 theorem verifying_key_44_prepare (pk : Array U8 1312#usize) (vk : api.VerifyingKey44)

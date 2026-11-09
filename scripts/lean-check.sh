@@ -31,8 +31,9 @@ scripts/check-no-decls.sh
 scripts/check-no-decls.sh --self-test
 # Declarations reachable from the verify entry points, by walking the resolved constants (not text).
 scripts/reachable-defs.sh
-# Feature independence (needs the extraction tools): the crate extracted a second time without the verify dispatch, compared with
-# lean/Impl, and lean/Proofs/NoDispatch.lean (built above) is what that extraction generates. Only for a full run (no module
+# Feature independence (needs the extraction tools): the crate extracted a second time under different target features
+# (`-C target-feature=+avx,+avx2`), compared with lean/Impl; the whitelist of differing declarations is empty. Only for a full
+# run (no module
 # arguments). scripts/ci.sh sets ML_DSA_FEATURE_INDEPENDENCE_DONE=1 for this script only after its own feature-independence step
 # passed in the same invocation; without that flag this script runs the check itself. A run with module arguments does not run
 # it at all, and says so in the last line: only a full run's "LEAN CHECK OK: " (nothing after the colon) is the done-gate.

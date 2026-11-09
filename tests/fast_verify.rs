@@ -1,23 +1,22 @@
-//! Differential tests of the dispatched verify (feature `avx2`, src/fast_verify.rs) against the scalar path.
+//! Differential tests of the 4-way verify (`api::verify_*`, `verifying_key_*` and the prepared verify run it) against the
+//! scalar functions it is proved equal to.
 //!
-//! The reference is `verify::verify_internal`, the proved scalar function. Three things are compared with it on every
-//! input, for ML-DSA-44/65/87:
-//!   * `fast_verify::verify_internal_dispatched`, `verify_internal_with(cpu::avx2(), ..)`, which `api::verify_*` call (AVX2 body on a CPU with AVX2);
-//!   * the AVX2 body itself (`verify_internal_avx2_or_none`), whatever the dispatcher decides;
+//! The reference is `verify::verify_internal`, the scalar function. Compared with it on every input, for ML-DSA-44/65/87:
+//!   * `verify::verify_internal_x4`, the function `api::verify_*` run;
+//!   * `verify::prepare_vk_x4` and `prepare_vk_into_x4` against `prepare_vk` (Â, NTT(t1 · 2^d) and tr);
 //!   * the public API: `verify_NN`, `verify_internal_NN`, and the prepared-key paths `verifying_key_NN` +
 //!     `verify_prepared_NN` / `verify_internal_prepared_NN`.
 //! Inputs: the NIST ACVP sigVer vectors, the Wycheproof verify vectors, and deterministic pseudo-random keys and messages
 //! with valid, corrupted (signature, message, context, key), wrong-length and random inputs.
 //!
-//! These tests need a CPU with AVX2 to say anything about the AVX2 path. Without it they still run (everything is the
-//! scalar path) and say so; set `ML_DSA_REQUIRE_AVX2=1` (scripts/ci.sh does for its avx2 steps) to make that a failure.
-//! That the public API chooses the AVX2 wrapper when the CPU has it is by construction (each `api::*` function is one
-//! call of its `_with` form with `cpu::avx2()`; `Proofs/Dispatch.lean`, `docs/assurance.md` section 1.9) and is not counted at run time.
-#![cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
+//! Nothing here depends on a CPU check: which instructions the 4-way code uses is decided when the crate is compiled. Run the
+//! suite as it is for the baseline build and with `RUSTFLAGS="-C target-feature=+avx2"` for the AVX2 build (the machine must
+//! have AVX2); set `ML_DSA_REQUIRE_AVX2=1` (scripts/ci.sh does for its avx2 step) to make a build without AVX2 target
+//! features a failure, so that the step cannot pass while testing the baseline code.
+#![cfg(not(miri))]
 #![allow(clippy::type_complexity)]
 use flate2::read::GzDecoder;
 use ml_dsa_lean::api;
-use ml_dsa_lean::fast_verify;
 use ml_dsa_lean::params::{self, ML_DSA_44, ML_DSA_65, ML_DSA_87, Params};
 use ml_dsa_lean::verify;
 use serde::Deserialize;
@@ -54,12 +53,11 @@ struct Set {
     /// api::verifying_key_NN then verify_prepared_NN / verify_internal_prepared_NN.
     prepared: fn(&[u8], &[u8], &[u8], &[u8]) -> bool,
     prepared_internal: fn(&[u8], &[u8], &[u8]) -> bool,
-    /// verify::verify_internal (scalar), fast_verify::verify_internal_dispatched, the AVX2 body.
+    /// verify::verify_internal (scalar) and verify::verify_internal_x4.
     scalar: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> bool,
-    dispatched: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> bool,
-    direct: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> Option<bool>,
-    /// Does the AVX2 prepare_vk equal the scalar one (None without AVX2)?
-    prepare_matches: fn(&[u8]) -> Option<bool>,
+    x4: fn(&Params, &[u8], &[u8], &[u8], &[u8]) -> bool,
+    /// Do `prepare_vk_x4` and the in-place `prepare_vk_into_x4` equal the scalar `prepare_vk`?
+    prepare_matches: fn(&[u8]) -> bool,
 }
 
 macro_rules! set_of {
@@ -84,9 +82,19 @@ macro_rules! set_of {
                 api::$vip(&vk, mp, sig.try_into().unwrap())
             },
             scalar: |p, pk, prefix, m, sig| verify::verify_internal::<$k, $l>(p, pk, prefix, m, sig),
-            dispatched: |p, pk, prefix, m, sig| fast_verify::verify_internal_dispatched::<$k, $l>(p, pk, prefix, m, sig),
-            direct: |p, pk, prefix, m, sig| fast_verify::verify_internal_avx2_or_none::<$k, $l>(p, pk, prefix, m, sig),
-            prepare_matches: |pk| fast_verify::prepare_vk_avx2_matches_scalar::<$k, $l>(pk),
+            x4: |p, pk, prefix, m, sig| verify::verify_internal_x4::<$k, $l>(p, pk, prefix, m, sig),
+            prepare_matches: |pk| {
+                let slow = verify::prepare_vk::<$k, $l>(pk);
+                let fast = verify::prepare_vk_x4::<$k, $l>(pk);
+                let mut in_place = verify::PreparedVk::<$k, $l>::zeroed();
+                verify::prepare_vk_into_x4::<$k, $l>(pk, &mut in_place);
+                fast.a_hat == slow.a_hat
+                    && fast.t1_2d_hat == slow.t1_2d_hat
+                    && fast.tr == slow.tr
+                    && in_place.a_hat == slow.a_hat
+                    && in_place.t1_2d_hat == slow.t1_2d_hat
+                    && in_place.tr == slow.tr
+            },
         }
     };
 }
@@ -99,46 +107,30 @@ fn sets() -> [Set; 3] {
     ]
 }
 
-fn have_avx2() -> bool {
-    std::arch::is_x86_feature_detected!("avx2")
-}
-
+/// The build under test: with `ML_DSA_REQUIRE_AVX2=1` it must have been compiled with AVX2 target features.
 #[test]
-fn avx2_is_present_when_required() {
+fn build_has_avx2_when_required() {
     if std::env::var("ML_DSA_REQUIRE_AVX2").as_deref() == Ok("1") {
-        assert!(have_avx2(), "ML_DSA_REQUIRE_AVX2=1 but this CPU has no AVX2: the AVX2 path would not be tested");
+        assert!(
+            cfg!(target_feature = "avx2"),
+            "ML_DSA_REQUIRE_AVX2=1 but this build has no AVX2 target feature: set RUSTFLAGS=\"-C target-feature=+avx2\""
+        );
     }
-    if !have_avx2() {
-        eprintln!("NOTE: no AVX2 on this CPU; the dispatched API is the scalar path and the AVX2 body is not compared");
-    }
+    eprintln!("4-way code compiled with AVX2 target features: {}", cfg!(target_feature = "avx2"));
 }
 
-#[test]
-fn cpu_detection_agrees_with_the_standard_library() {
-    use ml_dsa_lean::cpu;
-    assert_eq!(cpu::detect_avx2_uncached(), have_avx2());
-    // The cached answer, twice (the second call is the cached path).
-    assert_eq!(cpu::has_avx2_cached(), have_avx2());
-    assert_eq!(cpu::has_avx2_cached(), have_avx2());
-}
-
-/// Counts the checks that really compared the AVX2 body, so the summary line is evidence and not a claim.
+/// Counts the checks, so the summary line is evidence and not a claim.
 #[derive(Default)]
 struct Stats {
     cases: usize,
-    avx2_compared: usize,
     accepted: usize,
 }
 
 /// All verdicts for one (pk, M' = prefix ‖ m, sig); panics with context on any disagreement. Returns the verdict.
 fn check_slices(s: &Set, st: &mut Stats, what: &str, pk: &[u8], prefix: &[u8], m: &[u8], sig: &[u8]) -> bool {
     let want = (s.scalar)(&s.p, pk, prefix, m, sig);
-    let got = (s.dispatched)(&s.p, pk, prefix, m, sig);
-    assert_eq!(got, want, "{} {what}: dispatched slice verify vs scalar", s.name);
-    if let Some(d) = (s.direct)(&s.p, pk, prefix, m, sig) {
-        assert_eq!(d, want, "{} {what}: AVX2 body vs scalar", s.name);
-        st.avx2_compared += 1;
-    }
+    let got = (s.x4)(&s.p, pk, prefix, m, sig);
+    assert_eq!(got, want, "{} {what}: 4-way slice verify vs scalar", s.name);
     // The fixed-size public API, when the lengths allow it.
     let lens_ok = pk.len() == params::pk_len(&s.p) && sig.len() == params::sig_len(&s.p);
     if lens_ok {
@@ -176,7 +168,7 @@ fn run_random(s: &Set, seed: u64, keys: usize) -> Stats {
     for key in 0..keys {
         let xi: [u8; 32] = r.bytes(32).try_into().unwrap();
         let (pk, sk) = (s.keygen)(&xi);
-        assert!((s.prepare_matches)(&pk).unwrap_or(true), "{}: prepare_vk AVX2 vs scalar", s.name);
+        assert!((s.prepare_matches)(&pk), "{}: prepare_vk 4-way vs scalar", s.name);
         // 1-2 messages per key, one of them with a non-empty context.
         for msg_no in 0..2 {
             let m_len = if msg_no == 0 { r.below(40) } else { 200 + r.below(300) };
@@ -271,13 +263,10 @@ fn random_keys_and_messages_agree_with_scalar() {
     for (i, s) in sets().iter().enumerate() {
         let st = run_random(s, 0x4641_5354_5645_0000 + i as u64, if cfg!(debug_assertions) { 2 } else { 6 });
         eprintln!(
-            "{}: {} random cases ({} accepted); AVX2 body compared on {}; 0 disagreements",
-            s.name, st.cases, st.accepted, st.avx2_compared
+            "{}: {} random cases ({} accepted); 4-way compared on every one; 0 disagreements",
+            s.name, st.cases, st.accepted
         );
         assert!(st.accepted > 0 && st.accepted < st.cases);
-        if have_avx2() {
-            assert_eq!(st.avx2_compared, st.cases, "{}: every case must have compared the AVX2 body", s.name);
-        }
     }
 }
 
@@ -356,7 +345,7 @@ fn acvp_sigver_through_every_path() {
             assert_eq!(got, c.test_passed, "ACVP {} expected testPassed={}", g.parameter_set, c.test_passed);
         }
     }
-    eprintln!("ACVP sigVer: {} cases through scalar, dispatched, AVX2 body, verify_*, prepared ({} skipped: preHash / external mu); AVX2 body compared on {}", st.cases, skipped, st.avx2_compared);
+    eprintln!("ACVP sigVer: {} cases through scalar, 4-way, verify_*, prepared ({} skipped: preHash / external mu)", st.cases, skipped);
     // The other 30 of the 60 vectors are preHash / external mu (not implemented); the 12 valid signatures are spread over both halves.
     assert!(st.cases == 30 && st.accepted > 0);
 }
@@ -412,6 +401,6 @@ fn wycheproof_verify_through_every_path() {
         }
         per_set.push(format!("{name}: {}", st.cases - before));
     }
-    eprintln!("Wycheproof verify: {} cases ({}) through every path; AVX2 body compared on {}", st.cases, per_set.join(", "), st.avx2_compared);
+    eprintln!("Wycheproof verify: {} cases ({}) through every path", st.cases, per_set.join(", "));
     assert!(st.cases > 300);
 }

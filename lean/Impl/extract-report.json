@@ -2,9 +2,8 @@
  "crate": "ml_dsa_lean",
  "namespace": "Impl",
  "variant": "generic (no --monomorphize, no charon args)",
- "features": [
-  "avx2"
- ],
+ "features": [],
+ "rustflags": "--cfg miri",
  "roots": [
   "ml_dsa_lean::api::sign_internal_44",
   "ml_dsa_lean::api::sign_internal_65",
@@ -20,6 +19,7 @@
   "ml_dsa_lean::rounding::poly_power2round",
   "ml_dsa_lean::keygen::keygen_internal",
   "ml_dsa_lean::verify::verify_internal",
+  "ml_dsa_lean::verify::prepare_vk",
   "ml_dsa_lean::api::keygen_44",
   "ml_dsa_lean::api::sign_44",
   "ml_dsa_lean::api::verify_44",
@@ -68,27 +68,9 @@
   "ml_dsa_lean::sampling::rej_ntt_poly_x3_tr",
   "ml_dsa_lean::verify::prepare_vk_into_x4",
   "ml_dsa_lean::verify::prepare_vk_x4",
-  "ml_dsa_lean::verify::verify_internal_x4",
-  "ml_dsa_lean::fast_verify::verify_internal_with",
-  "ml_dsa_lean::fast_verify::prepare_vk_with",
-  "ml_dsa_lean::fast_verify::verify_prepared_internal_with",
-  "ml_dsa_lean::api::verify_44_with",
-  "ml_dsa_lean::api::verify_internal_44_with",
-  "ml_dsa_lean::api::verifying_key_44_with",
-  "ml_dsa_lean::api::verify_prepared_44_with",
-  "ml_dsa_lean::api::verify_internal_prepared_44_with",
-  "ml_dsa_lean::api::verify_65_with",
-  "ml_dsa_lean::api::verify_internal_65_with",
-  "ml_dsa_lean::api::verifying_key_65_with",
-  "ml_dsa_lean::api::verify_prepared_65_with",
-  "ml_dsa_lean::api::verify_internal_prepared_65_with",
-  "ml_dsa_lean::api::verify_87_with",
-  "ml_dsa_lean::api::verify_internal_87_with",
-  "ml_dsa_lean::api::verifying_key_87_with",
-  "ml_dsa_lean::api::verify_prepared_87_with",
-  "ml_dsa_lean::api::verify_internal_prepared_87_with"
+  "ml_dsa_lean::verify::verify_internal_x4"
  ],
- "extract_inputs_sha256": "8ebbd174b98d36dff9220fa5e403172bea6268faa2b45fcdcd41a3b1c22b3009",
+ "extract_inputs_sha256": "60a81f7e2d038dcfe0c4ebe8a4e0b3068aa9b72feec69391b7deb5083a96344e",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -97,7 +79,7 @@
   "lean": "v4.31.0"
  },
  "rename_changes": 0,
- "llbc_fun_decls": 296,
+ "llbc_fun_decls": 271,
  "llbc_opaque_funs": [
   "core::array::{impl}::index",
   "core::array::{impl}::index_mut",
@@ -129,13 +111,13 @@
  "aeneas_warnings": 0,
  "aeneas_name_clashes": 0,
  "impl_sha256": {
-  "Types.lean": "64553c4b23aa3c48e6d0d3a4354be6e271c02dec426dc3ef8b0eb7dcc6a8b8f7",
-  "Funs.lean": "420528914bd3560a5b5ec3860485a230e42b53c274b28f2a610c2c7dcb781721",
+  "Types.lean": "ed32b57109999a905c650b0d42970a4ad7321d4d3f8b4128ae6859716beeb297",
+  "Funs.lean": "e203f62c1218307924fc09670cff269c22fe94c8e10e35807632042a1f8b740b",
   "FunsExternal_Template.lean": "e719f0705fad5b41344287034a88de59cc82954430390ecdee52b786501d7f6d",
   "FunsExternal.lean": "e719f0705fad5b41344287034a88de59cc82954430390ecdee52b786501d7f6d"
  },
  "external_axioms_declared": 4,
  "external_axioms_referenced": 0,
  "external_axioms_removed": 4,
- "lean_defs": 508
+ "lean_defs": 483
 }

@@ -56,3 +56,15 @@ fn compilations_agree() {
     #[cfg(all(not(miri), target_arch = "x86_64", not(target_feature = "avx2")))]
     assert_eq!(compared > 0, std::arch::is_x86_feature_detected!("avx2"));
 }
+
+/// The detector of the NTT dispatch (`src/cpu.rs`) against the standard library's, uncached and cached (twice: the second call
+/// takes the cached path).
+#[cfg(all(not(miri), target_arch = "x86_64"))]
+#[test]
+fn cpu_detection_agrees_with_the_standard_library() {
+    use ml_dsa_lean::cpu;
+    let have = std::arch::is_x86_feature_detected!("avx2");
+    assert_eq!(cpu::detect_avx2_uncached(), have);
+    assert_eq!(cpu::has_avx2_cached(), have);
+    assert_eq!(cpu::has_avx2_cached(), have);
+}

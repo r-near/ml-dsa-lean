@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """Extract this crate to Lean with Charon + Aeneas (generic, no --monomorphize).
 
-Usage: scripts/extract.py [--src DIR] [--roots FILE] [--work DIR] [--out DIR] [--features LIST]
+Usage: scripts/extract.py [--src DIR] [--roots FILE] [--work DIR] [--out DIR] [--rustflags FLAGS]
   --src    crate root to extract (Cargo.toml + src/ are copied; default: repo root)
   --roots  extraction roots file (default: scripts/extract-roots.txt)
   --work   directory for logs and intermediate files (default: <repo>/.extract); the crate itself is staged in a fresh
            temporary directory outside the checkout, so no ancestor .cargo/config.toml applies
   --out    destination for Types.lean/Funs.lean/FunsExternal*.lean/extract-report.json (default: lean/Impl)
-  --features  comma-separated cargo features to extract with (default: avx2, the extraction the proofs are built from).
-           `--features ''` is the second extraction of scripts/check-feature-independence.sh (no dispatch, still --cfg miri);
-           its output is a scratch directory, never lean/Impl: the report it writes records the other feature set.
+  --rustflags  extra rustc flags appended to `--cfg miri` (default: none, the extraction the proofs are built from). The
+           second extraction of scripts/check-feature-independence.sh passes `-C target-feature=+avx,+avx2` (the target
+           features of an AVX2 build); its output is a scratch directory, never lean/Impl: the report it writes records the
+           flags (`rustflags`), which the gate compares to make sure the two extractions did not run with the same ones.
+           The crate has no cargo feature that changes what is extracted.
 
 Writes the external-functions files without Aeneas's unreferenced `axiom` declarations (extract_hash.clean_external), so
 lean/Impl declares no axiom; records extract_inputs_sha256 (digest of src/, Cargo.toml without dev-dependencies and with the package version
@@ -32,11 +34,11 @@ ap.add_argument('--src', default=str(repo))
 ap.add_argument('--roots', default=str(repo / 'scripts/extract-roots.txt'))
 ap.add_argument('--work', default=str(repo / '.extract'))
 ap.add_argument('--out', default=str(repo / 'lean/Impl'))
-ap.add_argument('--features', default='avx2')
+ap.add_argument('--rustflags', default='')
 a = ap.parse_args()
-FEATURES = tuple(f for f in a.features.split(',') if f)
-if FEATURES != ('avx2',) and Path(os.path.abspath(a.out)) == repo / 'lean/Impl':
-    sys.exit('refusing to write an extraction with features ' + repr(FEATURES) + ' into lean/Impl: use --out DIR')
+EXTRA_RUSTFLAGS = a.rustflags.strip()
+if EXTRA_RUSTFLAGS and Path(os.path.abspath(a.out)) == repo / 'lean/Impl':
+    sys.exit('refusing to write an extraction with extra rustflags ' + repr(EXTRA_RUSTFLAGS) + ' into lean/Impl: use --out DIR')
 src, work = Path(a.src).resolve(), Path(a.work).resolve()
 out = Path(os.path.abspath(a.out))  # not resolved: a symlinked --out is refused below
 out_problems = extract_hash.output_dir_problems(out)
@@ -72,7 +74,7 @@ work.mkdir(parents=True)
 # outside the checkout so that Cargo does not read a .cargo/config.toml from an ancestor directory.
 crate = Path(tempfile.mkdtemp(prefix='ml-dsa-extract-'))
 try:
-    inputs_sha = extract_hash.stage_crate(src, roots, crate, FEATURES)
+    inputs_sha = extract_hash.stage_crate(src, roots, crate, (), EXTRA_RUSTFLAGS)
 except ValueError as e:
     sys.exit(f'cannot stage the extraction inputs: {e}')
 
@@ -93,7 +95,8 @@ if r.returncode != 0:
     fail(f'cargo hax extract exited {r.returncode} (see {work}/hax.log)')
     print('\n'.join(hlog.splitlines()[-30:]), file=sys.stderr)
 llbc_cands = list(crate.glob('proofs/**/*.llbc'))
-record = {'crate': CRATE, 'namespace': NS, 'variant': 'generic (no --monomorphize, no charon args)', 'features': list(FEATURES),
+record = {'crate': CRATE, 'namespace': NS, 'variant': 'generic (no --monomorphize, no charon args)', 'features': [],
+          'rustflags': (extract_hash.RUSTFLAGS_BASE + ' ' + EXTRA_RUSTFLAGS).strip(),
           'roots': roots, 'extract_inputs_sha256': inputs_sha,
           'tools': {'aeneas': AENEAS_PIN, 'charon': CHARON_PIN, 'cargo_hax': '0.4.2',
                     'rust': 'nightly-2026-08-18', 'lean': 'v4.31.0'}}

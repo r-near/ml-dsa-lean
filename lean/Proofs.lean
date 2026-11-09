@@ -48,6 +48,5 @@ import Proofs.PkFromSk
 import Proofs.Divergence
 import Proofs.PreparedVerify
 import Proofs.PreparedSign
+import Proofs.FastVerifyCore
 import Proofs.FastVerify
-import Proofs.Dispatch
-import Proofs.NoDispatch

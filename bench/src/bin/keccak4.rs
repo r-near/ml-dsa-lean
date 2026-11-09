@@ -1,7 +1,7 @@
-//! Nanoseconds per 4-way Keccak-f[1600] permutation compiled with AVX2 (`keccak4::avx2_checked`), next to
-//! four scalar permutations. Needs `--features internals,avx2`. Run pinned on an idle machine.
+//! Nanoseconds per 4-way Keccak-f[1600] permutation (`keccak4::keccak_f1600_x4`; AVX2 code only when built with
+//! `-C target-feature=+avx2`), next to four scalar permutations. Needs `--features internals`. Run pinned on an idle machine.
 use ml_dsa_lean::keccak::keccak_f1600;
-use ml_dsa_lean::keccak4::avx2_checked;
+use ml_dsa_lean::keccak4::keccak_f1600_x4;
 use std::hint::black_box;
 use std::time::Instant;
 
@@ -32,10 +32,7 @@ fn main() {
     }
     // Check against the scalar permutation first.
     let mut t = s4;
-    if !avx2_checked::keccak_f1600_x4(&mut t) {
-        println!("no AVX2 on this CPU");
-        return;
-    }
+    keccak_f1600_x4(&mut t);
     for i in 0..4 {
         let mut st = [0u64; 25];
         for k in 0..25 {
@@ -47,9 +44,9 @@ fn main() {
         }
     }
     let x4 = median(rounds, 2000, || {
-        avx2_checked::keccak_f1600_x4(black_box(&mut s4));
+        keccak_f1600_x4(black_box(&mut s4));
     });
-    println!("KECCAK4\tx4-avx2\t{x4:.1} ns per 4-way permutation");
+    println!("KECCAK4\tx4\t{x4:.1} ns per 4-way permutation");
     let mut st = [[0u64; 25]; 4];
     let sc = median(rounds, 2000, || {
         for s in st.iter_mut() {

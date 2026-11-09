@@ -1,10 +1,8 @@
 //! `tr = H(pk, 64)` in the fourth lane of the 4-way ExpandA (`sampling::expand_a_tr_into_x4`, used by
 //! `verify::prepare_vk_into_x4` and `prepare_vk_x4`) against `expand_a` and the scalar SHAKE256.
 //!
-//! * Portable (the proved plain-Rust code, `lean/Proofs/TrOuter.lean` and `FastVerify.lean`): always run.
-//! * AVX2 (feature `avx2`, x86_64, CPU with AVX2): the same checks on the same source compiled with AVX2, run from a
-//!   `#[target_feature(enable = "avx2")]` wrapper (`fast_verify::expand_a_tr_into_x4_avx2_or_none`); `ML_DSA_REQUIRE_AVX2=1`
-//!   makes a missing AVX2 a failure.
+//! The code under test is the proved plain Rust (`lean/Proofs/TrOuter.lean` and `FastVerify.lean`); there is one compilation
+//! per build (run the file with `RUSTFLAGS="-C target-feature=+avx2"` for the AVX2 build).
 //!
 //! Coverage: the three parameter-set shapes (K·L = 16, 30, 56) with a real-length pk (1312, 1952, 2592 bytes), small
 //! matrices with pks of every length around the 136-byte block edges (0, 1, 135, 136, 137, 271, 272, 273, ...) so that the
@@ -49,22 +47,8 @@ fn check<const K: usize, const L: usize>(rho: &[u8; 32], pk: &[u8]) {
     let want_tr = h64(pk);
     let mut a = [[[0xDEAD_BEEFu32; 256]; L]; K];
     let tr = expand_a_tr_into_x4::<K, L>(rho, pk, &mut a);
-    assert!(a == want_a, "portable matrix, K={K} L={L} len={}", pk.len());
-    assert_eq!(tr, want_tr, "portable tr, K={K} L={L} len={}", pk.len());
-    #[cfg(all(feature = "avx2", target_arch = "x86_64", not(miri)))]
-    {
-        let mut a = [[[0xDEAD_BEEFu32; 256]; L]; K];
-        match ml_dsa_lean::fast_verify::expand_a_tr_into_x4_avx2_or_none::<K, L>(rho, pk, &mut a) {
-            Some(tr) => {
-                assert!(a == want_a, "avx2 matrix, K={K} L={L} len={}", pk.len());
-                assert_eq!(tr, want_tr, "avx2 tr, K={K} L={L} len={}", pk.len());
-            }
-            None => assert!(
-                std::env::var("ML_DSA_REQUIRE_AVX2").as_deref() != Ok("1"),
-                "ML_DSA_REQUIRE_AVX2=1 but this CPU has no AVX2"
-            ),
-        }
-    }
+    assert!(a == want_a, "matrix, K={K} L={L} len={}", pk.len());
+    assert_eq!(tr, want_tr, "tr, K={K} L={L} len={}", pk.len());
 }
 
 #[test]

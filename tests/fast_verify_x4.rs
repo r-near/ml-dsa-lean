@@ -1,10 +1,9 @@
 //! The 4-way ExpandA and the 4-way verify body (`sampling::rej_ntt_poly_x4`, `expand_a_into_x4`, `expand_a_x4`,
 //! `verify::prepare_vk_x4`, `verify::verify_internal_x4`) against the scalar functions they must equal.
 //!
-//! * Portable (the plain-Rust code proved equal to the scalar code in `lean/Proofs/Sample4.lean` and
-//!   `lean/Proofs/FastVerify.lean`): always run.
-//! * AVX2 (feature `avx2`, x86_64, CPU with AVX2): the same checks on the same source compiled inside a
-//!   `#[target_feature(enable = "avx2")]` wrapper like the shipped fast path.
+//! The code under test is the plain Rust that `lean/Proofs/Sample4.lean` and `lean/Proofs/FastVerify.lean` prove equal to the
+//! scalar code, and that `api::verify_*` run. There is one compilation per build: run this file as it is for the baseline
+//! build and with `RUSTFLAGS="-C target-feature=+avx2"` for the AVX2 build (scripts/ci.sh step `test-avx2`).
 //!
 //! Coverage per parameter set (K·L = 16, 30, 56 entries; ML-DSA-65's 30 is a multiple of 4 plus 2, so its last group
 //! has two real and two repeated entries; ML-DSA-44 and -87 have no padded lanes):
@@ -43,7 +42,7 @@ impl Rng {
     }
 }
 
-/// The compilation under test, as run code: portable directly, AVX2 through a `target_feature` wrapper.
+/// The compilation under test (the one this build has).
 trait Backend {
     const NAME: &'static str;
     fn available() -> bool;
@@ -74,41 +73,6 @@ impl Backend for PortableB {
     }
     fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
         verify_internal_x4::<K, L>(p, pk, pre, m, sig)
-    }
-}
-
-#[cfg(all(feature = "avx2", target_arch = "x86_64", not(miri)))]
-mod avx2_backend {
-    use super::*;
-    use ml_dsa_lean::fast_verify::{
-        expand_a_into_x4_avx2_or_false, expand_a_x4_avx2_or_none, prepare_vk_x4_avx2_or_none, rej_ntt_poly_x4_avx2_or_none,
-        verify_internal_avx2_or_none,
-    };
-
-    // These crate entry points run the AVX2 compilation inside a `#[target_feature(enable = "avx2")]` function after a
-    // `has_avx2` check. Every test checks
-    // `available()` first, so `None` here is a bug.
-    pub struct Avx2B;
-    impl Backend for Avx2B {
-        const NAME: &'static str = "avx2";
-        fn available() -> bool {
-            std::arch::is_x86_feature_detected!("avx2")
-        }
-        fn rej4(rho: &[u8; 32], s: [u8; 4], r: [u8; 4]) -> [[u32; 256]; 4] {
-            rej_ntt_poly_x4_avx2_or_none(rho, s, r).expect("AVX2 checked by the caller")
-        }
-        fn expand<const K: usize, const L: usize>(rho: &[u8; 32]) -> [[[u32; 256]; L]; K] {
-            expand_a_x4_avx2_or_none::<K, L>(rho).expect("AVX2 checked by the caller")
-        }
-        fn expand_into<const K: usize, const L: usize>(rho: &[u8; 32], a: &mut [[[u32; 256]; L]; K]) {
-            assert!(expand_a_into_x4_avx2_or_false::<K, L>(rho, a), "AVX2 checked by the caller");
-        }
-        fn prepare<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
-            prepare_vk_x4_avx2_or_none::<K, L>(pk).expect("AVX2 checked by the caller")
-        }
-        fn verify<const K: usize, const L: usize>(p: &Params, pk: &[u8], pre: &[u8], m: &[u8], sig: &[u8]) -> bool {
-            verify_internal_avx2_or_none::<K, L>(p, pk, pre, m, sig).expect("AVX2 checked by the caller")
-        }
     }
 }
 
@@ -277,12 +241,6 @@ fn run_all<B: Backend>() {
 }
 
 #[test]
-fn portable_x4_matches_scalar() {
+fn x4_matches_scalar() {
     run_all::<PortableB>();
-}
-
-#[cfg(all(feature = "avx2", target_arch = "x86_64", not(miri)))]
-#[test]
-fn avx2_x4_matches_scalar() {
-    run_all::<avx2_backend::Avx2B>();
 }

@@ -61,7 +61,7 @@ Requires Rust 1.86 or newer.
 ## How it's checked
 
 - **Proof.** 412 Lean theorems, from the top-level API down to the arithmetic (listed in `lean/headline-theorems.txt`), and
-  111 more for the 4-way verify (`lean/fast-verify-theorems.txt`, `lean/keccak4-theorems.txt`).
+  85 more for the 4-way verify (`lean/fast-verify-theorems.txt`, `lean/keccak4-theorems.txt`).
 - **Constant time.** [BINSEC](https://binsec.github.io/) checks the compiled secret-handling code for secret-dependent
   branches and memory accesses on x86_64, 32-bit Arm, RISC-V and AArch64.
 - **Tests.** Differential testing against RustCrypto, aws-lc-rs, libcrux and mldsa-native, NIST ACVP and Wycheproof

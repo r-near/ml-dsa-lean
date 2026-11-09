@@ -1,0 +1,2 @@
+# Roots of the probe crate (scripts/fi-probe).
+ml_dsa_lean::probe::avx2_enabled

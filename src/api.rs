@@ -82,9 +82,7 @@ use crate::encode::sk_is_well_formed;
 use crate::keygen::{keygen_internal, pk_from_sk};
 use crate::params::{ML_DSA_44, ML_DSA_65, ML_DSA_87};
 use crate::sign::{prepare_sk_into, sign_internal, sign_prepared_internal, PreparedSk};
-use crate::cpu::{self, Avx2};
-use crate::fast_verify::{prepare_vk_with, verify_internal_with, verify_prepared_internal_with};
-use crate::verify::PreparedVk;
+use crate::verify::{prepare_vk_into_x4, verify_internal_x4, verify_prepared_internal, PreparedVk};
 
 /// Builds the prefix 0 ‖ |ctx| ‖ ctx of M′ = IntegerToBytes(0, 1) ‖ IntegerToBytes(|ctx|, 1) ‖ ctx ‖ M.
 /// Returns the buffer (bytes `..2 + ctx.len()` are the prefix), or `None` if |ctx| > 255
@@ -134,17 +132,11 @@ pub fn sign_44(sk: &[u8; 2560], m: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Option<
 
 /// Algorithm 3 ML-DSA.Verify for ML-DSA-44. False if |ctx| > 255.
 pub fn verify_44(pk: &[u8; 1312], m: &[u8], ctx: &[u8], sig: &[u8; 2420]) -> bool {
-    verify_44_with(cpu::avx2(), pk, m, ctx, sig)
-}
-
-/// `verify_44` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_44_with(avx2: Option<Avx2>, pk: &[u8; 1312], m: &[u8], ctx: &[u8], sig: &[u8; 2420]) -> bool {
     let prefix = match ctx_prefix(ctx) {
         Some(b) => b,
         None => return false,
     };
-    verify_internal_with::<4, 4>(avx2, &ML_DSA_44, pk, &prefix[..2 + ctx.len()], m, sig)
+    verify_internal_x4::<4, 4>(&ML_DSA_44, pk, &prefix[..2 + ctx.len()], m, sig)
 }
 
 /// Algorithm 7 ML-DSA.Sign_internal for ML-DSA-44: M′ is supplied by the caller.
@@ -159,13 +151,7 @@ pub fn sign_internal_44(sk: &[u8; 2560], m_prime: &[u8], rnd: &[u8; 32]) -> Opti
 
 /// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-44: M′ is supplied by the caller.
 pub fn verify_internal_44(pk: &[u8; 1312], m_prime: &[u8], sig: &[u8; 2420]) -> bool {
-    verify_internal_44_with(cpu::avx2(), pk, m_prime, sig)
-}
-
-/// `verify_internal_44` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_internal_44_with(avx2: Option<Avx2>, pk: &[u8; 1312], m_prime: &[u8], sig: &[u8; 2420]) -> bool {
-    verify_internal_with::<4, 4>(avx2, &ML_DSA_44, pk, &[], m_prime, sig)
+    verify_internal_x4::<4, 4>(&ML_DSA_44, pk, &[], m_prime, sig)
 }
 
 /// A public key prepared for repeated verification (ML-DSA-44): Â = ExpandA(ρ) and NTT(t1 · 2^d) in the NTT
@@ -188,41 +174,25 @@ pub struct VerifyingKey44 {
 /// completes ExpandA (Proofs/Divergence.lean). Returns by value (20,544 bytes); with a
 /// `Box`, write `Box::new(verifying_key_44(&pk))`.
 pub fn verifying_key_44(pk: &[u8; 1312]) -> VerifyingKey44 {
-    verifying_key_44_with(cpu::avx2(), pk)
-}
-
-/// `verifying_key_44` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verifying_key_44_with(avx2: Option<Avx2>, pk: &[u8; 1312]) -> VerifyingKey44 {
-    VerifyingKey44 { inner: prepare_vk_with::<4, 4>(avx2, pk) }
+    let mut vk = PreparedVk::<4, 4>::zeroed();
+    prepare_vk_into_x4::<4, 4>(pk, &mut vk);
+    VerifyingKey44 { inner: vk }
 }
 
 /// Algorithm 3 ML-DSA.Verify for ML-DSA-44 against a prepared key. For `vk = verifying_key_44(pk)` it returns
 /// exactly `verify_44(pk, m, ctx, sig)`. False if |ctx| > 255.
 pub fn verify_prepared_44(vk: &VerifyingKey44, m: &[u8], ctx: &[u8], sig: &[u8; 2420]) -> bool {
-    verify_prepared_44_with(cpu::avx2(), vk, m, ctx, sig)
-}
-
-/// `verify_prepared_44` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_prepared_44_with(avx2: Option<Avx2>, vk: &VerifyingKey44, m: &[u8], ctx: &[u8], sig: &[u8; 2420]) -> bool {
     let prefix = match ctx_prefix(ctx) {
         Some(b) => b,
         None => return false,
     };
-    verify_prepared_internal_with::<4, 4>(avx2, &ML_DSA_44, &vk.inner, &prefix[..2 + ctx.len()], m, sig)
+    verify_prepared_internal::<4, 4>(&ML_DSA_44, &vk.inner, &prefix[..2 + ctx.len()], m, sig)
 }
 
 /// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-44 against a prepared key: M′ is supplied by the caller. For
 /// `vk = verifying_key_44(pk)` it returns exactly `verify_internal_44(pk, m_prime, sig)`.
 pub fn verify_internal_prepared_44(vk: &VerifyingKey44, m_prime: &[u8], sig: &[u8; 2420]) -> bool {
-    verify_internal_prepared_44_with(cpu::avx2(), vk, m_prime, sig)
-}
-
-/// `verify_internal_prepared_44` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_internal_prepared_44_with(avx2: Option<Avx2>, vk: &VerifyingKey44, m_prime: &[u8], sig: &[u8; 2420]) -> bool {
-    verify_prepared_internal_with::<4, 4>(avx2, &ML_DSA_44, &vk.inner, &[], m_prime, sig)
+    verify_prepared_internal::<4, 4>(&ML_DSA_44, &vk.inner, &[], m_prime, sig)
 }
 
 /// A secret key prepared for repeated signing (ML-DSA-44): ŝ1, ŝ2 and t̂0 in the NTT domain, Â = ExpandA(ρ), K and
@@ -349,17 +319,11 @@ pub fn sign_65(sk: &[u8; 4032], m: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Option<
 
 /// Algorithm 3 ML-DSA.Verify for ML-DSA-65. False if |ctx| > 255.
 pub fn verify_65(pk: &[u8; 1952], m: &[u8], ctx: &[u8], sig: &[u8; 3309]) -> bool {
-    verify_65_with(cpu::avx2(), pk, m, ctx, sig)
-}
-
-/// `verify_65` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_65_with(avx2: Option<Avx2>, pk: &[u8; 1952], m: &[u8], ctx: &[u8], sig: &[u8; 3309]) -> bool {
     let prefix = match ctx_prefix(ctx) {
         Some(b) => b,
         None => return false,
     };
-    verify_internal_with::<6, 5>(avx2, &ML_DSA_65, pk, &prefix[..2 + ctx.len()], m, sig)
+    verify_internal_x4::<6, 5>(&ML_DSA_65, pk, &prefix[..2 + ctx.len()], m, sig)
 }
 
 /// Algorithm 7 ML-DSA.Sign_internal for ML-DSA-65: M′ is supplied by the caller.
@@ -374,13 +338,7 @@ pub fn sign_internal_65(sk: &[u8; 4032], m_prime: &[u8], rnd: &[u8; 32]) -> Opti
 
 /// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-65: M′ is supplied by the caller.
 pub fn verify_internal_65(pk: &[u8; 1952], m_prime: &[u8], sig: &[u8; 3309]) -> bool {
-    verify_internal_65_with(cpu::avx2(), pk, m_prime, sig)
-}
-
-/// `verify_internal_65` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_internal_65_with(avx2: Option<Avx2>, pk: &[u8; 1952], m_prime: &[u8], sig: &[u8; 3309]) -> bool {
-    verify_internal_with::<6, 5>(avx2, &ML_DSA_65, pk, &[], m_prime, sig)
+    verify_internal_x4::<6, 5>(&ML_DSA_65, pk, &[], m_prime, sig)
 }
 
 /// A public key prepared for repeated verification (ML-DSA-65): Â = ExpandA(ρ) and NTT(t1 · 2^d) in the NTT
@@ -403,41 +361,25 @@ pub struct VerifyingKey65 {
 /// completes ExpandA (Proofs/Divergence.lean). Returns by value (36,928 bytes); with a
 /// `Box`, write `Box::new(verifying_key_65(&pk))`.
 pub fn verifying_key_65(pk: &[u8; 1952]) -> VerifyingKey65 {
-    verifying_key_65_with(cpu::avx2(), pk)
-}
-
-/// `verifying_key_65` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verifying_key_65_with(avx2: Option<Avx2>, pk: &[u8; 1952]) -> VerifyingKey65 {
-    VerifyingKey65 { inner: prepare_vk_with::<6, 5>(avx2, pk) }
+    let mut vk = PreparedVk::<6, 5>::zeroed();
+    prepare_vk_into_x4::<6, 5>(pk, &mut vk);
+    VerifyingKey65 { inner: vk }
 }
 
 /// Algorithm 3 ML-DSA.Verify for ML-DSA-65 against a prepared key. For `vk = verifying_key_65(pk)` it returns
 /// exactly `verify_65(pk, m, ctx, sig)`. False if |ctx| > 255.
 pub fn verify_prepared_65(vk: &VerifyingKey65, m: &[u8], ctx: &[u8], sig: &[u8; 3309]) -> bool {
-    verify_prepared_65_with(cpu::avx2(), vk, m, ctx, sig)
-}
-
-/// `verify_prepared_65` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_prepared_65_with(avx2: Option<Avx2>, vk: &VerifyingKey65, m: &[u8], ctx: &[u8], sig: &[u8; 3309]) -> bool {
     let prefix = match ctx_prefix(ctx) {
         Some(b) => b,
         None => return false,
     };
-    verify_prepared_internal_with::<6, 5>(avx2, &ML_DSA_65, &vk.inner, &prefix[..2 + ctx.len()], m, sig)
+    verify_prepared_internal::<6, 5>(&ML_DSA_65, &vk.inner, &prefix[..2 + ctx.len()], m, sig)
 }
 
 /// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-65 against a prepared key: M′ is supplied by the caller. For
 /// `vk = verifying_key_65(pk)` it returns exactly `verify_internal_65(pk, m_prime, sig)`.
 pub fn verify_internal_prepared_65(vk: &VerifyingKey65, m_prime: &[u8], sig: &[u8; 3309]) -> bool {
-    verify_internal_prepared_65_with(cpu::avx2(), vk, m_prime, sig)
-}
-
-/// `verify_internal_prepared_65` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_internal_prepared_65_with(avx2: Option<Avx2>, vk: &VerifyingKey65, m_prime: &[u8], sig: &[u8; 3309]) -> bool {
-    verify_prepared_internal_with::<6, 5>(avx2, &ML_DSA_65, &vk.inner, &[], m_prime, sig)
+    verify_prepared_internal::<6, 5>(&ML_DSA_65, &vk.inner, &[], m_prime, sig)
 }
 
 /// A secret key prepared for repeated signing (ML-DSA-65): ŝ1, ŝ2 and t̂0 in the NTT domain, Â = ExpandA(ρ), K and
@@ -564,17 +506,11 @@ pub fn sign_87(sk: &[u8; 4896], m: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Option<
 
 /// Algorithm 3 ML-DSA.Verify for ML-DSA-87. False if |ctx| > 255.
 pub fn verify_87(pk: &[u8; 2592], m: &[u8], ctx: &[u8], sig: &[u8; 4627]) -> bool {
-    verify_87_with(cpu::avx2(), pk, m, ctx, sig)
-}
-
-/// `verify_87` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_87_with(avx2: Option<Avx2>, pk: &[u8; 2592], m: &[u8], ctx: &[u8], sig: &[u8; 4627]) -> bool {
     let prefix = match ctx_prefix(ctx) {
         Some(b) => b,
         None => return false,
     };
-    verify_internal_with::<8, 7>(avx2, &ML_DSA_87, pk, &prefix[..2 + ctx.len()], m, sig)
+    verify_internal_x4::<8, 7>(&ML_DSA_87, pk, &prefix[..2 + ctx.len()], m, sig)
 }
 
 /// Algorithm 7 ML-DSA.Sign_internal for ML-DSA-87: M′ is supplied by the caller.
@@ -589,13 +525,7 @@ pub fn sign_internal_87(sk: &[u8; 4896], m_prime: &[u8], rnd: &[u8; 32]) -> Opti
 
 /// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-87: M′ is supplied by the caller.
 pub fn verify_internal_87(pk: &[u8; 2592], m_prime: &[u8], sig: &[u8; 4627]) -> bool {
-    verify_internal_87_with(cpu::avx2(), pk, m_prime, sig)
-}
-
-/// `verify_internal_87` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_internal_87_with(avx2: Option<Avx2>, pk: &[u8; 2592], m_prime: &[u8], sig: &[u8; 4627]) -> bool {
-    verify_internal_with::<8, 7>(avx2, &ML_DSA_87, pk, &[], m_prime, sig)
+    verify_internal_x4::<8, 7>(&ML_DSA_87, pk, &[], m_prime, sig)
 }
 
 /// A public key prepared for repeated verification (ML-DSA-87): Â = ExpandA(ρ) and NTT(t1 · 2^d) in the NTT
@@ -618,41 +548,25 @@ pub struct VerifyingKey87 {
 /// completes ExpandA (Proofs/Divergence.lean). Returns by value (65,600 bytes); with a
 /// `Box`, write `Box::new(verifying_key_87(&pk))`.
 pub fn verifying_key_87(pk: &[u8; 2592]) -> VerifyingKey87 {
-    verifying_key_87_with(cpu::avx2(), pk)
-}
-
-/// `verifying_key_87` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verifying_key_87_with(avx2: Option<Avx2>, pk: &[u8; 2592]) -> VerifyingKey87 {
-    VerifyingKey87 { inner: prepare_vk_with::<8, 7>(avx2, pk) }
+    let mut vk = PreparedVk::<8, 7>::zeroed();
+    prepare_vk_into_x4::<8, 7>(pk, &mut vk);
+    VerifyingKey87 { inner: vk }
 }
 
 /// Algorithm 3 ML-DSA.Verify for ML-DSA-87 against a prepared key. For `vk = verifying_key_87(pk)` it returns
 /// exactly `verify_87(pk, m, ctx, sig)`. False if |ctx| > 255.
 pub fn verify_prepared_87(vk: &VerifyingKey87, m: &[u8], ctx: &[u8], sig: &[u8; 4627]) -> bool {
-    verify_prepared_87_with(cpu::avx2(), vk, m, ctx, sig)
-}
-
-/// `verify_prepared_87` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_prepared_87_with(avx2: Option<Avx2>, vk: &VerifyingKey87, m: &[u8], ctx: &[u8], sig: &[u8; 4627]) -> bool {
     let prefix = match ctx_prefix(ctx) {
         Some(b) => b,
         None => return false,
     };
-    verify_prepared_internal_with::<8, 7>(avx2, &ML_DSA_87, &vk.inner, &prefix[..2 + ctx.len()], m, sig)
+    verify_prepared_internal::<8, 7>(&ML_DSA_87, &vk.inner, &prefix[..2 + ctx.len()], m, sig)
 }
 
 /// Algorithm 8 ML-DSA.Verify_internal for ML-DSA-87 against a prepared key: M′ is supplied by the caller. For
 /// `vk = verifying_key_87(pk)` it returns exactly `verify_internal_87(pk, m_prime, sig)`.
 pub fn verify_internal_prepared_87(vk: &VerifyingKey87, m_prime: &[u8], sig: &[u8; 4627]) -> bool {
-    verify_internal_prepared_87_with(cpu::avx2(), vk, m_prime, sig)
-}
-
-/// `verify_internal_prepared_87` with the CPU check's answer as an argument. The public function passes `cpu::avx2()`; the proofs
-/// (`Proofs/Dispatch.lean`) quantify over every value of `avx2`.
-pub(crate) fn verify_internal_prepared_87_with(avx2: Option<Avx2>, vk: &VerifyingKey87, m_prime: &[u8], sig: &[u8; 4627]) -> bool {
-    verify_prepared_internal_with::<8, 7>(avx2, &ML_DSA_87, &vk.inner, &[], m_prime, sig)
+    verify_prepared_internal::<8, 7>(&ML_DSA_87, &vk.inner, &[], m_prime, sig)
 }
 
 /// A secret key prepared for repeated signing (ML-DSA-87): ŝ1, ŝ2 and t̂0 in the NTT domain, Â = ExpandA(ρ), K and

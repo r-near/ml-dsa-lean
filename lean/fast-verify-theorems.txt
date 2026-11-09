@@ -1,11 +1,10 @@
 # Fast verify (docs/assurance.md section 1.9): the 4-way SHAKE128 sampler, the 4-way ExpandA and the 4-way verify body (all
-# over the plain-Rust `keccak4.keccak_f1600_x4`, proved equal to four scalar permutations in keccak4-theorems.txt), and the
-# CPU dispatch (`Proofs/Dispatch.lean`). Checked by
+# over the plain-Rust `keccak4.keccak_f1600_x4`, proved equal to four scalar permutations in keccak4-theorems.txt). The
+# public `api.verify_NN` and `api.verifying_key_NN` call these functions directly (no run-time choice, round 12). Checked by
 #   scripts/check-axioms.sh --list fast-verify-theorems.txt --no-impl
 # (wired into scripts/lean-check.sh next to keccak4-theorems.txt; headline-theorems.txt is unchanged).
+import Proofs.FastVerifyCore
 import Proofs.FastVerify
-import Proofs.Dispatch
-import Proofs.NoDispatch
 # The 4-lane sponge/sampler is the scalar one: stream relation, state init, the branchless block parse straight from the
 # lane words (one candidate, eight candidates of three lanes, one block, one lane), the loop, the group sampler.
 Proofs.absorb_pad34
@@ -67,7 +66,7 @@ Proofs.expand_a_tr_into_x4_eq
 # The 4-way verify body is the scalar one, as RustM values (divergence included), for every set.
 Proofs.prepare_vk_x4_eq
 Proofs.verify_internal_x4_eq
-Proofs.verifyInternalX4API_eq
+Proofs.APIInternal.verifyInternalX4API_eq
 Proofs.verify_internal_x4_44_eq
 Proofs.verify_internal_x4_65_eq
 Proofs.verify_internal_x4_87_eq
@@ -98,35 +97,3 @@ Proofs.pack6_loop
 Proofs.bit_pack_pub_core
 Proofs.bit_pack_pub_spec_repr
 Proofs.w1_encode_pub_spec_long
-# The CPU dispatch (docs/assurance.md 1.9, "The dispatch"): for every value of the CPU-check result (`Option cpu.Avx2`, both
-# arms), the extracted `fast_verify::*_with` functions are the scalar functions as RustM values (divergence included),
-# and the fifteen extracted `api::NAME_with` functions are the public `api.NAME`.
-Proofs.verify_internal_with_eq
-Proofs.prepare_vk_avx2_eq
-Proofs.prepare_vk_with_eq
-Proofs.verify_prepared_internal_with_eq
-Proofs.verifyAPIWith_eq
-Proofs.verifyInternalAPIWith_eq
-Proofs.verifyPreparedAPIWith_eq
-Proofs.verifyInternalPreparedAPIWith_eq
-Proofs.api_verify_44_with_eq
-Proofs.api_verify_internal_44_with_eq
-Proofs.api_verifying_key_44_with_eq
-Proofs.api_verify_prepared_44_with_eq
-Proofs.api_verify_internal_prepared_44_with_eq
-Proofs.api_verify_65_with_eq
-Proofs.api_verify_internal_65_with_eq
-Proofs.api_verifying_key_65_with_eq
-Proofs.api_verify_prepared_65_with_eq
-Proofs.api_verify_internal_prepared_65_with_eq
-Proofs.api_verify_87_with_eq
-Proofs.api_verify_internal_87_with_eq
-Proofs.api_verifying_key_87_with_eq
-Proofs.api_verify_prepared_87_with_eq
-Proofs.api_verify_internal_prepared_87_with_eq
-# The build without the verify dispatch (a default build, any build that is not x86_64): its `_with` functions, extracted from
-# the second extraction of scripts/check-feature-independence.sh, are the scalar functions for every token value
-# (Proofs/NoDispatch.lean, generated). Added in round 10.
-Proofs.NoDispatch.verify_internal_with_eq
-Proofs.NoDispatch.prepare_vk_with_eq
-Proofs.NoDispatch.verify_prepared_internal_with_eq

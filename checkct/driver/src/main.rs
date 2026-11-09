@@ -24,12 +24,11 @@ mod ntt;
 #[allow(dead_code)]
 #[path = "../../../src/keccak.rs"]
 mod keccak;
-// The 4-way Keccak of the fast verify (plain Rust; with the `avx2` feature on x86_64 also its checked AVX2 compilation).
+// The 4-way Keccak of the fast verify (plain Rust, no `unsafe`; the AVX2 code of a `+avx2` build is the compiler's output).
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/keccak4.rs"]
 mod keccak4;
-// The CPU check and the `Avx2` token (in every build: without the `avx2` feature, or off x86_64, `cpu::avx2()` is the stub
-// `None`; the driver never sets `miri`).
+// The CPU check of the NTT dispatch (only with the `avx2` feature on x86_64; the driver never sets `miri`).
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/cpu.rs"]
 mod cpu;
@@ -52,12 +51,6 @@ mod verify_arith;
 #[allow(dead_code, unexpected_cfgs)]
 #[path = "../../../src/verify.rs"]
 mod verify;
-// The verify dispatch: the real src/fast_verify.rs (its `mod dispatch` has an explicit `#[path]`, so the file also resolves
-// when included from here). Without the `avx2` feature (or off x86_64) its `_with` functions are the scalar functions of
-// `verify`, as in the crate. Nothing of it is repeated in this file, so a new dispatched name cannot drift.
-#[allow(dead_code, unexpected_cfgs)]
-#[path = "../../../src/fast_verify.rs"]
-mod fast_verify;
 // The public API, so that the probes enter through the same functions callers use.
 #[allow(dead_code)]
 #[path = "../../../src/api.rs"]

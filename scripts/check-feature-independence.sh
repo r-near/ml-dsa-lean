@@ -1,47 +1,44 @@
 #!/usr/bin/env bash
-# Feature-independence gate (run on Linux with the extraction tools of scripts/setup-tools.sh; no Lean needed except for the
-# generated file's own build, which scripts/lean-check.sh does).
+# Target-feature-independence gate (run on Linux with the extraction tools of scripts/setup-tools.sh; no Lean needed).
 #
-# Why. The Lean proofs are about one extraction of the crate: feature `avx2` on, `--cfg miri` (scripts/extract.py). A default
-# build, a build with the feature off, and any build that is not x86_64 compile a different `cfg` configuration of the same
-# source: the dispatch is not there. If a function had a different body in the two configurations (a `cfg`-split body), the
-# proofs would say nothing about the default build's version. This gate extracts the crate a second time, in the
-# configuration without the dispatch (`--features ''`, still `--cfg miri`, from the same src/), and compares the two
-# generated Lean trees declaration by declaration (scripts/feature_independence.py):
-#   * every declaration is byte-identical except an explicit, commented whitelist (the `cpu::Avx2` type, the three
-#     `fast_verify::dispatch::*_on` entry points, and the three `*_avx2` functions that exist only with the dispatch);
-#   * the three `fast_verify::*_with` functions, the scalar verify functions they call, and the stub `cpu::avx2` are
-#     additionally required to be identical on their own;
-#   * lean/Proofs/NoDispatch.lean (committed, generated from the second extraction) elaborates the declarations that differ
-#     and proves the default-configuration `_with` functions equal the scalar functions for every token value. It is part of
-#     the default build, so scripts/lean-check.sh checks it; this script checks that it is what the second extraction
-#     generates.
-# The second extraction is the Lean model of the default build for these functions; what it does not cover is the same as
-# for the main extraction (the compiler; the `cfg` conditions that are not `miri`/`avx2`/`x86_64`, which scripts/cfg-inventory.py
-# lists and justifies one by one).
+# Why. The Lean proofs are about one extraction of the crate (scripts/extract.py: `--cfg miri`, no extra flags). Since round 12 the
+# crate has no run-time choice between code paths and no `cfg` that reads a target feature: `api::verify_*`, `verifying_key_*` and
+# the prepared verify call the 4-way functions directly, and a build that wants AVX2 code compiles with
+# `-C target-feature=+avx2`, which changes what LLVM emits for the same Rust source and nothing else. This gate checks the "nothing
+# else": it extracts the crate a second time from the same src/ with `-C target-feature=+avx,+avx2` added to the rustc flags (through
+# the `env` RUSTFLAGS of hax.toml, which is how the extraction passes flags), and requires the two generated Lean trees to be
+# the same, declaration by declaration (scripts/feature_independence.py). The whitelist of differences is empty.
 #
-# Usage: scripts/check-feature-independence.sh            compare, and check lean/Proofs/NoDispatch.lean
-#        scripts/check-feature-independence.sh --update   also rewrite lean/Proofs/NoDispatch.lean from the second extraction
+# It cannot pass vacuously:
+#   * each extraction records its rustflags in extract-report.json, and `compare` fails unless they are exactly `--cfg miri` and
+#     `--cfg miri -C target-feature=+avx,+avx2` (so identical flags, a typo or a stripped flag fail);
+#   * a positive control: scripts/fi-probe, a one-function crate whose body is `cfg!(target_feature = "avx2")`, is extracted under both
+#     flag sets, and the gate fails unless it comes out as `false` and `true` (so the flags demonstrably reach the compiler);
+#   * the comparison must have covered the verify path (declarations listed in scripts/feature_independence.py, present and identical);
+#   * the script's self-test feeds synthetic tree pairs (same flags, split function, missing declaration, ...) to `compare` and
+#     `probe-check` and requires them to be rejected.
+# What it does not cover is the same as for the main extraction: the compiler's translation of the Rust, and the `cfg` conditions
+# that are not `miri`, which scripts/cfg-inventory.py lists and justifies one by one.
+#
+# Usage: scripts/check-feature-independence.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
-UPDATE=0
-for a in "$@"; do
-  case "$a" in
-    --update) UPDATE=1 ;;
-    *) echo "usage: $0 [--update]" >&2; exit 2 ;;
-  esac
-done
+[ "$#" -eq 0 ] || { echo "usage: $0" >&2; exit 2; }
+ALT_FLAGS='-C target-feature=+avx,+avx2'
 python3 -I scripts/extract_hash.py check
 python3 -I scripts/feature_independence.py --self-test
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-python3 scripts/extract.py --features '' --out "$WORK/Impl" --work "$WORK/work" > "$WORK/extract.log" 2>&1 \
-  || { tail -30 "$WORK/extract.log"; echo "FEATURE-INDEPENDENCE FAIL: the second extraction failed"; exit 1; }
-tail -2 "$WORK/extract.log"
-python3 -I scripts/feature_independence.py compare lean/Impl "$WORK/Impl"
-if [ "$UPDATE" -eq 1 ]; then
-  python3 -I scripts/feature_independence.py gen-lean "$WORK/Impl" > lean/Proofs/NoDispatch.lean
-  echo "wrote lean/Proofs/NoDispatch.lean"
-fi
-python3 -I scripts/feature_independence.py check-lean "$WORK/Impl" lean/Proofs/NoDispatch.lean
+extract() { # NAME SRC ROOTS RUSTFLAGS
+  python3 scripts/extract.py --src "$2" --roots "$3" --rustflags "$4" --out "$WORK/$1/Impl" --work "$WORK/$1/work" > "$WORK/$1.log" 2>&1 \
+    || { tail -30 "$WORK/$1.log"; echo "FEATURE-INDEPENDENCE FAIL: the extraction '$1' failed"; exit 1; }
+  tail -1 "$WORK/$1.log"
+}
+# The crate with the AVX2 target features; the main extraction is the committed lean/Impl (extract_hash.py check ties it to src/).
+extract alt . scripts/extract-roots.txt "$ALT_FLAGS"
+python3 -I scripts/feature_independence.py compare lean/Impl "$WORK/alt/Impl"
+# The positive control.
+extract probe-main scripts/fi-probe scripts/fi-probe/roots.txt ''
+extract probe-alt scripts/fi-probe scripts/fi-probe/roots.txt "$ALT_FLAGS"
+python3 -I scripts/feature_independence.py probe-check "$WORK/probe-main/Impl" "$WORK/probe-alt/Impl"
 echo "FEATURE-INDEPENDENCE OK"
