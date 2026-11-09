@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Done-gate for the non-vacuity witnesses (run on Linux): build the TopWitness modules, which the default
 # build roots (lean/Proofs.lean) do not import, fail on any build error or `sorry`, then run the axiom check on the
-# names in lean/witness-theorems.txt. Exit 0 only if all three pass and the default roots stay free of the witnesses.
+# names in lean/witness-theorems.txt, then the whole-environment scan for forbidden declarations over every module (the
+# default targets are built too). Exit 0 only if all pass and the default roots stay free of the witnesses.
 # Usage: scripts/witness-check.sh [Module ...]   (default: Proofs.TopWitnessCorrect, which imports the whole chain)
 # The kernel evaluations are the cost. Measured cold (2026-11-03): about 47 min wall, about 46 GB peak across the
 # concurrently built modules, about 24 GB for the largest single declaration; `lake` runs independent modules in
@@ -28,7 +29,16 @@ if grep -nE "(^|[^a-z])error:|declaration uses 'sorry'" .lake/witness-build.log;
 fi
 cd ..
 scripts/check-axioms.sh --list witness-theorems.txt --no-impl
-# With the TopWitness modules built, every module of lean/Impl, lean/Spec and lean/Proofs has an .olean: the whole-
-# environment scan must now cover all of them (scripts/lean-check.sh scans the default roots).
+# Every module of lean/Impl, lean/Spec and lean/Proofs must have an .olean for the whole-environment scan to cover it
+# (scripts/lean-check.sh scans the default roots; the TopWitness modules are built above). The default targets are built here
+# too, which is a no-op after scripts/lean-check.sh and the full build otherwise.
+cd lean
+rc=0
+timeout 10000 lake build Impl Spec Proofs 2>&1 | tee .lake/witness-default-build.log || rc=$?
+if [ "$rc" -ne 0 ]; then echo "WITNESS CHECK FAIL: lake build of the default targets exited $rc"; exit 1; fi
+if grep -nE "(^|[^a-z])error:|declaration uses 'sorry'" .lake/witness-default-build.log; then
+  echo "WITNESS CHECK FAIL: errors or sorry in the build log of the default targets"; exit 1
+fi
+cd ..
 scripts/check-no-decls.sh --all-built
 echo "WITNESS CHECK OK: $*"
