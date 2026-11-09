@@ -48,7 +48,7 @@ This section is the net change since 0.1.0. The branch went through a run-time A
 - **Cost for users of the 0.1.0 `avx2` feature** (`bench/results/2026-11-09-p12.md`): with nearcore's flags and no AVX2 target features, Sign is 14 to 17 % slower
   (ML-DSA-65 hedged 342.9 → 402.6 µs) and KeyGen 2 to 6 % slower (ML-DSA-65 140.2 → 145.7 µs), because the AVX2 copy of the NTT is gone. With `+avx2` target features
   there is no difference beyond noise (-1.9 % to +1.1 %). Users who did not enable the feature see no change in Sign or KeyGen speed.
-- The one-shot verify and `verifying_key_NN` use more stack: `verify_NN` 56 / 80 / 118 KB (was 45 / 71 / 111) and `verifying_key_NN` 50 / 73 / 108 KB (was 35 / 58 / 35);
+- The one-shot verify and `verifying_key_NN` use more stack: `verify_NN` 64 / 90 / 132 KB (was 45 / 71 / 111) and `verifying_key_NN` 50 / 74 / 111 KB (was 35 / 58 / 35);
   the ML-DSA-87 `verifying_key` figure includes a second copy of the key that the compiler does not elide (`bench/results/2026-11-09-p12.md`).
 - The checkct driver includes the real `src/api.rs`; its `avx2` feature and the `dispatch` BINSEC profiles are gone.
 

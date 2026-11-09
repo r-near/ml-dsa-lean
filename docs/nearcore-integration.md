@@ -122,8 +122,8 @@ table (release in parentheses; the ratio is not uniform, from 1.3 times for `sig
 | `verify_prepared_*` | 53,264 (34,216) | 66,064 (45,480) | 83,984 (58,792) |
 | `sign_prepared_*` | 134,768 (73,384) | 180,064 (100,920) | 236,464 (133,976) |
 
-These dev-profile figures predate the fast verify. Release-profile figures for the 4-way verify (`bench/results/2026-11-09-p12.md`, `docs/assurance.md` §3): one-shot `verify_*` 56 / 80 / 118 KB
-and `verifying_key_*` 50 / 73 / 108 KB below the caller's frame (ML-DSA-44 / 65 / 87), 11 / 9 / 7 and 15 / 15 / 73 KB more than before; the 87 figure of `verifying_key_*` includes a second copy of the key that the compiler does not elide. The key
+These dev-profile figures predate the fast verify. Release-profile figures for the 4-way verify (`bench/results/2026-11-09-p12.md`, `docs/assurance.md` §3): one-shot `verify_*` 64 / 90 / 132 KB
+and `verifying_key_*` 50 / 74 / 111 KB below the caller's frame (ML-DSA-44 / 65 / 87), 19 / 19 / 21 and 15 / 17 / 76 KB more than before; the 87 figure of `verifying_key_*` includes a second copy of the key that the compiler does not elide. The key
 The key
 constructors also place the returned key object in the caller's frame (20.5 / 36.9 / 65.6 KB for
 `verifying_key_*`, 28.8 / 48.2 / 81.0 KB for `signing_key_*`). The largest dev-profile figure is `signing_key_87`,
@@ -291,7 +291,7 @@ exists only for that, and nothing in the proofs depends on the attribute), and `
 uncached verify (36.4 µs) in both columns, which matters only if nearcore holds prepared keys: the aws-lc-rs figure is
 `UnparsedPublicKey::new(..).verify(..)` on every call, as nearcore calls it.
 Building the key and verifying costs a little more than one one-shot verify (ML-DSA-65 with AVX2 target features: 27.6 + 10.9 = 38.5 µs against
-38.4 µs), so a prepared key pays off from the second verify with the same key. `verifying_key_NN` needs 50 / 73 / 108 KB of stack below the caller's frame, plus the returned key
+38.4 µs), so a prepared key pays off from the second verify with the same key. `verifying_key_NN` needs 50 / 74 / 111 KB of stack below the caller's frame, plus the returned key
 (`docs/assurance.md` §3).
 
 Where a cache could apply in nearcore: any place the same public key verifies many signatures. Approval verification
