@@ -194,6 +194,9 @@ docker run --rm -e DISPATCH="$DISPATCH" -e EXACT="$EXACT" -e EXPERIMENTS="$EXPER
     st=$(echo "$out" | sed -n "s/.*Program status is : \([a-z]*\).*/\1/p" | head -1)
     {
       echo "  driver  $t  $ep  ${st:-error}"
+      # SHA-256 of the ELF that BINSEC analyzed and of the script it was given (after the dispatch pre-set), so that a later
+      # rerun can be compared with this one by file identity instead of by instruction counts.
+      echo "      sha256: elf $(sha256sum < "$t/release/driver" | cut -d" " -f1) script $(sha256sum < "$s" | cut -d" " -f1)"
       echo "$out" | sed -n "s/.*\[checkct:result\] Instruction \(.*\)/      \1/p"
       echo "$out" | grep "^LASTSTEP" | sed "s/^LASTSTEP /      last: /"
       echo "$out" | grep -E "visited instructions \(unrolled\)|branching points|checks pass|pending paths" | sed "s/^ */      stat: /"
