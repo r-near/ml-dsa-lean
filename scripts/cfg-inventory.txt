@@ -1,0 +1,900 @@
+# The cfg inventory of src/ (scripts/cfg_inventory.py checks this file against the source; read the header there).
+#
+# Every entry is a place where the compiled text depends on the build configuration. The conditions are of four kinds:
+#
+#   avx2 dispatch   `feature = "avx2"` with `target_arch = "x86_64"` and `miri` (the extraction sets `--cfg miri` and the feature):
+#                   which of two definitions a build gets. The verify dispatch (src/fast_verify*) is the same text in every
+#                   build apart from the token type and the three `dispatch::*_on` entry points, which
+#                   scripts/check-feature-independence.sh compares across the two extractions. The NTT dispatch (src/ntt.rs)
+#                   is a documented residual: its AVX2-build body is a plain `if has_avx2()` over two compilations of the same
+#                   proved body, and the extraction sees the portable body.
+#   miri            `cfg(miri)` selects the identity where the compiled build has `core::hint::black_box` (the identity on values),
+#                   so that the extraction sees plain code. Documented in docs/assurance.md (CT-1, CT-2).
+#   zeroize         `feature = "zeroize"`: wipes of secrets in Sign and KeyGen (and the secret-key decoders), outside the Lean
+#                   model by design (docs/limitations.md). None of them is on a verify path (verify handles only public data).
+#   internals       `feature = "internals"` / `cfg(test)`: visibility and test hooks; the module text is the same.
+#
+# A new or changed entry means a configuration-dependent computation was added or moved: review it against these four kinds.
+# Regenerate a skeleton with `python3 -I scripts/cfg_inventory.py --init` and write the justification by hand.
+
+file: src/cpu.rs
+form: cfg
+item: enum Avx2
+cfg: not(all(feature="avx2",any(miri,target_arch="x86_64")))
+count: 1
+why: avx2 dispatch (type level): the token is an uninhabited enum where the dispatch does not exist, so the `dispatch::*_on` entry points are `match t {}`. Unreachable by type; scripts/check-feature-independence.sh compares the two extractions.
+
+file: src/cpu.rs
+form: cfg
+item: fn avx2
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+count: 1
+why: avx2 dispatch: the real CPU check; makes the token only when `has_avx2()` holds. Outside the Lean proof (the CPU-detection assumption, docs/assurance.md).
+
+file: src/cpu.rs
+form: cfg
+item: fn avx2
+cfg: not(all(feature="avx2",not(miri),target_arch="x86_64"))
+count: 1
+why: avx2 dispatch: the stub `avx2() -> None`, which is also what the extraction sees (`--cfg miri`); every build without the CPU check runs it. Text-identical in the two extractions (checked).
+
+file: src/cpu.rs
+form: cfg
+item: fn detect_avx2
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+count: 1
+why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
+
+file: src/cpu.rs
+form: cfg
+item: fn detect_avx2_uncached
+cfg: all(feature="avx2",feature="internals",not(miri),target_arch="x86_64")
+count: 1
+why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
+
+file: src/cpu.rs
+form: cfg
+item: fn has_avx2
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+count: 1
+why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
+
+file: src/cpu.rs
+form: cfg
+item: fn has_avx2_cached
+cfg: all(feature="avx2",feature="internals",not(miri),target_arch="x86_64")
+count: 1
+why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
+
+file: src/cpu.rs
+form: cfg
+item: static AVX2:
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+count: 1
+why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
+
+file: src/cpu.rs
+form: cfg
+item: struct Avx2
+cfg: all(feature="avx2",any(miri,target_arch="x86_64"))
+count: 1
+why: avx2 dispatch (type level): the token is an inhabited struct (private field) where the dispatch exists; only `avx2()` makes one.
+
+file: src/cpu.rs
+form: cfg
+item: use core::sync::atomic::
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+count: 1
+why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
+
+file: src/cpu.rs
+form: cfg!
+item: expr in fn has_avx2
+cfg: target_feature="avx2"
+count: 1
+why: avx2 dispatch: the CPU detector and its cache (CPUID/XGETBV, an atomic), compiled only in the AVX2 build on x86_64 outside the extraction; the CPU-detection assumption of docs/assurance.md. `...internals` variants are the test hooks (`detect_avx2_uncached`, `has_avx2_cached`).
+
+file: src/cpu.rs
+form: cfg_attr
+cfg: miri
+attrs: allow(dead_code)
+count: 1
+why: attribute-only (lint): `dead_code` for items used only in some configuration.
+
+file: src/encode.rs
+form: cfg
+item: stmt in fn eta_block_bad
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/encode.rs
+form: cfg
+item: stmt in fn unpack_signed_into
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/encode.rs
+form: cfg_attr
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+attrs: inline(always)
+count: 3
+why: attribute-only (avx2 dispatch): `#[inline(always)]` so the verify body is compiled inside the `#[target_feature(enable = "avx2")]` wrappers. Code generation only; no change to the computation.
+
+file: src/encode.rs
+form: cfg_attr
+cfg: not(feature="internals")
+attrs: allow(dead_code)
+count: 1
+why: attribute-only (lint): items used only by tests and fuzzing (`internals`) are not dead code there.
+
+file: src/encode.rs
+form: cfg_attr
+cfg: not(feature="zeroize")
+attrs: allow(unused_mut)
+count: 1
+why: attribute-only (lint): `let mut` is needed only for the `zeroize` wipe that follows it.
+
+file: src/fast_verify.rs
+form: cfg
+item: mod hooks
+cfg: all(feature="avx2",feature="internals",not(miri),target_arch="x86_64")
+count: 1
+why: internals + avx2: the test and benchmark hooks (src/fast_verify/hooks.rs); never reached from `api`. They call the dispatch entry points with a token and need no `unsafe` for them.
+
+file: src/fast_verify.rs
+form: cfg
+item: use hooks::*
+cfg: all(feature="avx2",feature="internals",not(miri),target_arch="x86_64")
+count: 1
+why: internals + avx2: the test and benchmark hooks (src/fast_verify/hooks.rs); never reached from `api`. They call the dispatch entry points with a token and need no `unsafe` for them.
+
+file: src/fast_verify.rs
+form: cfg_attr
+cfg: feature="avx2"
+attrs: allow(unsafe_code)
+count: 1
+why: attribute-only (lint level): the crate forbids `unsafe` without the `avx2` feature, denies it with the feature and allows it only in the modules that carry the dispatch (src/cpu.rs, src/ntt.rs, src/fast_verify/dispatch.rs, and the test hooks).
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: fn prepare_vk_avx2
+cfg: all(feature="avx2",any(miri,target_arch="x86_64"))
+count: 1
+why: avx2 dispatch: the `#[target_feature(enable = "avx2")]` function (one call of an extracted, proved function); it exists only where the dispatch does, and the feature-independence gate whitelists it as main-only.
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: fn prepare_vk_on
+cfg: all(feature="avx2",any(miri,target_arch="x86_64"))
+count: 1
+why: avx2 dispatch (split body, the one that matters): where the dispatch exists the entry point is one `unsafe` call of the AVX2 function, justified by the token; elsewhere `Avx2` is uninhabited and the body is `match t {}`. The gate scripts/check-feature-independence.sh extracts both and whitelists exactly these three bodies; the `fast_verify::*_with` functions that call them have one text.
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: fn prepare_vk_on
+cfg: not(all(feature="avx2",any(miri,target_arch="x86_64")))
+count: 1
+why: avx2 dispatch (split body, the one that matters): where the dispatch exists the entry point is one `unsafe` call of the AVX2 function, justified by the token; elsewhere `Avx2` is uninhabited and the body is `match t {}`. The gate scripts/check-feature-independence.sh extracts both and whitelists exactly these three bodies; the `fast_verify::*_with` functions that call them have one text.
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: fn verify_internal_avx2
+cfg: all(feature="avx2",any(miri,target_arch="x86_64"))
+count: 1
+why: avx2 dispatch: the `#[target_feature(enable = "avx2")]` function (one call of an extracted, proved function); it exists only where the dispatch does, and the feature-independence gate whitelists it as main-only.
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: fn verify_internal_on
+cfg: all(feature="avx2",any(miri,target_arch="x86_64"))
+count: 1
+why: avx2 dispatch (split body, the one that matters): where the dispatch exists the entry point is one `unsafe` call of the AVX2 function, justified by the token; elsewhere `Avx2` is uninhabited and the body is `match t {}`. The gate scripts/check-feature-independence.sh extracts both and whitelists exactly these three bodies; the `fast_verify::*_with` functions that call them have one text.
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: fn verify_internal_on
+cfg: not(all(feature="avx2",any(miri,target_arch="x86_64")))
+count: 1
+why: avx2 dispatch (split body, the one that matters): where the dispatch exists the entry point is one `unsafe` call of the AVX2 function, justified by the token; elsewhere `Avx2` is uninhabited and the body is `match t {}`. The gate scripts/check-feature-independence.sh extracts both and whitelists exactly these three bodies; the `fast_verify::*_with` functions that call them have one text.
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: fn verify_prepared_avx2
+cfg: all(feature="avx2",any(miri,target_arch="x86_64"))
+count: 1
+why: avx2 dispatch: the `#[target_feature(enable = "avx2")]` function (one call of an extracted, proved function); it exists only where the dispatch does, and the feature-independence gate whitelists it as main-only.
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: fn verify_prepared_on
+cfg: all(feature="avx2",any(miri,target_arch="x86_64"))
+count: 1
+why: avx2 dispatch (split body, the one that matters): where the dispatch exists the entry point is one `unsafe` call of the AVX2 function, justified by the token; elsewhere `Avx2` is uninhabited and the body is `match t {}`. The gate scripts/check-feature-independence.sh extracts both and whitelists exactly these three bodies; the `fast_verify::*_with` functions that call them have one text.
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: fn verify_prepared_on
+cfg: not(all(feature="avx2",any(miri,target_arch="x86_64")))
+count: 1
+why: avx2 dispatch (split body, the one that matters): where the dispatch exists the entry point is one `unsafe` call of the AVX2 function, justified by the token; elsewhere `Avx2` is uninhabited and the body is `match t {}`. The gate scripts/check-feature-independence.sh extracts both and whitelists exactly these three bodies; the `fast_verify::*_with` functions that call them have one text.
+
+file: src/fast_verify/dispatch.rs
+form: cfg
+item: use crate::verify::
+cfg: all(feature="avx2",any(miri,target_arch="x86_64"))
+count: 1
+why: avx2 dispatch: the imports of the AVX2 functions, present where they are.
+
+file: src/fast_verify/dispatch.rs
+form: cfg_attr
+cfg: target_arch="x86_64"
+attrs: target_feature(enable="avx2")
+count: 3
+why: attribute-only (avx2 dispatch): the `#[target_feature(enable = "avx2")]` of the AVX2 functions (src/fast_verify/dispatch.rs); a non-x86_64 host extracting under `--cfg miri` drops the attribute and nothing else.
+
+file: src/field.rs
+form: cfg
+item: fn barrier_u32
+cfg: all(not(miri),any(target_arch="riscv32",target_arch="riscv64"))
+count: 1
+why: miri/riscv: `barrier_uN` is `core::hint::black_box` on RISC-V outside the extraction and the identity elsewhere and under `--cfg miri`; both return their argument (docs/assurance.md CT-1). Not on any x86_64 or aarch64 build.
+
+file: src/field.rs
+form: cfg
+item: fn barrier_u32
+cfg: any(miri,not(any(target_arch="riscv32",target_arch="riscv64")))
+count: 1
+why: miri/riscv: `barrier_uN` is `core::hint::black_box` on RISC-V outside the extraction and the identity elsewhere and under `--cfg miri`; both return their argument (docs/assurance.md CT-1). Not on any x86_64 or aarch64 build.
+
+file: src/field.rs
+form: cfg
+item: fn barrier_u64
+cfg: all(not(miri),any(target_arch="riscv32",target_arch="riscv64"))
+count: 1
+why: miri/riscv: `barrier_uN` is `core::hint::black_box` on RISC-V outside the extraction and the identity elsewhere and under `--cfg miri`; both return their argument (docs/assurance.md CT-1). Not on any x86_64 or aarch64 build.
+
+file: src/field.rs
+form: cfg
+item: fn barrier_u64
+cfg: any(miri,not(any(target_arch="riscv32",target_arch="riscv64")))
+count: 1
+why: miri/riscv: `barrier_uN` is `core::hint::black_box` on RISC-V outside the extraction and the identity elsewhere and under `--cfg miri`; both return their argument (docs/assurance.md CT-1). Not on any x86_64 or aarch64 build.
+
+file: src/field.rs
+form: cfg
+item: fn opaque_u32
+cfg: miri
+count: 1
+why: miri: `opaque_u32` is `core::hint::black_box` in the compiled build and the identity under `--cfg miri` (the extraction); both return their argument (docs/assurance.md CT-2). Present in both extractions alike, so the feature-independence gate does not see it; it is a known, documented substitution of the identity function.
+
+file: src/field.rs
+form: cfg
+item: fn opaque_u32
+cfg: not(miri)
+count: 1
+why: miri: `opaque_u32` is `core::hint::black_box` in the compiled build and the identity under `--cfg miri` (the extraction); both return their argument (docs/assurance.md CT-2). Present in both extractions alike, so the feature-independence gate does not see it; it is a known, documented substitution of the identity function.
+
+file: src/field.rs
+form: cfg_attr
+cfg: all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2"))
+attrs: inline(always)
+count: 6
+why: attribute-only (avx2 dispatch): `#[inline(always)]` so the body is compiled inside the `#[target_feature(enable = "avx2")]` function that calls it, in the build that has the second NTT/field compilation. No change to the computation.
+
+file: src/keccak.rs
+form: cfg
+item: fn wipe
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/keccak4.rs
+form: cfg
+item: mod avx2_checked
+cfg: all(feature="avx2",feature="internals",not(miri),target_arch="x86_64")
+count: 1
+why: internals + avx2: the test-only checked AVX2 wrapper of the 4-way permutation; never reached from `api`.
+
+file: src/keccak4.rs
+form: cfg_attr
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+attrs: inline(always)
+count: 3
+why: attribute-only (avx2 dispatch): `#[inline(always)]` so the verify body is compiled inside the `#[target_feature(enable = "avx2")]` wrappers. Code generation only; no change to the computation.
+
+file: src/keygen.rs
+form: cfg
+item: fn wipe_decoded
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/keygen.rs
+form: cfg
+item: fn wipe_keygen
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/keygen.rs
+form: cfg
+item: stmt in fn keygen_internal
+cfg: feature="zeroize"
+count: 2
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/keygen.rs
+form: cfg
+item: stmt in fn pk_check
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/keygen.rs
+form: cfg
+item: stmt in fn pk_from_sk
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/keygen.rs
+form: cfg_attr
+cfg: not(feature="zeroize")
+attrs: allow(unused_mut)
+count: 4
+why: attribute-only (lint): `let mut` is needed only for the `zeroize` wipe that follows it.
+
+file: src/lib.rs
+form: cfg
+item: mod cpu
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod cpu
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod encode
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod encode
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod fast_verify
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod fast_verify
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod field
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod field
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod keccak
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod keccak
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod keccak4
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod keccak4
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod keygen
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod keygen
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod ntt
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod ntt
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod params
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod params
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod rounding
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod rounding
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod sampling
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod sampling
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod sign
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod sign
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod verify
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod verify
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod verify_arith
+cfg: feature="internals"
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg
+item: mod verify_arith
+cfg: not(feature="internals")
+count: 1
+why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
+
+file: src/lib.rs
+form: cfg_attr
+cfg: feature="avx2"
+attrs: allow(unsafe_code)
+count: 2
+why: attribute-only (lint level): the crate forbids `unsafe` without the `avx2` feature, denies it with the feature and allows it only in the modules that carry the dispatch (src/cpu.rs, src/ntt.rs, src/fast_verify/dispatch.rs, and the test hooks).
+
+file: src/lib.rs
+form: cfg_attr
+cfg: feature="avx2"
+attrs: deny(unsafe_code)
+count: 1
+why: attribute-only (lint level): the crate forbids `unsafe` without the `avx2` feature, denies it with the feature and allows it only in the modules that carry the dispatch (src/cpu.rs, src/ntt.rs, src/fast_verify/dispatch.rs, and the test hooks).
+
+file: src/lib.rs
+form: cfg_attr
+cfg: not(feature="avx2")
+attrs: forbid(unsafe_code)
+count: 1
+why: attribute-only (lint level): the crate forbids `unsafe` without the `avx2` feature, denies it with the feature and allows it only in the modules that carry the dispatch (src/cpu.rs, src/ntt.rs, src/fast_verify/dispatch.rs, and the test hooks).
+
+file: src/lib.rs
+form: cfg_attr
+cfg: not(feature="internals")
+attrs: allow(dead_code)
+count: 1
+why: attribute-only (lint): items used only by tests and fuzzing (`internals`) are not dead code there.
+
+file: src/ntt.rs
+form: cfg
+item: fn both
+cfg: feature="internals"
+count: 1
+why: internals + avx2: test helper `compare_compilations` / `dispatch::both` (tests/dispatch.rs).
+
+file: src/ntt.rs
+form: cfg
+item: fn compare_compilations
+cfg: feature="internals"
+count: 1
+why: internals + avx2: test helper `compare_compilations` / `dispatch::both` (tests/dispatch.rs).
+
+file: src/ntt.rs
+form: cfg
+item: mod dispatch
+cfg: all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2"))
+count: 1
+why: avx2 dispatch (residual, outside the Lean proof): the AVX2 build on x86_64 compiles every NTT body twice (portable and `#[target_feature(enable = "avx2")]`) and picks one with `has_avx2()`; five `unsafe` calls. Same proved body in both; documented in docs/assurance.md as the NTT dispatch residual.
+
+file: src/ntt.rs
+form: cfg
+item: mod dispatch
+cfg: any(not(feature="avx2"),miri,not(target_arch="x86_64"),target_feature="avx2")
+count: 1
+why: avx2 dispatch (residual): the portable NTT entry points, which are the only ones in a default build and in the extraction (`miri`). The extraction and the proofs are about this module.
+
+file: src/ntt.rs
+form: cfg
+item: stmt in fn compare_compilations
+cfg: all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2"))
+count: 1
+why: internals + avx2: test helper `compare_compilations` / `dispatch::both` (tests/dispatch.rs).
+
+file: src/ntt.rs
+form: cfg
+item: stmt in fn compare_compilations
+cfg: not(all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2")))
+count: 1
+why: internals + avx2: test helper `compare_compilations` / `dispatch::both` (tests/dispatch.rs).
+
+file: src/ntt.rs
+form: cfg
+item: stmt in fn matrix_vector_ntt_into
+cfg: feature="zeroize"
+count: 1
+why: zeroize: Sign/KeyGen-side wipe of per-entry temporaries (`matrix_vector_ntt_into`, `ntt_vec_into`, `scalar_vector_ntt_inverse_into`); the values are the same with and without it. Not used by verify.
+
+file: src/ntt.rs
+form: cfg
+item: stmt in fn matrix_vector_ntt_into
+cfg: not(feature="zeroize")
+count: 1
+why: zeroize: Sign/KeyGen-side wipe of per-entry temporaries (`matrix_vector_ntt_into`, `ntt_vec_into`, `scalar_vector_ntt_inverse_into`); the values are the same with and without it. Not used by verify.
+
+file: src/ntt.rs
+form: cfg
+item: stmt in fn ntt_vec_into
+cfg: feature="zeroize"
+count: 1
+why: zeroize: Sign/KeyGen-side wipe of per-entry temporaries (`matrix_vector_ntt_into`, `ntt_vec_into`, `scalar_vector_ntt_inverse_into`); the values are the same with and without it. Not used by verify.
+
+file: src/ntt.rs
+form: cfg
+item: stmt in fn scalar_vector_ntt_inverse_into
+cfg: feature="zeroize"
+count: 1
+why: zeroize: Sign/KeyGen-side wipe of per-entry temporaries (`matrix_vector_ntt_into`, `ntt_vec_into`, `scalar_vector_ntt_inverse_into`); the values are the same with and without it. Not used by verify.
+
+file: src/ntt.rs
+form: cfg_attr
+cfg: all(feature="avx2",not(miri),target_arch="x86_64",not(target_feature="avx2"))
+attrs: inline(always)
+count: 7
+why: attribute-only (avx2 dispatch): `#[inline(always)]` so the body is compiled inside the `#[target_feature(enable = "avx2")]` function that calls it, in the build that has the second NTT/field compilation. No change to the computation.
+
+file: src/ntt.rs
+form: cfg_attr
+cfg: not(feature="internals")
+attrs: allow(dead_code)
+count: 1
+why: attribute-only (lint): items used only by tests and fuzzing (`internals`) are not dead code there.
+
+file: src/ntt.rs
+form: cfg_attr
+cfg: not(feature="zeroize")
+attrs: allow(unused_mut)
+count: 1
+why: attribute-only (lint): `let mut` is needed only for the `zeroize` wipe that follows it.
+
+file: src/rounding.rs
+form: cfg_attr
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+attrs: inline(always)
+count: 5
+why: attribute-only (avx2 dispatch): `#[inline(always)]` so the verify body is compiled inside the `#[target_feature(enable = "avx2")]` wrappers. Code generation only; no change to the computation.
+
+file: src/sampling.rs
+form: cfg
+item: mod boundary_tests
+cfg: test
+count: 1
+why: internals/test: unit tests of the module, not compiled in the library.
+
+file: src/sampling.rs
+form: cfg
+item: stmt in fn expand_mask
+cfg: feature="zeroize"
+count: 2
+why: zeroize: wipes of the secret-sampling temporaries in `expand_s`, `expand_mask`, `rej_bounded_poly` (Sign and KeyGen); the values are the same. Not used by verify.
+
+file: src/sampling.rs
+form: cfg
+item: stmt in fn expand_s
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipes of the secret-sampling temporaries in `expand_s`, `expand_mask`, `rej_bounded_poly` (Sign and KeyGen); the values are the same. Not used by verify.
+
+file: src/sampling.rs
+form: cfg
+item: stmt in fn rej_bounded_poly
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipes of the secret-sampling temporaries in `expand_s`, `expand_mask`, `rej_bounded_poly` (Sign and KeyGen); the values are the same. Not used by verify.
+
+file: src/sampling.rs
+form: cfg_attr
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+attrs: inline(always)
+count: 20
+why: attribute-only (avx2 dispatch): `#[inline(always)]` so the verify body is compiled inside the `#[target_feature(enable = "avx2")]` wrappers. Code generation only; no change to the computation.
+
+file: src/sampling.rs
+form: cfg_attr
+cfg: not(feature="internals")
+attrs: allow(dead_code)
+count: 2
+why: attribute-only (lint): items used only by tests and fuzzing (`internals`) are not dead code there.
+
+file: src/sampling.rs
+form: cfg_attr
+cfg: not(feature="zeroize")
+attrs: allow(unused_mut)
+count: 1
+why: attribute-only (lint): `let mut` is needed only for the `zeroize` wipe that follows it.
+
+file: src/sign.rs
+form: cfg
+item: fn wipe_attempt
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: fn wipe_decoded
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: fn wipe_rho_pp
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: impl
+cfg: feature="internals"
+count: 2
+why: internals: test accessors (`secret_regions` and the like) that the stack-residue tests use; they only read. Not compiled without `internals`.
+
+file: src/sign.rs
+form: cfg
+item: impl
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: impl crate::api::SigningKey44
+cfg: feature="internals"
+count: 1
+why: internals: test accessors (`secret_regions` and the like) that the stack-residue tests use; they only read. Not compiled without `internals`.
+
+file: src/sign.rs
+form: cfg
+item: impl crate::api::SigningKey65
+cfg: feature="internals"
+count: 1
+why: internals: test accessors (`secret_regions` and the like) that the stack-residue tests use; they only read. Not compiled without `internals`.
+
+file: src/sign.rs
+form: cfg
+item: impl crate::api::SigningKey87
+cfg: feature="internals"
+count: 1
+why: internals: test accessors (`secret_regions` and the like) that the stack-residue tests use; they only read. Not compiled without `internals`.
+
+file: src/sign.rs
+form: cfg
+item: stmt in fn attempt
+cfg: feature="zeroize"
+count: 22
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: stmt in fn attempt
+cfg: not(feature="zeroize")
+count: 5
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: stmt in fn prepare_sk_into
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: stmt in fn response_into
+cfg: feature="zeroize"
+count: 2
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: stmt in fn response_into
+cfg: not(feature="zeroize")
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: stmt in fn sign_prepared_internal
+cfg: feature="zeroize"
+count: 3
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: use crate::ntt::
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: use crate::ntt::
+cfg: not(feature="zeroize")
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: use crate::ntt::matrix_vector_ntt
+cfg: not(feature="zeroize")
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: use crate::ntt::matrix_vector_ntt_into
+cfg: feature="zeroize"
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg
+item: use crate::ntt::ntt_vec
+cfg: not(feature="zeroize")
+count: 1
+why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
+
+file: src/sign.rs
+form: cfg_attr
+cfg: feature="zeroize"
+attrs: allow(dead_code)
+count: 2
+why: attribute-only (lint): `dead_code` for items used only in some configuration.
+
+file: src/sign.rs
+form: cfg_attr
+cfg: not(feature="internals")
+attrs: allow(dead_code)
+count: 1
+why: attribute-only (lint): items used only by tests and fuzzing (`internals`) are not dead code there.
+
+file: src/sign.rs
+form: cfg_attr
+cfg: not(feature="zeroize")
+attrs: allow(unused_mut)
+count: 5
+why: attribute-only (lint): `let mut` is needed only for the `zeroize` wipe that follows it.
+
+file: src/verify.rs
+form: cfg
+item: mod tests
+cfg: test
+count: 1
+why: internals/test: unit tests of the module, not compiled in the library.
+
+file: src/verify.rs
+form: cfg_attr
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+attrs: inline(always)
+count: 6
+why: attribute-only (avx2 dispatch): `#[inline(always)]` so the verify body is compiled inside the `#[target_feature(enable = "avx2")]` wrappers. Code generation only; no change to the computation.
+
+file: src/verify.rs
+form: cfg_attr
+cfg: not(feature="internals")
+attrs: allow(dead_code)
+count: 3
+why: attribute-only (lint): items used only by tests and fuzzing (`internals`) are not dead code there.
+
+file: src/verify_arith.rs
+form: cfg_attr
+cfg: all(feature="avx2",not(miri),target_arch="x86_64")
+attrs: inline(always)
+count: 10
+why: attribute-only (avx2 dispatch): `#[inline(always)]` so the verify body is compiled inside the `#[target_feature(enable = "avx2")]` wrappers. Code generation only; no change to the computation.
