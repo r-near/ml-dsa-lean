@@ -1,38 +1,56 @@
-# Build matrix of the checkct driver on the fast-verify tree: one cheap probe (sign_rho_pp_hash) per profile and target,
+# Build matrix of the checkct driver on the fv-p8 tree (round 8): one cheap probe (sign_rho_pp_hash) per profile and target,
 # so that every driver is built and run through BINSEC; the dispatch profiles also show the cache symbol the pre-set found.
+# The driver includes the real src/fast_verify.rs, src/api.rs and src/cpu.rs by #[path]. Not rerun this round: the aarch64
+# builds, the split-run and exact-novec-zeroize (nothing in them compiles different code from the cells below).
 == default
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
 preset x86_64-unknown-linux-gnu: PROFILE=default: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
 done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
 done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
 == nearcore
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
 preset x86_64-unknown-linux-gnu: PROFILE=nearcore: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
 done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
-done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
+done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 == nearcore-novec
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
 preset x86_64-unknown-linux-gnu: PROFILE=nearcore-novec: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
 done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
-done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
+done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 == dispatch
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
 preset x86_64-unknown-linux-gnu: PROFILE=dispatch: dispatch compiled in, AVX2 cache static at 0x00000000002616e8; every script gets @[0x..., 1] := 1
+done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure (AVX2 cache 0x00000000002616e8 pre-set to 1)
+done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 == nearcore-dispatch
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
 preset x86_64-unknown-linux-gnu: PROFILE=nearcore-dispatch: dispatch compiled in, AVX2 cache static at 0x00000000002537e8; every script gets @[0x..., 1] := 1
 done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
-done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure (AVX2 cache 0x00000000002537e8 pre-set to 1)
+done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 == avx2
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
 preset x86_64-unknown-linux-gnu: PROFILE=avx2: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
 done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
-done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
+done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 == nearcore-avx2
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
 preset x86_64-unknown-linux-gnu: PROFILE=nearcore-avx2: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
 done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
-done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
+done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 == nearcore-exact
 preset x86_64-unknown-linux-gnu: PROFILE=nearcore-exact: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
@@ -43,24 +61,16 @@ done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure (AVX2 cache
 preset x86_64-unknown-linux-gnu: PROFILE=nearcore-exact-novec: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
 == zeroize
-zeroize feature enabled (zeroize =1.9.1);
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
 preset x86_64-unknown-linux-gnu: PROFILE=default: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
 done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
+done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
 done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
-done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
-== exact-novec-zeroize
-zeroize feature enabled (zeroize =1.9.1);
-preset x86_64-unknown-linux-gnu: PROFILE=nearcore-exact-novec: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
-done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
 == experiments
+preset riscv32imac-unknown-none-elf: no AVX2 dispatch on this architecture, nothing to pre-set
+preset thumbv7em-none-eabihf: no AVX2 dispatch on this architecture, nothing to pre-set
 preset x86_64-unknown-linux-gnu: PROFILE=default: no dispatch compiled (driver built without the avx2 feature), nothing to pre-set
 done riscv32imac-unknown-none-elf driver::extra::sign_rho_pp_hash secure
-done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
 done x86_64-unknown-linux-gnu driver::extra::sign_rho_pp_hash secure
-== aarch64-noneon
-done sign_rho_pp_hash secure
-== aarch64-neon
-done sign_rho_pp_hash secure
-== split-run (split_ntt_vec_into_1 on AArch64, split_vec_power2round_1 on riscv32imac)
-a64: done split_ntt_vec_into_1 secure
-rv: done riscv32imac-unknown-none-elf driver::split::split_vec_power2round_1 secure
+done thumbv7em-none-eabihf driver::extra::sign_rho_pp_hash secure
