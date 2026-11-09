@@ -5249,7 +5249,7 @@ def encode.w1_encode_pub
   encode.w1_encode_pub_loop p.w1_bits w1 out n 0#usize
 
 /-- [ml_dsa_lean::verify::verify_core]: loop body 0:
-    Source: 'src/verify.rs', lines 236:4-242:5 -/
+    Source: 'src/verify.rs', lines 235:4-241:5 -/
 @[rust_loop_body]
 def verify.verify_core_loop.body
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -5273,7 +5273,7 @@ def verify.verify_core_loop.body
   else ok (done w1)
 
 /-- [ml_dsa_lean::verify::verify_core]: loop 0:
-    Source: 'src/verify.rs', lines 236:4-242:5 -/
+    Source: 'src/verify.rs', lines 235:4-241:5 -/
 @[rust_loop]
 def verify.verify_core_loop
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -5287,7 +5287,7 @@ def verify.verify_core_loop
     (w1, i)
 
 /-- [ml_dsa_lean::verify::verify_core]:
-    Source: 'src/verify.rs', lines 219:0-255:1 -/
+    Source: 'src/verify.rs', lines 218:0-254:1 -/
 def verify.verify_core
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (mu : Array Std.U8 64#usize)
@@ -5331,7 +5331,7 @@ def verify.verify_core
   else ok false
 
 /-- [ml_dsa_lean::verify::hash_mu]:
-    Source: 'src/verify.rs', lines 204:0-213:1 -/
+    Source: 'src/verify.rs', lines 203:0-212:1 -/
 def verify.hash_mu
   (tr : Array Std.U8 64#usize) (m_prefix : Slice Std.U8) (m : Slice Std.U8) :
   RustM (Array Std.U8 64#usize)
@@ -5348,7 +5348,7 @@ def verify.hash_mu
   ok (to_slice_mut_back s2)
 
 /-- [ml_dsa_lean::verify::verify_decoded]:
-    Source: 'src/verify.rs', lines 263:0-278:1 -/
+    Source: 'src/verify.rs', lines 262:0-277:1 -/
 def verify.verify_decoded
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
@@ -7146,7 +7146,7 @@ def encode.pk_decode
   ok (rho1, t11)
 
 /-- [ml_dsa_lean::verify::prepare_vk_into_x4]:
-    Source: 'src/verify.rs', lines 177:0-184:1
+    Source: 'src/verify.rs', lines 176:0-183:1
     Visibility: public -/
 def verify.prepare_vk_into_x4
   {K : Std.Usize} {L : Std.Usize} (pk : Slice Std.U8)
@@ -7484,7 +7484,7 @@ def encode.sig_decode
   | some h => ok (some (c_tilde1, z1, h))
 
 /-- [ml_dsa_lean::verify::verify_internal_x4]:
-    Source: 'src/verify.rs', lines 322:0-344:1
+    Source: 'src/verify.rs', lines 321:0-343:1
     Visibility: public -/
 def verify.verify_internal_x4
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
@@ -7577,7 +7577,7 @@ def api.verifying_key_44
   ok { inner := vk1 }
 
 /-- [ml_dsa_lean::verify::verify_prepared_internal]:
-    Source: 'src/verify.rs', lines 351:0-368:1
+    Source: 'src/verify.rs', lines 350:0-367:1
     Visibility: public -/
 def verify.verify_prepared_internal
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
@@ -8777,7 +8777,7 @@ def verify.prepare_vk_into
   ok { a_hat := a, t1_2d_hat := a3, tr := a1 }
 
 /-- [ml_dsa_lean::verify::prepare_vk]:
-    Source: 'src/verify.rs', lines 157:0-167:1
+    Source: 'src/verify.rs', lines 156:0-166:1
     Visibility: public -/
 def verify.prepare_vk
   (K : Std.Usize) (L : Std.Usize) (pk : Slice Std.U8) :
@@ -8791,7 +8791,7 @@ def verify.prepare_vk
   ok { a_hat, t1_2d_hat, tr }
 
 /-- [ml_dsa_lean::verify::prepare_vk_x4]:
-    Source: 'src/verify.rs', lines 192:0-201:1
+    Source: 'src/verify.rs', lines 191:0-200:1
     Visibility: public -/
 def verify.prepare_vk_x4
   (K : Std.Usize) (L : Std.Usize) (pk : Slice Std.U8) :
@@ -8807,7 +8807,7 @@ def verify.prepare_vk_x4
   ok { a_hat := a_hat1, t1_2d_hat, tr }
 
 /-- [ml_dsa_lean::verify::verify_internal]:
-    Source: 'src/verify.rs', lines 292:0-314:1
+    Source: 'src/verify.rs', lines 291:0-313:1
     Visibility: public -/
 def verify.verify_internal
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)

@@ -141,17 +141,16 @@ pub fn prepare_vk_into<const K: usize, const L: usize>(pk: &[u8], out: &mut Prep
 }
 
 /// Steps 1, 6, 7 and the key-dependent half of step 10 of Algorithm 8, returned by value: the same computation as
-/// `prepare_vk_into` (proved equal to it on a zero destination, `Proofs/Verify.lean`). `api::verifying_key_*` uses
-/// this one because its result is the key object and LLVM builds a by-value call result in the caller's result slot,
-/// whereas going through `prepare_vk_into` would first fill a 66 KB local (ML-DSA-87) and then copy it to the
-/// result (measured: `verifying_key_87` 100 KB instead of 83 KB below the caller). The one-shot `verify_internal`
-/// owns its key and uses `prepare_vk_into`, so that Â exists once.
+/// `prepare_vk_into` (proved equal to it on a zero destination, `Proofs/Verify.lean`). It is the scalar reference for
+/// the by-value form: `prepare_vk_x4` is its 4-way counterpart, and `api::verifying_key_*` does not call either (it
+/// fills a zeroed key in place with `prepare_vk_into_x4`, so that Â exists once in the result and not also in a local
+/// that is then copied). The one-shot `verify_internal` owns its key and uses `prepare_vk_into` for the same reason.
 ///
 /// Precondition: `pk.len() == 32 + 320 * K`. Diverges exactly where ExpandA does.
 ///
-/// Both `prepare_vk*` functions are `#[inline(never)]`: inlined into `verify_internal` or `verifying_key_*`, their
-/// temporaries (t1, the scaled copy, the NTT result; for `prepare_vk` the 57 KB Â temporary) become part of that
-/// caller's frame for its whole duration (measured: `verify_87` 132 KB instead of 115 KB).
+/// Both scalar `prepare_vk*` functions are `#[inline(never)]`, so that the scalar reference keeps its own frame (its
+/// temporaries: t1, the scaled copy, the NTT result, and for `prepare_vk` the 57 KB Â temporary). The 4-way chain that
+/// `api` runs is the opposite: one frame, `#[inline(always)]` (docs/assurance.md, Round 13).
 #[inline(never)]
 #[allow(dead_code)]
 pub fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
