@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Verify timings under nearcore's build settings: scalar verify, the dispatched (4-way AVX2) verify, and an x86-64-v3 build,
-# next to aws-lc-rs and mldsa-native AVX2 as references. Run from the repository root on an otherwise idle x86_64 Linux machine:
+# Verify timings under nearcore's build settings: the 4-way verify with nearcore's target features, with +avx,+avx2 added, and
+# an x86-64-v3 build, next to aws-lc-rs and mldsa-native AVX2 as references. (Before round 12 the variants were the scalar verify
+# and a run-time dispatch; verify now always runs the 4-way code and the target features decide the vector width.) Run from the repository root on an otherwise idle x86_64 Linux machine:
 #   bash bench/fast-verify.sh LABEL [CPU] 2>&1 | tee fast-verify-LABEL.log
 # Environment: SETS (default 65; e.g. 44,65,87), ROUNDS (default 15), ML_DSA_SCRATCH (output root, as in compare.sh),
 #              HT_OFFSET (distance to the hyper-thread sibling, default half the logical CPUs),
@@ -12,14 +13,13 @@
 #
 # Variants (all in the `nearcore` profile of bench/Cargo.toml: opt-level 3, fat LTO, one codegen unit, abort on panic, plus
 # overflow-checks, exactly as nearcore's [profile.release]; and nearcore's x86_64 target features, which do not include AVX2):
-#   scalar  no `avx2` feature: the proved scalar verify.                                   RUSTFLAGS = nearcore's
-#   avx2    `--features avx2`: runtime dispatch; on AVX2 hardware verify is the 4-way body. RUSTFLAGS = nearcore's
-#   v3      `--features avx2` and -C target-cpu=x86-64-v3: AVX2 is static, no detection.   RUSTFLAGS = target-cpu=x86-64-v3
-# The `avx2` rows are the shipping configuration: the proved 4-way body (verify::verify_internal_x4) compiled with AVX2 (plain Rust, no lane operations).
+#   scalar  RUSTFLAGS = nearcore's (no AVX2). The label is historical: this is the 4-way body with 128-bit vectors.
+#   avx2    RUSTFLAGS = nearcore's plus +avx,+avx2: the same source compiled to 256-bit vectors.
+#   v3      RUSTFLAGS = -C target-cpu=x86-64-v3.
+# No variant enables the `avx2` Cargo feature (a deprecated no-op for verify). Plain Rust, no lane operations.
 #
-# `ours+prepared-vk verify` is the prepared-key verify: it runs no ExpandA, so it has no 4-way body; with the `avx2` feature it is
-# the same proved scalar function inside a second AVX2 wrapper (`verify_prepared_avx2`). `ours verify` includes building the
-# key's matrix every call.
+# `ours+prepared-vk verify` is the prepared-key verify: it runs no ExpandA, so it has no 4-way body; it is the same proved scalar
+# function in every variant, compiled with the variant's target features. `ours verify` includes building the key's matrix every call.
 set -o pipefail
 L=${1:?usage: fast-verify.sh LABEL [CPU]}
 SETS=${SETS:-65}
@@ -32,8 +32,8 @@ NC_RUSTFLAGS="-Ctarget-feature=+sse2,+ssse3,+sse4.1,+sse4.2,+popcnt,+fma,+bmi1,+
 cd bench || exit 1
 for v in scalar avx2 v3; do
   RF="$NC_RUSTFLAGS"; FEAT=""
-  [ "$v" = avx2 ] && FEAT="--features avx2"
-  [ "$v" = v3 ] && { RF="-C target-cpu=x86-64-v3"; FEAT="--features avx2"; }
+  [ "$v" = avx2 ] && RF="$NC_RUSTFLAGS -Ctarget-feature=+avx,+avx2"
+  [ "$v" = v3 ] && RF="-C target-cpu=x86-64-v3"
   CARGO_PROFILE_NEARCORE_OVERFLOW_CHECKS=true RUSTFLAGS="$RF" cargo ${TOOLCHAIN:+"+$TOOLCHAIN"} build --profile nearcore --bin bench $FEAT \
     --message-format=json-render-diagnostics >"$OUT/$v.json" || exit 1
   python3 - "$OUT/$v.json" "$OUT/bench-$v" <<'PY'
@@ -99,6 +99,6 @@ for st in sets:
             print(f"{imp:<28}" + "".join(f"{data[v].get((st, imp), float('nan')):>9.1f}" for v in ("scalar", "avx2", "v3")))
     s, a = data["scalar"].get((st, "ours")), data["avx2"].get((st, "ours"))
     if s and a:
-        print(f"ours: dispatched / scalar = {a / s:.2f}")
+        print(f"ours: avx2 / nearcore flags = {a / s:.2f}")
 PY
 exit $SCAN_RC

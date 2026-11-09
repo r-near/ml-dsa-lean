@@ -46,8 +46,8 @@
 #                         `checkct/compare_code.py --self-test` (a header-only or truncated disassembly, or one without the driver's
 #                         entry points and probes, must be an error and never "COMPARE OK").
 # feature-independence (--lean only; needs the extraction tools of scripts/setup-tools.sh, no Lean) extracts the crate a second
-# time without the verify dispatch and diffs the generated Lean against lean/Impl, failing on any difference outside a
-# whitelist (scripts/check-feature-independence.sh). SKIP when the tools are missing.
+# time under `-C target-feature=+avx,+avx2` and diffs the generated Lean against lean/Impl, failing on any difference outside
+# a whitelist that is empty (scripts/check-feature-independence.sh). SKIP when the tools are missing.
 #
 # NOTE: test-zeroize skips stack_residue_* where they fail at opt-level 0. test-zeroize runs the zeroize feature's tests in
 # the dev profile (opt-level 0) without the 21 failing stack-residue scans (keygen, pk_from_sk, sign, sign_prepared and the
@@ -160,12 +160,17 @@ step_test_zeroize() {
     cargo test --features zeroize --test zeroize -- stack_residue_signing_key
 }
 step_test_zeroize_release() { cargo test --release --features zeroize; }
-# The avx2 steps run the AVX2 tests (tests/keccak4_avx2.rs, tests/fast_verify.rs, tests/fast_verify_x4.rs, tests/fast_verify_tr.rs, and the
-# ACVP, Wycheproof and KAT suites through the dispatched API). ML_DSA_REQUIRE_AVX2=1 turns "this machine has no AVX2, so
-# the AVX2 path was not compared" from a printed note into a failure; GitHub-hosted x86_64 runners have AVX2.
-step_test_avx2() { ML_DSA_REQUIRE_AVX2=1 cargo test --features avx2; }
-# The generated part of src/keccak4.rs is current; the AVX2 4-way verify body is compiled with AVX2 and LLVM vectorized the
-# 4-way permutation in it (a scalar permutation is correct but 3x slower); see the script header.
+# The avx2 steps run the whole suite twice: with the `avx2` feature (a deprecated no-op for verify; it still enables the NTT
+# dispatch of Sign and KeyGen until that is removed) and with AVX2 target features (RUSTFLAGS="-C target-feature=+avx2"),
+# which is what makes LLVM emit 256-bit code for the 4-way verify. ML_DSA_REQUIRE_AVX2=1 makes tests/fast_verify.rs fail unless
+# the build has the AVX2 target feature (a build without it is also correct, so the note is not an error otherwise);
+# GitHub-hosted x86_64 runners have AVX2.
+step_test_avx2() {
+  cargo test --features avx2 && \
+    RUSTFLAGS="-C target-feature=+avx2" ML_DSA_REQUIRE_AVX2=1 cargo test
+}
+# The generated part of src/keccak4.rs is current; a build with AVX2 target features turns the 4-way permutation into
+# 256-bit code (a scalar permutation is correct but 3x slower); a PERFORMANCE check, see the script header.
 step_avx2_inlining() { python3 scripts/gen_keccak4_round.py --check && bash scripts/check-avx2-inlining.sh; }
 step_thumbv7em() {
   cargo_retry_target "$(rustup show active-toolchain | awk '{print $1}')" thumbv7em-none-eabihf \
@@ -174,7 +179,7 @@ step_thumbv7em() {
 step_msrv() {
   need_toolchain "$MSRV_TC" || return $?
   # The library only: the dev-dependencies (git oracle, serde_json, ...) have their own, higher MSRV. The `avx2`
-  # feature is why rust-version is 1.86 (safe #[target_feature] functions), so build with it on and off.
+  # feature is why rust-version is 1.86 (safe #[target_feature] functions in the NTT dispatch), so build with it on and off.
   cargo "+$MSRV_TC" --version && \
   cargo "+$MSRV_TC" build --release && \
   cargo "+$MSRV_TC" build --release --features zeroize,avx2
@@ -257,7 +262,8 @@ step_nearcore_test() {
 step_nearcore_test_avx2() {
   need_toolchain "$NEARCORE_TC" || return $?
   nearcore_profile_check test --features avx2 || { echo "profile check failed"; return 1; }
-  ML_DSA_REQUIRE_AVX2=1 nearcore_env cargo "+$NEARCORE_TC" test --release --features avx2
+  # nearcore's flags plus +avx,+avx2: what an operator who builds nearcore for x86-64-v3 gets (nearcore's own flags have no AVX2).
+  ML_DSA_REQUIRE_AVX2=1 NEARCORE_RUSTFLAGS="$NEARCORE_RUSTFLAGS -Ctarget-feature=+avx,+avx2" nearcore_env cargo "+$NEARCORE_TC" test --release --features avx2
 }
 step_nearcore_test_zeroize() {
   # The zeroize feature (tests/zeroize.rs, including all 24 stack-residue scans) under nearcore's release profile.
