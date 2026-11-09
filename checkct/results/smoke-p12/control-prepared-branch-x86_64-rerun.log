@@ -1,0 +1,24 @@
+toolchain for PROFILE=default (checkct/rust-toolchain.toml: channel = "nightly-2026-10-06", RUSTC_BOOTSTRAP=unset):
+  rustc 1.101.0-nightly (ea137335b 2026-10-05)
+  binary: rustc
+  commit-hash: ea137335b78829b4514bf1b4c16302f74fab8581
+  commit-date: 2026-10-05
+  host: x86_64-unknown-linux-gnu
+  release: 1.101.0-nightly
+  LLVM version: 23.1.3
+x86_64 rustflags: (checkct/.cargo/config.toml); CARGO_PROFILE_RELEASE_*: 
+driver .comment (x86_64-unknown-linux-gnu): rustc version 1.101.0-nightly (ea137335b 2026-10-05)|Linker: LLD 23.1.3 (/checkout/src/llvm-project/llvm aab11ee0ea5ea9a1d462ad0bc1fae9d9bb643019)|
+selected 1 probes
+done x86_64-unknown-linux-gnu driver::prepared::control_prepared_branch_44 insecure
+Summary:
+  driver  x86_64-unknown-linux-gnu  driver::prepared::control_prepared_branch_44  insecure
+      sha256: elf 6081cf3c17784a70753a578c099ca5a97c3d9cde42cbb46fd4a581ce1ca0f166 script c8fe6cb26f4b2d6d7d80d36820fa5625e32eac01f528a4dc3c8e7a0bb2094adf
+      0x219d1d has control flow leak (3.417s)
+      stat: pending paths                    0
+      stat: branching points                 62475
+      stat: visited instructions (unrolled)  989292
+      stat: [checkct:info] 65175 / 65176 control flow checks pass
+      stat: [checkct:info] 317929 / 317929 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0

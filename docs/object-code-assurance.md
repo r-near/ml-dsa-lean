@@ -295,9 +295,9 @@ LLVM emits for the same Rust text and nothing else (the extraction is identical 
 sweep tables in `checkct/README.md` that name those profiles are marked as history there.
 
 **What BINSEC covers.**
-- The default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit; no AVX2) and `nearcore-novec` are the builds with verdicts (section 3.2 and `checkct/README.md`). `docs/assurance.md` section 4, "Round 12", has the
-  rerun on this tree: the NTT callers of Sign and KeyGen compile differently from fv-p11 now that the dispatch is gone (`checkct/compare_code.py`: 39 of 233 functions differ on x86_64), so the sweep's verdicts for them
-  were re-checked on the final tree rather than carried over.
+- The default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit; no AVX2) and `nearcore-novec` are the builds with verdicts in the sweep of 1a72d9e (section 3.2 and `checkct/README.md`). On the final tree only `default` (the NTT probes and the 8-probe smoke),
+  `nearcore` and `nearcore-exact` (the smoke) were rerun (`docs/assurance.md` section 4, "Round 12"): the NTT callers of Sign and KeyGen compile differently from fv-p11 now that the dispatch is gone (`checkct/compare_code.py`: 39 of 233 functions differ on x86_64),
+  so the sweep's verdicts for the probes that were not rerun are for the earlier binary.
 - BINSEC 0.11.3 cannot lift VEX-encoded instructions. A build with `-C target-feature=+avx2` (`bash checkct/select-ntt.sh avx2`) therefore ends `unknown` for
   every probe that reaches vectorized code; the scalar probes (`field_mul_shoup`, `field_mont_reduce`, `field_mul_mont`) stay `secure` there. `nearcore`'s own flags have `+fma`, which implies AVX in LLVM, so the
   `nearcore-exact` profile is in the same position for 49 of 113 probes. No claim is made about BINSEC verdicts for AVX or AVX2 code.

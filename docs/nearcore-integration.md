@@ -124,10 +124,16 @@ table (release in parentheses; the ratio is not uniform, from 1.3 times for `sig
 
 These dev-profile figures predate the fast verify. Release-profile figures for the 4-way verify (`bench/results/2026-11-09-p12.md`, `docs/assurance.md` §3): one-shot `verify_*` 64 / 90 / 132 KB
 and `verifying_key_*` 50 / 74 / 111 KB below the caller's frame (ML-DSA-44 / 65 / 87), 19 / 19 / 21 and 15 / 17 / 76 KB more than before; the 87 figure of `verifying_key_*` includes a second copy of the key that the compiler does not elide. The key
-The key
 constructors also place the returned key object in the caller's frame (20.5 / 36.9 / 65.6 KB for
 `verifying_key_*`, 28.8 / 48.2 / 81.0 KB for `signing_key_*`). The largest dev-profile figure is `signing_key_87`,
 about 475 KB below the caller's frame plus the 81 KB result slot.
+
+nearcore's `[profile.release]` is `lto = "fat"` with `codegen-units = 1` and its flags have no AVX2, so the numbers that apply to it are the `lto` rows of `bench/results/2026-11-09-p12.md`. The verify chain is `#[inline(always)]` (commit 4d4bedb), which keeps
+the frames 32-byte aligned and the stack-offset scan clean in a build **with** `+avx2`; it is a stack cost in a build without it. Measured, fat LTO, `verify_*` in KB for ML-DSA-44 / 65 / 87:
+static walk 63 / 90 / 131 with the attribute against 48 / 72 / 110 without it (fv-p11: 45 / 71 / 102); painted harness binary 259 / 313 / 399 with it against 85 / 115 / 170 without it (fv-p11: 70 / 103 / 170). The cause of the larger painted figure was not traced.
+The scan of the tree without the attribute (a0292a3) under nearcore's flags (no AVX2), run while other jobs loaded the box, had no padding above 1.1 times the median for `verify` or for ML-DSA-44 / 65 `vk`
+(three of 257 for 87 `vk` and five of 257 for 87 `prepared`, which is the same code in both trees: load noise); with `+avx,+avx2` it had 30 of 257 for 44 `verify` (largest 34.4 µs against a median of 26.2), 77 of 257 for 44 `vk`, and some for 65. So the attribute buys layout robustness
+only for builds with AVX2, and nearcore's flags are not such a build. A consumer that builds with nearcore's flags, wants the smaller stack and does not enable AVX2 can remove the attribute (the change is commit 4d4bedb, with its re-extraction and the check script that expects the attribute; the stack figures in the documents of 06cbdef would then go back to the 56 / 80 / 118 KB of the default profile, and the `+avx2` stack scan fails).
 
 Thread stacks found in nearcore (a grep for `stack_size`, `RUST_MIN_STACK` and thread builders over the whole tree
 found only the two entries marked explicit; no `actix` appears in `Cargo.toml`):

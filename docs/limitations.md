@@ -60,8 +60,7 @@ found and fixed. The limits:
   needs none. Sign and KeyGen do not call the 4-way body or the verify-only `poly_use_hint_pub` and `bit_unpack_pub`. The
   full sweep predates the fast verify and the removal of the NTT dispatch and was not rerun on this tree: removing the dispatch changes the compiled NTT
   callers of Sign and KeyGen in the default build (39 of 233 functions on x86_64), so the sweep's verdicts are for an earlier binary. The harness
-  (`../checkct/driver`) builds on this tree for every target and profile, and a BINSEC run on this tree reproduced the sweep's verdicts for the probes it covered
-  (assurance.md section 4, "Round 12").
+  (`../checkct/driver`) builds on this tree for every target and profile, and BINSEC runs on this tree reproduced the sweep's verdicts for the probes they covered: the NTT probes and an 8-probe smoke in the default profile, the smoke in `nearcore` and `nearcore-exact` (assurance.md section 4, "Round 12", which lists the profiles that have no verdict on this tree).
 - The whole KeyGen, Sign and `pk_from_sk` functions have no verdict, and the glue between steps is covered by code reading
   only. ExpandS is covered only through its per-nibble helper; its sampler loop branches on its public accept/reject
   outcome.

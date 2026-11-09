@@ -1,0 +1,9 @@
+profile	target	probe	verdict	instructions	control-flow checks
+nearcore	x86_64-unknown-linux-gnu	control_early_exit_44	insecure	76541	15799/15807
+nearcore	x86_64-unknown-linux-gnu	control_prepared_branch_44	insecure	988446	67919/67920
+nearcore	x86_64-unknown-linux-gnu	hint_step_1_44	secure	72091	5556/5556
+nearcore	x86_64-unknown-linux-gnu	keygen_seed_hash	secure	7158	180/180
+nearcore	x86_64-unknown-linux-gnu	make_hint_44	secure	154	13/13
+nearcore	x86_64-unknown-linux-gnu	response_1x1_44	secure	102431	10610/10610
+nearcore	x86_64-unknown-linux-gnu	sign_rho_pp_hash	secure	7589	302/302
+nearcore	x86_64-unknown-linux-gnu	signing_key_44	secure	988427	67918/67918
