@@ -249,7 +249,7 @@ executed first as a counterexample and is now a negative fixture in the gate's s
 `lean/Impl` is byte-identical to the fv-p10 tree: the cleaner change does not alter the output, and a fresh extraction into an empty directory
 is identical to the committed files (`diff -r`). The extraction digest is unchanged because nothing under `src/` or `Cargo.toml` changed.
 
-Every gate below ran on the Linux build box on 2026-11-10 on the tree of 4288dd9; the commit after it changes `docs/assurance.md` and one docstring of
+Every gate below ran on the Linux build box on 2026-11-09 on the tree of 4288dd9; the commit after it changes `docs/assurance.md` and one docstring of
 `checkct/compare_code.py` only (`git diff 4288dd9 HEAD --stat -- src lean scripts Cargo.toml` is empty).
 
 | Gate | Result |
@@ -260,7 +260,7 @@ Every gate below ran on the Linux build box on 2026-11-10 on the tree of 4288dd9
 | `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`; default targets `Build completed successfully (3338 jobs)`; `no-decls env scan: 99 modules, 14413 constants, 0 violations` |
 | `scripts/extract_hash.py check`; a fresh `scripts/extract.py` into an empty directory | `extract hash OK`, extraction inputs sha256 `8ebbd174b98d36dff9220fa5e403172bea6268faa2b45fcdcd41a3b1c22b3009` (unchanged from fv-p10); the fresh extraction is byte-identical to `lean/Impl` (`diff -r`), 4 external axioms declared, 0 referenced, 4 removed |
 | `cargo test`, and `ML_DSA_REQUIRE_AVX2=1 cargo test --features avx2` | 113 passed, 0 failed; 122 passed, 0 failed, 1 ignored (the timing test of `tests/keccak4.rs`) |
-| `python3 -I scripts/cfg_inventory.py --self-test`, `scripts/ci-selftest.sh`, `checkct/compare_code.py --self-test` | each OK; `checkct/compare-code.sh compare` prints `COMPARE OK` for fv10 against fv10 and for fv9 against fv10 (6 binaries each, 234 to 240 functions) |
+| `python3 -I scripts/cfg_inventory.py --self-test`, `scripts/ci-selftest.sh`, `checkct/compare_code.py --self-test` | each OK; `checkct/compare-code.sh compare` prints `COMPARE OK` for fv10 against fv10 and for fv9 against fv10 (6 binaries each, 234 to 239 functions) |
 
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
