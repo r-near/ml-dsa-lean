@@ -21,8 +21,19 @@ use core::sync::atomic::{AtomicU8, Ordering};
 
 /// Permission to execute AVX2 code: its only constructor, [`avx2`], returns one when this CPU and OS can run it.
 /// The field is private, so no other module can make one.
-#[cfg_attr(not(all(feature = "avx2", not(miri), target_arch = "x86_64")), allow(dead_code))]
+///
+/// This is an inhabited type only where the dispatch exists (feature `avx2` on x86_64, and under `--cfg miri`, which is
+/// what the extraction sees). In every other build it is the uninhabited enum below: the dispatch wrappers
+/// (`fast_verify/dispatch.rs`) then take a value that cannot exist, their body is `match t {}`, and the verify
+/// functions in `fast_verify.rs` are the same text as in the dispatch build. The difference between the two builds is
+/// therefore one the type system sees, not a computation the Lean extraction has not seen.
+#[cfg(all(feature = "avx2", any(miri, target_arch = "x86_64")))]
+#[cfg_attr(miri, allow(dead_code))]
 pub(crate) struct Avx2(());
+
+/// See above: without the dispatch, no `Avx2` value exists.
+#[cfg(not(all(feature = "avx2", any(miri, target_arch = "x86_64"))))]
+pub(crate) enum Avx2 {}
 
 /// CPUID leaf 7 EBX bit 5 (AVX2), plus leaf 1 XSAVE, OSXSAVE and AVX, and XCR0 bits 1 and 2 (the OS saves XMM and YMM
 /// state). Not for SGX enclaves, where CPUID faults; the `avx2` feature does not support them. CPUID traps to the

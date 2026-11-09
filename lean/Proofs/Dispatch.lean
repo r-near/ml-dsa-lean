@@ -52,7 +52,8 @@ theorem verify_internal_with_eq {ip : Impl.params.Params} {K L : Usize} {sp : Sp
   cases t with
   | none => rfl
   | some _ =>
-    unfold fast_verify.verify_internal_with fast_verify.dispatch.verify_internal_avx2
+    unfold fast_verify.verify_internal_with fast_verify.dispatch.verify_internal_on
+      fast_verify.dispatch.verify_internal_avx2
     exact verify_internal_x4_eq hp p pk m_prefix m sig
 
 /-- The AVX2 `prepare_vk` wrapper is `prepare_vk`. -/
@@ -72,7 +73,7 @@ theorem prepare_vk_with_eq {ip : Impl.params.Params} {K L : Usize} {sp : Spec.Pa
   cases t with
   | none => rfl
   | some _ =>
-    unfold fast_verify.prepare_vk_with
+    unfold fast_verify.prepare_vk_with fast_verify.dispatch.prepare_vk_on
     exact prepare_vk_avx2_eq hp pk
 
 /-- `verify_prepared_internal_with` is `verify_prepared_internal` for every flag value (both arms call the same

@@ -3,11 +3,12 @@
 //! are called from here as well (`verify_internal_avx2_or_none`, `prepare_vk_x4_avx2_or_none`), so the tests compare
 //! exactly the compiled code the API runs with the scalar functions.
 //!
-//! The `#[target_feature]` functions are reached only through the functions below, each of which checks `has_avx2` and
-//! returns `None` (or `false`) without AVX2.
+//! The production wrappers are reached through `cpu::avx2()` (the token), so they need no `unsafe` here. The other
+//! `#[target_feature]` functions in this file are reached only through the functions below, each of which checks
+//! `has_avx2` and returns `None` (or `false`) without AVX2.
 
 use super::dispatch;
-use crate::cpu::has_avx2;
+use crate::cpu::{self, has_avx2};
 use crate::params::Params;
 use crate::sampling::{expand_a_into_x4, expand_a_tr_into_x4, expand_a_x4, rej_ntt_poly_x4};
 use crate::verify::{self, PreparedVk};
@@ -23,7 +24,7 @@ pub fn verify_internal_dispatched<const K: usize, const L: usize>(
     super::verify_internal_with::<K, L>(crate::cpu::avx2(), p, pk, m_prefix, m, sig)
 }
 
-/// `verify_internal_avx2`, the wrapper `fast_verify::verify_internal_with(Some(_), ..)` runs, or `None` without AVX2.
+/// `dispatch::verify_internal_on`, the entry point `fast_verify::verify_internal_with(Some(_), ..)` runs, or `None` without AVX2.
 pub fn verify_internal_avx2_or_none<const K: usize, const L: usize>(
     p: &Params,
     pk: &[u8],
@@ -31,14 +32,11 @@ pub fn verify_internal_avx2_or_none<const K: usize, const L: usize>(
     m: &[u8],
     sig: &[u8],
 ) -> Option<bool> {
-    if !has_avx2() {
-        return None;
-    }
-    // SAFETY: `has_avx2` just reported AVX2.
-    Some(unsafe { dispatch::verify_internal_avx2::<K, L>(p, pk, m_prefix, m, sig) })
+    let t = cpu::avx2()?;
+    Some(dispatch::verify_internal_on::<K, L>(t, p, pk, m_prefix, m, sig))
 }
 
-/// `verify_prepared_avx2`, the wrapper `verify_prepared_internal_with(Some(_), ..)` runs, or `None` without AVX2.
+/// `dispatch::verify_prepared_on`, the entry point `verify_prepared_internal_with(Some(_), ..)` runs, or `None` without AVX2.
 pub fn verify_prepared_avx2_or_none<const K: usize, const L: usize>(
     p: &Params,
     vk: &PreparedVk<K, L>,
@@ -46,33 +44,22 @@ pub fn verify_prepared_avx2_or_none<const K: usize, const L: usize>(
     m: &[u8],
     sig: &[u8],
 ) -> Option<bool> {
-    if !has_avx2() {
-        return None;
-    }
-    // SAFETY: as above.
-    Some(unsafe { dispatch::verify_prepared_avx2::<K, L>(p, vk, m_prefix, m, sig) })
+    let t = cpu::avx2()?;
+    Some(dispatch::verify_prepared_on::<K, L>(t, p, vk, m_prefix, m, sig))
 }
 
 /// Whether the AVX2 `prepare_vk` returns exactly the scalar one (Â, NTT(t1 · 2^d) and tr); `None` without AVX2. The
 /// `PreparedVk` fields are crate-private, so the comparison lives here.
 pub fn prepare_vk_avx2_matches_scalar<const K: usize, const L: usize>(pk: &[u8]) -> Option<bool> {
-    if !has_avx2() {
-        return None;
-    }
-    // SAFETY: checked above.
-    let fast = unsafe { dispatch::prepare_vk_avx2::<K, L>(pk) };
+    let t = cpu::avx2()?;
+    let fast = dispatch::prepare_vk_on::<K, L>(t, pk);
     let slow = verify::prepare_vk::<K, L>(pk);
     Some(fast.a_hat == slow.a_hat && fast.t1_2d_hat == slow.t1_2d_hat && fast.tr == slow.tr)
 }
 
-/// `dispatch::prepare_vk_avx2`, or `None` without AVX2.
+/// `dispatch::prepare_vk_on`, or `None` without AVX2.
 pub fn prepare_vk_x4_avx2_or_none<const K: usize, const L: usize>(pk: &[u8]) -> Option<PreparedVk<K, L>> {
-    if has_avx2() {
-        // SAFETY: checked above.
-        Some(unsafe { dispatch::prepare_vk_avx2::<K, L>(pk) })
-    } else {
-        None
-    }
+    cpu::avx2().map(|t| dispatch::prepare_vk_on::<K, L>(t, pk))
 }
 
 #[target_feature(enable = "avx2")]

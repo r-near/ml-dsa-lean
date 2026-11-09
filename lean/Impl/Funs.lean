@@ -4382,7 +4382,7 @@ def api.sign_44
     else ok none
 
 /-- [ml_dsa_lean::cpu::avx2]:
-    Source: 'src/cpu.rs', lines 92:0-94:1 -/
+    Source: 'src/cpu.rs', lines 103:0-105:1 -/
 def cpu.avx2 : RustM (Option cpu.Avx2) := do
   ok none
 
@@ -7673,7 +7673,7 @@ def verify.verify_internal_x4
         verify.verify_decoded p vk1 m_prefix m c_tilde z h
 
 /-- [ml_dsa_lean::fast_verify::dispatch::verify_internal_avx2]:
-    Source: 'src/fast_verify/dispatch.rs', lines 26:0-34:1 -/
+    Source: 'src/fast_verify/dispatch.rs', lines 117:0-125:1 -/
 def fast_verify.dispatch.verify_internal_avx2
   (K : Std.Usize) (L : Std.Usize) (p : params.Params) (pk : Slice Std.U8)
   (m_prefix : Slice Std.U8) (m : Slice Std.U8) (sig : Slice Std.U8) :
@@ -7681,8 +7681,18 @@ def fast_verify.dispatch.verify_internal_avx2
   := do
   verify.verify_internal_x4 K L p pk m_prefix m sig
 
+/-- [ml_dsa_lean::fast_verify::dispatch::verify_internal_on]:
+    Source: 'src/fast_verify/dispatch.rs', lines 43:0-53:1 -/
+def fast_verify.dispatch.verify_internal_on
+  (K : Std.Usize) (L : Std.Usize) (_t : cpu.Avx2) (p : params.Params)
+  (pk : Slice Std.U8) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
+  (sig : Slice Std.U8) :
+  RustM Bool
+  := do
+  fast_verify.dispatch.verify_internal_avx2 K L p pk m_prefix m sig
+
 /-- [ml_dsa_lean::fast_verify::verify_internal_with]:
-    Source: 'src/fast_verify.rs', lines 57:0-70:1 -/
+    Source: 'src/fast_verify.rs', lines 61:0-73:1 -/
 def fast_verify.verify_internal_with
   (K : Std.Usize) (L : Std.Usize) (avx2 : Option cpu.Avx2) (p : params.Params)
   (pk : Slice Std.U8) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
@@ -7691,7 +7701,7 @@ def fast_verify.verify_internal_with
   := do
   match avx2 with
   | none => verify.verify_internal K L p pk m_prefix m sig
-  | some _ => fast_verify.dispatch.verify_internal_avx2 K L p pk m_prefix m sig
+  | some t => fast_verify.dispatch.verify_internal_on K L t p pk m_prefix m sig
 
 /-- [ml_dsa_lean::api::verify_44_with]:
     Source: 'src/api.rs', lines 142:0-148:1 -/
@@ -7783,7 +7793,7 @@ def verify.prepare_vk
   ok { a_hat, t1_2d_hat, tr }
 
 /-- [ml_dsa_lean::fast_verify::dispatch::prepare_vk_avx2]:
-    Source: 'src/fast_verify/dispatch.rs', lines 57:0-61:1 -/
+    Source: 'src/fast_verify/dispatch.rs', lines 150:0-154:1 -/
 def fast_verify.dispatch.prepare_vk_avx2
   (K : Std.Usize) (L : Std.Usize) (pk : Slice Std.U8) :
   RustM (verify.PreparedVk K L)
@@ -7791,8 +7801,16 @@ def fast_verify.dispatch.prepare_vk_avx2
   let vk ← verify.PreparedVk.zeroed K L
   verify.prepare_vk_into_x4 pk vk
 
+/-- [ml_dsa_lean::fast_verify::dispatch::prepare_vk_on]:
+    Source: 'src/fast_verify/dispatch.rs', lines 73:0-76:1 -/
+def fast_verify.dispatch.prepare_vk_on
+  (K : Std.Usize) (L : Std.Usize) (_t : cpu.Avx2) (pk : Slice Std.U8) :
+  RustM (verify.PreparedVk K L)
+  := do
+  fast_verify.dispatch.prepare_vk_avx2 K L pk
+
 /-- [ml_dsa_lean::fast_verify::prepare_vk_with]:
-    Source: 'src/fast_verify.rs', lines 94:0-100:1 -/
+    Source: 'src/fast_verify.rs', lines 92:0-97:1 -/
 def fast_verify.prepare_vk_with
   (K : Std.Usize) (L : Std.Usize) (avx2 : Option cpu.Avx2) (pk : Slice Std.U8)
   :
@@ -7800,7 +7818,7 @@ def fast_verify.prepare_vk_with
   := do
   match avx2 with
   | none => verify.prepare_vk K L pk
-  | some _ => fast_verify.dispatch.prepare_vk_avx2 K L pk
+  | some t => fast_verify.dispatch.prepare_vk_on K L t pk
 
 /-- [ml_dsa_lean::api::verifying_key_44_with]:
     Source: 'src/api.rs', lines 196:0-198:1 -/
@@ -7842,7 +7860,7 @@ def verify.verify_prepared_internal
       verify.verify_decoded p vk m_prefix m c_tilde z h
 
 /-- [ml_dsa_lean::fast_verify::dispatch::verify_prepared_avx2]:
-    Source: 'src/fast_verify/dispatch.rs', lines 41:0-49:1 -/
+    Source: 'src/fast_verify/dispatch.rs', lines 133:0-141:1 -/
 def fast_verify.dispatch.verify_prepared_avx2
   {K : Std.Usize} {L : Std.Usize} (p : params.Params)
   (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
@@ -7851,8 +7869,18 @@ def fast_verify.dispatch.verify_prepared_avx2
   := do
   verify.verify_prepared_internal p vk m_prefix m sig
 
+/-- [ml_dsa_lean::fast_verify::dispatch::verify_prepared_on]:
+    Source: 'src/fast_verify/dispatch.rs', lines 58:0-68:1 -/
+def fast_verify.dispatch.verify_prepared_on
+  {K : Std.Usize} {L : Std.Usize} (_t : cpu.Avx2) (p : params.Params)
+  (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
+  (sig : Slice Std.U8) :
+  RustM Bool
+  := do
+  fast_verify.dispatch.verify_prepared_avx2 p vk m_prefix m sig
+
 /-- [ml_dsa_lean::fast_verify::verify_prepared_internal_with]:
-    Source: 'src/fast_verify.rs', lines 76:0-89:1 -/
+    Source: 'src/fast_verify.rs', lines 77:0-89:1 -/
 def fast_verify.verify_prepared_internal_with
   {K : Std.Usize} {L : Std.Usize} (avx2 : Option cpu.Avx2) (p : params.Params)
   (vk : verify.PreparedVk K L) (m_prefix : Slice Std.U8) (m : Slice Std.U8)
@@ -7861,7 +7889,7 @@ def fast_verify.verify_prepared_internal_with
   := do
   match avx2 with
   | none => verify.verify_prepared_internal p vk m_prefix m sig
-  | some _ => fast_verify.dispatch.verify_prepared_avx2 p vk m_prefix m sig
+  | some t => fast_verify.dispatch.verify_prepared_on t p vk m_prefix m sig
 
 /-- [ml_dsa_lean::api::verify_prepared_44_with]:
     Source: 'src/api.rs', lines 208:0-214:1 -/
