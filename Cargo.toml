@@ -26,12 +26,19 @@ zeroize = { version = "1", default-features = false, optional = true }
 [features]
 default = []
 zeroize = ["dep:zeroize"]
-# Optional, x86_64 only (not SGX): runtime AVX2 dispatch. (1) The NTT bodies (src/ntt.rs, "Dispatch"): the proved source
-# body is compiled twice, once for the build's target features and once with AVX2, and a cached CPUID check picks one.
-# (2) Verify and the prepared-key constructor (src/fast_verify.rs): on a CPU with AVX2 they run the 4-way body, whose
-# Keccak kernel uses AVX2 lane operations tested equal to the proved plain-Rust model; otherwise the scalar code. The
-# dispatch shims and the AVX2 lane operations are outside the Lean proof, they are the crate's only `unsafe`, and BINSEC
-# cannot lift the AVX2 copies (docs/object-code-assurance.md section 3.5). Alternative without `unsafe`: build with
+# Optional, x86_64 only (not SGX): runtime AVX2 dispatch. There are no intrinsics: both users compile proved plain Rust
+# a second time inside `#[target_feature(enable = "avx2")]` functions, and a cached CPUID check picks a compilation.
+# (1) The NTT bodies (src/ntt.rs, "Dispatch"): the proved source body is compiled twice, once for the build's target
+# features and once with AVX2; the choice is a plain `if has_avx2()` that the Lean extraction does not see (it extracts the
+# portable body). (2) Verify and the prepared-key constructor (src/fast_verify.rs, src/fast_verify/dispatch.rs): on a CPU
+# with AVX2 they run the 4-way body (a loop over four Keccak states that LLVM vectorizes), otherwise the scalar code. That
+# choice is made by `fast_verify::*_with(Option<cpu::Avx2>, ..)`, which is extracted and proved equal to the scalar function
+# for every token value (lean/Proofs/Dispatch.lean). What is outside the Lean proof is the CPU check that makes the token
+# (src/cpu.rs), the `unsafe` calls of the `#[target_feature]` functions (three in src/fast_verify/dispatch.rs, five in
+# src/ntt.rs, plus the CPUID code in src/cpu.rs and, for tests only, keccak4.rs and hooks.rs), the NTT
+# `has_avx2` branch, and the compiler. BINSEC cannot lift the AVX2 copies (docs/object-code-assurance.md section 3.5). Without the
+# feature, and on other targets, the crate forbids `unsafe` and the verify functions are the extracted text
+# (docs/assurance.md, "Round 10"). Alternative without `unsafe`: build with
 # `-C target-cpu=x86-64-v3` (verify timings are within a few percent of the feature's, in either direction depending on
 # the rustc version, docs/assurance.md section 5; the binary then requires AVX2, and BINSEC cannot lift its vector code
 # either).

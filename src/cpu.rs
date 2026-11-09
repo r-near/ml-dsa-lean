@@ -11,10 +11,13 @@
 //! not a guaranteed one), and the equality theorem does not constrain it. "The CPU and OS support AVX2 whenever
 //! `detect_avx2` reports it" is an assumption of the dispatch.
 //!
-//! Outside the Lean proof, and not extracted. Under extraction (`--cfg miri`, scripts/extract.py) and in every build
-//! that has no dispatch (feature `avx2` off, or not x86_64) `avx2()` is the one-line stub `None`. The real detector
-//! is shared with the NTT dispatch (`ntt.rs`, which uses `has_avx2`). The answer is a function of the CPU and OS
-//! only, never of secret data.
+//! What is extracted and what is not. The `Avx2` type and the stub `avx2() -> None` are ordinary code that the Lean
+//! extraction sees (`Impl/Types.lean`, `Impl/Funs.lean`); the proofs quantify over every `Option<Avx2>`, so they do not
+//! depend on what the real check returns. The real check, `detect_avx2` and the atomic cache are outside the Lean proof:
+//! they exist only in a build with the dispatch (feature `avx2` on x86_64, not under `--cfg miri`). In every other build
+//! (feature off, another target, or the extraction) `avx2()` is the one-line stub `None`. The real detector is shared
+//! with the NTT dispatch (`ntt.rs`, which uses `has_avx2`). The answer is a function of the CPU and OS only, never of
+//! secret data.
 
 #[cfg(all(feature = "avx2", not(miri), target_arch = "x86_64"))]
 use core::sync::atomic::{AtomicU8, Ordering};

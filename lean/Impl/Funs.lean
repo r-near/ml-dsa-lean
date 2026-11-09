@@ -4382,7 +4382,7 @@ def api.sign_44
     else ok none
 
 /-- [ml_dsa_lean::cpu::avx2]:
-    Source: 'src/cpu.rs', lines 103:0-105:1 -/
+    Source: 'src/cpu.rs', lines 106:0-108:1 -/
 def cpu.avx2 : RustM (Option cpu.Avx2) := do
   ok none
 

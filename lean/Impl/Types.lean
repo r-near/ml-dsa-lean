@@ -68,7 +68,7 @@ structure encode.SecretKey (K : Std.Usize) (L : Std.Usize) where
   t0 : Array (Array Std.U32 256#usize) K
 
 /-- [ml_dsa_lean::cpu::Avx2]
-    Source: 'src/cpu.rs', lines 32:0-32:27 -/
+    Source: 'src/cpu.rs', lines 35:0-35:27 -/
 @[reducible]
 def cpu.Avx2 := Unit
 

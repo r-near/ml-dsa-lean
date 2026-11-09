@@ -2,6 +2,9 @@
  "crate": "ml_dsa_lean",
  "namespace": "Impl",
  "variant": "generic (no --monomorphize, no charon args)",
+ "features": [
+  "avx2"
+ ],
  "roots": [
   "ml_dsa_lean::api::sign_internal_44",
   "ml_dsa_lean::api::sign_internal_65",
@@ -85,7 +88,7 @@
   "ml_dsa_lean::api::verify_prepared_87_with",
   "ml_dsa_lean::api::verify_internal_prepared_87_with"
  ],
- "extract_inputs_sha256": "f4156f4fec2aa828c65e9b354824c98e1b13843bcd2427720064463e4f67ec94",
+ "extract_inputs_sha256": "8ebbd174b98d36dff9220fa5e403172bea6268faa2b45fcdcd41a3b1c22b3009",
  "tools": {
   "aeneas": "build-183e4f0",
   "charon": "nightly-2026.09.02",
@@ -126,8 +129,8 @@
  "aeneas_warnings": 0,
  "aeneas_name_clashes": 0,
  "impl_sha256": {
-  "Types.lean": "dce7392e762d972272d7b5e75dd78ba56dd554475e7800c9e953e3efaa11b776",
-  "Funs.lean": "8e8c4d429c772957ff874843f6acf3f0e0857dac97a1a40e52c871dd1d0d8b41",
+  "Types.lean": "64553c4b23aa3c48e6d0d3a4354be6e271c02dec426dc3ef8b0eb7dcc6a8b8f7",
+  "Funs.lean": "420528914bd3560a5b5ec3860485a230e42b53c274b28f2a610c2c7dcb781721",
   "FunsExternal_Template.lean": "e719f0705fad5b41344287034a88de59cc82954430390ecdee52b786501d7f6d",
   "FunsExternal.lean": "e719f0705fad5b41344287034a88de59cc82954430390ecdee52b786501d7f6d"
  },
