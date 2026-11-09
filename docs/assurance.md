@@ -136,7 +136,7 @@ to it. Earlier runs of the Lean gates on older trees of the same branch (5f638b7
 | README example test (`cargo test --test readme_example`) | 2 passed | 428f6e2 |
 | `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (extraction inputs sha256 81b73246535d20d36ff25b04ebe980a3c4989e8101076b99e82e8a17783ef3f4) | 428f6e2 |
 | checkct driver | builds (release, `-p driver`) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`: 6 of 6 cells. The driver includes the real `src/cpu.rs`, `src/fast_verify.rs` and `src/api.rs` | 428f6e2 |
-| BINSEC smoke (`checkct/results/smoke-fast-verify/`) | 40 cells (8 probes: `keygen_seed_hash`, `sign_rho_pp_hash`, `control_early_exit_44`, `control_prepared_branch_44`, `signing_key_44`, `make_hint_44`, `hint_step_1_44`, `response_1x1_44`; default profile on riscv32imac, thumbv7em and x86_64, `dispatch` and `nearcore-exact-dispatch` on x86_64), run with the driver of 428f6e2: all 40 verdicts equal the sweep's (the `driver::cpu::AVX2` cache static was found and pre-set in both dispatch profiles). Against the sweep, instruction and check counts are equal in 33 cells and differ slightly in 7 (`control_prepared_branch_44` on riscv32imac and on x86_64, and four probes in the `dispatch` profile; section 4). One cell needed a rerun: `control_prepared_branch_44` on x86_64 ended `unknown` at the 1800 s timeout (1 pending path, 65173 of 65173 checks passed) while the box was busy with Lean jobs, and gave the sweep's `insecure` when rerun alone at 5400 s (leak found at 3924 s; 989265 instructions, 65173 of 65174 checks, against the sweep's 989292 and 65175 of 65176). `verdicts.tsv` and `build-matrix.txt` (10 profiles plus the zeroize and experiments builds, 30 of 30 cells `secure`; the aarch64 builds, the split-run and `exact-novec-zeroize` were not rerun) are in `checkct/results/smoke-fast-verify/` | 428f6e2 |
+| BINSEC smoke (`checkct/results/smoke-fast-verify/`) | 40 cells (8 probes: `keygen_seed_hash`, `sign_rho_pp_hash`, `control_early_exit_44`, `control_prepared_branch_44`, `signing_key_44`, `make_hint_44`, `hint_step_1_44`, `response_1x1_44`; default profile on riscv32imac, thumbv7em and x86_64, `dispatch` and `nearcore-exact-dispatch` on x86_64), run with the driver of 428f6e2: all 40 verdicts equal the sweep's (the `driver::cpu::AVX2` cache static was found and pre-set in both dispatch profiles). Against the sweep, instruction and check counts are equal in 33 cells and differ slightly in 7 (`control_prepared_branch_44` on riscv32imac and on x86_64, and four probes in the `dispatch` profile; section 4). One cell needed a rerun: `control_prepared_branch_44` on x86_64 ended `unknown` at the 1800 s timeout (1 pending path, 65173 of 65173 checks passed) while the box was busy with Lean jobs, and gave the sweep's `insecure` when rerun alone at 5400 s (leak found at 3924 s; 989265 instructions, 65173 of 65174 checks, against the sweep's 989292 and 65175 of 65176). `verdicts.tsv` and `build-matrix.txt` (10 profiles plus the zeroize and experiments builds, 30 of 30 cells `secure`; the aarch64 builds, the split-run and `exact-novec-zeroize` were not rerun) were in `checkct/results/smoke-fast-verify/` (now replaced by the round 10 rerun; the round 8 files are in git history, c0c62d6 and 40ee0de) | 428f6e2 |
 | `bench/stackscan.sh check` (257 paddings; nine instantiations; rustc 1.99.1 only, 1.95.0 not rerun) | `STACK SCAN OK`; largest padding over the median 1.03 (ML-DSA-87 `verifying_key`), none above 1.1. The scan cannot see the prepared-key anchor of 1.9; the A/B does | 428f6e2 |
 | Interleaved A/B against `fast-verify` and `fv-vec` (`bench/results/2026-11-08-p8.md`) | 44/65/87 one-shot, `verifying_key` and prepared verify at paddings 0, 672 and 2752: all 27 cells within 0.9% of `fast-verify` and within about 1.3% of `fv-vec` | 428f6e2 |
 
@@ -164,16 +164,81 @@ result file change documentation, benchmark files and the A/B table script only 
 | `cargo +1.86.0 build --features avx2` | builds (the declared MSRV) | 7356bef |
 | README example test (`cargo test --test readme_example`) | 2 passed | 7356bef |
 | `scripts/extract_hash.py check` | `extract hash OK`: the 4 files of `lean/Impl` match `extract-report.json` (extraction inputs sha256 3c19e744ca3e8138cfe48b7dc5839b167b4d917bb52d49a9444b3209959c60c1; the recorded hashes are those of the cleaned `FunsExternal*.lean`) | 7356bef, 4a3820a (ci) |
-| checkct driver | builds (release, `-p driver`, nightly-2026-10-06) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`: 6 of 6 cells. BINSEC smoke: not rerun, see section 4 (every function of the driver binaries is identical to fv-p8's after address masking, in all 12 binaries) | f93e94b |
+| checkct driver | builds (release, `-p driver`, nightly-2026-10-06) for riscv32imac, thumbv7em and x86_64, each with and without `avx2`: 6 of 6 cells. BINSEC smoke: not rerun in round 9; a comparison of masked disassembly stood in for it, which is not a BINSEC result; the smoke was rerun in round 10, section 4 | f93e94b |
 | `bench/stackscan.sh check` (257 paddings; nine instantiations) | rustc 1.99.1 and 1.95.0 (nearcore profile and flags, `OPS=verify,vk,prepared`, sets 44, 65, 87): `STACK SCAN OK` on both; no padding above 1.1 x the median in any of the nine cells (0/257 each); the largest padding over the median is 1.06 (ML-DSA-65 `prepared`, 1.95.0) | 4a3820a |
 | Interleaved A/B against `fast-verify` (3b79427) and fv-p8 (40ee0de) (`bench/results/2026-11-09-p9.md`) | 4 interleaved passes at pads 0, 672 and 2752, 27 cells (3 sets, one-shot, `verifying_key`, prepared-key verify): the final tree is within -1.0% to +1.2% of fv-p8 and `fast-verify` is within 0.83%; the prepared-key verify is within -0.6% to +1.2% of fv-p8 (the largest cell, ML-DSA-87 at pad 672, has a run spread of 2.6%); the spread of a cell over the passes is at most 2.6% of its median. The first formulation of the scratch (6e330b0) measured within 1.3% in the same way | 4a3820a |
+
+Round 10 (branch `fv-p10`, from fv-p9 = 8035f65; 1.9) closes the gap that the independent audit of fv-p9 found in the proof's reach: **the
+default build's dispatch was not extracted.** In fv-p9 the three `_with` functions of `src/fast_verify.rs` had a second definition under
+`#[cfg(not(all(feature = "avx2", any(miri, target_arch = "x86_64"))))]`, so a build without the `avx2` feature ran a body that the Lean
+extraction (which always has the feature on) had not seen. The design now:
+
+- `cpu::Avx2` (`src/cpu.rs` :35 and :39) is an inhabited struct where the dispatch exists (feature `avx2` on x86_64, and under `--cfg miri`,
+  which is what the extraction sees) and the uninhabited `enum Avx2 {}` everywhere else. The difference between the two builds is a type,
+  not a computation.
+- `mod dispatch` (`src/fast_verify/dispatch.rs`) is compiled in every build. Its three entry points `verify_internal_on`,
+  `verify_prepared_on` and `prepare_vk_on` are safe functions that take the token by value. With the dispatch the body is one `unsafe` call of
+  the matching `#[target_feature(enable = "avx2")]` function (:52, :67, :75). Without it the body is `match t {}`: there is no `unsafe` and
+  no AVX2 function in the build, and the default build keeps `#![forbid(unsafe_code)]`.
+- Each `_with` function in `src/fast_verify.rs` has **one** source definition, the same text in every configuration:
+  `match avx2 { Some(t) => dispatch::NAME_on(t, ..), None => <scalar function>(..) }`. `src/api.rs` is unchanged. The cfg inventory below is the
+  census that no other cfg-split body exists on the verify path.
+
+**No theorem statement changed or weakened.** `Proofs/Dispatch.lean` still proves, for every `Option<Avx2>` value and as an equality of `RustM`
+values (divergence included), that each `_with` function is the scalar function; its some-arm proofs now also unfold
+`fast_verify.dispatch.verify_internal_on` and `prepare_vk_on`. The names in `lean/headline-theorems.txt` (412) and `lean/keccak4-theorems.txt`
+(6) are unchanged; `lean/fast-verify-theorems.txt` grows from 102 to 105 names (`Proofs.NoDispatch`, below). The checked count of the first
+axiom gate is 928 (was 925: the three `_on` functions). `lean/Impl` is re-extracted: `Types.lean` changes only the source line of `cpu.Avx2`,
+`Funs.lean` gains the three `_on` functions, and the `_with` bodies call them.
+
+New gates, all in `scripts/ci.sh --lean` and `scripts/lean-check.sh`:
+
+| Gate | What it checks, and its scope |
+|---|---|
+| `scripts/check-feature-independence.sh` | A second extraction with `--no-default-features` (no `avx2`, still `--cfg miri`) is diffed against `lean/Impl`. It fails for any difference outside the whitelist of `scripts/feature_independence.py`: 7 entries, each with a comment: the `cpu.Avx2` type (struct against uninhabited enum), the three `fast_verify.dispatch.*_on` bodies (one call against `match t {}`) and the three `*_avx2` functions (they exist only where the dispatch does). Seven declarations must be byte-identical in both: the three `_with` functions, `verify::verify_internal`, `verify::prepare_vk`, `verify::verify_prepared_internal` and `cpu::avx2`. Scope: the extracted default configuration at `--cfg miri`. The compiled default build (without `--cfg miri`) differs from the extraction by the cfg sites of `scripts/cfg-inventory.txt`, each justified there |
+| `lean/Proofs/NoDispatch.lean` (generated by the same script from the second extraction, built by `lean-check.sh`) | Elaborates the declarations that differ in the default configuration, with its three `_with` functions, and proves them equal to the scalar functions for every `Option cpu.Avx2`: `Proofs.NoDispatch.verify_internal_with_eq`, `verify_prepared_internal_with_eq`, `prepare_vk_with_eq` (3 names, now in `lean/fast-verify-theorems.txt`). `none` is the scalar call and `some` is impossible because `cpu.Avx2` has no value. The gate fails if the file is not the one it would generate from the second extraction, so the proof cannot drift from it |
+| `scripts/cfg_inventory.py` (`cfg-inventory` step) | Lists every `#[cfg(..)]`, `#[cfg_attr(..)]`, `#![cfg..]` and `cfg!(..)` site of `src/` (comments and strings removed; 223 sites in 15 files, 92 of them attribute-only `cfg_attr` classes such as `inline`, `allow`, `target_feature`) against the justified whitelist `scripts/cfg-inventory.txt`. A site not listed, a count that differs, a stale entry or an entry without a justification fails; line numbers are not part of a site, so a new or changed cfg-split body needs a reviewer to write its reason. Scope: the Rust text of `src/`, not `checkct/driver`, `tests/` or `bench/` |
+| `scripts/reachable-defs.sh` (in `lean-check.sh`) | A Lean metaprogram (`scripts/lean/ReachableDefs.lean`) walks the constants that the elaborator resolved, transitively, from the 15 verify entry points of `api`, within `Impl`; an unresolved root or reference is an error. It replaces the lexical script `scripts/reachable_defs.py`, which missed six definitions (`field.Q`, `field.QNEG`, `ntt.F_SHOUP`, `sampling.M23`, `sampling.RATE256`, `verify_arith.R2`). Result: 291 declarations: 285 `def`/`abbrev` (the 278 that the lexical scan still finds on this tree, those six, and the `cpu.Avx2` alias) and 6 structure types; structure projection functions are not counted. fv-p9's lexical 275 was 281 with the six. `ntt.*` among them: `F_SHOUP`, `ZETAS`, `ZETAS_NEG_SHOUP`, `ZETAS_SHOUP` (tables only; no `ntt` function) |
+| `scripts/check-no-decls.sh` (extended) | The text scan now includes the root modules `lean/Impl.lean`, `lean/Spec.lean`, `lean/Proofs.lean`, and rejects the syntax that makes or adds an opaque or unsafe declaration (`partial`, `unsafe`, `initialize`, `builtin_initialize`, `run_cmd`, `run_elab`, `run_meta`, `addDecl`, `addAndCompile`) besides the old constructs. The Lean scan includes the roots and **refuses a module of the three directories that has no `.olean` unless it is an allowed witness module** (`Proofs.TopWitness*`, 19 modules, built only by `scripts/witness-check.sh`, which scans them with `--all-built`). Those 19 modules get only the text scan in `lean-check.sh` and the full environment scan in `witness-check.sh`: a narrower scope than the other 80 modules of `lean-check.sh`. `--self-test` builds a fixture tree with an axiom in a compiled root module and a `partial def` in an unbuilt module and requires both to be reported, besides the old injected-declaration test |
+| `scripts/extract.py`, `scripts/extract_hash.py` | `clean_external` finds the unreferenced external axioms Aeneas declares by discovery in every generated file (plain, `_root_.`-qualified, `Impl.`-qualified and «»-escaped spellings) instead of in `Funs.lean` only, and its self-test runs discovery and cleaning together. A wrongly removed axiom that is still referenced fails Lean's elaboration of `Funs.lean` (unknown identifier), so this check is defense in depth, not the only barrier |
+| `scripts/check-avx2-inlining.sh` | Inspects the assembly that the build it just ran wrote to its own path (mbx-managed target placement; no `--target-dir`). It is a performance check only: it shows that the wrappers are vectorized, inlined and realigned, and says nothing about correctness or constant time (verify handles public data only) |
+| `scripts/check-readme-counts.py` | The theorem counts that the README states (412 headline, 111 more = 105 + 6) are checked against `lean/*-theorems.txt`. The README said 88 more at fv-p9; the lists had 102 + 6 = 108 |
+
+**The residual of this tree** (outside the Lean proof, on the verify paths, with the feature on x86_64; section 2 item 5 and section 3 have
+the full text): the CPU detection and its cache (`src/cpu.rs` :45, :49, :66, :80, :98, and the stub :106 that the extraction sees); the 15 call
+lines `NAME_with(cpu::avx2(), ..)` in `src/api.rs`; the 3 `unsafe` calls (`src/fast_verify/dispatch.rs` :52, :67, :75); the attributes
+(`dispatch.rs` :116, :132, :149; `src/verify.rs` :53 and :75); and the compiler. Not on any verify path: the NTT dispatch of `src/ntt.rs`
+(`unsafe` at :284, :292, :300, :308, :316, :334; tested, section 3) and the test-only `internals` hooks (`src/fast_verify/hooks.rs`,
+`src/keccak4.rs` :189). The default build (no `avx2`) has no `unsafe` on the verify path, and the three `_with` functions it runs are the
+extracted ones (feature-independence gate). Unchanged from fv-p9 and still true: the compiled build differs from the extraction by
+`field::opaque_u32`, `barrier_u32` and `barrier_u64` (`black_box`, the identity under `--cfg miri`; on no verify path) and by the NTT
+dispatch.
+
+**The BINSEC rerun that fv-p9 replaced by a comparison of masked disassembly was done** (section 4; tree 5258017, whose `src/` equals the final tree's): the 40-cell smoke (8 probes in the default profile on riscv32imac, thumbv7em and x86_64, and in `dispatch` and `nearcore-exact-dispatch` on x86_64) plus the 8 probes in `nearcore-exact`: **all 48 verdicts equal the sweep's**; instruction and check counts equal in 44 of the 48 cells and different in the 4 `dispatch` cells that already differed in round 8 (same numbers); no `error`, no out-of-memory; build matrix 30 of 30 `secure`. One cell, `control_prepared_branch_44` on riscv32imac, ended `unknown` at 5400 s in the first run (three targets in parallel) and gave the sweep's `insecure` and counts when rerun alone at 10800 s. The masked disassembly comparison is not a BINSEC result and the section 4 text no longer treats it as one.
+
+Every gate below ran on the Linux build box on 2026-11-09 on the tree of the commit named in the last column; the commits after ff54614 change
+documentation, benchmark files and `checkct/compare-code.sh` only (`git diff ff54614 HEAD -- src lean scripts Cargo.toml` is empty).
+
+| Gate | Result | Run on |
+|---|---|---|
+| `scripts/lean-check.sh` | `LEAN CHECK OK`: `Build completed successfully (3338 jobs)`; axiom gate over the extracted definitions and the names in `lean/headline-theorems.txt`, 928 checked, then over the 6 names of `lean/keccak4-theorems.txt` and the 105 of `lean/fast-verify-theorems.txt`; each `AXIOM GATE OK`, axioms used: `propext`, `Classical.choice`, `Quot.sound`. `cfg inventory OK: 223 sites in 15 files, 92 attribute-only, all in the whitelist`; `README counts OK: 412 headline theorems, 111 more`; `no-decls text scan: 100 files, 0 forbidden constructs`; `no-decls env scan: 80 modules, 13935 constants, 0 violations`; `NO-DECLS GATE OK`; both self-tests OK; `reachable: 291 extracted declarations ... REACHABLE OK`; `extract hash OK` (extraction inputs sha256 8ebbd174b98d36dff9220fa5e403172bea6268faa2b45fcdcd41a3b1c22b3009); `feature independence: the two extractions agree except for 7 whitelisted declarations`; `lean/Proofs/NoDispatch.lean matches the second extraction`; `FEATURE-INDEPENDENCE OK` | ff54614 |
+| `scripts/ci.sh --lean` | `CI SUMMARY: 25 passed, 0 failed, 0 skipped`: `test-default`, `test-zeroize`, `test-zeroize-release`, `test-avx2`, `avx2-inlining`, `thumbv7em`, `msrv-1.86`, `nearcore-build`, `nearcore-test`, `nearcore-test-avx2`, `nearcore-test-zeroize`, `wasm32`, `wasm32-zeroize`, the three fuzz targets at 60 s, `diff-awslc`, `deny`, `extract-hash`, `axiom-gate-selftest`, `no-decls-text`, `cfg-inventory`, `readme-counts`, `feature-independence`, `lean` (`LEAN CHECK OK`) | ff54614 |
+| `scripts/witness-check.sh` | `WITNESS CHECK OK: Proofs.TopWitnessCorrect`: `Build completed successfully (3324 jobs)`, 146 names checked, axioms `propext`, `Classical.choice`, `Quot.sound`, `AXIOM GATE OK`; then the build of the default targets so that the scan covers every module, including the 19 witness modules: `Build completed successfully (3338 jobs)`, `no-decls text scan: 100 files, 0 forbidden constructs`, `no-decls env scan: 99 modules, 14413 constants, 0 violations`, `NO-DECLS GATE OK` | ff54614 |
+| `scripts/check-avx2-inlining.sh` | rustc 1.99.1: `OK: 4-way permutation vectorized in every wrapper; verify-only arithmetic fully inlined; verify wrappers realign their frames; 57462 lines of ymm code` (fv-p9: 57462); all nine wrappers show `1` in the realign table | ff54614 |
+| `ML_DSA_REQUIRE_AVX2=1 cargo test --release --features avx2,internals` | 27 result lines, 122 tests passed, 0 failed, 1 ignored (the timing test of `tests/keccak4.rs`); without the feature, `cargo test` (`test-default` of `ci.sh`) passed; README example test (`cargo test --test readme_example`): 2 passed, with and without `avx2` | ff54614 |
+| MSRV 1.86 and `thumbv7em-none-eabihf` | `msrv-1.86` (`cargo +1.86 build --release`, and with `zeroize,avx2`) and `thumbv7em` passed in `ci.sh` | ff54614 |
+| checkct driver | builds (release, `-p driver`, nightly-2026-10-06) for riscv32imac, thumbv7em and x86_64, each without and with `avx2`: 6 of 6 binaries (`checkct/compare-code.sh build`) | c5f3292 |
+| Sign and KeyGen code of the default build | `checkct/compare-code.sh compare` of the driver binaries of fv-p9 and of this tree (default release profile): 234, 239, 234 functions without `avx2` and 234, 239, 235 with it (riscv32imac, thumbv7em, x86_64), **every function identical** after masking addresses, address-like immediates and symbol hashes, none added or removed. This is a comparison of instruction streams, not a BINSEC verdict, and the nearcore-flag profiles are not covered. The source says the same: `git diff fv-p9 -- src` touches `cpu.rs`, `fast_verify.rs`, `fast_verify/dispatch.rs`, `fast_verify/hooks.rs` and `lib.rs` only (no `sign.rs`, `keygen.rs`, `field.rs` or `api.rs` line) | c5f3292 |
+| `bench/stackscan.sh check` (257 paddings; nine instantiations) | rustc 1.99.1 and 1.95.0 (nearcore profile and flags, `OPS=verify,vk,prepared`, sets 44, 65, 87): `STACK SCAN OK` on both; no padding above 1.1 x the median in any cell (0/257 each); the largest padding over the median is 1.06 (ML-DSA-87 `vk`, 1.99.1) | ff54614 |
+| Interleaved A/B against fv-p9 (8035f65) (`bench/results/2026-11-09-p10.md`) | 4 interleaved passes at pads 0, 672 and 2752, 27 cells (3 sets, one-shot, `verifying_key`, prepared-key verify): all within -0.3% to +1.2% of fv-p9. The two cells above +0.5% (ML-DSA-87 `verifying_key` at pads 0 and 2752, +1.2%) were rerun alone with 8 interleaved passes each and have equal medians (47.87 against 47.87 and 47.89 against 47.87 microseconds). The box carried the BINSEC containers (load 4 to 15) | ff54614 |
+| `scripts/extract_hash.py check` | `extract hash OK` (the digest above): the 4 files of `lean/Impl` match `extract-report.json` | ff54614 |
 
 A module counts as proved only after `lean-check.sh` passes. Exact steps to rerun everything are in
 [reproduce.md](reproduce.md).
 
 What ties the shipped Rust to the proved Lean (the proofs are about `lean/Impl`, the extraction of `src/`):
 
-- Every push and pull request (`ci.yml`, job `repo-checks`, steps `extract-hash`, `axiom-gate-selftest` and `no-decls-text` of `scripts/ci.sh`):
+- Every push and pull request (`ci.yml`, job `repo-checks`, steps `extract-hash`, `axiom-gate-selftest`, `no-decls-text`, `cfg-inventory` and `readme-counts` of `scripts/ci.sh`):
   `extract-hash` fails if the digest of the extraction inputs (every file under `src/`, `Cargo.toml` without its
   dev-dependencies and with its package `version` replaced by `0.0.0` (so a release version bump does not change the digest), the roots, the Charon and Aeneas pins; file names are part of the digest), the set and contents of the files in
   `lean/Impl` (recursively), or the roots in `scripts/extract-roots.txt` no longer match what `lean/Impl/extract-report.json`
@@ -537,20 +602,23 @@ of section 3 (the CPU detection, an assumption whose failure in one direction is
 
 5. **With the `avx2` feature only** (x86_64), on the verify paths. The residual is exactly this (references are to the tree of
    section 0; section 3 has the audit that nothing else is outside the proof):
-   (a) the CPU detection and its cache, `src/cpu.rs` (`detect_avx2` :31, the `AVX2` atomic :52, `has_avx2` :66, `avx2` :84;
-   the extraction replaces `avx2` by the stub `None`, :92). `detect_avx2` reports AVX2 when CPUID's maximum basic leaf is at least 7,
+   (a) the CPU detection and its cache, `src/cpu.rs` (`detect_avx2` :45 with its one `unsafe` block :49, the `AVX2` atomic :66,
+   `has_avx2` :80, `avx2` :98; the extraction replaces `avx2` by the stub `None`, :106). `detect_avx2` reports AVX2 when CPUID's maximum basic leaf is at least 7,
    leaf 1 ECX bits 26 to 28 (XSAVE, OSXSAVE, AVX) are all set, XCR0 bits 1 and 2 (the OS saves XMM and YMM state) are set, and leaf 7
    subleaf 0 EBX bit 5 (AVX2) is set; `has_avx2` skips the check when the build enables AVX2 statically. **The assumption: the CPU
    and OS can execute AVX2 whenever this reports it.** A false negative only selects the scalar function, which is proved to be the
    same function. A false positive executes a `#[target_feature(enable = "avx2")]` function on a CPU or OS that cannot run it, which is
    undefined behavior: SIGILL is one possible outcome, not a guaranteed one, and the equality theorems do not constrain it;
    (b) the 15 token-passing call lines `NAME_with(cpu::avx2(), ..)` in `src/api.rs` (:137, :162, :191, :203, :219 for 44; :352, :377,
-   :406, :418, :434 for 65; :567, :592, :621, :633, :649 for 87), which the extraction sees with the stub; the dispatch below them is
+   :406, :418, :434 for 65; :567, :592, :621, :633, :649 for 87), which the extraction sees with the stub (`src/api.rs` is
+   unchanged since fv-p9); the dispatch below them is
    proved (`Proofs/Dispatch.lean`: for every token value the `_with` functions are the scalar functions);
-   (c) the 3 `unsafe` calls of the wrappers in `src/fast_verify.rs` (:67, :86, :97, one in each `_with` function). What justifies them
-   is the type: only `cpu::avx2()` makes an `Avx2` token, and it does so after `has_avx2()`;
+   (c) the 3 `unsafe` calls of the wrappers in `src/fast_verify/dispatch.rs` (:52, :67, :75, one in each of `verify_internal_on`,
+   `verify_prepared_on` and `prepare_vk_on`, each a safe function that takes the `Avx2` token by value). What justifies them is the
+   type: only `cpu::avx2()` makes an `Avx2` token, and it does so after `has_avx2()`. The `_with` functions of `src/fast_verify.rs`
+   contain no `unsafe` and are one text in every build (round 10, below);
    (d) the attributes that steer code generation and no value: `#[target_feature(enable = "avx2")]` on the three wrappers
-   (`src/fast_verify/dispatch.rs`), `#[repr(align(32))]` on `PreparedVk` and `VerifyScratch` (`src/verify.rs`) and the
+   (`src/fast_verify/dispatch.rs` :116, :132, :149), `#[repr(align(32))]` on `PreparedVk` (:53) and `VerifyScratch` (:75) in `src/verify.rs` and the
    `#[inline(always)]` that `cfg_attr` adds to the functions the wrappers inline, and rustc and LLVM compiling the three wrappers
    (`verify_internal_avx2`, `prepare_vk_avx2`, `verify_prepared_avx2`: each a call of one proved function with the proved callees inlined
    into it) to code that computes what the source says. That is the same trust as item 3, on code with these attributes. The
@@ -578,14 +646,16 @@ See also section 7 (known limitations).
   between them is proved for every CPU-check answer. **Exactly what is not proved on those paths** (the audit that `Proofs/Dispatch.lean`
   is meant to leave nothing else): with the feature on x86_64, every Rust line reachable from `api::verify_*`, `api::verify_internal_*`,
   `api::verifying_key_*`, `api::verify_prepared_*` and `api::verify_internal_prepared_*` is in an extracted function (the extraction report
-  of section 0 counts the reachable definitions; no `ntt::*` function, including the `ntt::dispatch` family, is among them: only the tables `ZETAS`,
+  of section 0, Round 10, counts the 291 reachable declarations by walking the Lean environment (`scripts/reachable-defs.sh`); no `ntt::*` function, including the `ntt::dispatch` family, is among them: only the tables `ZETAS`,
   `ZETAS_SHOUP`, `ZETAS_NEG_SHOUP` and `F_SHOUP` are read), except the residual of section 2, item 5: (i) `src/cpu.rs` as compiled
-  (`detect_avx2`, the `AVX2` cache, `has_avx2`, `avx2`; the extraction sees the one-line stub), (ii) the 15 call lines
-  `NAME_with(cpu::avx2(), ..)` in `src/api.rs`, (iii) the 3 `unsafe` calls in `src/fast_verify.rs`, and (iv) attributes that steer code
-  generation and no value: the three `#[target_feature(enable = "avx2")]` lines of `src/fast_verify/dispatch.rs`, `#[repr(align(32))]` on
-  `PreparedVk` and `VerifyScratch`, and the `#[inline(always)]` that `cfg_attr` adds to the functions the wrappers inline, under the
+  (`detect_avx2` :45, the `AVX2` cache :66, `has_avx2` :80, `avx2` :98; the extraction sees the one-line stub, :106), (ii) the 15 call lines
+  `NAME_with(cpu::avx2(), ..)` in `src/api.rs`, (iii) the 3 `unsafe` calls in `src/fast_verify/dispatch.rs` (:52, :67, :75), and (iv) attributes that steer code
+  generation and no value: the three `#[target_feature(enable = "avx2")]` lines of `src/fast_verify/dispatch.rs` (:116, :132, :149), `#[repr(align(32))]` on
+  `PreparedVk` (`src/verify.rs` :53) and `VerifyScratch` (:75), and the `#[inline(always)]` that `cfg_attr` adds to the functions the wrappers inline, under the
   ordinary compiler trust. "CPU and OS support AVX2 whenever `detect_avx2` reports it" is an assumption (section 2, item 5(a)); a false
-  report is undefined behavior. The code in `src/fast_verify/hooks.rs`, `keccak4::avx2_checked` and `cpu::has_avx2_cached` exists
+  report is undefined behavior. **Without the feature** (or off x86_64) none of this exists: `Avx2` is uninhabited, the `_with` functions are the same
+  text as in the extraction and the three `_on` entry points are `match t {}` (the feature-independence gate and `Proofs/NoDispatch.lean`,
+  section 0, Round 10), and the build has no `unsafe`. The code in `src/fast_verify/hooks.rs`, `keccak4::avx2_checked` and `cpu::has_avx2_cached` exists
   only with the `internals` feature, for tests and benchmarks, and no `api` function reaches it. The `black_box` of
   `field::opaque_u32`, `barrier_u32` and `barrier_u64` (identity under extraction) is on no verify path, and no `black_box` is on a
   verify path at all since `align_frame()` was removed. The AVX2 copy of the NTT is
@@ -628,26 +698,37 @@ x86_64 in every `run-select.sh` profile except the aarch64 ones (`default`, `nea
 `ZEROIZE=1` and `EXPERIMENTS=1` builds; one cheap probe each, 30 of 30 cells `secure`), and the dispatch profiles find exactly one
 cache symbol to pre-set. `aarch64.sh` (with and without `NONEON=1`), `split-run.sh` and the `exact-novec-zeroize` build were not
 rerun this round (they compile the same driver sources; the `cpu.rs` stub they use is the one riscv32imac and thumbv7em build).
-A BINSEC smoke run of eight probes (the Sign pieces `signing_key_44`, `hint_step_1_44`, `response_1x1_44` and `make_hint_44`, the hashes
-`keygen_seed_hash` and `sign_rho_pp_hash`, and the controls `control_early_exit_44` and `control_prepared_branch_44`) gave the same
-verdict as the sweep in all 40 cells: 24 in the default profile (riscv32imac, thumbv7em, x86_64), 8 in `dispatch` and 8 in
-`nearcore-exact-dispatch` (x86_64; the cache pre-set found its symbol and applied). The `control_prepared_branch_44` cell on x86_64
-ended `unknown` at the 1800 s timeout while the box was busy (65173 of 65173 checks passed, 1 pending path) and gave the sweep's
-`insecure` when rerun alone at 5400 s. Against the sweep, counts are identical in 33 cells and differ slightly in 7: the four Sign
-probes in `dispatch` (for example `signing_key_44`: 998423 instructions against 1000499, code layout after the cache moved; the
-same counts as the previous smoke run on the `fast-verify` tree), and `control_prepared_branch_44` on riscv32imac (2230863 against 2230914) and on x86_64 (989265 against 989292); the
-previous smoke run had the sweep's counts in these two cells, so the change is code layout after the probe's path moved through the `_with` functions (the verdict is unchanged). The controls and the
-`nearcore-exact-dispatch` `unknown` cells give the same verdicts as in the sweep. The full sweep was not rerun: no
-Sign or KeyGen code changed. Rows: `checkct/results/smoke-fast-verify/`.
+**Round 10 BINSEC rerun** (fv-p10 tree 5258017, whose `src/` is the final tree's; the commits after it change scripts, documentation and `lean/Proofs` only). The same smoke as round 8 was run
+again: eight probes (the Sign pieces `signing_key_44`, `hint_step_1_44`, `response_1x1_44` and `make_hint_44`, the hashes `keygen_seed_hash` and
+`sign_rho_pp_hash`, and the controls `control_early_exit_44` and `control_prepared_branch_44`) in 40 cells: 24 in the default profile (riscv32imac,
+thumbv7em, x86_64), 8 in `dispatch` and 8 in `nearcore-exact-dispatch` (x86_64; the `driver::cpu::AVX2` cache pre-set found its symbol and applied
+in both); plus, beyond the 40, the 8 probes in `nearcore-exact` (x86_64, nearcore's flags without the dispatch). **All 40 verdicts, and the 8 extra
+ones, equal the sweep's** (`secure` for `keygen_seed_hash`, `sign_rho_pp_hash`, `make_hint_44` everywhere and for `signing_key_44`, `hint_step_1_44`,
+`response_1x1_44` in the default and `dispatch` profiles; `insecure` for `control_early_exit_44` everywhere and for `control_prepared_branch_44` in
+the default and `dispatch` profiles except `secure` on thumbv7em, the sweep's expected-invalid control there; `unknown` for `signing_key_44`,
+`hint_step_1_44`, `response_1x1_44` and `control_prepared_branch_44` in the two `nearcore-exact*` profiles, cut at the same VEX instruction as in the
+sweep). Instruction and check counts are identical to the sweep's in 36 of the 40 cells and in all 8 `nearcore-exact` cells; they differ in 4 cells,
+all in `dispatch` on x86_64 (`signing_key_44` 998423 instructions against the sweep's 1000499, `make_hint_44` 173 against 154, `hint_step_1_44` 72276
+against 75660, `response_1x1_44` 101989 against 102221), the same counts as the round 8 smoke run, so those probes' compiled code did not change
+in round 10; the difference from the sweep is the layout after the cache static moved. No cell ended `error` or out of memory (the kernel log of the
+box had no `Killed process` entry). The build matrix (one cheap probe, `sign_rho_pp_hash`, in the 12 profiles including `zeroize` and
+`experiments`) gave 30 of 30 cells `secure`, with the pre-set cache addresses unchanged; the aarch64 builds, the split-run and
+`exact-novec-zeroize` were not rerun. One cell is not clean: `control_prepared_branch_44` on riscv32imac, default profile, ended `unknown` in the
+first run (three targets in parallel, 5400 s timeout, 1 pending path, 2230863 instructions, 108951 of 108951 checks, no leak found in the time) and gave the sweep's
+`insecure` when rerun alone (10800 s timeout, one job): the leak was found at 0.885 s (the sweep: 0.910 s) with the sweep's counts, 2230914 instructions
+and 108953 of 108954 checks. Two runs of the same source gave 2230863 and 2230914 instructions, so BINSEC's exploration is not deterministic here; I
+did not compare the two drivers' binaries. That also means round 8's attribution of the small count changes in this probe to code layout was not
+established. The x86_64 default cell of this probe needed no rerun this time (989292 instructions, 65175 of 65176 checks, equal to the sweep, in
+2.25 s). The full sweep was not rerun: no Sign or KeyGen source changed since it. Rows: `checkct/results/smoke-fast-verify/` (`verdicts.tsv`,
+`verdicts-nearcore-exact.tsv`, `build-matrix.txt` and the logs of this run; the round 8 files are in git history, c0c62d6 and 40ee0de).
 
-Round 9 (fv-p9: `VerifyScratch`, no `align_frame`, an extraction without axiom declarations) changed no Sign or KeyGen source, and the
-smoke run was not repeated. Instead the checkct driver of the fv-p8 tree (40ee0de) and of the fv-p9 tree were built in the default release profile
-for riscv32imac, thumbv7em and x86_64, each with and without `avx2` (12 binaries), and every function of each pair was compared after
-removing addresses and symbol hashes (`llvm-objdump -d`, immediates that look like addresses and `<symbol>` operands replaced): 234, 234,
-239, 239, 234 and 235 functions respectively, all identical, none added or removed. So the machine code that BINSEC would analyze for
-the Sign and KeyGen probes is the code of the tree the smoke run covered (the verify probes of the driver are in those functions
-too). This is a comparison of the instruction streams with addresses masked, not a BINSEC verdict; the profiles with nearcore's flags were
-not compared.
+Round 9 (fv-p9: `VerifyScratch`, no `align_frame`, an extraction without axiom declarations) changed no Sign or KeyGen source, and replaced the
+smoke run by a function-by-function comparison of the driver binaries of fv-p8 and fv-p9 with addresses and symbol hashes masked. That
+comparison is not a BINSEC result: it compares instruction streams after masking, without the lifter, the solver or the flags of the
+nearcore profiles, so it does not stand in for a rerun, and the round 10 rerun above is the evidence for this tree. The comparison itself is kept as
+`checkct/compare-code.sh` and was repeated for fv-p9 against fv-p10 (default release profile, riscv32imac, thumbv7em and x86_64, each without and with `avx2`):
+234, 239 and 234 functions without `avx2` and 234, 239 and 235 with it, every function identical after masking, none added or removed
+(`bench/results/2026-11-09-p10.md`); that supports, and is not a substitute for, the statement that the default build's Sign and KeyGen code is unchanged.
 
 Full sweep at 1a72d9e (November 5–6, 2026; the tree with Sign's per-attempt wiping, in-place secret-key decoding and `sign::more_attempts`): 114 entrypoints per run (113 for the `nearcore`, `nearcore-dispatch` and `nearcore-exact*` profiles) plus two whole-Sign censuses, on x86_64 (checkct profile,
 `nearcore`, `avx2` dispatch, `nearcore-dispatch`, `nearcore-exact*`), thumbv7em, riscv32imac and AArch64 without NEON. BINSEC
