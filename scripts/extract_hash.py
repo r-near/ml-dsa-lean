@@ -173,8 +173,13 @@ def read_roots(path):
     return [l.strip() for l in Path(path).read_text().splitlines() if l.strip() and not l.lstrip().startswith('#')]
 
 
-def hax_toml(roots):
+def hax_toml(roots, features=('avx2',)):
+    """The hax.toml of the extraction. FEATURES is the cargo feature list the crate is extracted with: `('avx2',)` for the
+    extraction that lean/Impl and the proofs are built from, `()` for the second, feature-independence extraction
+    (scripts/check-feature-independence.sh), which scripts/extract.py runs with --features ''. Only the first is digested
+    into extract_inputs_sha256 of the report."""
     include = ', '.join(json.dumps(r) for r in roots)
+    feats = ', '.join(json.dumps(f) for f in features)
     return f'''[tools]
 aeneas = "{AENEAS_PIN}"
 charon = "{CHARON_PIN}"
@@ -185,7 +190,7 @@ hax-lean-lib = "{HAX_LEAN_LIB_PIN}"
 backend = "lean"
 include = [{include}]
 no-default-features = true
-features = ["avx2"]
+features = [{feats}]
 charon-args = []
 env = {{ RUSTFLAGS = "--cfg miri" }}
 '''
@@ -264,7 +269,10 @@ _EXT_AXIOM = ('/-- [core::iter::range::Step::forward]:\n    Source: \'x.rs\'\n  
 
 def clean_external_selftest():
     """Errors if clean_external keeps an axiom, keeps anything else out, accepts a referenced axiom or an axiom of an
-    unexpected shape."""
+    unexpected shape, or if the production path (impl_texts, which runs discovery and cleaning together) does not fail on a
+    reference spelled plainly, `_root_.`-qualified, `Impl.`-qualified or with «»-escaped components, in Funs.lean or in
+    Types.lean, and does not pass when nothing references the axioms."""
+    import tempfile
     errors = []
     want = _EXT_HEADER.rstrip('\n') + '\n'
     for text in (_EXT_HEADER + _EXT_AXIOM, _EXT_HEADER + _EXT_AXIOM + '\n' + _EXT_AXIOM.replace('forward', 'backward'), _EXT_HEADER):
@@ -284,6 +292,43 @@ def clean_external_selftest():
             errors.append(f'clean_external self-test: accepted an unexpected axiom shape {odd!r}')
         except ValueError:
             pass
+    name = 'core.iter.range.Step.forward.default'
+    uses = {
+        'plain': name,
+        '_root_-qualified': '_root_.' + name,
+        'Impl-qualified': 'Impl.' + name,
+        'escaped': 'core.iter.\u00abrange\u00bb.Step.forward.default',
+        'escaped and _root_-qualified': '_root_.core.\u00abiter\u00bb.range.\u00abStep\u00bb.forward.default',
+        'used after an open (suffix)': 'Step.forward.default',
+    }
+    def tree(tmp, funs_use=None, types_use=None):
+        (tmp / 'Types.lean').write_text('import Aeneas\nnamespace Impl\n' + (f'def T := {types_use}\n' if types_use else '') + 'end Impl\n')
+        (tmp / 'Funs.lean').write_text('import Aeneas\nnamespace Impl\n' + (f'def f := {funs_use} x\n' if funs_use else 'def f := 1\n') + 'end Impl\n')
+        (tmp / 'FunsExternal_Template.lean').write_text(_EXT_HEADER + _EXT_AXIOM)
+    with tempfile.TemporaryDirectory() as d:
+        tmp = Path(d)
+        tree(tmp)
+        try:
+            if impl_texts(tmp)['FunsExternal.lean'] != want:
+                errors.append('impl_texts self-test: wrong cleaned output for an unreferenced axiom')
+        except ValueError as e:
+            errors.append(f'impl_texts self-test: rejected an unreferenced axiom: {e}')
+        # A comment or a string that mentions the name is not a use.
+        tree(tmp, funs_use=None)
+        (tmp / 'Funs.lean').write_text('namespace Impl\n/-- ' + name + ' -/\n-- ' + name + '\ndef f := "' + name + '"\nend Impl\n')
+        try:
+            impl_texts(tmp)
+        except ValueError as e:
+            errors.append(f'impl_texts self-test: a comment or string was taken for a reference: {e}')
+        for label, spelling in uses.items():
+            for where in ('funs', 'types'):
+                tree(tmp, funs_use=spelling if where == 'funs' else None, types_use=spelling if where == 'types' else None)
+                try:
+                    impl_texts(tmp)
+                    errors.append(f'impl_texts self-test: a {label} reference in {where} was not detected')
+                except ValueError as e:
+                    if name not in str(e):
+                        errors.append(f'impl_texts self-test: wrong error for a {label} reference in {where}: {e}')
     return errors
 
 
@@ -305,7 +350,7 @@ def normalizer_selftest():
     return errors
 
 
-def stage_crate(repo, roots, dest):
+def stage_crate(repo, roots, dest, features=('avx2',)):
     """Write the extraction inputs of the crate at REPO into the new directory DEST: src/ (regular files only),
     Cargo.toml without [dev-dependencies] (a test-only oracle) and with the package version normalized to 0.0.0, and
     hax.toml. Returns the digest of what was written.
@@ -333,7 +378,7 @@ def stage_crate(repo, roots, dest):
     cargo = strip_dev_dependencies(cargo)
     cargo = normalize_version(cargo)
     (dest / 'Cargo.toml').write_text(cargo)
-    (dest / 'hax.toml').write_text(hax_toml(roots))
+    (dest / 'hax.toml').write_text(hax_toml(roots, features))
     return inputs_sha256(dest)
 
 
@@ -357,15 +402,75 @@ def output_dir_problems(out):
     return problems + [f'{rel} is not a file extraction writes' for rel in sorted(set(files) - set(IMPL_FILES) - {REPORT})]
 
 
+_AXIOM_NAME = re.compile(r'(?m)^[ \t]*(?:(?:private|protected|noncomputable|unsafe|partial)[ \t]+)*axiom[ \t]+(\S+)')
+_IDENT = re.compile(r"[A-Za-z_\u00C0-\uFFFF][\w.'\u00C0-\uFFFF]*")
+
+
+def axiom_names(template_text):
+    """The names of the `axiom` declarations in the external-functions template text."""
+    return [m.group(1).replace('\u00ab', '').replace('\u00bb', '') for m in _AXIOM_NAME.finditer(template_text)]
+
+
+def _reference_tokens(text):
+    """The identifier tokens of Lean TEXT as a set, comment-free and with the escaping removed: «x» becomes x, and the
+    `_root_.` and `Impl.` prefixes are dropped, so `_root_.core.iter.range.Step.forward.default`, `Impl.core.iter.«range».Step`
+    and the plain name are the same token. (referenced_axioms also matches a dotted token that is a proper suffix of an
+    axiom name, a use after an `open`; a single component never matches.)"""
+    # Comments cannot reference anything (they are removed by the Lean parser); strings are not names.
+    text = re.sub(r'/-.*?-/', ' ', text, flags=re.S)
+    text = re.sub(r'(?m)--.*$', ' ', text)
+    text = re.sub(r'"(?:\\.|[^"\\])*"', ' ', text)
+    text = text.replace('\u00ab', '').replace('\u00bb', '')
+    toks = set()
+    for m in _IDENT.finditer(text):
+        tok = m.group(0).rstrip('.')
+        for prefix in ('_root_.', 'Impl.'):
+            while tok.startswith(prefix):
+                tok = tok[len(prefix):]
+        toks.add(tok)
+    return toks
+
+
+def referenced_axioms(gen_dir):
+    """The axioms declared in the external-functions template of GEN_DIR that any generated file refers to, sorted. Scans
+    every file Aeneas generated (Types.lean, Funs.lean, and the template with the axiom declarations themselves removed), by
+    identifier token after normalizing the qualified (`_root_.`, `Impl.`) and escaped (`«x»`) spellings, so a use that is
+    qualified differently from the declaration is still found. It reports a name that merely shares its last components with a
+    used one; that is a reason to look, not a silent pass.
+
+    This detector is a safeguard, not the safety argument. An axiom that is referenced but removed makes Funs.lean fail to
+    elaborate (unknown identifier), so the Lean build catches a miss here; the point of failing early is a precise message
+    and a policy that lean/Impl never carries an axiom a function depends on."""
+    gen_dir = Path(gen_dir)
+    template = gen_dir / 'FunsExternal_Template.lean'
+    if not template.exists():
+        return []
+    ttext = template.read_text(encoding='utf-8')
+    names = axiom_names(ttext)
+    rest = _AXIOM_BLOCK.sub('', ttext)
+    corpus = [rest]
+    for name in ('Types.lean', 'Funs.lean'):
+        if (gen_dir / name).exists():
+            corpus.append((gen_dir / name).read_text(encoding='utf-8'))
+    toks = set()
+    for c in corpus:
+        toks |= _reference_tokens(c)
+    dotted = [x for x in toks if '.' in x]
+    return sorted(n for n in names if n in toks or any(n.endswith('.' + x) for x in dotted))
+
+
 def impl_texts(gen_dir):
     """What extraction writes to lean/Impl, keyed by the name in lean/Impl: the files Aeneas generated in GEN_DIR, with the
-    external-functions template cleaned by clean_external (missing files are left out). Raises ValueError as clean_external."""
+    external-functions template cleaned by clean_external (missing files are left out). Discovers the referenced axioms
+    itself (referenced_axioms) and passes them to clean_external, so cleaning cannot be asked to ignore a reference.
+    Raises ValueError as clean_external."""
     gen_dir = Path(gen_dir)
+    referenced = referenced_axioms(gen_dir)
     texts = {}
     for out, gen in IMPL_FILES.items():
         if (gen_dir / gen).exists():
             text = (gen_dir / gen).read_text(encoding='utf-8')
-            texts[out] = clean_external(text) if gen == 'FunsExternal_Template.lean' else text
+            texts[out] = clean_external(text, referenced) if gen == 'FunsExternal_Template.lean' else text
     return texts
 
 
