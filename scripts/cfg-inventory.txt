@@ -14,6 +14,11 @@
 #                   model by design (docs/limitations.md). None of them is on a verify path (verify handles only public data).
 #   internals       `feature = "internals"` / `cfg(test)`: visibility and test hooks; the module text is the same.
 #
+# Besides cfg attributes and `cfg!`, the scan also lists every other construct that reads a compile-time source: `cfg_if!`, `cfg_match!`,
+# `env!`, `option_env!`, `include!`, `include_bytes!`, `include_str!`, `is_*_feature_detected!`, a plain `#[path = ..]`, a
+# `macro_rules!` whose body mentions cfg, any stray `cfg` identifier (form `cfg-token`), and a build script (`build.rs` or a
+# `build =` key). src/ has none of these today but the `cfg!` in src/cpu.rs and the two `#[path]` attributes below.
+#
 # A new or changed entry means a configuration-dependent computation was added or moved: review it against these four kinds.
 # Regenerate a skeleton with `python3 -I scripts/cfg_inventory.py --init` and write the justification by hand.
 
@@ -135,6 +140,20 @@ cfg: not(feature="zeroize")
 attrs: allow(unused_mut)
 count: 1
 why: attribute-only (lint): `let mut` is needed only for the `zeroize` wipe that follows it.
+
+file: src/fast_verify.rs
+form: path
+item: mod dispatch
+cfg: "fast_verify/dispatch.rs"
+count: 1
+why: an explicit module path, not a configuration choice: the same file in every build. It is relative to this file's directory so that checkct/driver, which includes src/fast_verify.rs by `#[path]` from another directory, resolves the same file. The extraction stages the whole src/ tree, so the file it reads is this one.
+
+file: src/fast_verify.rs
+form: path
+item: mod hooks
+cfg: "fast_verify/hooks.rs"
+count: 1
+why: as for `mod dispatch`: an explicit module path to src/fast_verify/hooks.rs, which is compiled only under the cfg of the `mod hooks` entry (internals + avx2, never in the extraction).
 
 file: src/fast_verify.rs
 form: cfg
