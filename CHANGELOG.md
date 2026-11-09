@@ -68,8 +68,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     `verifying_key` and prepared-verify function in `src/api.rs` is one line calling its `NAME_with(cpu::avx2(), ..)` twin (15 new
     crate-private functions). `Proofs/Dispatch.lean` proves, as `RustM` equalities for every token value, that each `_with` function
     is the scalar function (23 more names in `lean/fast-verify-theorems.txt`).
-  - Removed: `align_frame()`/`black_box` (`PreparedVk` is `#[repr(align(32))]` instead; `scripts/check-avx2-inlining.sh` requires
-    the realignment of the six wrappers that own a key), the dead test hooks of `src/fast_verify/dispatch.rs` (the `internals`
+  - `align_frame()`/`black_box` is gone from the two wrappers that own a `PreparedVk` (the type is `#[repr(align(32))]` instead) and
+    kept in `verify_prepared_avx2` alone, which only borrows a key: without it the prepared-key verify was 2 to 8 % slower in the
+    interleaved A/B. It is empty under extraction (`scripts/check-avx2-inlining.sh` still requires the realignment of all nine
+    wrapper instantiations). Removed: the dead test hooks of `src/fast_verify/dispatch.rs` (the `internals`
     entry points moved to `src/fast_verify/hooks.rs`) and `tests/fast_verify_dispatch.rs`.
 - The checkct driver includes the real `src/fast_verify.rs` instead of a hand-copied list of its re-exports.
 - `bench/fast-verify.sh` ends with a stack-offset scan (`bench/stackscan.sh`; `bench/ab.sh` has a `PAD` knob and `scan` subcommands)

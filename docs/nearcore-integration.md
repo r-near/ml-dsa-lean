@@ -287,7 +287,8 @@ dispatched wrapper's frame landed at the wrong offset, which is about one stack 
 whatever the call chain above it makes it (a different one per thread, and per call depth). The cause was LLVM spilling the
 4-way Keccak's 256-bit vectors to slots that are only 16-byte aligned, so that a slot straddling a 4 KiB page made each access a
 page split. `PreparedVk` is now `#[repr(align(32))]`, so the wrappers that own one get a 32-byte aligned frame (no code exists only
-for that; the earlier `align_frame()` local is gone, and nothing in the proofs depends on the attribute), and `bench/stackscan.sh` (run by `bench/fast-verify.sh`) scans 257 stack
+for that, and nothing in the proofs depends on the attribute); the prepared-key wrapper, which only borrows a key, keeps the
+value-free `align_frame()` anchor (`docs/assurance.md` §1.9), and `bench/stackscan.sh` (run by `bench/fast-verify.sh`) scans 257 stack
 offsets: with the fix the largest value is 1.02 to 1.03 times the median for every set and operation on rustc 1.99.1, and so is
 rustc 1.95.0 (largest 1.04, no offset above 1.1 times the median; ML-DSA-65 one-shot on 1.99.1: median 41.5, maximum 42.5 µs;
 `bench/results/2026-11-07-p6.md`); rerun after the `tr` change: largest 1.02 (1.99.1) and 1.03 (1.95.0) for one-shot verify and

@@ -445,13 +445,18 @@ of section 3 (the CPU check itself, which can only make a wrong answer a crash, 
   boundary tests (`src/sampling.rs`, `boundary_tests`). `ML_DSA_REQUIRE_AVX2=1` turns "this machine has no AVX2" from a printed note
   into a failure.
 - **Stack frames.** `PreparedVk` is `#[repr(align(32))]` (`src/verify.rs`). A wrapper that owns one (`verify_internal_avx2`,
-  `prepare_vk_avx2`) therefore has a 32-byte aligned stack frame, with no code that exists only for that purpose. Without it LLVM
-  spills 256-bit vectors to 16-byte aligned slots and accesses them unaligned, and at about one stack offset in seven a slot straddles
-  a 4 KiB page, which made one-shot verify and `verifying_key_NN` up to 7, 13 and 24 µs above the median at that offset
-  (`bench/results/2026-11-07-p6.md`). `verify_prepared_avx2` only borrows a key and needs no realignment (`bench/stackscan.sh`, nine
-  instantiations: the largest padding over the median is within 1.03). `scripts/check-avx2-inlining.sh` requires `andq $-32, %rsp` in
-  the six wrappers that own a key. The attribute changes no value (Aeneas ignores it), and the earlier `align_frame()` local and its
-  `black_box` are gone.
+  `prepare_vk_avx2`) therefore has a 32-byte aligned stack frame, with no code that exists only for that purpose; the attribute
+  changes no value (Aeneas ignores it). Without a realigned frame LLVM spills 256-bit vectors to 16-byte aligned slots and accesses
+  them unaligned, and at about one stack offset in seven a slot straddles a 4 KiB page, which made one-shot verify and
+  `verifying_key_NN` up to 7, 13 and 24 µs above the median at that offset (`bench/results/2026-11-07-p6.md`).
+  `verify_prepared_avx2` only borrows a key, so the type does not help it. The stack-offset scan (`bench/stackscan.sh`, nine
+  instantiations, largest padding within 1.03 of the median) does not show a cost there, but the interleaved A/B does: without a
+  realigned frame the prepared-key verify was 2 to 8 % slower than on fv-vec at all three paddings (`bench/results/2026-11-08-p8.md`),
+  and calling the old `align_frame()` in that wrapper alone brought it back to fv-vec's time. So that one wrapper keeps
+  `align_frame()` (a 32-byte aligned local passed to `core::hint::black_box`; it reads and writes no value). It is the only code on a
+  verify path, besides the CPU check, that is compiled differently from the extraction: under `--cfg miri` it is the empty function
+  (as `field::opaque_u32` is the identity there). The mechanism was not isolated further. `scripts/check-avx2-inlining.sh` requires
+  `andq $-32, %rsp` in all nine wrapper instantiations.
 - **Performance, not correctness:** that every link of the chain is `#[inline(always)]` into the wrapper (the check fails if a
   verify-only arithmetic function is defined out of line), that LLVM vectorizes the loops (the check requires a `vpsllq` for every
   permutation rotation amount in each wrapper, and ymm code in each `verify_prepared_avx2`), and that the wrapper's frame is aligned.
@@ -480,9 +485,9 @@ of section 3 (the CPU check itself, which can only make a wrong answer a crash, 
    make a CPU without AVX2 execute AVX2 code (SIGILL), or leave a CPU with AVX2 on the scalar path (slower); it cannot change a
    result. What justifies the one `unsafe` call per wrapper is the type: only `cpu::avx2()` makes an `Avx2` token, and it does so
    after `has_avx2()`, which is trusted to report AVX2 only when CPU and OS can run it (checked against the standard library's
-   detection by `tests/dispatch.rs`). (b) rustc and LLVM compiling the three `#[target_feature(enable = "avx2")]` wrappers
-   (`verify_internal_avx2`, `prepare_vk_avx2`, `verify_prepared_avx2`: each a call of one proved function, with the proved
-   callees inlined into it) to code that computes what the source says, besides the same trust in item 3. The compilation is
+   detection by `tests/dispatch.rs`). (b) `align_frame()` in the prepared-key wrapper (a value-free stack-alignment anchor, 1.9), and (c) rustc and LLVM compiling the three `#[target_feature(enable = "avx2")]` wrappers
+   (`verify_internal_avx2`, `prepare_vk_avx2`, `verify_prepared_avx2`: each a call of one proved function, the last one after
+   `align_frame()`, with the proved callees inlined into it) to code that computes what the source says, besides the same trust in item 3. The compilation is
    exercised by the AVX2-versus-scalar tests of 1.9, not proved. That the compiler vectorizes the loops is a performance property
    (`scripts/check-avx2-inlining.sh`), not a premise. The NTT's AVX2 copy (`src/ntt.rs`, used by signing and key generation, **not
    reachable from verify**) rests on `tests/dispatch.rs` (section 3).
@@ -505,11 +510,13 @@ See also section 7 (known limitations).
   for verify, `verifying_key` and the prepared verify (1.9): the 4-way body is proved equal to the scalar verify and the dispatch
   between them is proved for every CPU-check answer. **Exactly what is not proved on those paths** (the audit that `Proofs/Dispatch.lean`
   is meant to leave nothing else): with the feature on x86_64, every Rust line reachable from `api::verify_*`, `api::verify_internal_*`,
-  `api::verifying_key_*`, `api::verify_prepared_*` and `api::verify_internal_prepared_*` is in an extracted function (266 extracted
+  `api::verifying_key_*`, `api::verify_prepared_*` and `api::verify_internal_prepared_*` is in an extracted function (267 extracted
   definitions are reachable; no `ntt::*` function, including the `ntt::dispatch` family, is among them: only the tables `ZETAS`,
   `ZETAS_SHOUP`, `ZETAS_NEG_SHOUP` and `F_SHOUP` are read), except (i) `src/cpu.rs` as compiled (`detect_avx2`, the `AVX2` cache,
   `has_avx2`, `avx2`; the extraction sees the one-line stub), (ii) the 15 call lines `NAME_with(cpu::avx2(), ..)` in `src/api.rs`,
-  and (iii) attributes that steer code generation and no value: the three `#[target_feature(enable = "avx2")]` lines of
+  (iii) `align_frame()` in `src/fast_verify/dispatch.rs`, the value-free stack-alignment anchor of `verify_prepared_avx2` (the
+  extraction sees the empty function that `cfg(miri)` selects; the real one is an aligned local passed to `black_box`), and (iv)
+  attributes that steer code generation and no value: the three `#[target_feature(enable = "avx2")]` lines of
   `src/fast_verify/dispatch.rs`, `#[repr(align(32))]` on `PreparedVk`, and the `#[inline(always)]` that `cfg_attr` adds to the
   functions the wrappers inline. The code in `src/fast_verify/hooks.rs`, `keccak4::avx2_checked` and `cpu::has_avx2_cached` exists
   only with the `internals` feature, for tests and benchmarks, and no `api` function reaches it. The `black_box` of
