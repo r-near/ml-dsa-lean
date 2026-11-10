@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/r-near/ml-dsa-lean/compare/v0.1.0...v0.2.0) - 2026-11-10
+
 This section is the net change since 0.1.0. The branch went through a run-time AVX2 dispatch for verify on the way (rounds 1 to 11 of
 `docs/assurance.md`, section 0); the last round removed it, so none of it ships.
 
