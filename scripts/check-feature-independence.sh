@@ -37,8 +37,12 @@ extract() { # NAME SRC ROOTS RUSTFLAGS
 # The crate with the AVX2 target features; the main extraction is the committed lean/Impl (extract_hash.py check ties it to src/).
 extract alt . scripts/extract-roots.txt "$ALT_FLAGS"
 python3 -I scripts/feature_independence.py compare lean/Impl "$WORK/alt/Impl"
-# The positive control.
-extract probe-main scripts/fi-probe scripts/fi-probe/roots.txt ''
-extract probe-alt scripts/fi-probe scripts/fi-probe/roots.txt "$ALT_FLAGS"
+# The positive control. Its manifest is kept as Cargo.toml.in (see that file), so stage the crate with it as Cargo.toml.
+PROBE="$WORK/fi-probe"
+mkdir -p "$PROBE"
+cp -R scripts/fi-probe/src "$PROBE/src"
+cp scripts/fi-probe/Cargo.toml.in "$PROBE/Cargo.toml"
+extract probe-main "$PROBE" scripts/fi-probe/roots.txt ''
+extract probe-alt "$PROBE" scripts/fi-probe/roots.txt "$ALT_FLAGS"
 python3 -I scripts/feature_independence.py probe-check "$WORK/probe-main/Impl" "$WORK/probe-alt/Impl"
 echo "FEATURE-INDEPENDENCE OK"

@@ -1,6 +1,8 @@
 # The positive control of scripts/check-feature-independence.sh: a one-function crate whose extraction depends on the target
 # features. It is named like the real crate so that scripts/extract.py (which names roots `ml_dsa_lean::...`) extracts it unchanged.
-# Never published or built by cargo directly; scripts/extract.py stages a copy.
+# Never published or built by cargo directly. The file is Cargo.toml.in, not Cargo.toml, so the repository holds only one
+# package named ml-dsa-lean (cargo-semver-checks in release-plz rejects a second one as ambiguous); scripts/check-feature-independence.sh
+# stages the probe in a temporary directory with this file as its Cargo.toml.
 [package]
 name = "ml-dsa-lean"
 version = "0.0.0"
