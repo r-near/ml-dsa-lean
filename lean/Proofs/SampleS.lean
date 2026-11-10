@@ -576,6 +576,43 @@ theorem ExpandS_some (p : Params) (fuel : Nat) (ρ : List UInt8) (s₁ : Vector 
     simp at h
 
 
+/-- The success counterpart of `fill_forIn`: when `f` succeeds at every index of the range, the loop never exits early. -/
+theorem fill_forIn_ok {β : Type} {n : Nat} (f : Nat → Option RPoly) (m : Nat) :
+    ∀ (s : Nat) (v : Vector RPoly n), (∀ i, i < m → (f (s + i)).isSome = true) →
+      ∃ w : Vector RPoly n,
+        forIn (m := Id) (List.range' s m) (⟨none, v⟩ : FS β n) (fillBody f) = ⟨none, w⟩ := by
+  induction m with
+  | zero => intro s v _; exact ⟨v, rfl⟩
+  | succ m ih =>
+    intro s v h
+    obtain ⟨a, ha⟩ := Option.isSome_iff_exists.mp (h 0 (by omega))
+    obtain ⟨w, hw⟩ := ih (s + 1) (v.set! s a) (fun i hi => by
+      have := h (i + 1) (by omega)
+      rwa [show s + (i + 1) = s + 1 + i by omega] at this)
+    refine ⟨w, ?_⟩
+    rw [Nat.add_zero] at ha
+    simp [List.range'_succ, List.forIn_cons, fillBody, ha]
+    exact hw
+
+/-- `ExpandS` succeeds as soon as each of its `ℓ + k` calls to `RejBoundedPoly` does. This is what lets the
+satisfiability witnesses evaluate the calls one at a time, each in its own kernel check, instead of the whole `ExpandS`
+in one (the memory of one kernel check grows with the work it does). -/
+theorem ExpandS_isSome (p : Params) (fuel : Nat) (ρ : List UInt8)
+    (h : ∀ i, i < p.ℓ + p.k → (RejBoundedPoly p fuel (ρ ++ IntegerToBytes i 2)).isSome = true) :
+    (ExpandS p fuel ρ).isSome = true := by
+  rw [ExpandS_eq]
+  unfold expandSModel
+  simp only [Std.Legacy.Range.forIn_eq_forIn_range', Std.Legacy.Range.size, Nat.sub_zero,
+    Nat.add_sub_cancel, Nat.div_one]
+  obtain ⟨w1, e1⟩ := fill_forIn_ok (β := Vector RPoly p.ℓ × Vector RPoly p.k)
+    (fun r => RejBoundedPoly p fuel (ρ ++ IntegerToBytes r 2)) p.ℓ 0
+    (Vector.replicate p.ℓ (Vector.replicate 256 0)) (fun i hi => by simpa using h i (by omega))
+  obtain ⟨w2, e2⟩ := fill_forIn_ok (β := Vector RPoly p.ℓ × Vector RPoly p.k)
+    (fun r => RejBoundedPoly p fuel (ρ ++ IntegerToBytes (r + p.ℓ) 2)) p.k 0
+    (Vector.replicate p.k (Vector.replicate 256 0)) (fun i hi => by simpa [Nat.add_comm] using h (i + p.ℓ) (by omega))
+  rw [e1, e2]
+  rfl
+
 /-! ## ExpandS: the seed buffer -/
 
 theorem seed_set (seed : Array U8 66#usize) (ρ0 : List UInt8) (hρ : ρ0.length = 64)
@@ -810,10 +847,79 @@ theorem rej_bounded_poly_premise_satisfiable :
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- The `ExpandS` premise holds for the all-zero seed, ML-DSA-44, fuel 512. -/
+/-- Call 0 of `ExpandS` (ML-DSA-44, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 0 2`. -/
+theorem rej_bounded_44_0 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_44 512 (List.replicate 64 0 ++ IntegerToBytes 0 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 1 of `ExpandS` (ML-DSA-44, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 1 2`. -/
+theorem rej_bounded_44_1 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_44 512 (List.replicate 64 0 ++ IntegerToBytes 1 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 2 of `ExpandS` (ML-DSA-44, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 2 2`. -/
+theorem rej_bounded_44_2 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_44 512 (List.replicate 64 0 ++ IntegerToBytes 2 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 3 of `ExpandS` (ML-DSA-44, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 3 2`. -/
+theorem rej_bounded_44_3 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_44 512 (List.replicate 64 0 ++ IntegerToBytes 3 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 4 of `ExpandS` (ML-DSA-44, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 4 2`. -/
+theorem rej_bounded_44_4 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_44 512 (List.replicate 64 0 ++ IntegerToBytes 4 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 5 of `ExpandS` (ML-DSA-44, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 5 2`. -/
+theorem rej_bounded_44_5 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_44 512 (List.replicate 64 0 ++ IntegerToBytes 5 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 6 of `ExpandS` (ML-DSA-44, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 6 2`. -/
+theorem rej_bounded_44_6 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_44 512 (List.replicate 64 0 ++ IntegerToBytes 6 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 7 of `ExpandS` (ML-DSA-44, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 7 2`. -/
+theorem rej_bounded_44_7 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_44 512 (List.replicate 64 0 ++ IntegerToBytes 7 2)).isSome = true := by
+  decide +kernel
+
+/-- The `ExpandS` premise holds for the all-zero seed, ML-DSA-44, fuel 512 (8 kernel evaluations of SHAKE256 +
+`RejBoundedPoly`, each its own declaration, assembled by `ExpandS_isSome`). -/
 theorem expand_s_satisfiable :
     ∃ r, Spec.ExpandS Spec.ML_DSA_44 512 (List.replicate 64 0) = some r := by
-  have : (Spec.ExpandS Spec.ML_DSA_44 512 (List.replicate 64 0)).isSome = true := by decide +kernel
+  have : (Spec.ExpandS Spec.ML_DSA_44 512 (List.replicate 64 0)).isSome = true := by
+    apply ExpandS_isSome
+    have h8 : Spec.ML_DSA_44.ℓ + Spec.ML_DSA_44.k = 8 := by decide +kernel
+    rw [h8]
+    intro i hi
+    match i, hi with
+    | 0, _ => exact rej_bounded_44_0
+    | 1, _ => exact rej_bounded_44_1
+    | 2, _ => exact rej_bounded_44_2
+    | 3, _ => exact rej_bounded_44_3
+    | 4, _ => exact rej_bounded_44_4
+    | 5, _ => exact rej_bounded_44_5
+    | 6, _ => exact rej_bounded_44_6
+    | 7, _ => exact rej_bounded_44_7
+    | i + 8, h => exact absurd h (by omega)
   exact Option.isSome_iff_exists.mp this
 
 /-- The premise of `expand_s_spec` is satisfiable for the extracted type. -/
