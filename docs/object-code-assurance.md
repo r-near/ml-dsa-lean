@@ -295,9 +295,11 @@ LLVM emits for the same Rust text and nothing else (the extraction is identical 
 sweep tables in `checkct/README.md` that name those profiles are marked as history there.
 
 **What BINSEC covers.**
-- The default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit; no AVX2) and `nearcore-novec` are the builds with verdicts in the sweep of 1a72d9e (section 3.2 and `checkct/README.md`). On the final tree only `default` (the NTT probes and the 8-probe smoke),
-  `nearcore` and `nearcore-exact` (the smoke) were rerun (`docs/assurance.md` section 4, "Round 12"): the NTT callers of Sign and KeyGen compile differently from fv-p11 now that the dispatch is gone (`checkct/compare_code.py`: 39 of 233 functions differ on x86_64),
-  so the sweep's verdicts for the probes that were not rerun are for the earlier binary.
+- The default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit; no AVX2) and `nearcore-novec` are the builds with verdicts in the sweep of 1a72d9e (section 3.2 and `checkct/README.md`).
+  **On the final tree the full sweep was rerun in round 13** (tree 1d8b5c5, whose `src/` is the final tree's; `checkct/results/sweep-1d8b5c5/`, `docs/assurance.md` section 4, "Round 13 BINSEC sweep"): every profile except the removed dispatch ones, on x86_64,
+  thumbv7em, riscv32imac and AArch64 without NEON. The default-build code of the driver is identical to fv-p11's in every function on all three targets (`checkct/compare-code.sh`, an address-masked comparison, not a verdict; `ntt::dispatch` was restored in round 13),
+  and 1,018 of the 1,024 probes of the nine cells that have a counterpart in the sweep of 1a72d9e are equal in verdict and counts, the other six being listed, with the reruns, in that section. The `avx2` and `nearcore-avx2` profiles ran only their 26 NTT probes.
+  The smaller rerun of round 12 and the 39 of 233 differing x86_64 functions that came with it describe the tree before the wrapper module was restored; they are superseded.
 - BINSEC 0.11.3 cannot lift VEX-encoded instructions. A build with `-C target-feature=+avx2` (`bash checkct/select-ntt.sh avx2`) therefore ends `unknown` for
   every probe that reaches vectorized code; the scalar probes (`field_mul_shoup`, `field_mont_reduce`, `field_mul_mont`) stay `secure` there. `nearcore`'s own flags have `+fma`, which implies AVX in LLVM, so the
   `nearcore-exact` profile is in the same position for 49 of 113 probes. No claim is made about BINSEC verdicts for AVX or AVX2 code.
