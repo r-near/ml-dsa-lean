@@ -1,0 +1,12 @@
+== painted x86_64 default
+dyn verify_44 64168;dyn verifying_key_44 49640;dyn verify_prepared_44 31064;dyn verify_65 89752;dyn verifying_key_65 74216;dyn verify_prepared_65 38216;dyn verify_87 131784;dyn verifying_key_87 110952;dyn verify_prepared_87 49496;
+== static x86_64-unknown-linux-gnu default
+verify_44|64232;verify_65|89816;verify_87|131848;verify_prepared_44|31144;verify_prepared_65|38296;verify_prepared_87|49576;verifying_key_44|49688;verifying_key_65|74296;verifying_key_87|111032;
+== static thumbv7em-none-eabi default
+verify_44|62984;verify_65|89616;verify_87|131568;verify_prepared_44|31080;verify_prepared_65|38256;verify_prepared_87|49520;verifying_key_44|49680;verifying_key_65|74304;verifying_key_87|110984;
+== painted x86_64 lto
+dyn verify_44 63016;dyn verifying_key_44 49592;dyn verify_prepared_44 29912;dyn verify_65 89672;dyn verifying_key_65 74168;dyn verify_prepared_65 37096;dyn verify_87 130648;dyn verifying_key_87 101768;dyn verify_prepared_87 48360;
+== static x86_64-unknown-linux-gnu lto
+verify_44|63016;verify_65|89672;verify_87|130568;verifying_key_44|49592;verifying_key_65|74200;verifying_key_87|101736;wrapper:verify_prepared_44|29896;wrapper:verify_prepared_65|37064;wrapper:verify_prepared_87|48328;stk_verify_prepared_87|31736;stk_verify_prepared_65|25080;stk_verify_prepared_44|20472;
+== static thumbv7em-none-eabi lto
+verify_44|61980;verify_65|88628;verify_87|130484;verifying_key_44|49660;verifying_key_65|74236;verifying_key_87|110812;wrapper:verify_prepared_44|29980;wrapper:verify_prepared_65|37172;wrapper:verify_prepared_87|48436;stk_verify_prepared_87|31776;stk_verify_prepared_65|25120;stk_verify_prepared_44|20512;
