@@ -1,6 +1,6 @@
 [package]
 name = "ml-dsa-lean"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 # 1.86 was set by the safe `#[target_feature]` functions of the old `avx2` feature; the crate no longer uses them, and 1.86 is kept
 # because it is what the CI builds with.
