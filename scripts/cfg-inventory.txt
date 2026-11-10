@@ -17,6 +17,10 @@
 # `build =` key). src/ has none of these today.
 # (scripts/extract_hash.py also rejects a build script and an `env!`/`include!`-style macro in src/ outright, whatever is listed here.)
 #
+# Each `cfg` entry (and each gating `cfg_attr`) also carries `body:`, a SHA-256 over the normalized text the cfg selects
+# (comments and whitespace dropped), so editing what a `cfg(not(miri))` function does fails the gate even though the
+# extraction never sees it (details in the header of scripts/cfg_inventory.py).
+#
 # A new or changed entry means a configuration-dependent computation was added or moved: review it against these three kinds.
 # Regenerate a skeleton with `python3 -I scripts/cfg_inventory.py --init` and write the justification by hand.
 
@@ -24,6 +28,7 @@ file: src/encode.rs
 form: cfg
 item: stmt in fn eta_block_bad
 cfg: feature="zeroize"
+body: 04614de29dd228382d3fe8435e965f7622c2fa487743bc2863697a477c0978f5
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -31,6 +36,7 @@ file: src/encode.rs
 form: cfg
 item: stmt in fn unpack_signed_into
 cfg: feature="zeroize"
+body: 957017108ba8b92e89231b676f9b6f342dda0da07cc0cc36258d3149a506311f
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -52,6 +58,7 @@ file: src/field.rs
 form: cfg
 item: fn barrier_u32
 cfg: all(not(miri),any(target_arch="riscv32",target_arch="riscv64"))
+body: 34477523b344964aa756cb64091ae61f63af250cce29f036346c7a8d8e477f75
 count: 1
 why: miri/riscv: `barrier_uN` is `core::hint::black_box` on RISC-V outside the extraction and the identity elsewhere and under `--cfg miri`; both return their argument (docs/assurance.md CT-1). Not on any x86_64 or aarch64 build.
 
@@ -59,6 +66,7 @@ file: src/field.rs
 form: cfg
 item: fn barrier_u32
 cfg: any(miri,not(any(target_arch="riscv32",target_arch="riscv64")))
+body: a2c78f9e6b5b87d1e6ca69b4cbc9100207701d0721a3bfc76daeaa05fbccfb91
 count: 1
 why: miri/riscv: `barrier_uN` is `core::hint::black_box` on RISC-V outside the extraction and the identity elsewhere and under `--cfg miri`; both return their argument (docs/assurance.md CT-1). Not on any x86_64 or aarch64 build.
 
@@ -66,6 +74,7 @@ file: src/field.rs
 form: cfg
 item: fn barrier_u64
 cfg: all(not(miri),any(target_arch="riscv32",target_arch="riscv64"))
+body: 64c6f4d05f4b8b0400625e0cbd9a559c7dd371c3eff3fbd0c44d8bfe1aabc05b
 count: 1
 why: miri/riscv: `barrier_uN` is `core::hint::black_box` on RISC-V outside the extraction and the identity elsewhere and under `--cfg miri`; both return their argument (docs/assurance.md CT-1). Not on any x86_64 or aarch64 build.
 
@@ -73,6 +82,7 @@ file: src/field.rs
 form: cfg
 item: fn barrier_u64
 cfg: any(miri,not(any(target_arch="riscv32",target_arch="riscv64")))
+body: 667850c601d54873633f10d16c08cdbf6460395d9e1f5c7bad4ad3ca57f1086b
 count: 1
 why: miri/riscv: `barrier_uN` is `core::hint::black_box` on RISC-V outside the extraction and the identity elsewhere and under `--cfg miri`; both return their argument (docs/assurance.md CT-1). Not on any x86_64 or aarch64 build.
 
@@ -80,6 +90,7 @@ file: src/field.rs
 form: cfg
 item: fn opaque_u32
 cfg: miri
+body: b8d31399d5fa5c50c40748da21c530a2ff74eae9efbd7f3b4a1a5567d5247f01
 count: 1
 why: miri: `opaque_u32` is `core::hint::black_box` in the compiled build and the identity under `--cfg miri` (the extraction); both return their argument (docs/assurance.md CT-2). Present in both extractions alike, so the feature-independence gate does not see it; it is a known, documented substitution of the identity function.
 
@@ -87,6 +98,7 @@ file: src/field.rs
 form: cfg
 item: fn opaque_u32
 cfg: not(miri)
+body: fc4a336ce891b6adbf777d47e9e5a89cf9705949eb11249b3ac95fcbe5794f26
 count: 1
 why: miri: `opaque_u32` is `core::hint::black_box` in the compiled build and the identity under `--cfg miri` (the extraction); both return their argument (docs/assurance.md CT-2). Present in both extractions alike, so the feature-independence gate does not see it; it is a known, documented substitution of the identity function.
 
@@ -94,6 +106,7 @@ file: src/keccak.rs
 form: cfg
 item: fn wipe
 cfg: feature="zeroize"
+body: 26d378f06f278d19e3aab1608d51548ef250de73fa2c5c9590c052574f89b1d9
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -101,6 +114,7 @@ file: src/keygen.rs
 form: cfg
 item: fn wipe_decoded
 cfg: feature="zeroize"
+body: 5f3a0c755909784744f006b319548f6edf991bbfbd48c308229c53aac2eae6ff
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -108,6 +122,7 @@ file: src/keygen.rs
 form: cfg
 item: fn wipe_keygen
 cfg: feature="zeroize"
+body: 9e1b69302af9b2359db97721437f9c27d3f860b7330ed971ce3fb98afc735f36
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -115,6 +130,7 @@ file: src/keygen.rs
 form: cfg
 item: stmt in fn keygen_internal
 cfg: feature="zeroize"
+body: 794b7310773ab6b268b8304273339133e7cbfa1d33c546e64268659ceb2de9e2
 count: 2
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -122,6 +138,7 @@ file: src/keygen.rs
 form: cfg
 item: stmt in fn pk_check
 cfg: feature="zeroize"
+body: 5cc87f8fac53ae7f1bdf15a0b4cad1f0184c023c4a25e7c9ffd4aa0859c75d46
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -129,6 +146,7 @@ file: src/keygen.rs
 form: cfg
 item: stmt in fn pk_from_sk
 cfg: feature="zeroize"
+body: 3e9141d75f60936870ef9ab3c5f5650254f81a3f15acbcf6cf006fa098f62f1f
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -143,6 +161,7 @@ file: src/lib.rs
 form: cfg
 item: mod encode
 cfg: feature="internals"
+body: 788bf36b64fe00cc99f4897ec128bc2cc3f1e8a476aac6592da106e4d6a61f65
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -150,6 +169,7 @@ file: src/lib.rs
 form: cfg
 item: mod encode
 cfg: not(feature="internals")
+body: 41616072355795194765b36caaaf3e47446b185f117944332df604b95b498017
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -157,6 +177,7 @@ file: src/lib.rs
 form: cfg
 item: mod field
 cfg: feature="internals"
+body: 4152b0b2fad64cffcc9614fbe3793708842e44819d02d245858700a52e289f9e
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -164,6 +185,7 @@ file: src/lib.rs
 form: cfg
 item: mod field
 cfg: not(feature="internals")
+body: 7e885d55f3ed47032de7bea0ce1146c9c73cce6b46ae140946d0bb5b0b2c01bc
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -171,6 +193,7 @@ file: src/lib.rs
 form: cfg
 item: mod keccak
 cfg: feature="internals"
+body: d1a78f83e0cd051109abb56d8fdfafff01c0b22b093458cd2662e2cdaf9a563c
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -178,6 +201,7 @@ file: src/lib.rs
 form: cfg
 item: mod keccak
 cfg: not(feature="internals")
+body: f6574112191b1b0a7fe38acae408b24e052f1a4783ba138bc77e6908061ab55b
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -185,6 +209,7 @@ file: src/lib.rs
 form: cfg
 item: mod keccak4
 cfg: feature="internals"
+body: 7a59eb9c5f05b660995db05d72ba55370617b7e500b7460e21b88ac50bb2cbc1
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -192,6 +217,7 @@ file: src/lib.rs
 form: cfg
 item: mod keccak4
 cfg: not(feature="internals")
+body: 6090b785b8286a914a17f1e50a22c9387884f41c3e0abb388f1980d7161994fa
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -199,6 +225,7 @@ file: src/lib.rs
 form: cfg
 item: mod keygen
 cfg: feature="internals"
+body: 578d1ef4302b629b3f4d93a9921a9cde26adaaa4943f063173fa4d394fdf8b88
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -206,6 +233,7 @@ file: src/lib.rs
 form: cfg
 item: mod keygen
 cfg: not(feature="internals")
+body: 222ec3ba318aca35c11dfd637de7fe9ae311976d3b4ded1dda15459293f86005
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -213,6 +241,7 @@ file: src/lib.rs
 form: cfg
 item: mod ntt
 cfg: feature="internals"
+body: c2975a1edab7075f3db5087064fa0bf975aa9a1a0e93bb3b89bae53fa22de09c
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -220,6 +249,7 @@ file: src/lib.rs
 form: cfg
 item: mod ntt
 cfg: not(feature="internals")
+body: 7a1028414057c93bbe33483a950973ae3d1417e90c4e6d2cfc73f4058bc766cb
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -227,6 +257,7 @@ file: src/lib.rs
 form: cfg
 item: mod params
 cfg: feature="internals"
+body: 1489aea1b8f3c78857a87bbed2ce4c84324a167be54803ef8c4fcb468c514d2c
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -234,6 +265,7 @@ file: src/lib.rs
 form: cfg
 item: mod params
 cfg: not(feature="internals")
+body: fa841df711ac7264c28092d534b5e728c7c9e955184188d7d2a1de4dedbb73fb
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -241,6 +273,7 @@ file: src/lib.rs
 form: cfg
 item: mod rounding
 cfg: feature="internals"
+body: 3f49a114917fe9c7681e067a2eec45accc5c54d71b8091df15be877737618745
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -248,6 +281,7 @@ file: src/lib.rs
 form: cfg
 item: mod rounding
 cfg: not(feature="internals")
+body: be4aea52519b31b2989a0f942bc6f6d15c4826ff138e1649c2f87b966bcfdf83
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -255,6 +289,7 @@ file: src/lib.rs
 form: cfg
 item: mod sampling
 cfg: feature="internals"
+body: 70f0f80c455f3e00c109f5ec7a20ee55d899a45055c8e65a59e9f0d30e296845
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -262,6 +297,7 @@ file: src/lib.rs
 form: cfg
 item: mod sampling
 cfg: not(feature="internals")
+body: 1007adfae7348d1fed8004fd27b54c67f2e9d7d05f75966dcdf7393c4e8b9819
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -269,6 +305,7 @@ file: src/lib.rs
 form: cfg
 item: mod sign
 cfg: feature="internals"
+body: 03e8d889bfabd31a8ac3e0da06f5a17cdc1604efdf92b6287e599f7509cd4b67
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -276,6 +313,7 @@ file: src/lib.rs
 form: cfg
 item: mod sign
 cfg: not(feature="internals")
+body: c1d6e2969f35b4e330ef2aaa895802d0377ab409636f834710097f9f8f0c108a
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -283,6 +321,7 @@ file: src/lib.rs
 form: cfg
 item: mod verify
 cfg: feature="internals"
+body: 474e6a6518ac8f6caacf726fb64a12c0bedef097c7754224f3eab5cb94f81705
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -290,6 +329,7 @@ file: src/lib.rs
 form: cfg
 item: mod verify
 cfg: not(feature="internals")
+body: 6daca36f4d6e3a6a59526d4476525ea6c0d2e19c2d5ccfaf6ecbcb8f6179f198
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -297,6 +337,7 @@ file: src/lib.rs
 form: cfg
 item: mod verify_arith
 cfg: feature="internals"
+body: 7cb03ab2e4f75f16d14053712d0d599afe0a886b04768300c435585d0a069e7f
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -304,6 +345,7 @@ file: src/lib.rs
 form: cfg
 item: mod verify_arith
 cfg: not(feature="internals")
+body: c71ed90fea59c3d0ac80e2762c39e33552b56a3fb1ec5b17ffdbb3bf36c0e99f
 count: 1
 why: internals: `pub mod X` with the `internals` feature (tests, fuzzing), private `mod X` without; the module text is the same.
 
@@ -318,6 +360,7 @@ file: src/ntt.rs
 form: cfg
 item: stmt in fn matrix_vector_ntt_into
 cfg: feature="zeroize"
+body: e50de03f34bb7a4d5bd730fe3a23cd69c57dafbc7e96dee2146c6e8273f37ca1
 count: 1
 why: zeroize: Sign/KeyGen-side wipe of per-entry temporaries (`matrix_vector_ntt_into`, `ntt_vec_into`, `scalar_vector_ntt_inverse_into`); the values are the same with and without it. Not used by verify.
 
@@ -325,6 +368,7 @@ file: src/ntt.rs
 form: cfg
 item: stmt in fn matrix_vector_ntt_into
 cfg: not(feature="zeroize")
+body: 2d3568fb58420a9b320e65da774536c2095564813ce5205b7f5e87a045d53133
 count: 1
 why: zeroize: Sign/KeyGen-side wipe of per-entry temporaries (`matrix_vector_ntt_into`, `ntt_vec_into`, `scalar_vector_ntt_inverse_into`); the values are the same with and without it. Not used by verify.
 
@@ -332,6 +376,7 @@ file: src/ntt.rs
 form: cfg
 item: stmt in fn ntt_vec_into
 cfg: feature="zeroize"
+body: 32203938db9eb1b3b9e45e5bb803896d381b05df8cc29fc939ad81c2f095047b
 count: 1
 why: zeroize: Sign/KeyGen-side wipe of per-entry temporaries (`matrix_vector_ntt_into`, `ntt_vec_into`, `scalar_vector_ntt_inverse_into`); the values are the same with and without it. Not used by verify.
 
@@ -339,6 +384,7 @@ file: src/ntt.rs
 form: cfg
 item: stmt in fn scalar_vector_ntt_inverse_into
 cfg: feature="zeroize"
+body: 32203938db9eb1b3b9e45e5bb803896d381b05df8cc29fc939ad81c2f095047b
 count: 1
 why: zeroize: Sign/KeyGen-side wipe of per-entry temporaries (`matrix_vector_ntt_into`, `ntt_vec_into`, `scalar_vector_ntt_inverse_into`); the values are the same with and without it. Not used by verify.
 
@@ -360,6 +406,7 @@ file: src/sampling.rs
 form: cfg
 item: mod boundary_tests
 cfg: test
+body: 3e8d4181aa2caaf7a958f4b85c2ddfe0195d770ef3eeefe2c246d8c1eb8c25d6
 count: 1
 why: internals/test: unit tests of the module, not compiled in the library.
 
@@ -367,6 +414,7 @@ file: src/sampling.rs
 form: cfg
 item: stmt in fn expand_mask
 cfg: feature="zeroize"
+body: eb060ff8feb727ce77d546860d1c77d41ea5f1d4156abf3ce6c9a1d78f5d4458
 count: 2
 why: zeroize: wipes of the secret-sampling temporaries in `expand_s`, `expand_mask`, `rej_bounded_poly` (Sign and KeyGen); the values are the same. Not used by verify.
 
@@ -374,6 +422,7 @@ file: src/sampling.rs
 form: cfg
 item: stmt in fn expand_s
 cfg: feature="zeroize"
+body: 34651b62489b69d7116a5affb2ceb796ac834e28b3525ed75c7212872c1472e2
 count: 1
 why: zeroize: wipes of the secret-sampling temporaries in `expand_s`, `expand_mask`, `rej_bounded_poly` (Sign and KeyGen); the values are the same. Not used by verify.
 
@@ -381,6 +430,7 @@ file: src/sampling.rs
 form: cfg
 item: stmt in fn rej_bounded_poly
 cfg: feature="zeroize"
+body: 1db7c3ce203dfaaac9f7a63f55df17b2b1744ccfdedd0e3dcc75e639dd1f579a
 count: 1
 why: zeroize: wipes of the secret-sampling temporaries in `expand_s`, `expand_mask`, `rej_bounded_poly` (Sign and KeyGen); the values are the same. Not used by verify.
 
@@ -402,6 +452,7 @@ file: src/sign.rs
 form: cfg
 item: fn wipe_attempt
 cfg: feature="zeroize"
+body: 7a0eef12aec96910675181d979123946de589f358879999af68bab38c265438d
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -409,6 +460,7 @@ file: src/sign.rs
 form: cfg
 item: fn wipe_decoded
 cfg: feature="zeroize"
+body: 77e48bbc6c329bb558cb28ed34b321aacfbd8eaad81f1623d9ffa077a6bff48b
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -416,6 +468,7 @@ file: src/sign.rs
 form: cfg
 item: fn wipe_rho_pp
 cfg: feature="zeroize"
+body: 33d9856ba18515d7b76ddcbdb2bc12604dd1042519106c004465288b526b08a1
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -423,6 +476,7 @@ file: src/sign.rs
 form: cfg
 item: impl
 cfg: feature="internals"
+body: 6d56baa2ea8113ac3108e44cb0b21c68249565096ed763be179b309e543d709f
 count: 2
 why: internals: test accessors (`secret_regions` and the like) that the stack-residue tests use; they only read. Not compiled without `internals`.
 
@@ -430,6 +484,7 @@ file: src/sign.rs
 form: cfg
 item: impl
 cfg: feature="zeroize"
+body: 2c5aa3f349928a235e98097f8d1705df2962419037253a599e3bf71907b818ec
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -437,6 +492,7 @@ file: src/sign.rs
 form: cfg
 item: impl crate::api::SigningKey44
 cfg: feature="internals"
+body: 1f748b612b860e8dccd094937aba9be44dff3eccfa9ffe65cf8bc9884c70dad6
 count: 1
 why: internals: test accessors (`secret_regions` and the like) that the stack-residue tests use; they only read. Not compiled without `internals`.
 
@@ -444,6 +500,7 @@ file: src/sign.rs
 form: cfg
 item: impl crate::api::SigningKey65
 cfg: feature="internals"
+body: c6c7867e7e136c70d3f7f79cc5b000e0b19a6372b6668a834e2f0bc3563f30d9
 count: 1
 why: internals: test accessors (`secret_regions` and the like) that the stack-residue tests use; they only read. Not compiled without `internals`.
 
@@ -451,6 +508,7 @@ file: src/sign.rs
 form: cfg
 item: impl crate::api::SigningKey87
 cfg: feature="internals"
+body: b22181c257942cc02f2e0fe46d9ce255c57c2679739f51f539d41068b9370234
 count: 1
 why: internals: test accessors (`secret_regions` and the like) that the stack-residue tests use; they only read. Not compiled without `internals`.
 
@@ -458,6 +516,7 @@ file: src/sign.rs
 form: cfg
 item: stmt in fn attempt
 cfg: feature="zeroize"
+body: 6cbae552b13f8ccfbd5ea10f28b85663540af8e8f35e0afda4eb99db08b5cf85
 count: 22
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -465,6 +524,7 @@ file: src/sign.rs
 form: cfg
 item: stmt in fn attempt
 cfg: not(feature="zeroize")
+body: e2c3a694e4f3d33ff7a0903dc37b9e8bacad81d2b7505fd5def1c8407828b24e
 count: 5
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -472,6 +532,7 @@ file: src/sign.rs
 form: cfg
 item: stmt in fn prepare_sk_into
 cfg: feature="zeroize"
+body: 5a02651cb483802ed34bd6403cef94cb994c99b903376f086624985f3c45fbaf
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -479,6 +540,7 @@ file: src/sign.rs
 form: cfg
 item: stmt in fn response_into
 cfg: feature="zeroize"
+body: 01f2937d719d93ae6fc6942f82fc9de3c5a18f16cd8b012dd2b7081c32829810
 count: 2
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -486,6 +548,7 @@ file: src/sign.rs
 form: cfg
 item: stmt in fn response_into
 cfg: not(feature="zeroize")
+body: 9a32bda24163cdf5f984862998ac100e45758305890ebb7c023225357b8333dd
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -493,6 +556,7 @@ file: src/sign.rs
 form: cfg
 item: stmt in fn sign_prepared_internal
 cfg: feature="zeroize"
+body: 2daf9e6a8bb65e05184ed9e9d2103e64161903bb2a50b6631ad2e931fc1f7bb9
 count: 3
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -500,6 +564,7 @@ file: src/sign.rs
 form: cfg
 item: use crate::ntt::
 cfg: feature="zeroize"
+body: 1bf6e10291e9a12666acbe518aade698d240a2c2221f2cc9748d349869a37c39
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -507,6 +572,7 @@ file: src/sign.rs
 form: cfg
 item: use crate::ntt::
 cfg: not(feature="zeroize")
+body: b171d8bff78e63c9075cb61299b5fcd8c81bd4f6afe636334a83c827c4656228
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -514,6 +580,7 @@ file: src/sign.rs
 form: cfg
 item: use crate::ntt::matrix_vector_ntt
 cfg: not(feature="zeroize")
+body: 9ffbaef436b8320362822f148e9df1e7e406cb1fc11ee0c9479570804381b99c
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -521,6 +588,7 @@ file: src/sign.rs
 form: cfg
 item: use crate::ntt::matrix_vector_ntt_into
 cfg: feature="zeroize"
+body: dc1bc0e950e2034b47273a2bde8fd40546d21c1f550cd2a5c139f0be3279ef4b
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -528,6 +596,7 @@ file: src/sign.rs
 form: cfg
 item: use crate::ntt::ntt_vec
 cfg: not(feature="zeroize")
+body: f351bf0b94c017636716c4bbc0a762a0dc07320046b77c39322eccf71783990a
 count: 1
 why: zeroize: wipe of secret material (Sign/KeyGen/secret-key decoders) in the zeroize build; the computed values are the same with and without it. Not on a verify path.
 
@@ -556,6 +625,7 @@ file: src/verify.rs
 form: cfg
 item: mod tests
 cfg: test
+body: 1e0b7801800a61bf4c4394db205d32b6e81e5aad938221f871376505ea6c0eb1
 count: 1
 why: internals/test: unit tests of the module, not compiled in the library.
 

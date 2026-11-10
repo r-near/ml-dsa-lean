@@ -26,7 +26,7 @@ A scan that finds no Rust file, or no site at all, fails: a gate that parses zer
 
 What a site is. A site is identified by
 
-  file | form | item | predicate | attributes
+  file | form | item | predicate | attributes      (plus the digest of the selected body, see "Bodies")
 
 where `item` is what the attribute is on (`fn name`, `mod name`, `use path`, `struct name`, `impl ..`, ..., or `stmt in fn
 name` for a statement or expression inside a function body; for a block or expression inside a function it is the enclosing
@@ -42,22 +42,36 @@ Two kinds of site:
     `env!`, ...). One entry per (file, form, item, predicate) with a count and a justification. This is the list of places
     where the source text that is compiled depends on the configuration; a new or changed entry is a review item.
 
-The whitelist is exact: a site that is not listed, a count that differs, and a listed entry that matches no site are all
-errors, and so is an entry without a justification.
+Bodies. The identity above says where a cfg is, not what it selects. A `cfg(not(miri))` body is compiled but never extracted
+(the extraction runs with `--cfg miri`), so a change to it moves neither the extraction digest nor the feature-independence
+gate. Therefore every `cfg` site and every gating `cfg_attr` also records `body:`, the SHA-256 of the text the attribute
+selects (the item or statement after it, with further attributes skipped; for an inner `#![cfg]` the rest of the file),
+normalized by dropping comments and whitespace (one space is kept between two word characters; string and character literals
+are kept as written). An entry with several sites records one digest of the sorted per-site hashes. A changed body, a body
+that is added to an entry that has none, or a missing hash is an error that prints the new digest and the lines of the sites.
+Only the selected text is bound: a function that such a body calls is ordinary code and is covered by the extraction, and a
+cfg-selected body that calls into a non-cfg item is not re-proved here. After reviewing a changed body, paste the printed
+digest into scripts/cfg-inventory.txt.
+
+The whitelist is exact: a site that is not listed, a count that differs, a body that differs from its recorded digest, and a
+listed entry that matches no site are all errors, and so is an entry without a justification.
 
 The self-test (run first by every invocation, and by `--self-test`) holds the negative fixtures: the audited counterexample
 `if cfg! { not(miri) } { return false; }` with the variants `cfg ! [..]`, a comment between the tokens, the attribute forms
 with whitespace, `cfg_if!`, `env!`, `include!`, `is_*_feature_detected!`, `#[path]`, `macro_rules!` with cfg, a build script,
-lexer traps (raw strings that would hide a site from a naive scanner), and an empty scan. Each must be reported; text that only
-looks like a site (a raw string, a doc comment, a longer identifier) must not.
+lexer traps (raw strings that would hide a site from a naive scanner), and an empty scan. It also holds the body fixtures: the
+audited mutation of the non-Miri RISC-V `barrier_u64` (`black_box(x)` to `black_box(x).wrapping_add(1)`), a changed statement,
+literal, callee or extra statement in a selected body, each of which must be reported; and a comment-only change, an added doc
+comment and a re-indented body, which must pass. Each site must be reported; text that only looks like a site (a raw string, a
+doc comment, a longer identifier) must not.
 
 Usage: python3 -I scripts/cfg_inventory.py [--root DIR] [--whitelist FILE]        check (exit 1 on any difference)
        python3 -I scripts/cfg_inventory.py --init                                 print a skeleton whitelist for the current src/
        python3 -I scripts/cfg_inventory.py --self-test
 """
+import hashlib
 import re
 import sys
-from collections import Counter
 from pathlib import Path
 
 ATTR_ONLY = {'inline', 'allow', 'warn', 'deny', 'forbid', 'expect', 'target_feature', 'must_use', 'cold', 'track_caller',
@@ -68,46 +82,73 @@ CHAR_LIT = re.compile(r"'(?:\\\\.[^']*|[^\\\\'])'")
 RAW_OPEN = re.compile(r'(?:br|cr|r)(#*)"')
 
 
-def strip_rust(text):
-    """TEXT with comments, string literals and char literals replaced by spaces (newlines kept), so that cfg-looking text
-    inside them is not scanned. Handles nested block comments and raw strings."""
-    out, i, n = [], 0, len(text)
-    def blank(s):
-        return re.sub(r'[^\n]', ' ', s)
+def lex_spans(text):
+    """List of (start, end, kind) for the comments (kind 'comment') and the string, byte-string, C-string, raw-string and
+    character literals (kind 'lit') of the Rust source TEXT. Handles nested block comments and raw strings."""
+    spans, i, n = [], 0, len(text)
     while i < n:
         c = text[i]
         if text.startswith('//', i):
             j = text.find('\n', i)
             j = n if j < 0 else j
-            out.append(blank(text[i:j])); i = j
+            spans.append((i, j, 'comment')); i = j
         elif text.startswith('/*', i):
             depth, j = 1, i + 2
             while j < n and depth:
                 if text.startswith('/*', j): depth += 1; j += 2
                 elif text.startswith('*/', j): depth -= 1; j += 2
                 else: j += 1
-            out.append(blank(text[i:j])); i = j
+            spans.append((i, j, 'comment')); i = j
         elif c in 'rbc' and (i == 0 or not (text[i - 1].isalnum() or text[i - 1] == '_')) and RAW_OPEN.match(text, i):
             m = RAW_OPEN.match(text, i)
             end = '"' + m.group(1)
             j = text.find(end, m.end())
             j = n if j < 0 else j + len(end)
-            out.append(blank(text[i:j])); i = j
+            spans.append((i, j, 'lit')); i = j
         elif c == '"':
             j = i + 1
             while j < n and text[j] != '"':
                 j += 2 if text[j] == '\\' else 1
             j = min(j + 1, n)
-            out.append(blank(text[i:j])); i = j
+            spans.append((i, j, 'lit')); i = j
         elif c == "'":
             m = CHAR_LIT.match(text, i)
             if m:  # a char literal; otherwise a lifetime
-                out.append(blank(m.group(0))); i += len(m.group(0))
+                spans.append((i, i + len(m.group(0)), 'lit')); i += len(m.group(0))
             else:
-                out.append(c); i += 1
+                i += 1
         else:
-            out.append(c); i += 1
+            i += 1
+    return spans
+
+
+def strip_rust(text):
+    """TEXT with comments, string literals and char literals replaced by spaces (newlines kept), so that cfg-looking text
+    inside them is not scanned."""
+    out, last = [], 0
+    for a, b, _ in lex_spans(text):
+        out.append(text[last:a])
+        out.append(re.sub(r'[^\n]', ' ', text[a:b]))
+        last = b
+    out.append(text[last:])
     return ''.join(out)
+
+
+def normalize_body(text):
+    """TEXT without comments and with whitespace removed (one space is kept only between two word characters, where it
+    separates tokens). String and character literals are kept verbatim, so changing a literal changes the result."""
+    lits, out, last = [], [], 0
+    for a, b, kind in lex_spans(text):
+        out.append(text[last:a])
+        if kind == 'comment':
+            out.append(' ')
+        else:
+            out.append(f'\x00{len(lits)}\x00'); lits.append(text[a:b])
+        last = b
+    out.append(text[last:])
+    s = re.sub(r'\s+', ' ', ''.join(out)).strip()
+    s = re.sub(r'(?<![\w\x00]) | (?![\w\x00])', '', s)
+    return re.sub(r'\x00(\d+)\x00', lambda m: lits[int(m.group(1))], s)
 
 
 def match_close(s, i):
@@ -203,6 +244,47 @@ def describe_item(s, pos, spans, attr_start):
     return f'stmt in fn {enclosing[-1]}' if enclosing else 'expression'
 
 
+def item_end(s, start):
+    """Index just past the item or statement that begins at S[start] (S is the stripped text): its first `;` outside any
+    bracket, or the `}` that closes its outermost braces unless `else`, `.` or `?` follows (`if .. { } else { }`, a method call
+    on a block); a trailing `;` after that `}` is included. An unbalanced item runs to the end of S."""
+    depth, j, n = 0, start, len(s)
+    while j < n:
+        ch = s[j]
+        if ch in '([{':
+            depth += 1
+        elif ch in ')]':
+            depth -= 1
+        elif ch == '}':
+            depth -= 1
+            if depth <= 0:
+                k = j + 1
+                while k < n and s[k].isspace():
+                    k += 1
+                if s.startswith('else', k) and not (k + 4 < n and (s[k + 4].isalnum() or s[k + 4] == '_')):
+                    j += 1
+                    continue
+                if k < n and s[k] in '.?':
+                    j += 1
+                    continue
+                return k + 1 if k < n and s[k] == ';' else j + 1
+        elif ch == ';' and depth <= 0:
+            return j + 1
+        j += 1
+    return n
+
+
+def skip_attrs(s, j):
+    """Index of the first token at or after S[j] that is not whitespace or an attribute (`#[..]`, `#![..]`)."""
+    while True:
+        while j < len(s) and s[j].isspace():
+            j += 1
+        if s.startswith('#', j) and j + 1 < len(s) and s[j + 1] in '[!':
+            j = match_close(s, s.index('[', j))
+            continue
+        return j
+
+
 ATTR = re.compile(r'#\s*(!?)\s*\[\s*(cfg_attr|cfg)\s*[(\[{]')
 PATH_ATTR = re.compile(r'#\s*(!?)\s*\[\s*path\s*=')
 # Macros that select or read something at compile time. A path prefix (`core::cfg!`, `$crate::env!`) is allowed.
@@ -262,6 +344,12 @@ def sites(text, rel):
                         pred=pred, attrs=','.join(attrs))
             if m.group(1) == '!' and not only:
                 site['item'] = 'crate'
+        if site['form'] in ('cfg', 'cfg_attr(gating)'):
+            # The text the attribute selects. An inner attribute (`#![cfg(..)]`) selects the rest of the file.
+            a = skip_attrs(s, close_bracket + 1)
+            b = len(s) if m.group(1) == '!' else item_end(s, a)
+            site['body'] = normalize_body(text[a:b])
+        site['line'] = text.count('\n', 0, m.start()) + 1
         out.append(site)
     for m in PATH_ATTR.finditer(s):
         open_bracket = s.index('[', m.start())
@@ -330,7 +418,21 @@ def key(site):
     return (site['file'], site['form'], site['item'], site['pred'], site['attrs'])
 
 
-def fmt_entry(k, count, why='TODO'):
+def body_digest(bodies):
+    """One digest for the normalized bodies of all the sites of an entry, independent of their order in the source."""
+    return hashlib.sha256('\n'.join(sorted(hashlib.sha256(b.encode()).hexdigest() for b in bodies)).encode()).hexdigest()
+
+
+def inventory(found):
+    """key -> (count, body digest or '', [line, ..]) for the list FOUND of sites."""
+    groups = {}
+    for s in found:
+        groups.setdefault(key(s), []).append(s)
+    return {k: (len(v), body_digest([s['body'] for s in v]) if all('body' in s for s in v) else '',
+                [s.get('line', 0) for s in v]) for k, v in groups.items()}
+
+
+def fmt_entry(k, count, why='TODO', body=''):
     f, form, item, pred, attrs = k
     lines = [f'file: {f}', f'form: {form}']
     if item:
@@ -338,8 +440,14 @@ def fmt_entry(k, count, why='TODO'):
     lines.append(f'cfg: {pred}')
     if attrs:
         lines.append(f'attrs: {attrs}')
+    if body:
+        lines.append(f'body: {body}')
     lines += [f'count: {count}', f'why: {why}']
     return '\n'.join(lines)
+
+
+def whitelist_text(found, why='TODO'):
+    return '\n\n'.join(fmt_entry(k, n, why, digest) for k, (n, digest, _) in sorted(inventory(found).items()))
 
 
 def parse_whitelist(text):
@@ -351,7 +459,7 @@ def parse_whitelist(text):
         d = {}
         last = None
         for l in lines:
-            m = re.match(r'(file|form|item|cfg|attrs|count|why):\s?(.*)$', l)
+            m = re.match(r'(file|form|item|cfg|attrs|body|count|why):\s?(.*)$', l)
             if m:
                 last = m.group(1)
                 d[last] = m.group(2)
@@ -365,7 +473,7 @@ def parse_whitelist(text):
         k = (d['file'], d['form'], d.get('item', ''), d['cfg'], d.get('attrs', ''))
         if k in entries:
             raise ValueError(f'duplicate whitelist entry {k}')
-        entries[k] = (int(d['count']), d['why'].strip())
+        entries[k] = (int(d['count']), d['why'].strip(), d.get('body', '').strip())
     return entries
 
 
@@ -379,16 +487,26 @@ def check(root, whitelist_text):
     root = Path(root)
     if not root.is_dir() or not any(root.rglob('*.rs')):
         return [f'no Rust source under {root.name}/ to scan: a gate that scans nothing passes vacuously']
-    have = Counter(key(s) for s in scan(root))
+    have = inventory(scan(root))
     if not have:
         errors.append(f'the scan found no cfg site at all in {root.name}/: the scanner is broken or the path is wrong '
                       f'(a gate that parses zero sites passes vacuously)')
-    for k, n in sorted(have.items()):
+    for k, (n, digest, lines) in sorted(have.items()):
+        name = " | ".join(x for x in k if x)
+        where = ', '.join(f'{k[0]}:{ln}' for ln in sorted(lines))
         if k not in wl:
-            errors.append(f'new cfg site not in the whitelist ({n}x): {" | ".join(x for x in k if x)}')
+            errors.append(f'new cfg site not in the whitelist ({n}x): {name}')
         elif wl[k][0] != n:
-            errors.append(f'cfg site count changed (whitelist {wl[k][0]}, now {n}): {" | ".join(x for x in k if x)}')
-    for k, (n, why) in sorted(wl.items()):
+            errors.append(f'cfg site count changed (whitelist {wl[k][0]}, now {n}): {name}')
+        elif digest and not wl[k][2]:
+            errors.append(f'whitelist entry without a body hash (add "body: {digest}" after reviewing {where}): {name}')
+        elif digest != wl[k][2]:
+            if digest:
+                errors.append(f'the body of a cfg site changed (whitelist body {wl[k][2][:16]}.., now {digest[:16]}..; sites {where}): '
+                              f'review the new text, then set "body: {digest}": {name}')
+            else:
+                errors.append(f'whitelist entry has a body hash but its site has no body to hash: {name}')
+    for k, (n, why, body) in sorted(wl.items()):
         if k not in have:
             errors.append(f'whitelisted cfg site no longer exists: {" | ".join(x for x in k if x)}')
         if not why or why.upper().startswith('TODO'):
@@ -409,6 +527,15 @@ pub fn f(x: u32) -> u32 {
     x.zeroize();
     if cfg!(target_feature = "avx2") { 1 } else { 2 }
 }
+// The shape of src/field.rs `barrier_u64`: the body the extraction sees (`miri`) and the one it does not (`not(miri)`).
+#[cfg(all(not(miri), any(target_arch = "riscv32", target_arch = "riscv64")))]
+fn barrier_u64(x: u64) -> u64 {
+    core::hint::black_box(x)
+}
+#[cfg(any(miri, not(any(target_arch = "riscv32", target_arch = "riscv64"))))]
+fn barrier_u64(x: u64) -> u64 {
+    x
+}
 '''
     def run(label, src, want_ok, needle=None, extra=None):
         """Whitelist = the sites of BASE; then SRC (and the EXTRA files, name -> text, next to src/) is checked against it."""
@@ -416,8 +543,7 @@ pub fn f(x: u32) -> u32 {
             root = Path(t) / 'src'
             root.mkdir()
             (root / 'a.rs').write_text(base)
-            inv = Counter(key(s) for s in scan(root))
-            wl = '\n\n'.join(fmt_entry(k, n, 'because') for k, n in sorted(inv.items()))
+            wl = whitelist_text(scan(root), 'because')
             (root / 'a.rs').write_text(src)
             for name, text in (extra or {}).items():
                 (Path(t) / name).write_text(text)
@@ -428,14 +554,33 @@ pub fn f(x: u32) -> u32 {
                 errs.append(f'self-test {label}: not caught ({e})')
     run('unchanged', base, True)
     s0 = sites(base, 'src/a.rs')
-    if len(s0) != 4:
-        errs.append(f'self-test: base has {len(s0)} sites, expected 4: {s0}')
+    if len(s0) != 6:
+        errs.append(f'self-test: base has {len(s0)} sites, expected 6: {s0}')
     run('a new cfg-split body', base + '\n#[cfg(feature = "avx2")]\nfn g() -> u32 { 1 }\n#[cfg(not(feature = "avx2"))]\nfn g() -> u32 { 2 }\n',
         False, 'new cfg site')
     run('a changed predicate', base.replace('target_feature = "avx2"', 'target_feature = "sse2"'), False, 'new cfg site')
     run('a removed site', base.replace('#[cfg(feature = "zeroize")]\n    x.zeroize();', 'x.zeroize();'), False, 'no longer exists')
     run('one more copy of an existing site', base.replace('    x.zeroize();', '    x.zeroize();\n    #[cfg(feature = "zeroize")]\n    x.zeroize();'),
         False, 'count changed')
+    # The bodies a cfg selects are bound by content (the whitelist records a digest of the normalized text): a changed body is
+    # reported although file, item, predicate and attributes are the same. The first is the audited mutation of the non-Miri
+    # RISC-V `barrier_u64`, which the extraction cannot see.
+    run('the audited mutation: black_box(x) becomes black_box(x).wrapping_add(1) in the not(miri) barrier',
+        base.replace('core::hint::black_box(x)', 'core::hint::black_box(x).wrapping_add(1)'), False, 'body of a cfg site changed')
+    run('a changed body in the miri variant', base.replace('    x\n}', '    x ^ 0\n}'), False, 'body of a cfg site changed')
+    run('a changed statement under a cfg', base.replace('x.zeroize();', 'x.zeroize_more();'), False, 'body of a cfg site changed')
+    run('a changed string literal in a selected body', base.replace('core::hint::black_box(x)', 'core::hint::black_box(x); let _ = "a"'),
+        False, 'body of a cfg site changed')
+    run('a callee swapped in a selected body', base.replace('core::hint::black_box', 'core::convert::identity'), False,
+        'body of a cfg site changed')
+    run('a body that gains a statement',
+        base.replace('core::hint::black_box(x)\n}', 'let y = x;\n    core::hint::black_box(y)\n}'), False, 'body of a cfg site changed')
+    # Comments and layout are not part of the body.
+    run('a comment-only change in a selected body', base.replace('core::hint::black_box(x)',
+        '// a comment with a } and a "quote\n    core::hint::black_box(x) /* and { another */'), True)
+    run('a doc comment added to a selected item', base.replace('fn barrier_u64(x: u64) -> u64 {\n    core::hint', '/// docs\nfn barrier_u64(x: u64) -> u64 {\n    core::hint'), True)
+    run('a re-indented, re-wrapped body', base.replace('fn barrier_u64(x: u64) -> u64 {\n    core::hint::black_box(x)\n}',
+        'fn barrier_u64( x : u64 )\n    -> u64\n{\n\t\tcore::hint::black_box( x )\n\n}'), True)
     run('a cfg_attr that is not attribute-only', base + '\n#[cfg_attr(feature = "avx2", path = "x.rs")]\nmod m;\n', False, 'new cfg site')
     # The audited counterexample (a verify function with a body that only some builds run) and the spellings around it. Each is
     # appended to BASE, so each must be reported as a site that is not in the whitelist.
@@ -507,8 +652,7 @@ pub fn f(x: u32) -> u32 {
         root = Path(t) / 'src'
         root.mkdir()
         (root / 'a.rs').write_text(base)
-        inv = Counter(key(s) for s in scan(root))
-        wl = '\n\n'.join(fmt_entry(k, n) for k, n in sorted(inv.items()))
+        wl = whitelist_text(scan(root))
         if not any('justification' in x for x in check(root, wl)):
             errs.append('self-test: a TODO justification was accepted')
     # A scan that parses zero sites must fail, not pass: a source tree without any cfg site, one without any Rust file, a
@@ -553,8 +697,7 @@ def main(argv):
             print(__doc__, file=sys.stderr)
             return 2
     if init:
-        inv = Counter(key(s) for s in scan(root))
-        print('\n\n'.join(fmt_entry(k, n) for k, n in sorted(inv.items())))
+        print(whitelist_text(scan(root)))
         return 0
     errs = self_test()
     if errs:

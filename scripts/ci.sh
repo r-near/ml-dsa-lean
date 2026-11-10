@@ -37,8 +37,11 @@
 #                         axiom, opaque, sorry, admit, native_decide, implemented_by and extern. The Lean half (the whole
 #                         environment, with an injected-declaration self-test) runs in the `lean` step via scripts/lean-check.sh.
 #   cfg-inventory         every #[cfg(..)], #[cfg_attr(..)] and cfg!(..) site in src/ against the justified whitelist
-#                         scripts/cfg-inventory.txt (scripts/cfg_inventory.py): a new or changed cfg-split body fails until a
-#                         reviewer writes it into the whitelist.
+#                         scripts/cfg-inventory.txt (scripts/cfg_inventory.py): a new, removed or re-counted site fails, and so
+#                         does a change to the text a cfg selects (the whitelist records a SHA-256 of each selected body with
+#                         comments and whitespace dropped, so editing a `cfg(not(miri))` body, which the extraction never
+#                         sees, fails) until a reviewer writes the new digest into the whitelist. Its self-test includes the
+#                         audited mutation of the RISC-V `barrier_u64`. It binds the cfg-selected text only, not its callees.
 #   readme-counts         the theorem counts in README.md against the theorem lists (scripts/check-readme-counts.py).
 #   ci-selftest           scripts/ci-selftest.sh: runs this script and scripts/lean-check.sh against stub gates and fails unless the
 #                         feature-independence check ran exactly when it should have (never skipped by `--only lean`, a SKIP or a
