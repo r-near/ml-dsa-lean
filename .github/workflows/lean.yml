@@ -3,21 +3,40 @@ name: Lean
 # The Lean proof gate (scripts/lean-check.sh) and the kernel witnesses (scripts/witness-check.sh).
 #
 # THESE JOBS NEED A LARGE RUNNER
-#   Neither job fits a standard `ubuntu-latest` runner (4 vCPU, 16 GB RAM, 14 GB disk). Measured for this workflow, cold
-#   builds of scripts/lean-check.sh in containers with a hard memory limit (the partial build output was already 7.8 GB plus
-#   2.8 GB of toolchain, so the disk is also tight):
-#     - 16 GB, 4 CPUs: killed by the out-of-memory killer (Lean exit code 137) in Proofs.SampleS, about 6 minutes in.
-#     - 40 GB, 8 CPUs: also killed (exit code 137), in Proofs.SkWellFormed, after about 34 minutes (Proofs.Witnesses alone
-#       took 28 minutes). So lean-check's peak is above 40 GB at 8 CPUs, and its true peak is not recorded anywhere.
-#   `lake` builds modules in parallel, so the peak grows with the core count and the memory needed depends on the runner.
-#   A Docker CPU limit (`--cpus`) caps CPU time but not the CPU count the build sees, so the capped runs may have built
-#   more modules at once than an 8-vCPU runner would; the true peak on an 8-vCPU runner is not measured.
+#   Neither job fits a standard `ubuntu-latest` runner (4 vCPU, 16 GB RAM, 14 GB disk), at any build parallelism. Measured
+#   for this workflow in Ubuntu 24.04 containers with `--memory 16g --memory-swap 16g`, 4 pinned cores (2 physical cores,
+#   both hyperthreads) and `--cpus 4`, each run cold (fresh elan, Rust and Lake directories; only `lake exe cache get`
+#   downloads, as in the job), running the steps of the lean-check job in order:
+#     - Default parallelism (Lake runs up to 5 `lean` processes at once here): killed by the out-of-memory killer (Lean exit
+#       code 137) in Proofs.SampleS, about 11 min into the `scripts/lean-check.sh` step (about 15 min into the job). The
+#       setup steps took 4 min 17 s (tools 184 s, re-extraction 72 s).
+#     - `LEAN_NUM_THREADS=1` (one `lean` process at a time, checked by sampling the process list every 2 s): killed in the
+#       same module, Proofs.SampleS, with that single process at 16.3 GB resident, about 17.5 min into the lean-check step.
+#       So lowering the parallelism does not help: one module alone does not fit.
+#     - Proofs.SampleS alone, with the other modules already built, in a container with a 48 GB limit: 18.9 GB of anonymous
+#       memory (21.0 GB cgroup peak, which includes the memory-mapped .olean files), 2 min 21 s to 2 min 31 s, the same with
+#       `LEAN_NUM_THREADS=1`. It needs about 19 GB for one module, so 16 GB cannot hold it.
+#     - The rest of the default targets with a 48 GB limit and `LEAN_NUM_THREADS=1` (one module at a time, so the
+#       per-module resident sizes are clean): passed in 38 min 32 s, cgroup peak 38.5 GB. The three large modules are
+#       Proofs.SkWellFormed (35.5 GB resident, 5 min 38 s), Proofs.Witnesses (33.3 GB, 20 min 32 s) and
+#       Proofs.SampleS (about 21 GB resident, 3 min 5 s). No other module needs more than 4.4 GB (Proofs.CorrNTT is the next).
+#       Earlier attempts agree: 16 GB / 4 CPUs was killed in Proofs.SampleS, and 40 GB / 8 CPUs in Proofs.SkWellFormed after
+#       about 34 min.
+#     - Disk: Mathlib and the other Lake packages are 7.8 GB, the Lean toolchain 2.8 GB, the nightly Rust toolchain 2.1 GB,
+#       the extraction tools 0.7 GB: 13.8 GB before the rest of the build output, against about 14 GB free on `/`. A runner
+#       job would also have to use the larger `/mnt`.
+#   To fit a standard runner, Proofs.SampleS, Proofs.SkWellFormed and Proofs.Witnesses would each have to be split until no
+#   module peaks above about 12 GB (some margin under 16 GB) (the other modules are small), and the disk use moved to `/mnt`; the time is not the limit
+#   (about 40 min single-threaded for the build on a shared box, far under 6 hours).
+#   `lake` has no `-j` option; `LEAN_NUM_THREADS` is the parallelism setting (it sets the size of the Lean task pool, and
+#   with it the number of `lean` processes Lake runs at once). A Docker CPU limit (`--cpus`) caps CPU time but not the CPU
+#   count that `sysconf` reports; the default follows the process's CPU affinity, so a `--cpuset-cpus` container sees 4.
 #   scripts/witness-check.sh is documented at about 47 min cold and about 46 GB peak (24 GB for the largest declaration) in
 #   its header, measured on a many-core machine.
 #   So both jobs read their runner label from the repository variable LEAN_HEAVY_RUNNER:
 #     - Set it (Settings > Secrets and variables > Actions > Variables) to the label of a large hosted runner, for example
 #       a WarpBuild or other label with 64 GB of RAM or more. 32 GB is not enough for witness-check (about 46 GB), and
-#       lean-check was above 40 GB at 8 CPUs. If a run dies with exit code 137, rerun it or pick a runner with more memory.
+#       lean-check needs at least 38.5 GB even one module at a time (more with parallel modules). If a run dies with exit code 137, rerun it or pick a runner with more memory.
 #     - Unset, the weekly run is skipped; a manual dispatch falls back to `ubuntu-latest`, where the jobs fail with exit
 #       code 137 (out of memory).
 #   Every run is a cold build: nothing is cached between runs.
@@ -44,7 +63,7 @@ concurrency:
 jobs:
   lean-check:
     name: lean-check
-    # Needs a large runner, see the header. Peak memory is unrecorded; it exceeded 40 GB at 8 CPUs.
+    # Needs a large runner, see the header. At least 38.5 GB (one module at a time); the peak with parallel modules is unrecorded.
     runs-on: ${{ vars.LEAN_HEAVY_RUNNER || 'ubuntu-latest' }}
     # The weekly run is skipped until a large runner is configured; a manual dispatch always runs.
     if: ${{ vars.LEAN_HEAVY_RUNNER != '' || github.event_name == 'workflow_dispatch' }}
