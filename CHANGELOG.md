@@ -60,6 +60,7 @@ This section is the net change since 0.1.0. The branch went through a run-time A
 - On 32-bit targets the 4-way verify executes 17 to 23 % fewer instructions than the scalar one (Cortex-M4 and riscv32imac, instruction counts under an emulator,
   `bench/emu/`), so there is no compile-time selector.
 - The checkct driver includes the real `src/api.rs`; its `avx2` feature and the `dispatch` BINSEC profiles are gone.
+- Round 14 (nothing under `src/` or `lean/` changes): the Lean workflow runs on pull requests that touch the proofs' inputs and on every push to main (the check to require is `lean-ok`), and a release waits for a successful `lean-check` on its exact commit; the cfg inventory records a digest of every cfg-selected body, so editing a `cfg(not(miri))` body fails it; the stack guidance is recomputed from a fresh `tools/stack` run (one-shot `verify_44` leaves about 1.3 KB of a 64 KiB stack; `verify_prepared_*` leaves 16 to 34 KB) and the stale 0.1.0-era tables are replaced.
 
 ## [0.1.0] - 2026-11-06
 
