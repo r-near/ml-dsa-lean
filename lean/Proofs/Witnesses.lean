@@ -163,10 +163,103 @@ theorem expand_a_premise_satisfiable :
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- The `ExpandS` premise holds for the all-zero seed, ML-DSA-65, fuel 512. -/
+/-- Call 0 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 0 2`. -/
+theorem rej_bounded_65_0 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 0 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 1 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 1 2`. -/
+theorem rej_bounded_65_1 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 1 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 2 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 2 2`. -/
+theorem rej_bounded_65_2 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 2 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 3 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 3 2`. -/
+theorem rej_bounded_65_3 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 3 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 4 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 4 2`. -/
+theorem rej_bounded_65_4 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 4 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 5 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 5 2`. -/
+theorem rej_bounded_65_5 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 5 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 6 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 6 2`. -/
+theorem rej_bounded_65_6 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 6 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 7 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 7 2`. -/
+theorem rej_bounded_65_7 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 7 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 8 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 8 2`. -/
+theorem rej_bounded_65_8 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 8 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 9 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 9 2`. -/
+theorem rej_bounded_65_9 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 9 2)).isSome = true := by
+  decide +kernel
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 4000000 in
+/-- Call 10 of `ExpandS` (ML-DSA-65, all-zero seed, fuel 512): `RejBoundedPoly` succeeds on `ρ ‖ IntegerToBytes 10 2`. -/
+theorem rej_bounded_65_10 :
+    (Spec.RejBoundedPoly Spec.ML_DSA_65 512 (List.replicate 64 0 ++ IntegerToBytes 10 2)).isSome = true := by
+  decide +kernel
+
+/-- The `ExpandS` premise holds for the all-zero seed, ML-DSA-65, fuel 512 (11 kernel evaluations of SHAKE256 +
+`RejBoundedPoly`, each its own declaration, assembled by `ExpandS_isSome`). -/
 theorem expand_s_satisfiable_65 :
     ∃ r, Spec.ExpandS Spec.ML_DSA_65 512 (List.replicate 64 0) = some r := by
-  have : (Spec.ExpandS Spec.ML_DSA_65 512 (List.replicate 64 0)).isSome = true := by decide +kernel
+  have : (Spec.ExpandS Spec.ML_DSA_65 512 (List.replicate 64 0)).isSome = true := by
+    apply ExpandS_isSome
+    have h11 : Spec.ML_DSA_65.ℓ + Spec.ML_DSA_65.k = 11 := by decide +kernel
+    rw [h11]
+    intro i hi
+    match i, hi with
+    | 0, _ => exact rej_bounded_65_0
+    | 1, _ => exact rej_bounded_65_1
+    | 2, _ => exact rej_bounded_65_2
+    | 3, _ => exact rej_bounded_65_3
+    | 4, _ => exact rej_bounded_65_4
+    | 5, _ => exact rej_bounded_65_5
+    | 6, _ => exact rej_bounded_65_6
+    | 7, _ => exact rej_bounded_65_7
+    | 8, _ => exact rej_bounded_65_8
+    | 9, _ => exact rej_bounded_65_9
+    | 10, _ => exact rej_bounded_65_10
+    | i + 11, h => exact absurd h (by omega)
   exact Option.isSome_iff_exists.mp this
 
 /-- ML-DSA-65 (`η = 4`): the parameter premises (`Params.Std`) and the `ExpandS` premise hold together, for the
