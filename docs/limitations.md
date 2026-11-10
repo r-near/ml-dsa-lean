@@ -58,9 +58,11 @@ found and fixed. The limits:
 
 - Verify, including the 4-way verify, handles only public data (public key, message, signature), so it has no probes and
   needs none. Sign and KeyGen do not call the 4-way body or the verify-only `poly_use_hint_pub` and `bit_unpack_pub`. The
-  full sweep predates the fast verify and the removal of the NTT dispatch and was not rerun on this tree: removing the dispatch changes the compiled NTT
-  callers of Sign and KeyGen in the default build (39 of 233 functions on x86_64), so the sweep's verdicts are for an earlier binary. The harness
-  (`../checkct/driver`) builds on this tree for every target and profile, and BINSEC runs on this tree reproduced the sweep's verdicts for the probes they covered: the NTT probes and an 8-probe smoke in the default profile, the smoke in `nearcore` and `nearcore-exact` (assurance.md section 4, "Round 12", which lists the profiles that have no verdict on this tree).
+  full sweep was rerun on this tree in round 13 (assurance.md section 4, "Round 13 BINSEC sweep"): the default-build code of the checkct driver is identical to fv-p11's in every
+  function (`ntt::dispatch` was restored; an address-masked comparison, not a verdict), and every probe of the nine cells that have a counterpart in the earlier sweep has the verdict it had
+  there (`default`, `nearcore`, `nearcore-exact`, `nearcore-exact-novec`, the two `zeroize` builds, thumbv7em, riscv32imac, AArch64 without NEON; `nearcore-novec` and the
+  NTT probes of `avx2` and `nearcore-avx2` are new cells). The `unknown` cells are the known ones (cut paths at VEX instructions in `nearcore-exact` and the `avx2` profiles, solver stalls on riscv32imac and
+  AArch64), and the whole-Sign censuses that did not finish or were not run are listed in that section. The `avx2` profiles are covered by their NTT probes only, and BINSEC cannot lift most of the vector code.
 - The whole KeyGen, Sign and `pk_from_sk` functions have no verdict, and the glue between steps is covered by code reading
   only. ExpandS is covered only through its per-nibble helper; its sampler loop branches on its public accept/reject
   outcome.

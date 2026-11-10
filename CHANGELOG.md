@@ -50,6 +50,15 @@ This section is the net change since 0.1.0. The branch went through a run-time A
   there is no difference beyond noise (-1.9 % to +1.1 %). Users who did not enable the feature see no change in Sign or KeyGen speed.
 - The one-shot verify and `verifying_key_NN` use more stack: `verify_NN` 64 / 90 / 132 KB (was 45 / 71 / 111) and `verifying_key_NN` 50 / 74 / 111 KB (was 35 / 58 / 35);
   the ML-DSA-87 `verifying_key` figure includes a second copy of the key that the compiler does not elide (`bench/results/2026-11-09-p12.md`).
+- The NTT entry points (`ntt`, `ntt_in_place`, `ntt_inverse`, `ntt_inverse_in_place`, `multiply_ntt`) call their one body through the plain, safe module `ntt::dispatch`, which
+  holds no choice. The module costs nothing at run time; it is kept because it decides how the bodies are inlined into Sign and KeyGen, and with it the machine code that
+  BINSEC analyzed: with the module the default-build driver of `checkct/` is identical, function by function (address-masked disassembly, `checkct/compare-code.sh`),
+  to the one of the tree that had the dispatch (234, 239 and 234 functions on riscv32imac, thumbv7em and x86_64); without it 185 of 233, 107 of 236 and 39 of 233 functions differed.
+- Stack of verify (`bench/results/2026-11-09-p13.md`): the figures above are unchanged. Variants that split the inlined chain into frames came within 4 to 10 KB of the old
+  stack under fat LTO but made some stack offsets slow in a build with `+avx2` and in one with nearcore's flags, so the one-frame design stays. Painted in a release build with
+  fat LTO, `verify_NN` takes 63.0 / 89.7 / 130.6 KB, the static walk; the 259 / 313 / 399 KB quoted for it in earlier notes were the dev-profile figures.
+- On 32-bit targets the 4-way verify executes 17 to 23 % fewer instructions than the scalar one (Cortex-M4 and riscv32imac, instruction counts under an emulator,
+  `bench/emu/`), so there is no compile-time selector.
 - The checkct driver includes the real `src/api.rs`; its `avx2` feature and the `dispatch` BINSEC profiles are gone.
 
 ## [0.1.0] - 2026-11-06

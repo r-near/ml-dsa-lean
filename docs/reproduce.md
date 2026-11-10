@@ -41,6 +41,7 @@ assembly, and fails unless the 4-way permutation is 256-bit vector code and the 
 (these are performance properties: a miss would still be correct, but several times slower).
 `EXTRA_RF="-Ctarget-feature=+avx,+avx2" bash bench/stackscan.sh build NAME && OPS=verify,vk,prepared bash bench/stackscan.sh check CPU NAME` scans 257 stack offsets
 (`STACK SCAN OK` when the largest is within 1.15 of the median; without `EXTRA_RF` it scans the 128-bit build).
+`bash bench/scanboth.sh CPU NAME` builds and scans both variants (nearcore's flags and the same plus `+avx,+avx2`); `bash bench/stackquick.sh` prints the painted and static stack of `verify_NN`, `verifying_key_NN` and `verify_prepared_NN` (x86_64 and thumbv7em, default profile and fat LTO) on the build box; `bash bench/emu/run.sh` counts the instructions of the scalar and 4-way verify on Cortex-M4 and riscv32imac under the Unicorn emulator (docker; instruction counts, not cycles).
 The Lean theorems behind the 4-way verify (`lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`) are checked by
 `scripts/lean-check.sh` (section 2.1).
 
@@ -200,9 +201,8 @@ larger one.
 
 ## 3. Constant-time checks (BINSEC)
 
-These need Linux and Docker. The recorded sweep predates the fast verify and was not rerun on this tree (Sign and KeyGen code is unchanged since it). The
-harness (`checkct/driver`, which includes the `src/` files by `#[path]`) builds on a tree that has the fast verify, and a small
-BINSEC run reproduced the sweep's verdicts for the probes it covered (assurance.md section 4). The image builds BINSEC and the Rust toolchains (about 10 minutes):
+These need Linux and Docker. The sweep of round 13 (`checkct/results/sweep-1d8b5c5/`, assurance.md section 4, "Round 13 BINSEC sweep") is the current one. The
+harness (`checkct/driver`, which includes the `src/` files by `#[path]`) builds on this tree. `bash checkct/compare-code.sh build NAME` and `compare A B` compare the driver's machine code between two checkouts; `checkct/sweep-post.sh CELL` and `checkct/sweep-compare.py OLD NEW` turn a cell's log into its files and compare two cells. The image builds BINSEC and the Rust toolchains (about 10 minutes):
 
 ```sh
 docker build -t ct-binsec checkct

@@ -69,7 +69,8 @@ Under nearcore's current flags fast verify runs at 38.6 / 57.9 / 96.2 µs. The 2
 a binary built that way runs only on a CPU with AVX2. This README does not claim that the CPU features in nearcore's list (FMA, BMI2, MOVBE and the others) guarantee AVX2 on
 the machines that run it. On aarch64 the 4-way verify is 42 to 61 % faster than scalar with no flags. Measurements and method: `bench/results/2026-11-09-p12.md`.
 
-Stack: the 4-way verify uses more stack than the scalar one did. One-shot `verify_NN` 64 / 90 / 132 KB, `verifying_key_NN` 50 / 74 / 111 KB (ML-DSA-44 / 65 / 87), measured; see `src/api.rs`.
+Stack: the 4-way verify uses more stack than the scalar one did. One-shot `verify_NN` 64 / 90 / 132 KB (63 / 90 / 131 KB under fat LTO), `verifying_key_NN` 50 / 74 / 111 KB (ML-DSA-44 / 65 / 87), measured; see `src/api.rs`
+and `bench/results/2026-11-09-p13.md`. On 32-bit targets (Cortex-M4, riscv32imac) the 4-way verify executes 17 to 23 % fewer instructions than the scalar one (instruction counts under an emulator, not cycles).
 
 ## How it's checked
 
