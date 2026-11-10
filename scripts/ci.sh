@@ -48,6 +48,8 @@
 #                         failure; not repeated after a pass), and unless the old unconditional flag is caught; then
 #                         `checkct/compare_code.py --self-test` (a header-only or truncated disassembly, or one without the driver's
 #                         entry points and probes, must be an error and never "COMPARE OK").
+#                         Its last case is `scripts/require-lean-run.sh --self-test`, the release gate on lean.yml (a stub `gh`;
+#                         only a successful `lean-check` job for the exact commit passes).
 # feature-independence (--lean only; needs the extraction tools of scripts/setup-tools.sh, no Lean) extracts the crate a second
 # time under `-C target-feature=+avx,+avx2` and diffs the generated Lean against lean/Impl, failing on any difference outside
 # a whitelist that is empty (scripts/check-feature-independence.sh). SKIP when the tools are missing.

@@ -1,10 +1,22 @@
 name: Release-plz
 
-# Automated releases with release-plz (https://release-plz.dev), configured in release-plz.toml. Two jobs:
+# Automated releases with release-plz (https://release-plz.dev), configured in release-plz.toml. Three jobs:
 #   - release-pr  opens or updates a release pull request that bumps the version in Cargo.toml and Cargo.lock and updates
 #                 CHANGELOG.md.
-#   - release     after that pull request is merged, publishes the unpublished version to crates.io, then pushes the
-#                 v<version> git tag and creates the GitHub release.
+#   - lean-gate   waits for the Lean workflow (lean.yml) to finish on the exact commit that was pushed, and fails unless its
+#                 `lean-check` job succeeded there (scripts/require-lean-run.sh).
+#   - release     needs lean-gate; after the release pull request is merged, publishes the unpublished version to crates.io,
+#                 then pushes the v<version> git tag and creates the GitHub release.
+#
+# NO RELEASE WITHOUT THE PROOFS
+#   lean.yml runs on every push to main, started by the same push that starts this workflow, so lean-gate looks for the run
+#   with head_sha = github.sha, waits for it (up to 3 hours, about the runtime of a cold Lean build plus queueing) and
+#   accepts only the job `lean-check` with the conclusion `success`: a failed, cancelled or skipped job, a run for another
+#   commit and no run all fail the release. The gate has its own job, so it needs only `actions: read` and `contents: read`;
+#   the job that holds the OIDC and write permissions does not start until it passed. The cost: on every push to main the
+#   `release` job also waits for the Lean run (it is a no-op after that unless the push is a merged release pull request),
+#   so a push that breaks the proofs also shows a failed release job. A failed gate is retried with "Re-run failed jobs"
+#   once the Lean run for that commit is green (rerunning lean.yml itself fixes the run the gate reads).
 #
 # NO LONG-LIVED REGISTRY TOKEN
 #   Publishing uses crates.io trusted publishing (OIDC). The `release` job runs in the GitHub environment `release` and
@@ -75,6 +87,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # Fails unless lean.yml succeeded for exactly this commit; see the header. No secrets and no write permission.
+  lean-gate:
+    name: lean-gate
+    if: github.repository == 'r-near/ml-dsa-lean'
+    runs-on: ubuntu-latest
+    # lean.yml's lean-check has a 120 minute timeout; the gate waits up to 3 hours (LEAN_GATE_MAX_SECS) for the run to show up
+    # and finish.
+    timeout-minutes: 200
+    permissions:
+      contents: read # check out scripts/require-lean-run.sh at the pushed commit
+      actions: read # list the lean.yml runs of this commit and their jobs
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Require a successful lean-check job for this commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: bash scripts/require-lean-run.sh "$REPO" "$SHA"
+
   # Publishes to crates.io, tags the release commit and creates the GitHub release. With `release_always = false` in
   # release-plz.toml it only publishes when the pushed commit comes from a merged release pull request (found through the
   # GitHub API, hence `pull-requests: read`), so it is a no-op on every other push.
@@ -83,6 +119,8 @@ jobs:
   # request's merge commit publishes, and crates.io refuses a second upload of the same version.
   release:
     name: release
+    # The proofs must have been checked for this exact commit (see the header).
+    needs: lean-gate
     if: github.repository == 'r-near/ml-dsa-lean'
     runs-on: ubuntu-latest
     timeout-minutes: 20

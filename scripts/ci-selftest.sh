@@ -13,6 +13,7 @@
 #   E  a flag inherited from the caller's environment       is ignored: the check runs
 #   F  lean-check.sh with a module argument                 says PARTIAL; without a flag a full run runs the check
 #   G  a copy of ci.sh with the old unconditional flag      case A must fail on it (the self-test catches the bug it is about)
+#   H  scripts/require-lean-run.sh --self-test              the release gate on lean.yml accepts only a successful lean-check job
 # Usage: bash scripts/ci-selftest.sh   (exit 0 and a final "ci-selftest OK" line only if every case behaves)
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -120,6 +121,10 @@ PY
 mktree "$T/old" "$T/old-ci.sh"
 if case_a "$T/old"; then bad "G: case A passed on a ci.sh with the unconditional flag, so the self-test cannot see the bug"
 else note "G ok: case A fails on a ci.sh with the old unconditional flag"; fi
+
+# H: the release gate that makes a release wait for the Lean workflow (stub gh; skipped job, failed run, no run, ...).
+if bash "$REPO/scripts/require-lean-run.sh" --self-test > "$T/gate-out" 2>&1; then note "H ok: $(tail -1 "$T/gate-out")"
+else bad "H: scripts/require-lean-run.sh --self-test"; tail -8 "$T/gate-out"; fi
 
 if [ "$fails" -eq 0 ]; then echo "ci-selftest OK"; exit 0; fi
 echo "ci-selftest FAILED: $fails case(s)"; exit 1
