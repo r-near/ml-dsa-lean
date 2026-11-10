@@ -98,7 +98,7 @@ modules instead of upstream's, and `signing.rs` probes this crate's `sign::respo
 
 ## Full sweep at 1a72d9e (November 5–6, 2026, UTC)
 
-The current results. `src/` at 1a72d9e: the tree after the merge of the change to Sign. The per-attempt intermediates of
+The results at 1a72d9e (the current ones are `results/sweep-1d8b5c5/`, see the Round 13 note above). `src/` at 1a72d9e: the tree after the merge of the change to Sign. The per-attempt intermediates of
 `sign::attempt` live in caller-owned buffers (`response_into`, `hint_step_into`; `response` and `hint_step` are those functions on
 fresh buffers) that the `zeroize` feature wipes on every path (`wipe_attempt`); secret keys are decoded in place
 (`sk_decode_into`, `unpack_signed_into`, `prepare_sk_into` with `ntt_vec_into`, `ntt_inverse_in_place`,
