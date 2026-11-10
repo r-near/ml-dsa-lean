@@ -9,69 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.0](https://github.com/r-near/ml-dsa-lean/compare/v0.1.0...v0.2.0) - 2026-11-10
 
-### Other
-
-- Round 13 entry (code identity, stack decision, 32-bit counts, gates, BINSEC sweep and censuses), limitations, README, CHANGELOG, reproduce
-- replace the stale prepare_vk doc comments (100 KB / 83 KB, 132 KB / 115 KB) with a description of the current design; re-extract (line-number comments only)
-- restore the plain dispatch wrapper module of round 11 (no choice inside); default-build object code is identical to fv-p11 again
-- stack figures and stack-offset scan for the inline-always tree
-- keep the verify chain #[inline(always)] so frames stay 32-byte aligned; check-avx2-inlining checks the nine public functions; re-extract (line numbers)
-- README speed claims state their build flags; CHANGELOG as the net change; limitations, nearcore-integration, reproduce, object-code-assurance, checkct README for round 12; bench results of the round; stackscan builds with target features
-- documentation of the always-4-way verify, stack figures, no dispatch left in comments; re-extract (comments only)
-- remove the NTT AVX2 dispatch: the crate has no unsafe and no run-time detection
-- always call the 4-way code; delete the run-time AVX2 dispatch
-- unsafe calls now in fast_verify/dispatch.rs; reproduce.md and CHANGELOG describe the new gates
-- README theorem counts checked against the lists (108 was 88, now 111 with NoDispatch); ci.sh and lean-check.sh run the new gates
-- cpu.rs and lib.rs docs for the one-text dispatch; Cargo.toml avx2 comment rewritten for the current design; lean/Impl re-extracted
-- one _with text in every build; Avx2 is uninhabited without the dispatch
-- the AVX2 residual and the CPU-detection assumption stated the same way everywhere; README and changelog for round 9
-- run the row loop on a borrow of the scratch's w1 field
-- src, docs: a false AVX2 report is undefined behavior, not a crash; precise unsafe-call wording in fast_verify.rs
-- an aligned scratch owned by verify_core replaces the black_box align_frame anchor
-- keep a value-free align_frame() in verify_prepared_avx2 (empty under extraction); the prepared-key verify is 2-8% slower without it
-- the 4-way Keccak is plain proved Rust and the AVX2 dispatch is extracted and proved; list what stays outside the proof
-- extracted *_with functions take an Avx2 token; api::*_with carry the flag; drop align_frame and the test hooks in dispatch.rs
-- module docs
-- round25 (one scalar round on [u64; 25]) called twice per lane iteration; generator --check; lab: reference copy, q variant
-- allow clippy::manual_rotate on the generated body
-- plain-Rust 4-way kernel (loop over the four states around a straight-line two-round body); remove Lanes4, Shim4 and the AVX2 intrinsics
-- also run the tr-lane ExpandA over Avx2, through a checked internals-only wrapper (re-extracted: digest only)
-- p7 results (tr in the fourth lane of the 4-way ExpandA), assurance 1.9 and benchmarks, nearcore-integration 6, changelog
-- compute tr = H(pk, 64) in the fourth lane of the first 4-way ExpandA groups
-- allow dead_code on the never-read anchor of align_frame (inputs digest only)
-- build the prepared key in place in prepare_vk_avx2 (verifying_key_87: 69.6 us at every stack offset after the realignment, 52.0 now)
-- realign every AVX2 wrapper's stack frame to 32 bytes (page-split spills made verify up to 12 us slower at some stack offsets)
-- checkct driver: include the real src/fast_verify.rs instead of repeating its re-export list
-- second AVX2 wrapper for the prepared-key verify (verify_prepared_avx2)
-- bit_pack_pub_spec is in Proofs/VerifyArith.lean, not Proofs/Encode.lean; re-extract (only the extraction-input digest moves)
-- fixed-width w1Encode (bit_pack_pub, w1_encode_pub)
-- lazy-reduction NTT and NTT^-1 (ntt_pub, ntt_inverse_pub, ntt_vec_pub)
-- fused multiply-accumulate row for w'_Approx (mac_row_pub)
-- z norm check without constant-time masks (vec_norm_lt_pub)
-- Fix stale comments: bit_unpack_pub theorem names, Shim4 description, avx2 feature note, spike-b references
-- state the avx2 fast verify's proof status in the README and limitations
-- bit_unpack_pub, fixed-width unpacking of t1 (10 bits) and z (18, 20 bits) for pkDecode and sigDecode
-- parse the 4-way rejection candidates straight from the Keccak lanes (eight per three lanes), no byte buffer
-- build each round's output row by row into a second buffer (ping-pong), 24 rounds as 12 double rounds
-- UseHint with plain arithmetic (public data), multiply-shift HighBits, vectorizable; verify_core/decoded inline into the AVX2 body
-- deterministic boundary tests for the branchless 4-way rejection parse
-- parse the 4-way SHAKE128 blocks branchlessly from a byte buffer, and prove it
-- make the AVX2 lane operations crate-private; tests reach them through checked wrappers
-- keccak_f1600_x4_avx2 is test and bench only; say so instead of warning
-- narrow dead_code to Shim4 and keccak_f1600_x4_portable, with a reason
-- replace the line-padding comment with a short note on the dispatch contract
-- dispatch to the proved verify_internal_x4 and prepare_vk_x4; delete the stand-in
-- x4 entry points: generic order <K, L, X> (const generics first), as the dispatch calls them
-- build the lane-4 words from literals and a constant shift, re-extract
-- describe the avx2 feature's verify dispatch (Cargo.toml, README); fast_verify.rs states the proof as the target; bench: TOOLCHAIN option
-- Extract the 4-way ExpandA and verify body (new roots); unroll the rho loads, loop on a flag
-- 4-way ExpandA and verify body generic over Lanes4, with shim differential tests
-- fast-verify.sh (scalar vs dispatched verify under nearcore's flags); scripts: check-avx2-inlining.sh; stub: inline the prepare functions into the AVX2 wrapper
-- keep the extracted Lean byte-identical (one-line api import, fast_verify.rs always present, ntt.rs line numbers unchanged)
-- one cached CPU detector (cpu.rs) and a run-time dispatcher for verify and prepare_vk
-- document the AVX2 entry point's safety requirement; tests: allow needless_range_loop; refresh extract-report digest
-- 4-way Keccak-f1600 kernel generic over a Lanes4 trait, shim impl extracted
-
 This section is the net change since 0.1.0. The branch went through a run-time AVX2 dispatch for verify on the way (rounds 1 to 11 of
 `docs/assurance.md`, section 0); the last round removed it, so none of it ships.
 
