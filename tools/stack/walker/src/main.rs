@@ -218,9 +218,17 @@ fn parse_wasm(dis: &str) -> Graph {
         let Some((m, ops)) = split_insn(line) else { continue };
         if window.len() < 12 {
             window.push((m.to_string(), ops.to_string()));
-            // shadow stack prologue: global.get G; i32.const N; i32.sub
+            // shadow stack prologue: `global.get 0; i32.const N; i32.sub`, or, in a function that owns a 32-byte-aligned local
+            // (the 4-way Keccak of the verify chain), `global.get 0; local.tee A; local.set B; local.get A; i32.const N; i32.sub;
+            // i32.const -32; i32.and`. So: an `i32.const N; i32.sub` with a `global.get 0` earlier in the first 12 instructions.
+            // (Before this was widened the aligned form was missed and the wasm column of verify, verifying_key and
+            // verify_prepared came out at 5 to 18 KB; it adds up to 16 bytes of alignment padding that this does not count.)
             let n = window.len();
-            if n >= 3 && window[n - 1].0 == "i32.sub" && window[n - 2].0 == "i32.const" && window[n - 3].0 == "global.get" {
+            if n >= 3
+                && window[n - 1].0 == "i32.sub"
+                && window[n - 2].0 == "i32.const"
+                && window[..n - 2].iter().any(|(mn, op)| mn == "global.get" && op.trim() == "0")
+            {
                 if let Ok(v) = window[n - 2].1.trim().parse::<i64>() {
                     funcs[c].frame = Some(v.max(0) as u64);
                 }

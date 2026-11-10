@@ -98,35 +98,35 @@ this is a nearcore decision.
 
 ## 3. Stack: nearcore's threads against our measured worst case
 
-Our figures (`tools/stack/README.md`, release, x86_64, bytes below the caller's frame; ML-DSA-44 / 65 / 87):
+Our figures (`tools/stack/README.md`, release, x86_64 static walk of the final tree, round 14; KB below the caller's frame; ML-DSA-44 / 65 / 87):
 
 | Call | KB |
 |---|---|
-| `verify_*` (one-shot) | 50 / 76 / 115 |
-| `verify_prepared_*` | 34 / 45 / 59 |
-| `verifying_key_*` (plus 20.5 / 36.9 / 65.6 KB key object in the caller's frame) | 31 / 52 / 26 |
-| `sign_*` | 116 / 168 / 240 |
+| `verify_*` (one-shot) | 64 / 90 / 132 |
+| `verify_prepared_*` | 31 / 38 / 50 |
+| `verifying_key_*` (plus 20.5 / 36.9 / 65.6 KB key object in the caller's frame) | 50 / 74 / 111 |
+| `sign_*` | 99 / 140 / 209 |
 | `keygen_*` | 64 / 98 / 143 |
 | debug (opt-level 0, with debug assertions; `cargo test` without `--release`) | see the next table |
 
 Dev profile (opt-level 0), x86_64 painted, bytes, from the dev-profile column of the `tools/stack/README.md` results
-table (release in parentheses; the ratio is not uniform, from 1.3 times for `sign_87` to 8.7 times for `verifying_key_87`):
+table (release static walk in parentheses; the ratio is not uniform, from 1.5 times for `keygen_44` to 4.2 times for `verify_prepared_44`):
 
 | Call | ML-DSA-44 | ML-DSA-65 | ML-DSA-87 |
 |---|---|---|---|
-| `verify_*` | 73,824 (49,576) | 103,008 (75,688) | 169,480 (115,112) |
-| `sign_*` | 163,728 (115,704) | 228,480 (167,816) | 317,648 (239,784) |
-| `keygen_*` | 93,440 (64,184) | 143,072 (98,040) | 221,856 (142,616) |
-| `verifying_key_*` | 79,008 (31,112) | 133,280 (51,592) | 225,440 (25,976) |
-| `signing_key_*` | 179,176 (59,960) | 286,696 (98,872) | 474,688 (164,424) |
-| `verify_prepared_*` | 53,264 (34,216) | 66,064 (45,480) | 83,984 (58,792) |
-| `sign_prepared_*` | 134,768 (73,384) | 180,064 (100,920) | 236,464 (133,976) |
+| `verify_*` | 258,792 (64,232) | 313,480 (89,816) | 398,984 (131,848) |
+| `sign_*` | 160,784 (99,344) | 223,488 (140,176) | 310,608 (209,120) |
+| `keygen_*` | 93,472 (64,216) | 143,072 (98,056) | 221,856 (142,568) |
+| `verifying_key_*` | 172,424 (49,688) | 232,872 (74,296) | 331,176 (111,032) |
+| `signing_key_*` | 185,120 (59,200) | 302,880 (98,112) | 501,536 (163,648) |
+| `verify_prepared_*` | 129,424 (31,144) | 144,656 (38,296) | 168,552 (49,576) |
+| `sign_prepared_*` | 131,824 (57,024) | 175,072 (73,280) | 229,424 (103,312) |
 
-These dev-profile figures predate the fast verify. Release-profile figures for the 4-way verify (`bench/results/2026-11-09-p12.md`, `docs/assurance.md` §3): one-shot `verify_*` 64 / 90 / 132 KB
-and `verifying_key_*` 50 / 74 / 111 KB below the caller's frame (ML-DSA-44 / 65 / 87), 19 / 19 / 21 and 15 / 17 / 76 KB more than before; the 87 figure of `verifying_key_*` includes a second copy of the key that the compiler does not elide. The key
+Both tables are the round-14 run of `tools/stack` on the final tree (`nightly-2026-10-06`). The one-shot `verify_*` and `verifying_key_*` rows are the 4-way verify's (round 12): 19 / 19 / 21 KB and 15 / 17 / 76 KB more than in 0.1.0; the 87 figure of `verifying_key_*` includes a second copy of the key that the compiler does not elide (`bench/results/2026-11-09-p13.md` section 2). The key
 constructors also place the returned key object in the caller's frame (20.5 / 36.9 / 65.6 KB for
 `verifying_key_*`, 28.8 / 48.2 / 81.0 KB for `signing_key_*`). The largest dev-profile figure is `signing_key_87`,
-about 475 KB below the caller's frame plus the 81 KB result slot.
+about 502 KB below the caller's frame plus the 81 KB result slot. (The dev-profile `verify_*` figures, 259 / 313 / 399 KB, are opt-level 0 numbers; the same function in a release build with
+fat LTO takes 63 / 90 / 131 KB, below.)
 
 nearcore's `[profile.release]` is `lto = "fat"` with `codegen-units = 1` and its flags have no AVX2, so the numbers that apply to it are the `lto` rows of `bench/results/2026-11-09-p12.md`. The verify chain is `#[inline(always)]` (commit 4d4bedb), which keeps
 the frames 32-byte aligned and the stack-offset scan clean in a build **with** `+avx2`; it is a stack cost in a build without it. Measured, fat LTO, `verify_*` in KB for ML-DSA-44 / 65 / 87:
@@ -147,9 +147,13 @@ found only the two entries marked explicit; no `actix` appears in `Cargo.toml`):
 | Actor runtimes: one tokio worker each | tokio default (2 MiB), no `thread_stack_size` | `core/async/src/tokio/runtime_handle.rs:117–120`, `core/async/src/tokio/futures.rs:12–15`, `neard/src/cli.rs:577–580` |
 | Main thread | OS default (not set by nearcore) | |
 
-Against a 2 MiB stack: Verify 65 uses 3.6%, Verify 87 5.5%, Sign 87 11.4% (240 KB; `tools/stack/README.md` "Notes for
-nearcore" gives 11%). A 64 KB (65,536 B) stack fits none of Sign, KeyGen 65/87 or Verify 65/87; `keygen_44` (64,184 B)
-fits with about 1.3 KB to spare, before any frame above the call, and Verify 44 (49,576 B) with about 16 KB. What is not measured: the frames
+Against a 2 MiB stack: Verify 44 uses 3.1%, Verify 65 4.3%, Verify 87 6.3% and Sign 87 10.0% (209 KB; `tools/stack/README.md` "Notes for
+nearcore" has the same figures). **Against a 64 KB (65,536 B) stack**, with the figures above: one-shot `verify_44` (64,232 B) and `keygen_44` (64,216 B) leave only about
+1.3 KB before any frame above the call, which is no margin (the figure was about 16 KB for `verify_44` before the 4-way verify of round 12, and this document said so until round 14);
+one-shot Verify 65/87, KeyGen 65/87 and Sign do not fit. The prepared calls do fit: `verify_prepared_44` / `65` / `87` use 31.1 / 38.3 / 49.6 KB and leave 34.4 / 27.2 / 16.0 KB, with the key held by the
+caller (heap or static), before the frames above the call. The key constructors need the callee plus the key object in the caller's frame: `verifying_key_44` is 49.7 + 20.5 = 70.2 KB, more than 64 KiB, so a key has to be
+built on a larger stack and kept on the heap. On a 128 KiB stack one-shot Verify 44 and 65 fit (66.8 and 41.3 KB to spare) and `verify_87` (131,848 B) does not, by 0.8 KB; on 256 KiB every function fits,
+Sign 87 with 52.9 KB to spare. Under nearcore's fat LTO (the second table of `tools/stack/README.md`, static walk) the one-shot figures are 1 to 1.3 KB lower: `verify_44` takes 63.0 KB (2.5 KB to spare in 64 KiB) and `verify_87` 130.6 KB (0.5 KB to spare in 128 KiB), so the margin is still too small to use. What is not measured: the frames
 already on the stack when verification starts. For `ml_dsa_verify` those include the VM's own frames (wasmtime sets
 `max_wasm_stack(1 GiB)` and relies on instrumented stack metering, `runtime/near-vm-runner/src/wasmtime_runner/mod.rs:193`;
 `max_stack_height` is 262,144, `parameters.yaml:303`) and async state machines, none of which this repository measured
@@ -216,7 +220,7 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
   verify signatures through the host functions; `near-crypto` itself pulls in `aws-lc-rs` and `secp256k1`. The toolchain file installs the
   `wasm32-unknown-unknown` target (`rust-toolchain.toml:14`) for contract builds. Our crate is `no_std` and builds for wasm32
   (`scripts/ci.sh` steps `wasm32`, `wasm32-zeroize`, 1.95.0, `wasm32-unknown-unknown`, library only; both passed on 2026-11-03), so an in-contract verifier is possible, with the
-  shadow-stack caveat in `tools/stack/README.md` (Verify 87 about 115 KB against rust-lld's 1 MiB default).
+  shadow-stack caveat in `tools/stack/README.md` (Verify 87 about 131 KB against rust-lld's 1 MiB default).
 
 ## 5. Public API and semver
 

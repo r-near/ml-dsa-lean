@@ -100,5 +100,5 @@ The full list is [assurance.md](assurance.md) section 7.
 - **Malformed secret keys:** expanded secret keys with out-of-range coefficients are accepted by `sign_NN`, as FIPS 204
   specifies. Use `sk_is_well_formed_NN` (or `pk_from_sk_NN`) on untrusted keys (E-4).
 - **`internals` feature:** the crate-private internals it exposes are meant for tests and can panic on wrong-length slices.
-- **Stack use** is measured, not proved: Sign needs up to about 240 KB for ML-DSA-87, one-shot verify about 132 KB (`../tools/stack/README.md`).
+- **Stack use** is measured, not proved: Sign needs up to about 209 KB for ML-DSA-87, one-shot verify about 132 KB (`../tools/stack/README.md`).
 - **Secret keys** are the 2560/4032/4896-byte expanded encoding, not the 32-byte seed.
