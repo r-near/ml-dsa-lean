@@ -8,10 +8,8 @@ name: CI
 # default and the zeroize suites on Apple Silicon, which the Linux jobs do not cover.
 #
 # Heavy checks are elsewhere:
-#   - Lean proofs, and a re-run of the extraction compared with the committed lean/Impl, and the feature-independence gate:
-#     .github/workflows/lean.yml (a large runner; runs on pull requests that touch the proofs' inputs from this repository
-#     and on every push to main, and its `lean-ok` job is the check to require; `ci-ok` below does not cover it). The kernel
-#     witnesses run there weekly and on demand. Releases wait for it (release-plz.yml).
+#   - Lean proofs and the kernel witnesses, and a re-run of the extraction compared with the committed lean/Impl:
+#     .github/workflows/lean.yml (needs a large runner, never runs on pull requests).
 #   - The BINSEC constant-time harness (checkct/): manual, far too heavy for CI.
 #
 # This workflow uses no secrets and a read-only token, so it is safe for pull requests from forks.

@@ -20,37 +20,14 @@ name: Lean
 #       lean-check was above 40 GB at 8 CPUs. If a run dies with exit code 137, rerun it or pick a runner with more memory.
 #     - Unset, the weekly run is skipped; a manual dispatch falls back to `ubuntu-latest`, where the jobs fail with exit
 #       code 137 (out of memory).
-#   Every run is a cold build: nothing is cached between runs. Expect the lean-check job to take about an hour on a
-#   16 vCPU / 64 GB runner (an estimate, not a measurement: at 8 CPUs the build was still going when it was killed after 34
-#   minutes), plus about 10 minutes before it for the extraction tools; its timeout is 120 minutes.
+#   Every run is a cold build: nothing is cached between runs.
 #
 # TRIGGERS
-#   - pull_request: lean-check runs when the pull request touches an input of the proofs (src/, lean/, scripts/, Cargo.toml,
-#     Cargo.lock, README.md, rust-toolchain.toml, .cargo/, the workflows and actions; the `changes` job decides). A pull
-#     request that touches none of them skips the heavy job and passes `lean-ok`. A pull request from a FORK is never run on
-#     the large runner (it would execute untrusted build code there); if it touches an input of the proofs, `lean-ok` FAILS
-#     until a maintainer pushes the branch to this repository, so a green `lean-ok` always means the proofs were checked.
-#     New commits cancel the run of the pull request they replace.
-#   - push to main: always runs, for every commit, never cancelled by a later push. The release workflow
-#     (release-plz.yml, scripts/require-lean-run.sh) refuses to publish a commit that has no successful `lean-check` job here.
-#   - workflow_dispatch and a weekly schedule: as before; the schedule is skipped until a large runner is configured.
-#   witness-check (the kernel witnesses, about 47 minutes and 46 GB) runs only on the dispatch and the schedule.
-#
-# BRANCH PROTECTION
-#   Require `lean-ok`, not `lean-check`: `lean-ok` always reports, and it fails when the heavy job failed, was cancelled or
-#   was skipped although it had to run. A skipped job counts as passing for a required check, which is why `lean-check` alone
-#   cannot be the required one.
-#
-# WITHOUT A LARGE RUNNER
-#   A pull request or push with LEAN_HEAVY_RUNNER unset fails at once (the first step of lean-check says why) instead of
-#   skipping: a skipped proof check must not look like a passed one. The weekly schedule still skips quietly.
-#
-# The workflow uses no secrets and a read-only token, and checks out only the commit of the event.
+#   Only a manual dispatch and a weekly schedule. There is deliberately no pull_request trigger (a pull request must not
+#   spend large-runner minutes or run its code there) and no push trigger (a push would fail without a large runner).
+#   The workflow uses no secrets and a read-only token, and checks out the default ref of the event only.
 
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
   schedule:
     # Weekly, Sunday 03:17 UTC: catches toolchain and dependency drift without any push.
@@ -59,72 +36,20 @@ on:
 permissions:
   contents: read
 
-# A pull request has one run at a time and a new commit replaces it; a push to main has its own group per commit, so a later
-# push never cancels the run a release may be waiting for; a dispatch or the schedule waits instead of cancelling a long run.
+# One heavy run at a time; a new run waits instead of cancelling a long one.
 concurrency:
-  group: ${{ github.event_name == 'pull_request' && format('lean-pr-{0}', github.event.pull_request.number) || (github.event_name == 'push' && format('lean-push-{0}', github.sha) || 'lean-heavy') }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: lean-heavy
+  cancel-in-progress: false
 
 jobs:
-  # Cheap and always run: decides whether a pull request touches an input of the proofs. Everything else (push, dispatch,
-  # schedule) always counts as relevant.
-  changes:
-    name: changes
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      run: ${{ steps.decide.outputs.run }}
-    steps:
-      # For a pull request this is the merge commit of the base and the head; depth 2 includes its first parent, the base.
-      - name: Check out the repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
-          persist-credentials: false
-
-      - name: Decide whether the proofs are affected
-        id: decide
-        env:
-          EVENT: ${{ github.event_name }}
-          FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
-        run: |
-          set -euo pipefail
-          if [ "$EVENT" != pull_request ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          # Inputs of the proofs: what lean-check.sh, the extraction and the feature-independence gate read, and the workflows.
-          pattern='^(src/|lean/|scripts/|\.cargo/|\.github/workflows/|\.github/actions/|Cargo\.toml$|Cargo\.lock$|README\.md$|rust-toolchain)'
-          files="$(git diff --name-only HEAD^1 HEAD)"
-          echo "$files"
-          if echo "$files" | grep -Eq "$pattern"; then
-            if [ "$FORK" = true ]; then
-              echo "run=fork" >> "$GITHUB_OUTPUT"
-              echo "::warning::this pull request is from a fork and touches an input of the proofs; the Lean check does not run on forks"
-            else
-              echo "run=true" >> "$GITHUB_OUTPUT"
-            fi
-          else
-            echo "run=false" >> "$GITHUB_OUTPUT"
-            echo "no input of the proofs changed; the heavy Lean job is skipped"
-          fi
-
   lean-check:
     name: lean-check
-    needs: changes
     # Needs a large runner, see the header. Peak memory is unrecorded; it exceeded 40 GB at 8 CPUs.
     runs-on: ${{ vars.LEAN_HEAVY_RUNNER || 'ubuntu-latest' }}
-    # Skipped when the pull request does not touch the proofs, on a fork pull request, and on the weekly schedule until a large
-    # runner is configured; a push, a pull request and a dispatch without one fail in the first step instead.
-    if: ${{ needs.changes.outputs.run == 'true' && (vars.LEAN_HEAVY_RUNNER != '' || github.event_name != 'schedule') }}
+    # The weekly run is skipped until a large runner is configured; a manual dispatch always runs.
+    if: ${{ vars.LEAN_HEAVY_RUNNER != '' || github.event_name == 'workflow_dispatch' }}
     timeout-minutes: 120
     steps:
-      - name: Require a large runner for a pull request or a push
-        if: ${{ vars.LEAN_HEAVY_RUNNER == '' && (github.event_name == 'pull_request' || github.event_name == 'push') }}
-        run: |
-          echo "::error::LEAN_HEAVY_RUNNER is not set (Settings > Secrets and variables > Actions > Variables). The Lean check needs a large runner and a skipped proof check must not pass."
-          exit 1
-
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -166,36 +91,12 @@ jobs:
       - name: scripts/lean-check.sh
         run: scripts/lean-check.sh
 
-  # The one check to require: it reports for every pull request and push, and fails unless the proofs were checked when they had to be.
-  lean-ok:
-    name: lean-ok
-    if: ${{ always() && (github.event_name == 'pull_request' || github.event_name == 'push') }}
-    needs: [changes, lean-check]
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Fail unless the Lean check passed or was not needed
-        env:
-          CHANGES: ${{ needs.changes.result }}
-          RUN: ${{ needs.changes.outputs.run }}
-          LEAN: ${{ needs.lean-check.result }}
-        run: |
-          echo "changes: $CHANGES (run=$RUN), lean-check: $LEAN"
-          if [ "$CHANGES" != success ]; then echo "::error::the changes job did not succeed"; exit 1; fi
-          case "$RUN" in
-            false) echo "no input of the proofs changed" ;;
-            fork) echo "::error::fork pull request that touches an input of the proofs: the Lean check does not run on forks; a maintainer must push the branch to this repository"; exit 1 ;;
-            true) [ "$LEAN" = success ] || { echo "::error::lean-check did not succeed ($LEAN)"; exit 1; } ;;
-            *) echo "::error::unexpected decision: $RUN"; exit 1 ;;
-          esac
-
   witness-check:
     name: witness-check
     # This job needs about 46 GB of memory and a large runner (WarpBuild or similar, 16 vCPU / 64 GB) to pass. On a
     # standard runner it is killed with exit code 137, which is an out-of-memory kill, not a proof failure.
     runs-on: ${{ vars.LEAN_HEAVY_RUNNER || 'ubuntu-latest' }}
-    # Not on pull requests or pushes (about 47 minutes and 46 GB each time); the dispatch and the schedule only.
-    if: ${{ (github.event_name == 'schedule' && vars.LEAN_HEAVY_RUNNER != '') || github.event_name == 'workflow_dispatch' }}
+    if: ${{ vars.LEAN_HEAVY_RUNNER != '' || github.event_name == 'workflow_dispatch' }}
     # About 47 min cold. The script's own `lake build` timeout is 10000 s (167 min).
     timeout-minutes: 180
     steps:
