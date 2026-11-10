@@ -1,0 +1,941 @@
+Summary:
+  driver  x86_64-unknown-linux-gnu  driver::extra::coeff_from_half_byte_eta2  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script b1c6744eac3ab833e4f5b5a228ae4dcd62f480aa6088a5ab8e0a7c71c8f0b063
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  57
+      stat: [checkct:info] 6 / 6 control flow checks pass
+      stat: [checkct:info] 20 / 20 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::coeff_from_half_byte_eta4  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 9fb9b0299d4f82edd281360b0a79ea781a14504c7919d1058bb4b7966e1374a2
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  51
+      stat: [checkct:info] 6 / 6 control flow checks pass
+      stat: [checkct:info] 20 / 20 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_1x1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 10596b08e91938bc774feea2000905ad09543141d03fe189e0f8675237ae00dc
+      stat: pending paths                    0
+      stat: branching points                 3279
+      stat: visited instructions (unrolled)  62806
+      stat: [checkct:info] 6384 / 6384 control flow checks pass
+      stat: [checkct:info] 17917 / 17917 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 1abbcfea1b815f8ddd48f38593e65c7c10b87d665d806bb5f613185ab9841811
+      stat: pending paths                    0
+      stat: branching points                 34493
+      stat: visited instructions (unrolled)  442052
+      stat: [checkct:info] 59352 / 59352 control flow checks pass
+      stat: [checkct:info] 139590 / 139590 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 98142e66a3a15bba028a72d0db007e9dc21dd6cbabf9cd3883c23d63023c4ef6
+      stat: pending paths                    0
+      stat: branching points                 59616
+      stat: visited instructions (unrolled)  732679
+      stat: [checkct:info] 102060 / 102060 control flow checks pass
+      stat: [checkct:info] 233635 / 233635 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 3c575640c87ac68571f160c3a9befe6eaebed107119d36ceca2bc15b5f66c3c3
+      stat: pending paths                    0
+      stat: branching points                 102405
+      stat: visited instructions (unrolled)  1231106
+      stat: [checkct:info] 175877 / 175877 control flow checks pass
+      stat: [checkct:info] 394168 / 394168 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::control_early_exit_44  insecure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script be97c14d45e9d4c2d8fe348c09419baf0108338980bc96528a6b10d9c1b3d3a0
+      0x25c1bd has control flow leak (0.089s)
+      0x25c25d has control flow leak (5.115s)
+      0x25c2ed has control flow leak (20.711s)
+      0x25c37d has control flow leak (49.710s)
+      0x25c40d has control flow leak (95.554s)
+      0x25c49d has control flow leak (156.718s)
+      0x25c52d has control flow leak (226.439s)
+      0x25c5b0 has control flow leak (310.852s)
+      stat: pending paths                    0
+      stat: branching points                 13214
+      stat: visited instructions (unrolled)  76541
+      stat: [checkct:info] 15799 / 15807 control flow checks pass
+      stat: [checkct:info] 28912 / 28912 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::encode_sk_is_well_formed_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 51d33f79639700bfcda0adc4e3e71152126bb0990eabaaf1371f22ad55e2da7d
+      stat: pending paths                    0
+      stat: branching points                 14144
+      stat: visited instructions (unrolled)  83888
+      stat: [checkct:info] 19088 / 19088 control flow checks pass
+      stat: [checkct:info] 27593 / 27593 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::encode_sk_is_well_formed_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 066dcebadf87a1ce46f2f86288b1930a665590c822ab694f868afcb4524bca07
+      stat: pending paths                    0
+      stat: branching points                 18085
+      stat: visited instructions (unrolled)  110050
+      stat: [checkct:info] 23044 / 23044 control flow checks pass
+      stat: [checkct:info] 32544 / 32544 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::encode_sk_is_well_formed_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 9ad50c12bd7150147091f301f8ffaf8f0547ebe30e418ee52df5917d6db54aad
+      stat: pending paths                    0
+      stat: branching points                 22312
+      stat: visited instructions (unrolled)  131605
+      stat: [checkct:info] 27293 / 27293 control flow checks pass
+      stat: [checkct:info] 39552 / 39552 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::expand_mask_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 2d9754694149a572c820b18d3b06ff931e744e2143920d70d3951bb174135828
+      stat: pending paths                    0
+      stat: branching points                 10567
+      stat: visited instructions (unrolled)  187929
+      stat: [checkct:info] 10685 / 10685 control flow checks pass
+      stat: [checkct:info] 63457 / 63457 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::expand_mask_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 5f593aca49ea9bf6287f91605141fdc74d3e50b668af8d5d758e7690d5a61326
+      stat: pending paths                    0
+      stat: branching points                 14052
+      stat: visited instructions (unrolled)  240053
+      stat: [checkct:info] 14180 / 14180 control flow checks pass
+      stat: [checkct:info] 79598 / 79598 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::expand_mask_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 451468616eef03f94fe732f16c4083f965d77402ce70f7607600ea89bc965b65
+      stat: pending paths                    0
+      stat: branching points                 19606
+      stat: visited instructions (unrolled)  335503
+      stat: [checkct:info] 19754 / 19754 control flow checks pass
+      stat: [checkct:info] 111004 / 111004 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::keygen_seed_hash  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script bc251cdc2f2899b68350f25b68f542699719fcaf72be2c53306ce7a309a8795b
+      stat: pending paths                    0
+      stat: branching points                 140
+      stat: visited instructions (unrolled)  7112
+      stat: [checkct:info] 180 / 180 control flow checks pass
+      stat: [checkct:info] 3161 / 3161 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_1x1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 914ff02f8c5d645e24dd3fbabfd4a594dbdc2cfc1ccc6454c23f943b1ae03da1
+      stat: pending paths                    0
+      stat: branching points                 1781
+      stat: visited instructions (unrolled)  22270
+      stat: [checkct:info] 3848 / 3848 control flow checks pass
+      stat: [checkct:info] 7469 / 7469 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 403166e22600bfcc45595b8375f15196853770fbbffc370333e24d200303c0e0
+      stat: pending paths                    0
+      stat: branching points                 25883
+      stat: visited instructions (unrolled)  276960
+      stat: [checkct:info] 46557 / 46557 control flow checks pass
+      stat: [checkct:info] 93149 / 93149 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script d00641a1619e338a696135818a2195dd5929a80a2a99350f000a80b6a1997ffa
+      stat: pending paths                    0
+      stat: branching points                 47046
+      stat: visited instructions (unrolled)  500902
+      stat: [checkct:info] 83224 / 83224 control flow checks pass
+      stat: [checkct:info] 167468 / 167468 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script a9c3457a784182acd3196feb671276f6ff760a961040e1d0e223519b065944a4
+      stat: pending paths                    0
+      stat: branching points                 85284
+      stat: visited instructions (unrolled)  916600
+      stat: [checkct:info] 150402 / 150402 control flow checks pass
+      stat: [checkct:info] 304536 / 304536 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::ntt_vec_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 4bd5b1ae414d523685ef85229af7369c25764d3f367158b261d2d394b97febd1
+      stat: pending paths                    0
+      stat: branching points                 4671
+      stat: visited instructions (unrolled)  93342
+      stat: [checkct:info] 8819 / 8819 control flow checks pass
+      stat: [checkct:info] 26035 / 26035 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::poly_power2round  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 151b6348221e3a48116c93afd9175f95e4d345d90b45d42099a090ed5eec71fe
+      stat: pending paths                    0
+      stat: branching points                 943
+      stat: visited instructions (unrolled)  8965
+      stat: [checkct:info] 1982 / 1982 control flow checks pass
+      stat: [checkct:info] 3628 / 3628 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::rej_bounded_poly_eta2  insecure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script f03df2704d9de1dfb593cb693d1d5df1f481c791bcadab9e02baf0a51cd5e131
+      0x237aa3 has control flow leak (7.898s)
+      0x237aab has control flow leak (38.471s)
+      stat: pending paths                    5
+      stat: branching points                 232
+      stat: visited instructions (unrolled)  7190
+      stat: [checkct:info] 301 / 303 control flow checks pass
+      stat: [checkct:info] 3308 / 3308 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 5 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::rej_bounded_poly_eta4  insecure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 2d0b50353d1e8eb57dc304aafaee7b7ed2f184820c08611664d9bd97d546e262
+      0x237bd3 has control flow leak (0.235s)
+      0x237bd8 has control flow leak (2.232s)
+      stat: pending paths                    12
+      stat: branching points                 254
+      stat: visited instructions (unrolled)  7265
+      stat: [checkct:info] 316 / 318 control flow checks pass
+      stat: [checkct:info] 3317 / 3317 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 12 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::scalar_vector_ntt_inverse_1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 139e798051d84ed1c129e1514b52378cb9c4d03e7405d4cc804207a80f763553
+      stat: pending paths                    0
+      stat: branching points                 1687
+      stat: visited instructions (unrolled)  37260
+      stat: [checkct:info] 3751 / 3751 control flow checks pass
+      stat: [checkct:info] 10053 / 10053 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::sign_rho_pp_hash  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 9ed4e834512c0c7016ecab62299c5816b205c6baa418743cfe5576920b05450d
+      stat: pending paths                    0
+      stat: branching points                 165
+      stat: visited instructions (unrolled)  7545
+      stat: [checkct:info] 302 / 302 control flow checks pass
+      stat: [checkct:info] 3511 / 3511 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::sk_is_well_formed_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 019e55707f99de97e6afc2b7e340b5584d245e126b8b590b11af2a22c302e7b2
+      stat: pending paths                    0
+      stat: branching points                 11516
+      stat: visited instructions (unrolled)  69578
+      stat: [checkct:info] 14124 / 14124 control flow checks pass
+      stat: [checkct:info] 20292 / 20292 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::sk_is_well_formed_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 685a9ac9a7edba7e1aebdc77c13cf0a52ee130c0f83ab6353ba057207c3cb83a
+      stat: pending paths                    0
+      stat: branching points                 17113
+      stat: visited instructions (unrolled)  104756
+      stat: [checkct:info] 21208 / 21208 control flow checks pass
+      stat: [checkct:info] 29843 / 29843 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::sk_is_well_formed_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script cdde76568a19b9017afc953c1496147d4ea9ae232c0fdf9d1ed3cede7389fb64
+      stat: pending paths                    0
+      stat: branching points                 22312
+      stat: visited instructions (unrolled)  131605
+      stat: [checkct:info] 27293 / 27293 control flow checks pass
+      stat: [checkct:info] 39552 / 39552 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::vec_power2round_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script f401725b7ec13c50cf147c71e377a6b607421cff50618ba6f8259a10b20159f1
+      stat: pending paths                    0
+      stat: branching points                 8708
+      stat: visited instructions (unrolled)  41157
+      stat: [checkct:info] 12898 / 12898 control flow checks pass
+      stat: [checkct:info] 24005 / 24005 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::extra::vec_power2round_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script be02907ef8e63ccc9d0716582ea06a1c1fad5ac855fcd3e3b825e388dd9c3966
+      stat: pending paths                    0
+      stat: branching points                 17672
+      stat: visited instructions (unrolled)  82445
+      stat: [checkct:info] 26038 / 26038 control flow checks pass
+      stat: [checkct:info] 48223 / 48223 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::control_prepared_branch_44  insecure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 646f5653a637efa82f5a709a8887d2c651f5d02ab3519c33458b06a8731c1876
+      0x237108 has control flow leak (2.492s)
+      stat: pending paths                    0
+      stat: branching points                 75214
+      stat: visited instructions (unrolled)  1021812
+      stat: [checkct:info] 77947 / 77948 control flow checks pass
+      stat: [checkct:info] 351461 / 351461 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::prepared::control_prepared_index_44  insecure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script ac3ea53ffa23ad2a6595f1ce4f862e6dc675281690fc4c0c28207c7c7174f434
+      0x236ff1 has memory access leak (2.491s)
+      stat: pending paths                    0
+      stat: branching points                 74829
+      stat: visited instructions (unrolled)  1017520
+      stat: [checkct:info] 77561 / 77561 control flow checks pass
+      stat: [checkct:info] 348348 / 348349 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::prepared::prepare_sk_1x1_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 76ee56279e7ecb8529c9b699aa6cf4642eb33e7888a3b094dcccfe1399198188
+      stat: pending paths                    0
+      stat: branching points                 12240
+      stat: visited instructions (unrolled)  132529
+      stat: [checkct:info] 14758 / 14758 control flow checks pass
+      stat: [checkct:info] 43439 / 43439 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::prepare_sk_1x1_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 87b8acc5788ed174a1a33efbfc3c9cb9f43956bf1ee7961be8caf3e89db5072d
+      stat: pending paths                    0
+      stat: branching points                 14208
+      stat: visited instructions (unrolled)  142691
+      stat: [checkct:info] 18198 / 18198 control flow checks pass
+      stat: [checkct:info] 48472 / 48472 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::prepare_sk_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 34a2fefd7bd09afab32e2369af67dda516f3f8e75c6b7260f75dd689c6de1c04
+      stat: pending paths                    0
+      stat: branching points                 74829
+      stat: visited instructions (unrolled)  1017510
+      stat: [checkct:info] 77561 / 77561 control flow checks pass
+      stat: [checkct:info] 348342 / 348342 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::prepare_sk_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script c5d8f870b8308fcfe0036249dbd99259fac732ed5689c933d81bb70f4025ee92
+      stat: pending paths                    0
+      stat: branching points                 129175
+      stat: visited instructions (unrolled)  1778397
+      stat: [checkct:info] 133557 / 133557 control flow checks pass
+      stat: [checkct:info] 618364 / 618364 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::prepare_sk_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script be2bdb3f141a540c818e09e300f792d4f5f5160d016c981f583cca6b95302fdd
+      stat: pending paths                    0
+      stat: branching points                 218914
+      stat: visited instructions (unrolled)  3084243
+      stat: [checkct:info] 224406 / 224406 control flow checks pass
+      stat: [checkct:info] 1092330 / 1092330 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::signing_key_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script c4c74cb49096d48b3050c15cad9476def785c8b787d4b4da592c19b6b52e62d7
+      stat: pending paths                    0
+      stat: branching points                 78812
+      stat: visited instructions (unrolled)  1025417
+      stat: [checkct:info] 81547 / 81547 control flow checks pass
+      stat: [checkct:info] 355048 / 355048 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::signing_key_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script aa6ea98e001905e236deb890b0fc810f76ee0b0b1920a2a2333a48c75f2f959e
+      stat: pending paths                    0
+      stat: branching points                 135750
+      stat: visited instructions (unrolled)  1790506
+      stat: [checkct:info] 140135 / 140135 control flow checks pass
+      stat: [checkct:info] 628782 / 628782 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::prepared::signing_key_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script c9f1ded3b522b072f3d7ef21b0a1227a10619a93a721c08db21e51f45feef442
+      stat: pending paths                    0
+      stat: branching points                 229777
+      stat: visited instructions (unrolled)  3102572
+      stat: [checkct:info] 235272 / 235272 control flow checks pass
+      stat: [checkct:info] 1108380 / 1108380 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::barrett_reduce  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 655863380327c25be7eeab5600eb8c5095310fcac901f801ed240aa553ea8dac
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  92
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 33 / 33 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::bit_pack_13  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 6e19393cd9a7a7865281ad9f347a80c1b3d84374ed7d53f45781742ac1d36467
+      stat: pending paths                    0
+      stat: branching points                 1641
+      stat: visited instructions (unrolled)  17232
+      stat: [checkct:info] 2676 / 2676 control flow checks pass
+      stat: [checkct:info] 3885 / 3885 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::bit_pack_18  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 37446df84d26c9dac1127ed4a09259ce4858bf657ecbf66b6a62f3bfbe7636ea
+      stat: pending paths                    0
+      stat: branching points                 1961
+      stat: visited instructions (unrolled)  18512
+      stat: [checkct:info] 2996 / 2996 control flow checks pass
+      stat: [checkct:info] 4045 / 4045 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::bit_pack_20  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 6af3d03482e07f83251620e6770b7dfc0dcd253592664beeba61eb5a94455767
+      stat: pending paths                    0
+      stat: branching points                 2089
+      stat: visited instructions (unrolled)  19024
+      stat: [checkct:info] 3124 / 3124 control flow checks pass
+      stat: [checkct:info] 4109 / 4109 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::bit_pack_3  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 17a005088f4164fc8e4b773a7ddc37c483e8fa62caeb81fc42223690d1ea0b67
+      stat: pending paths                    0
+      stat: branching points                 1257
+      stat: visited instructions (unrolled)  12624
+      stat: [checkct:info] 2292 / 2292 control flow checks pass
+      stat: [checkct:info] 3565 / 3565 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::bit_pack_4  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script e02cb199b50bc989861cfda259e77ade300edba745b75185a982906a59aa85f8
+      stat: pending paths                    0
+      stat: branching points                 1321
+      stat: visited instructions (unrolled)  13392
+      stat: [checkct:info] 2356 / 2356 control flow checks pass
+      stat: [checkct:info] 3597 / 3597 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::ct_lt_mask  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script eb504339e1063d8d9ce7930e21c805d85572cb469951fb670a133c52fef68d5f
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  135
+      stat: [checkct:info] 21 / 21 control flow checks pass
+      stat: [checkct:info] 53 / 53 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::ct_select  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 07bcd2c925fda4aa8373a722a34d0dd030788d081c450c389ad8835df80ca0dd
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  92
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 44 / 44 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::decompose_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script d91be42e78ade4e0e43064ba6db9def9739ac61837a2fab4caa3ed482bd67734
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  111
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 34 / 34 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::decompose_65_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 4fb776b5a898d26f2dd6e2b68635c3de7ff9708594e3b8f208d7a582dd66c509
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  111
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 34 / 34 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mont_reduce  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script c1ed3f4306e47b51156891f90a5bdc7f666591243c5ba8513dc647244553fcef
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  87
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 33 / 33 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mul  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 1a2d39ae63080dd1fe7937081dffd394056425248e5b32967fae5650f68303b5
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  92
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 33 / 33 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mul_mont  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 5feb2b28c49ff6c74770809bf51c114c2d4daba4a0bf177e4002d89ac94c1115
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  96
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 33 / 33 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mul_shoup  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script d37c58d43fe23dc678f7a0163c61b0fddad2ff402e6effb59ab3c7eff6ac4fb4
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  68
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 25 / 25 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_neg  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 85b2753d29c1760c0436aa14cdc9a0fd32354a6a31c65dc5c967e3847363f2b6
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  65
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 25 / 25 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_small_reduce  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 56c42118ca0cb08234ec33f9b20a2d53e507765a9ff3bdeeaa5d3c43dc2b7c95
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  86
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 33 / 33 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_sub  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 169ea8b2235b455e9dbcaa547ed511b61a6f6e6810890734bd2f23df2a2d0b91
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  86
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 33 / 33 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::high_bits_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script d05edd437ae89527ec0b3f2ea1c990aae849bdb0bdabf96339e8102954a81423
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  103
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 33 / 33 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::high_bits_65_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script b7168902a6b340e7c42c54a410e928643c6deadc4b072791749549a0194b5701
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  103
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 33 / 33 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::infinity_norm  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 382f987ec5201d6b4a412500815033f988e8be3408da5cb3d4b11088362f0262
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  63
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 25 / 25 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::keccak_f1600  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 8d97102d982544a7a5e3a65e873860d03ed19fef4af0b865d4719a732f57d9eb
+      stat: pending paths                    0
+      stat: branching points                 52
+      stat: visited instructions (unrolled)  7530
+      stat: [checkct:info] 260 / 260 control flow checks pass
+      stat: [checkct:info] 3186 / 3186 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::low_bits_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script eae7ecc9118921e826de77519bcc01a8a267a0f9795025c4e79360caa27fde1f
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  104
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 32 / 32 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::low_bits_65_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script ef7af0cbfb5fa712a1825b245490078177d90651715eb25b8f898bfb412c9f34
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  104
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 32 / 32 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::make_hint_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script dea651d8a7490178d774484293a4eb4452a6c7c4c5436be912e23877b3bd343d
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  173
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 45 / 45 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::make_hint_65_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script b1aa2f55e8c0bfdb0afb88c1dbcb7f86f9071afb69ae667bf891d534d595c07b
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  173
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 45 / 45 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::multiply_ntt  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 54c32a12a95e9bf9ac4ff843160099839c3c1a2b7bdef4ffc866d5ac5fcca6b1
+      stat: pending paths                    0
+      stat: branching points                 1161
+      stat: visited instructions (unrolled)  19446
+      stat: [checkct:info] 3220 / 3220 control flow checks pass
+      stat: [checkct:info] 5785 / 5785 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::ntt  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 0aab8db6f02d07f3f2a137c122ffa26e4fc56da295d08a9ac4eb0b593a83d92a
+      stat: pending paths                    0
+      stat: branching points                 841
+      stat: visited instructions (unrolled)  22989
+      stat: [checkct:info] 1877 / 1877 control flow checks pass
+      stat: [checkct:info] 5937 / 5937 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::ntt_inverse  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script ae1175d79114143934793937d40d7c5ce6f874c30cc8e2095704218fcb89527a
+      stat: pending paths                    0
+      stat: branching points                 881
+      stat: visited instructions (unrolled)  23793
+      stat: [checkct:info] 1917 / 1917 control flow checks pass
+      stat: [checkct:info] 6460 / 6460 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::power2round  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 75c2c0bdc97180296e629070bbe3fe8231af58b44ff1158302cb7b533fb0c4e9
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  71
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 26 / 26 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::sk_decode_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 8f60703d59324f762310bfd21be66cbc81bda05b1c1672e8e9bd2714542edf8a
+      stat: pending paths                    0
+      stat: branching points                 19099
+      stat: visited instructions (unrolled)  95283
+      stat: [checkct:info] 21695 / 21695 control flow checks pass
+      stat: [checkct:info] 26473 / 26473 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::sk_decode_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script fc5ddc828e49b22449e54b7679b87845353c3f0ddc93922d2101f597ae41bd19
+      stat: pending paths                    0
+      stat: branching points                 28027
+      stat: visited instructions (unrolled)  142961
+      stat: [checkct:info] 32105 / 32105 control flow checks pass
+      stat: [checkct:info] 38831 / 38831 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::sk_decode_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script a1cf7e8b0688b6704893df1d58b9ece217f64aa76838355bf22cec3a7f4e2cf0
+      stat: pending paths                    0
+      stat: branching points                 36113
+      stat: visited instructions (unrolled)  182329
+      stat: [checkct:info] 41067 / 41067 control flow checks pass
+      stat: [checkct:info] 50093 / 50093 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::sk_encode_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 6c5b89790e9af30b79e12be11b035aa41415c4e25cb75e5e80d7d7bddf011b40
+      stat: pending paths                    0
+      stat: branching points                 21293
+      stat: visited instructions (unrolled)  180376
+      stat: [checkct:info] 33800 / 33800 control flow checks pass
+      stat: [checkct:info] 45920 / 45920 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::sk_encode_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script bda6c40c6532b981561c6a15b8bd5d4196db1530011d03e274c4749f854b5039
+      stat: pending paths                    0
+      stat: branching points                 30850
+      stat: visited instructions (unrolled)  265554
+      stat: [checkct:info] 48507 / 48507 control flow checks pass
+      stat: [checkct:info] 65461 / 65461 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::sk_encode_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 5a5093262d0790cf248cbb967fd6e22a0148c38a5c7e0c452d586b55ae007e80
+      stat: pending paths                    0
+      stat: branching points                 40545
+      stat: visited instructions (unrolled)  348977
+      stat: [checkct:info] 64382 / 64382 control flow checks pass
+      stat: [checkct:info] 86470 / 86470 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::vec_infinity_norm  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script d45f7208c439d19cdecfc9be6929078d40f876b4d17f691bbda90d93d2723adf
+      stat: pending paths                    0
+      stat: branching points                 3355
+      stat: visited instructions (unrolled)  45599
+      stat: [checkct:info] 7475 / 7475 control flow checks pass
+      stat: [checkct:info] 14136 / 14136 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_1_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 5768213cae2556f406271074ef3152787995dddba5712e70a8e7b72e5f65bac8
+      stat: pending paths                    0
+      stat: branching points                 2497
+      stat: visited instructions (unrolled)  75510
+      stat: [checkct:info] 5844 / 5844 control flow checks pass
+      stat: [checkct:info] 16993 / 16993 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_1_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 302491549c84d449e7bdc15d33a1239590dcd1be3e4e5a74b87d942a92964f02
+      stat: pending paths                    0
+      stat: branching points                 2497
+      stat: visited instructions (unrolled)  75510
+      stat: [checkct:info] 5844 / 5844 control flow checks pass
+      stat: [checkct:info] 16993 / 16993 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 5f4b809e38e2ed32f74d5e72695ad1b5cd868eff73d8d8bb37c52b4ada6c29b3
+      stat: pending paths                    0
+      stat: branching points                 11524
+      stat: visited instructions (unrolled)  282307
+      stat: [checkct:info] 21840 / 21840 control flow checks pass
+      stat: [checkct:info] 64579 / 64579 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 6260268f528663215a086ef5f6cfcfeda87561636942a39523faf6f18d439bfd
+      stat: pending paths                    0
+      stat: branching points                 17336
+      stat: visited instructions (unrolled)  419657
+      stat: [checkct:info] 32286 / 32286 control flow checks pass
+      stat: [checkct:info] 95858 / 95858 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 725e54f785d264aa0a3fc6810cab72686ea7d29c073685392320b25ea0ac20eb
+      stat: pending paths                    0
+      stat: branching points                 23157
+      stat: visited instructions (unrolled)  557025
+      stat: [checkct:info] 42741 / 42741 control flow checks pass
+      stat: [checkct:info] 127134 / 127134 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_1x1_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 6dfa9c5bc03e42f6e391345ba227b9d870cbf933136bcdaf1b53764d9c0aea7b
+      stat: pending paths                    0
+      stat: branching points                 6031
+      stat: visited instructions (unrolled)  104803
+      stat: [checkct:info] 11203 / 11203 control flow checks pass
+      stat: [checkct:info] 28887 / 28887 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_1x1_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 36f114611d841033067a32cc36b9d2af15edfe03f03728915cbef25202cba2b9
+      stat: pending paths                    0
+      stat: branching points                 6031
+      stat: visited instructions (unrolled)  104803
+      stat: [checkct:info] 11203 / 11203 control flow checks pass
+      stat: [checkct:info] 28887 / 28887 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_44  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 911b894f661a42bfed8b1c6fc4c238ee88fb0c5cac4dfd6564af2cda38b6bc00
+      stat: pending paths                    0
+      stat: branching points                 25522
+      stat: visited instructions (unrolled)  398035
+      stat: [checkct:info] 43110 / 43110 control flow checks pass
+      stat: [checkct:info] 112223 / 112223 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_65  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script fbc1cc7b7fb78f896850d2b85b7ef48100231ee79c0bb4383951f0816d0dc472
+      stat: pending paths                    0
+      stat: branching points                 36575
+      stat: visited instructions (unrolled)  551479
+      stat: [checkct:info] 60365 / 60365 control flow checks pass
+      stat: [checkct:info] 156493 / 156493 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_87  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 6acbb19ed77820a5126faa604dc19c6a4e9ba4baf994285bb6040644e78603d7
+      stat: pending paths                    0
+      stat: branching points                 49901
+      stat: visited instructions (unrolled)  747165
+      stat: [checkct:info] 81953 / 81953 control flow checks pass
+      stat: [checkct:info] 212348 / 212348 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_compute_t_44_2x2  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script bfaaeb3db8c76e7f5259bbb5a06784155c86fa24534c9d6247912c1efe9e9f00
+      stat: pending paths                    0
+      stat: branching points                 11296
+      stat: visited instructions (unrolled)  159076
+      stat: [checkct:info] 19594 / 19594 control flow checks pass
+      stat: [checkct:info] 49341 / 49341 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_compute_t_44_col  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 52ce0c829ed75fce2639c21c69f5a5c4781ad88d9663ae0a2dfca680cfee021c
+      stat: pending paths                    0
+      stat: branching points                 13957
+      stat: visited instructions (unrolled)  186908
+      stat: [checkct:info] 23295 / 23295 control flow checks pass
+      stat: [checkct:info] 59284 / 59284 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_compute_t_44_row  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 52c80a9604ae923c9442458164a4cd4529f46e2213dda7a43baec38d7888c5f8
+      stat: pending paths                    0
+      stat: branching points                 11419
+      stat: visited instructions (unrolled)  179818
+      stat: [checkct:info] 20745 / 20745 control flow checks pass
+      stat: [checkct:info] 53332 / 53332 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_ntt_vec_into_1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 887fe1290f6799dd69db6e73ce7f01c32ec32cc7ded4165c478ba404c8ec0640
+      stat: pending paths                    0
+      stat: branching points                 1004
+      stat: visited instructions (unrolled)  23489
+      stat: [checkct:info] 2042 / 2042 control flow checks pass
+      stat: [checkct:info] 6450 / 6450 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_ntt_vec_into_7  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 8247330219127c28944e4d4006785e7e48e4a6b43a4522a31396de43fbadafe0
+      stat: pending paths                    0
+      stat: branching points                 8570
+      stat: visited instructions (unrolled)  165851
+      stat: [checkct:info] 15812 / 15812 control flow checks pass
+      stat: [checkct:info] 47514 / 47514 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_ntt_vec_into_8  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 0076ce7afe14943a323448cc340450c13fbe863b00b7a7346e58d3c67d415d20
+      stat: pending paths                    0
+      stat: branching points                 9830
+      stat: visited instructions (unrolled)  189562
+      stat: [checkct:info] 18105 / 18105 control flow checks pass
+      stat: [checkct:info] 54331 / 54331 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_44_col  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 1f896eb8196a4d419cc1b0f196f8dfb0fb9b4d5b111f9de2e86f5422a036597f
+      stat: pending paths                    0
+      stat: branching points                 34637
+      stat: visited instructions (unrolled)  412316
+      stat: [checkct:info] 37246 / 37246 control flow checks pass
+      stat: [checkct:info] 132534 / 132534 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_44_row  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 40f678f331ae925ce70815ac1d33ed186c23964fc40369a5355de5c05094a7ef
+      stat: pending paths                    0
+      stat: branching points                 26664
+      stat: visited instructions (unrolled)  335494
+      stat: [checkct:info] 29233 / 29233 control flow checks pass
+      stat: [checkct:info] 111138 / 111138 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_65_col  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 32cee877a111eba3b8ef63ae80dacd0b8b5c05a0a34635204d1ed320749b5267
+      stat: pending paths                    0
+      stat: branching points                 51691
+      stat: visited instructions (unrolled)  611118
+      stat: [checkct:info] 55822 / 55822 control flow checks pass
+      stat: [checkct:info] 196594 / 196594 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_65_row  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 16e2e4100cfd16ae94257ffa5fce63a2604f1b3bae37298fb730465392627a3e
+      stat: pending paths                    0
+      stat: branching points                 33696
+      stat: visited instructions (unrolled)  415251
+      stat: [checkct:info] 37756 / 37756 control flow checks pass
+      stat: [checkct:info] 138878 / 138878 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_87_2x1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 9f058a342fd9a17c5b3bc48c3c926aa2a1cbb040d0e3c5f9443fd75ecd02ff81
+      stat: pending paths                    0
+      stat: branching points                 22793
+      stat: visited instructions (unrolled)  240687
+      stat: [checkct:info] 27689 / 27689 control flow checks pass
+      stat: [checkct:info] 81571 / 81571 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_87_4x1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 2fd2cdae684af67ed1884a84c85a3458937ce4ef60f98b3e8a13429688d84f7c
+      stat: pending paths                    0
+      stat: branching points                 37557
+      stat: visited instructions (unrolled)  426918
+      stat: [checkct:info] 42502 / 42502 control flow checks pass
+      stat: [checkct:info] 140419 / 140419 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_87_6x1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 57523cbbcd5a824deda663b901366e8a846f29322052a3c5943a5ea1e270c347
+      stat: pending paths                    0
+      stat: branching points                 52323
+      stat: visited instructions (unrolled)  613160
+      stat: [checkct:info] 57318 / 57318 control flow checks pass
+      stat: [checkct:info] 199287 / 199287 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_87_7x1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 7c8b74b60b70690a7962dbc1ae755a02d600d2414f499b2c083bea4ab84b41ea
+      stat: pending paths                    0
+      stat: branching points                 59724
+      stat: visited instructions (unrolled)  706384
+      stat: [checkct:info] 64743 / 64743 control flow checks pass
+      stat: [checkct:info] 228751 / 228751 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_87_col  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script e3469fa4e07fa581f3f95d88f287590a4d0f7838b92f94234efa8fc64a7e1abe
+      stat: pending paths                    0
+      stat: branching points                 67106
+      stat: visited instructions (unrolled)  799493
+      stat: [checkct:info] 72149 / 72149 control flow checks pass
+      stat: [checkct:info] 258177 / 258177 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_prepare_sk_87_row  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 6df420c730c482a99acd883b9a6dcf705c20103a2af2b876fa4baffc3fc6561a
+      stat: pending paths                    0
+      stat: branching points                 44039
+      stat: visited instructions (unrolled)  553704
+      stat: [checkct:info] 48997 / 48997 control flow checks pass
+      stat: [checkct:info] 186791 / 186791 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 0d68b29d116e8bd5f73ae83454feed5e4febcf17cee715b7c5c7c1b42f84e5c0
+      stat: pending paths                    0
+      stat: branching points                 1464
+      stat: visited instructions (unrolled)  9544
+      stat: [checkct:info] 2509 / 2509 control flow checks pass
+      stat: [checkct:info] 4662 / 4662 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_2  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 70b46032a805d9dc7b78eba9d3ef50b86720b0ac7d1fd003f717411246b61516
+      stat: pending paths                    0
+      stat: branching points                 4229
+      stat: visited instructions (unrolled)  20476
+      stat: [checkct:info] 6328 / 6328 control flow checks pass
+      stat: [checkct:info] 11881 / 11881 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_3  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script a4b8aa0d4e4bb2ba9e56e30c3eb263d4e1b6181f9215cbe23f2dca6176fe099a
+      stat: pending paths                    0
+      stat: branching points                 6470
+      stat: visited instructions (unrolled)  30818
+      stat: [checkct:info] 9615 / 9615 control flow checks pass
+      stat: [checkct:info] 17938 / 17938 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_4  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 4393d257ec58982963bc568950185c544fe23e227dbb54ff166545aaaa4e5ccb
+      stat: pending paths                    0
+      stat: branching points                 8708
+      stat: visited instructions (unrolled)  41157
+      stat: [checkct:info] 12898 / 12898 control flow checks pass
+      stat: [checkct:info] 24005 / 24005 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_5  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 3cba7cdcb46dde377975c03dfccca8c31cb52f82f1c3ed11b77762d04c2f63eb
+      stat: pending paths                    0
+      stat: branching points                 10954
+      stat: visited instructions (unrolled)  51490
+      stat: [checkct:info] 16188 / 16188 control flow checks pass
+      stat: [checkct:info] 30060 / 30060 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_6  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 720d8a5cfd816f498cc48721ed54e426df795dd5910425ec824069d7a6385077
+      stat: pending paths                    0
+      stat: branching points                 13193
+      stat: visited instructions (unrolled)  61807
+      stat: [checkct:info] 19471 / 19471 control flow checks pass
+      stat: [checkct:info] 36114 / 36114 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_7  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 7340bfcf5d774e02c1eedc54e3d3b74bfdf74d00d9463cf76ec2c1d222cb0843
+      stat: pending paths                    0
+      stat: branching points                 15433
+      stat: visited instructions (unrolled)  72128
+      stat: [checkct:info] 22755 / 22755 control flow checks pass
+      stat: [checkct:info] 42169 / 42169 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_8_hi  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script e1f9cd8a3f6a7bdfe946a332368593aa5ef09a54caa25c2b820251f8fa0dec48
+      stat: pending paths                    0
+      stat: branching points                 14382
+      stat: visited instructions (unrolled)  73695
+      stat: [checkct:info] 22688 / 22688 control flow checks pass
+      stat: [checkct:info] 40423 / 40423 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_8_lo  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 89a6337820bb94e60a3c90ec30323eece140b62ae6ff7cfe72465722c89b1398
+      stat: pending paths                    0
+      stat: branching points                 14385
+      stat: visited instructions (unrolled)  73718
+      stat: [checkct:info] 22693 / 22693 control flow checks pass
+      stat: [checkct:info] 40425 / 40425 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_8_q0  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script 60b4fa2d7f5abf8510fb6658a48d2199d73b51d38b175a83351a029255353a72
+      stat: pending paths                    0
+      stat: branching points                 12737
+      stat: visited instructions (unrolled)  69312
+      stat: [checkct:info] 21013 / 21013 control flow checks pass
+      stat: [checkct:info] 36522 / 36522 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_8_q1  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script f17768586d8d3da5d14449350bfc7f0cdcf04d456e3ba4c6c4174aeaea2fb2e7
+      stat: pending paths                    0
+      stat: branching points                 12743
+      stat: visited instructions (unrolled)  69364
+      stat: [checkct:info] 21023 / 21023 control flow checks pass
+      stat: [checkct:info] 36526 / 36526 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_8_q2  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script fbebd1b3064b3c79f9f9864738a5bd4507644d512b9b8fb884771ddca6d05ea7
+      stat: pending paths                    0
+      stat: branching points                 12743
+      stat: visited instructions (unrolled)  69364
+      stat: [checkct:info] 21023 / 21023 control flow checks pass
+      stat: [checkct:info] 36526 / 36526 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::split::split_vec_power2round_8_q3  secure
+      sha256: elf 7b0d03ddf5f40a49635322137eacef6c79556b643f6ef84a5dc6fee6f636afdf script ae77f20effc12ec189aec2022b8d14afa94c83e0935883dfd5d8e8c7858b8b9f
+      stat: pending paths                    0
+      stat: branching points                 12734
+      stat: visited instructions (unrolled)  69288
+      stat: [checkct:info] 21008 / 21008 control flow checks pass
+      stat: [checkct:info] 36520 / 36520 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass

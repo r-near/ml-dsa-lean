@@ -1,0 +1,14 @@
+Summary:
+  driver  x86_64-unknown-linux-gnu  driver::prepared::census_sign_prepared_44  insecure
+      sha256: elf 425f8ac97c222f8268752152384f56d6be56b73f11e2edc76944cca39f6dcdd8 script 0cfa9ca3508e4760245fa34cbfa3362ebbeedef50d7819e49cce42c466cf3246
+      0x242548 has control flow leak (6.185s)
+      stat: pending paths                    1
+      stat: branching points                 101688
+      stat: visited instructions (unrolled)  1557566
+      stat: [checkct:info] 104700 / 104701 control flow checks pass
+      stat: [checkct:info] 484807 / 484807 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0

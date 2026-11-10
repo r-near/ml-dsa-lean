@@ -1,0 +1,26 @@
+compute_t_1x1	unknown	0	22853	4392/4392	cut vinsertps 0x2870ad src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+compute_t_44	unknown	0	169634	39588/39588	cut vinsertps 0x2870ad src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+compute_t_65	unknown	0	287630	68314/68314	cut vinsertps 0x2870ad src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+compute_t_87	unknown	0	494666	118546/118546	cut vinsertps 0x2870ad src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+matrix_vector_ntt_1x1	unknown	0	13832	2963/2963	cut vpermpd 0x22554c src/field.rs:65 driver::field::mont_reduce
+matrix_vector_ntt_44	unknown	0	139598	34151/34151	cut vpermpd 0x279689 src/field.rs:65 driver::field::mont_reduce
+matrix_vector_ntt_65	unknown	0	243426	60046/60046	cut vpermpd 0x27d459 src/field.rs:65 driver::field::mont_reduce
+matrix_vector_ntt_87	unknown	0	436278	107440/107440	cut vpermpd 0x27fa99 src/field.rs:65 driver::field::mont_reduce
+ntt_vec_44	unknown	0	31335	6599/6599	cut vinsertps 0x2870ad src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+scalar_vector_ntt_inverse_1	unknown	0	13834	2963/2963	cut vpermpd 0x22702c src/field.rs:65 driver::field::mont_reduce
+field_mont_reduce	secure	0	83	13/13	
+field_mul_mont	secure	0	92	13/13	
+field_mul_shoup	secure	0	63	9/9	
+multiply_ntt	unknown	0	14341	2963/2963	cut vpermpd 0x272d55 src/field.rs:65 driver::field::mont_reduce
+ntt	unknown	0	9229	1566/1566	cut vinsertps 0x2870ad src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+ntt_inverse	unknown	0	10322	1578/1578	cut vinsertps 0x289068 src/ntt.rs:128 driver::ntt::ntt_inverse_layer::<8, 16>
+hint_step_1_44	unknown	0	21242	4642/4642	cut vpermpd 0x20fd30 src/field.rs:65 driver::field::mont_reduce
+hint_step_1_65	unknown	0	21242	4642/4642	cut vpermpd 0x20fd30 src/field.rs:65 driver::field::mont_reduce
+hint_step_44	unknown	0	65826	15092/15092	cut vpermpd 0x282f29 src/field.rs:65 driver::field::mont_reduce
+hint_step_65	unknown	0	95528	22108/22108	cut vpermpd 0x283a09 src/field.rs:65 driver::field::mont_reduce
+hint_step_87	unknown	0	125247	29133/29133	cut vpermpd 0x284969 src/field.rs:65 driver::field::mont_reduce
+response_1x1_44	unknown	0	35830	7867/7867	cut vpermpd 0x207fa9 src/field.rs:65 driver::field::mont_reduce
+response_1x1_65	unknown	0	35830	7867/7867	cut vpermpd 0x207fa9 src/field.rs:65 driver::field::mont_reduce
+response_44	unknown	0	125151	28901/28901	cut vpermpd 0x282f29 src/field.rs:65 driver::field::mont_reduce
+response_65	unknown	0	169873	39589/39589	cut vpermpd 0x283409 src/field.rs:65 driver::field::mont_reduce
+response_87	unknown	0	229419	53755/53755	cut vpermpd 0x284129 src/field.rs:65 driver::field::mont_reduce

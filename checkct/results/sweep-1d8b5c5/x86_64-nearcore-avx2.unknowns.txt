@@ -1,0 +1,153 @@
+
+driver::extra::compute_t_1x1  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  22853
+   stat: [checkct:info] 4392 / 4392 control flow checks pass
+   cut   0x236efd  vinsertps $0x70,%xmm0,%xmm13,%xmm13   [src/ntt.rs:110]   in driver::ntt::ntt_layer::<8, 16>
+
+driver::extra::compute_t_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  170168
+   stat: [checkct:info] 40104 / 40104 control flow checks pass
+   cut   0x236efd  vinsertps $0x70,%xmm0,%xmm13,%xmm13   [src/ntt.rs:110]   in driver::ntt::ntt_layer::<8, 16>
+
+driver::extra::compute_t_65  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  287880
+   stat: [checkct:info] 68569 / 68569 control flow checks pass
+   cut   0x236efd  vinsertps $0x70,%xmm0,%xmm13,%xmm13   [src/ntt.rs:110]   in driver::ntt::ntt_layer::<8, 16>
+
+driver::extra::compute_t_87  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  494912
+   stat: [checkct:info] 118800 / 118800 control flow checks pass
+   cut   0x236efd  vinsertps $0x70,%xmm0,%xmm13,%xmm13   [src/ntt.rs:110]   in driver::ntt::ntt_layer::<8, 16>
+
+driver::extra::matrix_vector_ntt_1x1  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  13832
+   stat: [checkct:info] 2963 / 2963 control flow checks pass
+   cut   0x24e9cc  vpermpd $0xd8,%ymm9,%ymm9   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::extra::matrix_vector_ntt_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  139466
+   stat: [checkct:info] 34022 / 34022 control flow checks pass
+   cut   0x206289  vpermpd $0xd8,%ymm2,%ymm2   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::extra::matrix_vector_ntt_65  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  242756
+   stat: [checkct:info] 59400 / 59400 control flow checks pass
+   cut   0x208169  vpermpd $0xd8,%ymm2,%ymm2   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::extra::matrix_vector_ntt_87  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  435411
+   stat: [checkct:info] 106538 / 106538 control flow checks pass
+   cut   0x24c0b9  vpermpd $0xd8,%ymm2,%ymm2   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::extra::ntt_vec_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  31464
+   stat: [checkct:info] 6727 / 6727 control flow checks pass
+   cut   0x236efd  vinsertps $0x70,%xmm0,%xmm13,%xmm13   [src/ntt.rs:110]   in driver::ntt::ntt_layer::<8, 16>
+
+driver::extra::scalar_vector_ntt_inverse_1  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  13834
+   stat: [checkct:info] 2963 / 2963 control flow checks pass
+   cut   0x254a2c  vpermpd $0xd8,%ymm9,%ymm9   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::probes::field_mont_reduce  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  83
+   stat: [checkct:info] 13 / 13 control flow checks pass
+
+driver::probes::field_mul_mont  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  92
+   stat: [checkct:info] 13 / 13 control flow checks pass
+
+driver::probes::field_mul_shoup  secure
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  63
+   stat: [checkct:info] 9 / 9 control flow checks pass
+
+driver::probes::multiply_ntt  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  14341
+   stat: [checkct:info] 2963 / 2963 control flow checks pass
+   cut   0x27f215  vpermpd $0xd8,%ymm9,%ymm9   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::probes::ntt  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  9229
+   stat: [checkct:info] 1566 / 1566 control flow checks pass
+   cut   0x236efd  vinsertps $0x70,%xmm0,%xmm13,%xmm13   [src/ntt.rs:110]   in driver::ntt::ntt_layer::<8, 16>
+
+driver::probes::ntt_inverse  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  10322
+   stat: [checkct:info] 1578 / 1578 control flow checks pass
+   cut   0x238eb8  vinsertps $0x70,%xmm0,%xmm1,%xmm1   [src/ntt.rs:128]   in driver::ntt::ntt_inverse_layer::<8, 16>
+
+driver::signing::hint_step_1_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  20919
+   stat: [checkct:info] 4376 / 4376 control flow checks pass
+   cut   0x233a27  vpermpd $0xd8,%ymm8,%ymm8   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::signing::hint_step_1_65  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  20919
+   stat: [checkct:info] 4376 / 4376 control flow checks pass
+   cut   0x233a27  vpermpd $0xd8,%ymm8,%ymm8   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::signing::hint_step_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  66357
+   stat: [checkct:info] 15609 / 15609 control flow checks pass
+   cut   0x20a749  vpermpd $0xd8,%ymm3,%ymm3   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::signing::hint_step_65  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  96302
+   stat: [checkct:info] 22881 / 22881 control flow checks pass
+   cut   0x20ac49  vpermpd $0xd8,%ymm3,%ymm3   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::signing::hint_step_87  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  126258
+   stat: [checkct:info] 30153 / 30153 control flow checks pass
+   cut   0x20b389  vpermpd $0xd8,%ymm3,%ymm3   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::signing::response_1x1_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  35508
+   stat: [checkct:info] 7601 / 7601 control flow checks pass
+   cut   0x232ad7  vpermpd $0xd8,%ymm3,%ymm3   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::signing::response_1x1_65  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  35508
+   stat: [checkct:info] 7601 / 7601 control flow checks pass
+   cut   0x232ad7  vpermpd $0xd8,%ymm3,%ymm3   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::signing::response_44  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  126624
+   stat: [checkct:info] 30322 / 30322 control flow checks pass
+   cut   0x20a749  vpermpd $0xd8,%ymm3,%ymm3   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::signing::response_65  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  170332
+   stat: [checkct:info] 40100 / 40100 control flow checks pass
+   cut   0x28af17  vpermpd $0xd8,%ymm3,%ymm3   [src/field.rs:65]   in driver::field::mont_reduce
+
+driver::signing::response_87  unknown
+   stat: pending paths                    0
+   stat: visited instructions (unrolled)  229872
+   stat: [checkct:info] 54265 / 54265 control flow checks pass
+   cut   0x28e1a7  vpermpd $0xd8,%ymm3,%ymm3   [src/field.rs:65]   in driver::field::mont_reduce

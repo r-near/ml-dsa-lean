@@ -1,0 +1,4 @@
+Summary:
+  driver  thumbv7em-none-eabihf  driver::extra::census_sign_internal_44  error
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e2ab6ed56b32fb13f9fc55aa0da9984c2cd0dd6a86ac6c0ffc63fec0fbf92c03
+      0x05a134 has control flow leak (38.848s)

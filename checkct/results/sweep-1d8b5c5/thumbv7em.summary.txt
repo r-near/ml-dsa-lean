@@ -1,0 +1,938 @@
+Summary:
+  driver  thumbv7em-none-eabihf  driver::extra::coeff_from_half_byte_eta2  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script a2c68fdb9f857878242a551ee87ad602b195ab9b68b5ec663198f6f6db7b9a9f
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  54
+      stat: [checkct:info] 6 / 6 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::coeff_from_half_byte_eta4  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 5e108f3027f2ee40618937a9d2c4bc005a8c1dac21b7e6ea6008f3b3a9b42d2a
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  48
+      stat: [checkct:info] 6 / 6 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_1x1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script d4c0c518929aaa2aedf536389df41991760ad76b830381b155ee1dc234ef4383
+      stat: pending paths                    0
+      stat: branching points                 2314
+      stat: visited instructions (unrolled)  79942
+      stat: [checkct:info] 5406 / 5406 control flow checks pass
+      stat: [checkct:info] 21027 / 21027 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 7f0397fd5e810050310d0826e1a85b678f993c22f375e253e523ce429bbae3ba
+      stat: pending paths                    0
+      stat: branching points                 20570
+      stat: visited instructions (unrolled)  534125
+      stat: [checkct:info] 45296 / 45296 control flow checks pass
+      stat: [checkct:info] 151997 / 151997 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 1f12fc8074779e775c747c2804dccaa96b3ad20c5af107923ca5884dd2eacf20
+      stat: pending paths                    0
+      stat: branching points                 34766
+      stat: visited instructions (unrolled)  866391
+      stat: [checkct:info] 76990 / 76990 control flow checks pass
+      stat: [checkct:info] 254248 / 254248 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::compute_t_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 804a0310f8b8d611ff88b20bf9d4eadded055d2896046e8958b9a369aaed5649
+      stat: pending paths                    0
+      stat: branching points                 58646
+      stat: visited instructions (unrolled)  1418109
+      stat: [checkct:info] 131746 / 131746 control flow checks pass
+      stat: [checkct:info] 410992 / 410992 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::control_early_exit_44  insecure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 642dc521440dc3a8841b6d47199a5565448928eeda1fd769c27955df57b87785
+      0x02f416 has control flow leak (0.140s)
+      0x02f57c has control flow leak (2.094s)
+      0x02f6e6 has control flow leak (8.660s)
+      0x02f848 has control flow leak (18.917s)
+      0x02f9ae has control flow leak (33.138s)
+      0x02fb12 has control flow leak (53.714s)
+      0x02fc78 has control flow leak (79.331s)
+      0x02fdde has control flow leak (109.537s)
+      stat: pending paths                    0
+      stat: branching points                 10857
+      stat: visited instructions (unrolled)  83238
+      stat: [checkct:info] 13432 / 13440 control flow checks pass
+      stat: [checkct:info] 36050 / 36050 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::extra::encode_sk_is_well_formed_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 2c1832740b213a81530d047b071d211fec6d731f481905387b3bb284ca711025
+      stat: pending paths                    0
+      stat: branching points                 12517
+      stat: visited instructions (unrolled)  117605
+      stat: [checkct:info] 17437 / 17437 control flow checks pass
+      stat: [checkct:info] 28530 / 28530 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::encode_sk_is_well_formed_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e853f9c34a7fe55eba58b5bc9cdd4745b7cbc579109da956882f51b3e59657e0
+      stat: pending paths                    0
+      stat: branching points                 15846
+      stat: visited instructions (unrolled)  155500
+      stat: [checkct:info] 20772 / 20772 control flow checks pass
+      stat: [checkct:info] 37396 / 37396 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::encode_sk_is_well_formed_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script f09cd11d277d6b58433729b14b7e63fa9bf2c3cafd817cd94aae57c4c10589ba
+      stat: pending paths                    0
+      stat: branching points                 18642
+      stat: visited instructions (unrolled)  189600
+      stat: [checkct:info] 23576 / 23576 control flow checks pass
+      stat: [checkct:info] 45932 / 45932 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::expand_mask_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 5b9341e529ed27f2a926f5f381cee6e54792d7368d45f70b5ac832710876aa17
+      stat: pending paths                    0
+      stat: branching points                 9821
+      stat: visited instructions (unrolled)  408441
+      stat: [checkct:info] 9937 / 9937 control flow checks pass
+      stat: [checkct:info] 185710 / 185710 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::expand_mask_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script f0e1c181a2e643beab4dd667fbc2771c86e681a11b1c219c030335f04ad71437
+      stat: pending paths                    0
+      stat: branching points                 13149
+      stat: visited instructions (unrolled)  516743
+      stat: [checkct:info] 13275 / 13275 control flow checks pass
+      stat: [checkct:info] 231915 / 231915 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::expand_mask_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script c4293912dcb4e1a99b86952f79bc4e9d05b3ccb66b9264f7d03362026cea6051
+      stat: pending paths                    0
+      stat: branching points                 18389
+      stat: visited instructions (unrolled)  723171
+      stat: [checkct:info] 18535 / 18535 control flow checks pass
+      stat: [checkct:info] 324525 / 324525 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::keygen_seed_hash  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 2e2be493904d0323f291d6dee096b31c0497f6da7d5bd882ec3aad6a6ff8141e
+      stat: pending paths                    0
+      stat: branching points                 200
+      stat: visited instructions (unrolled)  17592
+      stat: [checkct:info] 244 / 244 control flow checks pass
+      stat: [checkct:info] 9026 / 9026 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_1x1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e4104a3df9b57f3193662b3b8eb815e1fd6ddb33c19932e5dbfc4de915e7c2e5
+      stat: pending paths                    0
+      stat: branching points                 1070
+      stat: visited instructions (unrolled)  21685
+      stat: [checkct:info] 3130 / 3130 control flow checks pass
+      stat: [checkct:info] 4945 / 4945 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 377ab0b43787712f06c1bb68c50ab7972afa79b4dc292fe8fd373efd009872f7
+      stat: pending paths                    0
+      stat: branching points                 14237
+      stat: visited instructions (unrolled)  286426
+      stat: [checkct:info] 34818 / 34818 control flow checks pass
+      stat: [checkct:info] 77500 / 77500 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 5313d592e9e300d19642ddf3274d935876548c8526a7a461012452f171edd79f
+      stat: pending paths                    0
+      stat: branching points                 25602
+      stat: visited instructions (unrolled)  516164
+      stat: [checkct:info] 61615 / 61615 control flow checks pass
+      stat: [checkct:info] 148485 / 148485 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::matrix_vector_ntt_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script a39aa67877070052bbe0ff542589dc2366e26085eeec4521570746bf186b5859
+      stat: pending paths                    0
+      stat: branching points                 46196
+      stat: visited instructions (unrolled)  943308
+      stat: [checkct:info] 111015 / 111015 control flow checks pass
+      stat: [checkct:info] 267373 / 267373 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::ntt_vec_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script bbfceb9c353922177a738976f73bdd4aacda20aa20bf6d68b4616bb8c4513538
+      stat: pending paths                    0
+      stat: branching points                 3524
+      stat: visited instructions (unrolled)  115487
+      stat: [checkct:info] 7651 / 7651 control flow checks pass
+      stat: [checkct:info] 31577 / 31577 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::poly_power2round  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 76c1a63cd40b0c5a51c55942221a15e365b7a48380805dd3da71230bb6a9128c
+      stat: pending paths                    0
+      stat: branching points                 630
+      stat: visited instructions (unrolled)  11353
+      stat: [checkct:info] 1664 / 1664 control flow checks pass
+      stat: [checkct:info] 2965 / 2965 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::rej_bounded_poly_eta2  insecure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 9ef96b89dc04a900c54c33ac594cd695b04187bb56b0f80a9c0eef7403cf73aa
+      0x05a2b6 has control flow leak (118.115s)
+      0x05a2dc has control flow leak (180.211s)
+      stat: pending paths                    27
+      stat: branching points                 310
+      stat: visited instructions (unrolled)  18573
+      stat: [checkct:info] 371 / 373 control flow checks pass
+      stat: [checkct:info] 9396 / 9396 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 27 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::extra::rej_bounded_poly_eta4  insecure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 4d183a2eac2b04f42758ab4eac479cb4fdc9ab6e796b9fa7acf631be60069b3b
+      0x05a36a has control flow leak (0.356s)
+      0x05a37c has control flow leak (9.941s)
+      stat: pending paths                    11
+      stat: branching points                 226
+      stat: visited instructions (unrolled)  17781
+      stat: [checkct:info] 295 / 297 control flow checks pass
+      stat: [checkct:info] 9204 / 9204 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 11 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::extra::scalar_vector_ntt_inverse_1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script f15cd5025edcf56bc2d261580e2629b2115bff5c6382871ad8015f6016bd53f9
+      stat: pending paths                    0
+      stat: branching points                 1230
+      stat: visited instructions (unrolled)  45891
+      stat: [checkct:info] 3289 / 3289 control flow checks pass
+      stat: [checkct:info] 10999 / 10999 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sign_rho_pp_hash  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script caba1efc7c9f346471a98bcd84ac710ce763f76b5edf0d0fbe72478f5b7406b4
+      stat: pending paths                    0
+      stat: branching points                 208
+      stat: visited instructions (unrolled)  17837
+      stat: [checkct:info] 349 / 349 control flow checks pass
+      stat: [checkct:info] 9132 / 9132 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sk_is_well_formed_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 4a41ab4983e4ee6aa24fec087753816220f373f8bcb872624b18e018fdd16437
+      stat: pending paths                    0
+      stat: branching points                 9889
+      stat: visited instructions (unrolled)  100813
+      stat: [checkct:info] 12473 / 12473 control flow checks pass
+      stat: [checkct:info] 24442 / 24442 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sk_is_well_formed_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script d1733df63a33cee1b19629b5f5b35321ec391bfeb6e6105b95b9b254e141eda1
+      stat: pending paths                    0
+      stat: branching points                 14874
+      stat: visited instructions (unrolled)  149288
+      stat: [checkct:info] 18936 / 18936 control flow checks pass
+      stat: [checkct:info] 35884 / 35884 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::sk_is_well_formed_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 8e197463d83544184a683b4505ce63aac34d802a4ce384df8c6223aaea8bf81f
+      stat: pending paths                    0
+      stat: branching points                 18642
+      stat: visited instructions (unrolled)  189600
+      stat: [checkct:info] 23576 / 23576 control flow checks pass
+      stat: [checkct:info] 45932 / 45932 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::vec_power2round_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script baf004900ba442cb20e1c87767b59ddddc317a5e491ba9a0bb07541036845798
+      stat: pending paths                    0
+      stat: branching points                 5071
+      stat: visited instructions (unrolled)  77698
+      stat: [checkct:info] 9217 / 9217 control flow checks pass
+      stat: [checkct:info] 31274 / 31274 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::extra::vec_power2round_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 5f4aa23c905825c24e62a7fc91f5ba0e3a3796561b1e60c144fc1a2ede5d03f4
+      stat: pending paths                    0
+      stat: branching points                 10251
+      stat: visited instructions (unrolled)  156376
+      stat: [checkct:info] 18533 / 18533 control flow checks pass
+      stat: [checkct:info] 62972 / 62972 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::control_prepared_branch_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e2d6f2bac0bdc7da9858a2f207503242fd041c2191466c32f88cd8bba22bc2ed
+      stat: pending paths                    0
+      stat: branching points                 58392
+      stat: visited instructions (unrolled)  1971930
+      stat: [checkct:info] 61064 / 61064 control flow checks pass
+      stat: [checkct:info] 837119 / 837119 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::control_prepared_index_44  insecure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 684a7fe6f364d242125eb5735e720668b41652394ed1a53207d57c5fe7c4ce8c
+      0x032c02 has memory access leak (2.160s)
+      stat: pending paths                    0
+      stat: branching points                 58461
+      stat: visited instructions (unrolled)  1972812
+      stat: [checkct:info] 61134 / 61134 control flow checks pass
+      stat: [checkct:info] 837657 / 837658 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_1x1_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e65625c629627cff5af9b8845924f00a325af0aecbb75966b6c69baa410ee997
+      stat: pending paths                    0
+      stat: branching points                 12177
+      stat: visited instructions (unrolled)  227314
+      stat: [checkct:info] 14932 / 14932 control flow checks pass
+      stat: [checkct:info] 85264 / 85264 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_1x1_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 1bc3ac4b6352c2a5881d8944ea60e6b6f7f0e36a1835151d8993fa12c9724946
+      stat: pending paths                    0
+      stat: branching points                 14237
+      stat: visited instructions (unrolled)  239203
+      stat: [checkct:info] 18464 / 18464 control flow checks pass
+      stat: [checkct:info] 88000 / 88000 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script a5b25c797554cb5176ae5a69fc03bd70538a4c3c375f4a4a15e885bd7b717998
+      stat: pending paths                    0
+      stat: branching points                 62825
+      stat: visited instructions (unrolled)  2016590
+      stat: [checkct:info] 65511 / 65511 control flow checks pass
+      stat: [checkct:info] 865223 / 865223 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e036ce65a99f40418412ad75ec0c7f7025b8d091184b027dc5dcd615ada4b474
+      stat: pending paths                    0
+      stat: branching points                 109117
+      stat: visited instructions (unrolled)  3604132
+      stat: [checkct:info] 113435 / 113435 control flow checks pass
+      stat: [checkct:info] 1571184 / 1571184 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::prepare_sk_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 754d689fc60104614fbf005d2f8cdaa76aeca899d22b83e4770696880208f84d
+      stat: pending paths                    0
+      stat: branching points                 185315
+      stat: visited instructions (unrolled)  6422722
+      stat: [checkct:info] 190725 / 190725 control flow checks pass
+      stat: [checkct:info] 2847275 / 2847275 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::signing_key_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 77d2407695712a6686f3edf57914c2ee6d067466fc21622e02bdf8b99309e8b3
+      stat: pending paths                    0
+      stat: branching points                 60249
+      stat: visited instructions (unrolled)  1995749
+      stat: [checkct:info] 62936 / 62936 control flow checks pass
+      stat: [checkct:info] 851857 / 851857 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::signing_key_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script f116865b7ee323f221bb4d1c8a0b0afc8c5698b7698b838a4e0fdf4898b6e687
+      stat: pending paths                    0
+      stat: branching points                 105005
+      stat: visited instructions (unrolled)  3571835
+      stat: [checkct:info] 109324 / 109324 control flow checks pass
+      stat: [checkct:info] 1550392 / 1550392 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::prepared::signing_key_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script c2f8b584d6c53c3fe5982021556ffd7c978bfc86d4aec0e84db12e85a3ff1ee3
+      stat: pending paths                    0
+      stat: branching points                 178771
+      stat: visited instructions (unrolled)  6373143
+      stat: [checkct:info] 184182 / 184182 control flow checks pass
+      stat: [checkct:info] 2815219 / 2815219 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::barrett_reduce  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 79c22703717fdcac0b2fb21df0197ed34e5fb827070d0282b4ea4deeb6a66f99
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  80
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_13  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script dd6bb2d31681f691807a64029ac919aea116b55ebb13d64401f2836f1c0079bf
+      stat: pending paths                    0
+      stat: branching points                 1517
+      stat: visited instructions (unrolled)  16098
+      stat: [checkct:info] 2549 / 2549 control flow checks pass
+      stat: [checkct:info] 2229 / 2229 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_18  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 3b688117421ba1d2ec544f802d41f477fc2515aecc1fbe5a3055bfddb8bfbd08
+      stat: pending paths                    0
+      stat: branching points                 1837
+      stat: visited instructions (unrolled)  17668
+      stat: [checkct:info] 2869 / 2869 control flow checks pass
+      stat: [checkct:info] 2389 / 2389 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_20  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script f68518b60140f828ca0bbd3e888fd942d823e8e8d6d43aae115aa2915bb39bbd
+      stat: pending paths                    0
+      stat: branching points                 1965
+      stat: visited instructions (unrolled)  18180
+      stat: [checkct:info] 2997 / 2997 control flow checks pass
+      stat: [checkct:info] 2453 / 2453 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_3  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 68c22cbcd3abd75ae5418b8f3ce6ac9f5b9afd042c082a2f2b262dba671c128c
+      stat: pending paths                    0
+      stat: branching points                 1133
+      stat: visited instructions (unrolled)  12931
+      stat: [checkct:info] 2165 / 2165 control flow checks pass
+      stat: [checkct:info] 1909 / 1909 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::bit_pack_4  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 06ce74c2a77fd388047fbc24d68dd4c9473e434e14009b565327bc7aae9a6f08
+      stat: pending paths                    0
+      stat: branching points                 1197
+      stat: visited instructions (unrolled)  13571
+      stat: [checkct:info] 2229 / 2229 control flow checks pass
+      stat: [checkct:info] 1941 / 1941 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::ct_lt_mask  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e618f6a7497eef4ffb7541d115706b9007899322ed407aa9e17a15dd67164c83
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  120
+      stat: [checkct:info] 21 / 21 control flow checks pass
+      stat: [checkct:info] 25 / 25 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::ct_select  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 696ab8f29444bd81b1fedcd080c20a07903124c98373dcefe9899cc6e31ba15d
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  75
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::decompose_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script d975e89185b5dd1b49b8765751bde27002b02ac894485dffeaef0c59d26dfd1f
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  115
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 35 / 35 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::decompose_65_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 6402d0242175fc9a9fa41c71979504be295ac6cf5fea14e166e2be86358fa86e
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  115
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 35 / 35 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_mont_reduce  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script ed4bd5bb621d76e2ea35b32267703cbd3cfc610b25e56c1ee301e0354de839ee
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  75
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_mul  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script dfe6e43afac0c35753c2ddaa271c76b70f775a3ba6892f6190a46825505acbe4
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  80
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_mul_mont  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script aa961aa07d984544dc243672f0155b99307f83db639f158e43e2db758f820832
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  83
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_mul_shoup  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 2c42ce34ddc85b0b6485775edcfef9c1c6ef4451a00dd2f59cd288bd79c15c4d
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  61
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_neg  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 3c98d22a1c9ea3a04108ef7bf48048a7664bc345be6e62167edc05ab5a28015d
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  57
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_small_reduce  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 7c5aaeccbbe7c396623091b4bf424be0e0440562026117175b636324977d15f4
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  72
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::field_sub  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 87c5aae30e05b51df8782ed3b85b519351d4401d43a46e42319fb6b2f11ec7ee
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  72
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 18 / 18 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::high_bits_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 0cb7091475efd3f4159bf147da3355cccdbaa53f57340720ac3bcc93a017e5f5
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  109
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 34 / 34 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::high_bits_65_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 9b4d026c9f05da71424b41c1e5fa1c1fe085f701bfde8854d8e9c5cc7e12b7d9
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  109
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 34 / 34 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::infinity_norm  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 2a08aca03689d7eb91e3e1c4d8c250741a46dd1ed0412e853991d88273e3f025
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  56
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::keccak_f1600  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 643f232ea33f53ab1b6c2cbbb5ee0ed46b4028a78be10637448260220ceec2cf
+      stat: pending paths                    0
+      stat: branching points                 43
+      stat: visited instructions (unrolled)  17402
+      stat: [checkct:info] 250 / 250 control flow checks pass
+      stat: [checkct:info] 8607 / 8607 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::low_bits_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 81dc051460360b32c1e0d54eb3d36b437f258a33660a771018bfdfa22ada728c
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  108
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 28 / 28 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::low_bits_65_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script c813aafd45b41d42ec1eddb4ad0d8f11b3c552074d5dd5aba2164c4daeb3a02d
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  108
+      stat: [checkct:info] 10 / 10 control flow checks pass
+      stat: [checkct:info] 28 / 28 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::make_hint_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script b513c2797433a4dad2e1ec860a466cf094d6ad8821e1573061c35276f1dde2ed
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  176
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 50 / 50 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::make_hint_65_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 20b169e2d642e8740a2b6f81922a02a92d4dc53873fd0de6f03fe45acb3d6623
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  176
+      stat: [checkct:info] 14 / 14 control flow checks pass
+      stat: [checkct:info] 50 / 50 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::multiply_ntt  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 55c208980ba3cc1a755919632bf4f31a8f5a1682bb7889685456698f4b40d364
+      stat: pending paths                    0
+      stat: branching points                 780
+      stat: visited instructions (unrolled)  15791
+      stat: [checkct:info] 2836 / 2836 control flow checks pass
+      stat: [checkct:info] 2658 / 2658 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::ntt  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script aee00d605bca4cf1f4f3ca605a5e2a5298dfdd50b52cf64d41f312345b97b9be
+      stat: pending paths                    0
+      stat: branching points                 710
+      stat: visited instructions (unrolled)  26959
+      stat: [checkct:info] 1743 / 1743 control flow checks pass
+      stat: [checkct:info] 6697 / 6697 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::ntt_inverse  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 4f80a9624d345986022a1a68e244d616ac0ed5a52e7f1e0354c3a3fc57df61df
+      stat: pending paths                    0
+      stat: branching points                 774
+      stat: visited instructions (unrolled)  34823
+      stat: [checkct:info] 1807 / 1807 control flow checks pass
+      stat: [checkct:info] 9002 / 9002 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::power2round  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 0cb0e7418ce2c15d0350ae188ed18639d46407c54ce258a86fb4afe8809a12cf
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  63
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_decode_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script cede8e9383f4674cc98371e379a4b945c76f7a9e7ce54b6df3e8c1bfde5796ce
+      stat: pending paths                    0
+      stat: branching points                 15990
+      stat: visited instructions (unrolled)  146425
+      stat: [checkct:info] 18571 / 18571 control flow checks pass
+      stat: [checkct:info] 36407 / 36407 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_decode_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script c0cc2afc171bd8874082c26530934a8ed7b8d62b48bee3e3a3285c0b77c9c6d3
+      stat: pending paths                    0
+      stat: branching points                 23720
+      stat: visited instructions (unrolled)  216986
+      stat: [checkct:info] 27778 / 27778 control flow checks pass
+      stat: [checkct:info] 52262 / 52262 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_decode_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 26f75f81e17673670790f48be88093cbaf97759d1ae3cf0de0f0145c1dee5652
+      stat: pending paths                    0
+      stat: branching points                 30364
+      stat: visited instructions (unrolled)  287293
+      stat: [checkct:info] 35292 / 35292 control flow checks pass
+      stat: [checkct:info] 70117 / 70117 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_encode_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 1d5bca8e279ddda666cf3cc3329550495c52fc09b3d8c5d91e34b91aa5549417
+      stat: pending paths                    0
+      stat: branching points                 17940
+      stat: visited instructions (unrolled)  212171
+      stat: [checkct:info] 30407 / 30407 control flow checks pass
+      stat: [checkct:info] 41475 / 41475 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_encode_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 3e8aa5c8ac8cb929b70fbab7a354c9d02629830f88d68a2d42b5f63933004546
+      stat: pending paths                    0
+      stat: branching points                 26163
+      stat: visited instructions (unrolled)  307315
+      stat: [checkct:info] 43765 / 43765 control flow checks pass
+      stat: [checkct:info] 58842 / 58842 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::sk_encode_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script fd9596a8e89b6d456a09a77ed4dfe6ec2ddb657fefb0bde7326c951064c77682
+      stat: pending paths                    0
+      stat: branching points                 34237
+      stat: visited instructions (unrolled)  399631
+      stat: [checkct:info] 58001 / 58001 control flow checks pass
+      stat: [checkct:info] 69685 / 69685 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::probes::vec_infinity_norm  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 92a37699b4fba44adfd03dc7a52e682d22ad3c7b6705ec478a2b5582f16de1ca
+      stat: pending paths                    0
+      stat: branching points                 2728
+      stat: visited instructions (unrolled)  40766
+      stat: [checkct:info] 6839 / 6839 control flow checks pass
+      stat: [checkct:info] 7842 / 7842 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_1_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script b3921c991ea2febcbb41c096473355cbf3b26d9d81a4ad7d243f19aaa59bea9a
+      stat: pending paths                    0
+      stat: branching points                 2244
+      stat: visited instructions (unrolled)  87855
+      stat: [checkct:info] 5590 / 5590 control flow checks pass
+      stat: [checkct:info] 22433 / 22433 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_1_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 39748002faf3dcb9f1f0b946f37385071cf39558ba9d746c9c90bc2fb332dc63
+      stat: pending paths                    0
+      stat: branching points                 2244
+      stat: visited instructions (unrolled)  87855
+      stat: [checkct:info] 5590 / 5590 control flow checks pass
+      stat: [checkct:info] 22433 / 22433 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 36a9533a7b5ee83a24b3d282ee4e54acafa43217bd3f59a469af4d500c6498c4
+      stat: pending paths                    0
+      stat: branching points                 8490
+      stat: visited instructions (unrolled)  336125
+      stat: [checkct:info] 18775 / 18775 control flow checks pass
+      stat: [checkct:info] 92090 / 92090 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script bba7a1f4e476a33c1236152c4daf3e77bb883bcd57857eadcb3aa069d477055f
+      stat: pending paths                    0
+      stat: branching points                 12688
+      stat: visited instructions (unrolled)  501484
+      stat: [checkct:info] 27595 / 27595 control flow checks pass
+      stat: [checkct:info] 137979 / 137979 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::hint_step_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 6585090e1a52f90c1e7966ef8fe9450d376f9dfd16233464b48d5a97b5e430a3
+      stat: pending paths                    0
+      stat: branching points                 16886
+      stat: visited instructions (unrolled)  664791
+      stat: [checkct:info] 36415 / 36415 control flow checks pass
+      stat: [checkct:info] 185792 / 185792 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_1x1_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 06e5f1b4861a7d278138136a8b63cdc39685095bea5313e7eb99f2c52b7f285b
+      stat: pending paths                    0
+      stat: branching points                 4285
+      stat: visited instructions (unrolled)  126356
+      stat: [checkct:info] 9436 / 9436 control flow checks pass
+      stat: [checkct:info] 32019 / 32019 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_1x1_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e65ab6b9f8da37240da86296aea84797e975b2b5f9f90f9d3a889fb544a37b43
+      stat: pending paths                    0
+      stat: branching points                 4285
+      stat: visited instructions (unrolled)  126356
+      stat: [checkct:info] 9436 / 9436 control flow checks pass
+      stat: [checkct:info] 32019 / 32019 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_44  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 6e2ec9891c22fa5a311f1a21e75d173345642f7bfa8c88f02ba2c7592ec71cab
+      stat: pending paths                    0
+      stat: branching points                 17432
+      stat: visited instructions (unrolled)  496786
+      stat: [checkct:info] 34943 / 34943 control flow checks pass
+      stat: [checkct:info] 133427 / 133427 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_65  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 407dd598810e5ee297b5e6d5222f9e53924691d6c6fb64c9a6bcfa7b6c67b4ce
+      stat: pending paths                    0
+      stat: branching points                 24714
+      stat: visited instructions (unrolled)  695759
+      stat: [checkct:info] 48400 / 48400 control flow checks pass
+      stat: [checkct:info] 189058 / 189058 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::signing::response_87  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 0ad153bf55bfec6d0cc28ab31cf9d60c03675b1cc1ffaa8bd4be1c62456740ae
+      stat: pending paths                    0
+      stat: branching points                 33626
+      stat: visited instructions (unrolled)  945240
+      stat: [checkct:info] 65542 / 65542 control flow checks pass
+      stat: [checkct:info] 259415 / 259415 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_compute_t_44_2x2  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 2c1f4b2d5f56a01b46aa86a0bc9e52a580ccbbd11d15510d58e5a632fb44b59e
+      stat: pending paths                    0
+      stat: branching points                 7194
+      stat: visited instructions (unrolled)  202079
+      stat: [checkct:info] 15446 / 15446 control flow checks pass
+      stat: [checkct:info] 59262 / 59262 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_compute_t_44_col  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 52a4883710f254cf54d42c17b85c08cfc07c5236fcdcd0ede3299f6b6f3d2c84
+      stat: pending paths                    0
+      stat: branching points                 8912
+      stat: visited instructions (unrolled)  256836
+      stat: [checkct:info] 18195 / 18195 control flow checks pass
+      stat: [checkct:info] 76496 / 76496 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_compute_t_44_row  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script f79994b3fd617b23e91bff74b36c7fcac7ff04da1a9ced7bd67d04594e0595bf
+      stat: pending paths                    0
+      stat: branching points                 7495
+      stat: visited instructions (unrolled)  216612
+      stat: [checkct:info] 16772 / 16772 control flow checks pass
+      stat: [checkct:info] 60549 / 60549 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_ntt_vec_into_1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 7ad86381f04fec4edb03bffd1bca5632cad020a13b063c307f654d581e911666
+      stat: pending paths                    0
+      stat: branching points                 710
+      stat: visited instructions (unrolled)  26959
+      stat: [checkct:info] 1743 / 1743 control flow checks pass
+      stat: [checkct:info] 6697 / 6697 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_ntt_vec_into_7  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e19c7a10a2f6b8965a62b33ba23a7bb2fe69ba1e59ef99fb5022aed66775fbc0
+      stat: pending paths                    0
+      stat: branching points                 6230
+      stat: visited instructions (unrolled)  202401
+      stat: [checkct:info] 13441 / 13441 control flow checks pass
+      stat: [checkct:info] 55453 / 55453 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_ntt_vec_into_8  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script e4db26ad43a00099865c9333d4f46a3d8c8862ecfefbed3f8acae153c6730612
+      stat: pending paths                    0
+      stat: branching points                 7137
+      stat: visited instructions (unrolled)  231410
+      stat: [checkct:info] 15377 / 15377 control flow checks pass
+      stat: [checkct:info] 63439 / 63439 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_44_col  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 5b49c8296d1a2c2a6dd733e9d6b06d206cb803170dbdc7aa0861a8126cd19892
+      stat: pending paths                    0
+      stat: branching points                 35985
+      stat: visited instructions (unrolled)  779683
+      stat: [checkct:info] 39577 / 39577 control flow checks pass
+      stat: [checkct:info] 310534 / 310534 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_44_row  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 1d852051e047ade73b62fdf64efc8a2b207e4d1bef93c15044c09fe527f5ea32
+      stat: pending paths                    0
+      stat: branching points                 29612
+      stat: visited instructions (unrolled)  661910
+      stat: [checkct:info] 33178 / 33178 control flow checks pass
+      stat: [checkct:info] 275818 / 275818 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_65_col  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 618241ea12da7b016f79090090e67a530e3c164ce23b5cd47f7a726d5fd4bcd5
+      stat: pending paths                    0
+      stat: branching points                 53895
+      stat: visited instructions (unrolled)  1156638
+      stat: [checkct:info] 59507 / 59507 control flow checks pass
+      stat: [checkct:info] 462262 / 462262 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_65_row  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 808406585125310e8ee851c905fd88d442c4b7f91069c35714d35b123fb414c1
+      stat: pending paths                    0
+      stat: branching points                 37976
+      stat: visited instructions (unrolled)  824841
+      stat: [checkct:info] 43286 / 43286 control flow checks pass
+      stat: [checkct:info] 344674 / 344674 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_2x1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 336038cf2f2fded2daa9ec1aa077583b2f33c63041a8f58b1c1092b883dadb26
+      stat: pending paths                    0
+      stat: branching points                 22777
+      stat: visited instructions (unrolled)  424328
+      stat: [checkct:info] 28148 / 28148 control flow checks pass
+      stat: [checkct:info] 162149 / 162149 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_4x1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script dbab48242501021736b35db3d8958163705efb77e38eb19dec217e42d82062cd
+      stat: pending paths                    0
+      stat: branching points                 39051
+      stat: visited instructions (unrolled)  796620
+      stat: [checkct:info] 44979 / 44979 control flow checks pass
+      stat: [checkct:info] 314626 / 314626 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_6x1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 718c7522e5c45b4abd465e6d7604d71eb47846a1922b95c341ddbbfadc9a1a16
+      stat: pending paths                    0
+      stat: branching points                 54581
+      stat: visited instructions (unrolled)  1158455
+      stat: [checkct:info] 61057 / 61057 control flow checks pass
+      stat: [checkct:info] 463138 / 463138 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_7x1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 0ebb4d9f133f41bb12977a09f54084fc6249c53c00b302a81650fe88e669bac1
+      stat: pending paths                    0
+      stat: branching points                 49779
+      stat: visited instructions (unrolled)  1267408
+      stat: [checkct:info] 54736 / 54736 control flow checks pass
+      stat: [checkct:info] 490504 / 490504 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_col  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 9337009140de93edb932baab760c5d5a29fb0d713c94ac70886e7ab4933a7967
+      stat: pending paths                    0
+      stat: branching points                 55748
+      stat: visited instructions (unrolled)  1440662
+      stat: [checkct:info] 60723 / 60723 control flow checks pass
+      stat: [checkct:info] 555901 / 555901 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_prepare_sk_87_row  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script dd3ac54380956a625e290ead116799ca71f4256d7f5fae768f99093efc79770f
+      stat: pending paths                    0
+      stat: branching points                 37751
+      stat: visited instructions (unrolled)  1038589
+      stat: [checkct:info] 42673 / 42673 control flow checks pass
+      stat: [checkct:info] 424318 / 424318 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 1a5c75a7b684e30d18646c0398803cd6b3d2732ce158fb703cd7c5368cc40ebf
+      stat: pending paths                    0
+      stat: branching points                 901
+      stat: visited instructions (unrolled)  14796
+      stat: [checkct:info] 1938 / 1938 control flow checks pass
+      stat: [checkct:info] 5091 / 5091 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_2  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script b26a645169398b8373e447b829db481484ec9bd6ddcd6591624cf4ff4ee0b00c
+      stat: pending paths                    0
+      stat: branching points                 2613
+      stat: visited instructions (unrolled)  39033
+      stat: [checkct:info] 4692 / 4692 control flow checks pass
+      stat: [checkct:info] 15972 / 15972 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_3  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 0d77ba2972302f8cc75e8d6776e0e755556ffaeaf8dd29e326fe036301c083b9
+      stat: pending paths                    0
+      stat: branching points                 4044
+      stat: visited instructions (unrolled)  59346
+      stat: [checkct:info] 7159 / 7159 control flow checks pass
+      stat: [checkct:info] 24373 / 24373 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_4  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 7ff59f387abce4f84b3b6153c9395956e07ccb6f0b25c194cd6bd4f8c94d37ab
+      stat: pending paths                    0
+      stat: branching points                 5467
+      stat: visited instructions (unrolled)  79979
+      stat: [checkct:info] 9616 / 9616 control flow checks pass
+      stat: [checkct:info] 32824 / 32824 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_5  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 6e5fa01979360f358abd7c52941ccf6a8559bc55a6a7674dcc640505e28a26cc
+      stat: pending paths                    0
+      stat: branching points                 6890
+      stat: visited instructions (unrolled)  100353
+      stat: [checkct:info] 12073 / 12073 control flow checks pass
+      stat: [checkct:info] 41277 / 41277 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_6  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 2b36fc5090ac8ad0b6bc4a6a3d123bdadadb48f98a7578418de933d18e1cc054
+      stat: pending paths                    0
+      stat: branching points                 8313
+      stat: visited instructions (unrolled)  120700
+      stat: [checkct:info] 14530 / 14530 control flow checks pass
+      stat: [checkct:info] 49730 / 49730 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_7  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 9aab6c58b97e0ff57abb60ce98ae779635f454ea3381fe674c10b586d4de2867
+      stat: pending paths                    0
+      stat: branching points                 9871
+      stat: visited instructions (unrolled)  141637
+      stat: [checkct:info] 17122 / 17122 control flow checks pass
+      stat: [checkct:info] 58795 / 58795 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_hi  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 94ac39049b03f83d737b011229e4691f012f5e8c3c7cc3281e8a40c39c873708
+      stat: pending paths                    0
+      stat: branching points                 8959
+      stat: visited instructions (unrolled)  125537
+      stat: [checkct:info] 17212 / 17212 control flow checks pass
+      stat: [checkct:info] 48913 / 48913 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_lo  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 413224e17c528f3d8c91e4bc983770048903491c6ac25b4ccb5ce21d99945072
+      stat: pending paths                    0
+      stat: branching points                 8831
+      stat: visited instructions (unrolled)  124499
+      stat: [checkct:info] 17084 / 17084 control flow checks pass
+      stat: [checkct:info] 48304 / 48304 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_q0  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script c8d951d9029d081f8f61a7dc20d0585aa6cf468cf34be0ff856fb16af447c592
+      stat: pending paths                    0
+      stat: branching points                 7667
+      stat: visited instructions (unrolled)  105823
+      stat: [checkct:info] 15904 / 15904 control flow checks pass
+      stat: [checkct:info] 39202 / 39202 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_q1  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 764995bbbec4dd38b331b31a6ebad8f91df793bf61ef04681b8af88be8a29f2b
+      stat: pending paths                    0
+      stat: branching points                 7795
+      stat: visited instructions (unrolled)  107293
+      stat: [checkct:info] 16032 / 16032 control flow checks pass
+      stat: [checkct:info] 39745 / 39745 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_q2  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 6da1c260df14366d45d07a55657fe3d2c6f7fa15c22d72867247797ecfa8c572
+      stat: pending paths                    0
+      stat: branching points                 7795
+      stat: visited instructions (unrolled)  107074
+      stat: [checkct:info] 16032 / 16032 control flow checks pass
+      stat: [checkct:info] 39745 / 39745 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  thumbv7em-none-eabihf  driver::split::split_vec_power2round_8_q3  secure
+      sha256: elf 5534285cc3e85fd3b1cdf12ce39d324b310faa52d09e77990950e0681f56b632 script 5257e96e5e9d053ec112ad57bab8f23e8d2c23460277becd7ff60f5e056ac10a
+      stat: pending paths                    0
+      stat: branching points                 7731
+      stat: visited instructions (unrolled)  106690
+      stat: [checkct:info] 15968 / 15968 control flow checks pass
+      stat: [checkct:info] 39491 / 39491 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass

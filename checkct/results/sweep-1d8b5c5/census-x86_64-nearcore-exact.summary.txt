@@ -1,0 +1,27 @@
+Summary:
+  driver  x86_64-unknown-linux-gnu  driver::extra::census_sign_internal_44  unknown
+      sha256: elf ad603049a24b1d2d502080341b45d5fd5dc845f3f6465e9c4f09e270dd0ffa8e script dd954953b9b0404dbe524f13208ed2a91d551dc5dc18cd42cf91bd6378a5f486
+      stat: pending paths                    0
+      stat: branching points                 58478
+      stat: visited instructions (unrolled)  726927
+      stat: [checkct:info] 59800 / 59800 control flow checks pass
+      stat: [checkct:info] 273968 / 273968 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (1.642)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::prepared::census_sign_prepared_44  unknown
+      sha256: elf ad603049a24b1d2d502080341b45d5fd5dc845f3f6465e9c4f09e270dd0ffa8e script c4f4b231fabf86ad981336979fdbc92a0c00e7288619fcddaf7f54e44612fc8e
+      stat: pending paths                    0
+      stat: branching points                 16260
+      stat: visited instructions (unrolled)  82072
+      stat: [checkct:info] 18762 / 18762 control flow checks pass
+      stat: [checkct:info] 23391 / 23391 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x221610
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (1.003)
+      note: 1              failed assertions                0
+      note: 1                unknown        0

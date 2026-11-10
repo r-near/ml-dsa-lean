@@ -1,0 +1,6 @@
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x20e2bb  jae    20e2dc <driver::sign::sign_prepared_internal::<4, 4>+0x118c>   [src/sampling.rs:36]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2845144
+   stat: [checkct:info] 198893 / 198894 control flow checks pass

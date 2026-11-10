@@ -1,0 +1,324 @@
+Summary:
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_1x1  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script a7cd71caa57d204fd08d2071818b29e80a2ad1e200761a7c4864b30b16b5ba85
+      stat: pending paths                    0
+      stat: branching points                 1308
+      stat: visited instructions (unrolled)  22853
+      stat: [checkct:info] 4392 / 4392 control flow checks pass
+      stat: [checkct:info] 8749 / 8749 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x2870ad
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.560)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_44  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 7d60b5c527ab8f5ba45107780435f3c089ad51f9515a27157510962619a74ae4
+      stat: pending paths                    0
+      stat: branching points                 14901
+      stat: visited instructions (unrolled)  169634
+      stat: [checkct:info] 39588 / 39588 control flow checks pass
+      stat: [checkct:info] 68458 / 68458 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x2870ad
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.931)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_65  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 1c9a6333310b339f10199d033f413f5288dce70e667c02608a37714a768220e9
+      stat: pending paths                    0
+      stat: branching points                 26151
+      stat: visited instructions (unrolled)  287630
+      stat: [checkct:info] 68314 / 68314 control flow checks pass
+      stat: [checkct:info] 116702 / 116702 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x2870ad
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (1.088)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::compute_t_87  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 80b302aaa95912c56354c6be708d170fb98fd358dbfbd7286a8b11cfcac1703d
+      stat: pending paths                    0
+      stat: branching points                 45543
+      stat: visited instructions (unrolled)  494666
+      stat: [checkct:info] 118546 / 118546 control flow checks pass
+      stat: [checkct:info] 201390 / 201390 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x2870ad
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (1.450)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_1x1  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script bf592e117a4a0ff78307ad08f9eeefcb619d216834fc5025cfe22e940806fba6
+      stat: pending paths                    0
+      stat: branching points                 905
+      stat: visited instructions (unrolled)  13832
+      stat: [checkct:info] 2963 / 2963 control flow checks pass
+      stat: [checkct:info] 5036 / 5036 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x22554c
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.087)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_44  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 68cdb1584453201817a7dd5a3327ee6726e4389533d8286b3ada90e66fae86ec
+      stat: pending paths                    0
+      stat: branching points                 13575
+      stat: visited instructions (unrolled)  139598
+      stat: [checkct:info] 34151 / 34151 control flow checks pass
+      stat: [checkct:info] 57250 / 57250 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x279689
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.407)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_65  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 0bca1322d77a605c30d31f059504cace3a3c637ad2dc0afdb9042ce95aa6cffb
+      stat: pending paths                    0
+      stat: branching points                 24050
+      stat: visited instructions (unrolled)  243426
+      stat: [checkct:info] 60046 / 60046 control flow checks pass
+      stat: [checkct:info] 100359 / 100359 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x27d459
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.513)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::matrix_vector_ntt_87  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 9d120ca17cc490bfdc44c858b03bc5fa53da8cf7c528ee0bac2b4b732c2d525f
+      stat: pending paths                    0
+      stat: branching points                 42660
+      stat: visited instructions (unrolled)  436278
+      stat: [checkct:info] 107440 / 107440 control flow checks pass
+      stat: [checkct:info] 179913 / 179913 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x27fa99
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.851)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::ntt_vec_44  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 09ebfa2da9e3fcdda2d8be3099419d92e2ea400071f8119fe43c71af82c0df91
+      stat: pending paths                    0
+      stat: branching points                 2478
+      stat: visited instructions (unrolled)  31335
+      stat: [checkct:info] 6599 / 6599 control flow checks pass
+      stat: [checkct:info] 12493 / 12493 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x2870ad
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.619)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::extra::scalar_vector_ntt_inverse_1  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 0cb1e0eb39b2d65a4bc77c37369e83b02adbff0da662a02425559b94630c9374
+      stat: pending paths                    0
+      stat: branching points                 905
+      stat: visited instructions (unrolled)  13834
+      stat: [checkct:info] 2963 / 2963 control flow checks pass
+      stat: [checkct:info] 5038 / 5038 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x22702c
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.086)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mont_reduce  secure
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 6806932dca2e6132012ccbc9d20b9e6bfb2e7fec73d19af726d685dddfacda06
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  83
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 56 / 56 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mul_mont  secure
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script b48c8d80120bc7869f575d076615723bddd472dcc99cf959b356507d0ef5a915
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  92
+      stat: [checkct:info] 13 / 13 control flow checks pass
+      stat: [checkct:info] 56 / 56 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::field_mul_shoup  secure
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 5b7ac6e023e9f275a834507f0fa17c22e8aa072a6fd0ef6128f0014e1f55e6c3
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  63
+      stat: [checkct:info] 9 / 9 control flow checks pass
+      stat: [checkct:info] 25 / 25 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  x86_64-unknown-linux-gnu  driver::probes::multiply_ntt  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script d233dd28e4646b2758320e8348c0adbc28e14fdec22bed45f34007a60ef693d5
+      stat: pending paths                    0
+      stat: branching points                 905
+      stat: visited instructions (unrolled)  14341
+      stat: [checkct:info] 2963 / 2963 control flow checks pass
+      stat: [checkct:info] 5035 / 5035 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x272d55
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.090)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::probes::ntt  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 78fd4d24b06dffb2a70fbe7bdf3b93dcb32bbe6b9d934b5462c75df44a13ed84
+      stat: pending paths                    0
+      stat: branching points                 534
+      stat: visited instructions (unrolled)  9229
+      stat: [checkct:info] 1566 / 1566 control flow checks pass
+      stat: [checkct:info] 3878 / 3878 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x2870ad
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.549)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::probes::ntt_inverse  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 5ddfb1281c72f7b8a45811e492c020d691b9fbf9e95954b3d048ff51fd4f486e
+      stat: pending paths                    0
+      stat: branching points                 546
+      stat: visited instructions (unrolled)  10322
+      stat: [checkct:info] 1578 / 1578 control flow checks pass
+      stat: [checkct:info] 5305 / 5305 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x289068
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.242)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_1_44  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 8589f9a945adfb2019dffb53ca8dd665640960420300b49724e2f50d7dedc5c9
+      stat: pending paths                    0
+      stat: branching points                 1554
+      stat: visited instructions (unrolled)  21242
+      stat: [checkct:info] 4642 / 4642 control flow checks pass
+      stat: [checkct:info] 7907 / 7907 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x20fd30
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.121)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_1_65  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script c9121b8c0002140ec8dba0000b819a50bd36b588f2012a6e1a075a4774f5aab8
+      stat: pending paths                    0
+      stat: branching points                 1554
+      stat: visited instructions (unrolled)  21242
+      stat: [checkct:info] 4642 / 4642 control flow checks pass
+      stat: [checkct:info] 7907 / 7907 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x20fd30
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.122)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_44  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script f4c7740504b6b6fe0ff1f5a4a732153cca2a76772c15c7ba4c90a8ed316fb83e
+      stat: pending paths                    0
+      stat: branching points                 5826
+      stat: visited instructions (unrolled)  65826
+      stat: [checkct:info] 15092 / 15092 control flow checks pass
+      stat: [checkct:info] 25357 / 25357 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x282f29
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.203)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_65  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 15e2d667f3ecdc1306b712caa40889fb86d863c562753bbe2e08ac120cecd05a
+      stat: pending paths                    0
+      stat: branching points                 8730
+      stat: visited instructions (unrolled)  95528
+      stat: [checkct:info] 22108 / 22108 control flow checks pass
+      stat: [checkct:info] 36968 / 36968 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x283a09
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.274)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::hint_step_87  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 4937fe6d2809ce784a5809e6fd92e28e98653e0f6ce6a3160f4c28b67a792079
+      stat: pending paths                    0
+      stat: branching points                 11643
+      stat: visited instructions (unrolled)  125247
+      stat: [checkct:info] 29133 / 29133 control flow checks pass
+      stat: [checkct:info] 48578 / 48578 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x284969
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.328)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_1x1_44  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 30075b5595cedb25b8a746181f00dce032fdf9f38a52488cfc96981e358362f2
+      stat: pending paths                    0
+      stat: branching points                 2721
+      stat: visited instructions (unrolled)  35830
+      stat: [checkct:info] 7867 / 7867 control flow checks pass
+      stat: [checkct:info] 13269 / 13269 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x207fa9
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.150)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_1x1_65  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script 3492dd8d52f36ad896449baa664b5667591b74821da12485eadd6aa6da9f0d4e
+      stat: pending paths                    0
+      stat: branching points                 2721
+      stat: visited instructions (unrolled)  35830
+      stat: [checkct:info] 7867 / 7867 control flow checks pass
+      stat: [checkct:info] 13269 / 13269 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x207fa9
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.156)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_44  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script fd93ad7837565525f1b578928f3f057de924404c0faf7d46e978ecb35265076e
+      stat: pending paths                    0
+      stat: branching points                 11401
+      stat: visited instructions (unrolled)  125151
+      stat: [checkct:info] 28901 / 28901 control flow checks pass
+      stat: [checkct:info] 48364 / 48364 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x282f29
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.295)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_65  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script a987b910bba35363b6fdf10edc3e3113028bb9a11b9bbf2f358b01ffd39bae76
+      stat: pending paths                    0
+      stat: branching points                 15921
+      stat: visited instructions (unrolled)  169873
+      stat: [checkct:info] 39589 / 39589 control flow checks pass
+      stat: [checkct:info] 65941 / 65941 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x283409
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.439)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  x86_64-unknown-linux-gnu  driver::signing::response_87  unknown
+      sha256: elf 77aedf7c5042bfac26fe6f5934b3bab5dff7b46c4a3f956fae6eda6f07d4a446 script e0490737e7b407eedd98cc5446d9171d7902f55265d03ab9816996347ec5e703
+      stat: pending paths                    0
+      stat: branching points                 21863
+      stat: visited instructions (unrolled)  229419
+      stat: [checkct:info] 53755 / 53755 control flow checks pass
+      stat: [checkct:info] 89292 / 89292 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1 [sse:error] Cut path 0 (uninterpreted "KO") @ 0x284129
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (0.557)
+      note: 1              failed assertions                0
+      note: 1                unknown        0

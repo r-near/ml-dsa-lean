@@ -1,0 +1,13 @@
+# Kernel OOM kills on the build box during the sweep at 1d8b5c5 (journalctl -k -g 'Killed process', November 9 22:00 UTC to the end of the
+# census runs, both boots), host name removed. Every one is a whole-Sign census container at its 160 GB cap (`CT_MEMORY=160g`); each matches
+# exactly one `error` cell of the census table in docs/assurance.md, section 4, and nothing else in the sweep was killed:
+#   06:59:27  thumbv7em census_sign_internal_44      (container ct-cs-thumb-int)
+#   07:15:53  thumbv7em census_sign_prepared_44      (container ct-cs-thumb-prep)
+#   08:17:21  riscv32imac census_sign_prepared_44    (container ct-cs-riscv-prep)
+#   08:47:34  x86_64 nearcore-exact-novec census_sign_prepared_44 (container ct-cs-x86-ncev-prep)
+# The box was preempted once, about 07:33 UTC on November 10 (uptime reset); the riscv32imac prepared census that was running was lost and rerun
+# from the start. That is not an OOM kill and is not in the list.
+Nov 10 06:59:27 kernel: Memory cgroup out of memory: Killed process 1883129 (binsec) total-vm:182190044kB, anon-rss:167438156kB, file-rss:19612kB, shmem-rss:0kB, UID:1000 pgtables:327860kB oom_score_adj:0
+Nov 10 07:15:53 kernel: Memory cgroup out of memory: Killed process 1902100 (binsec) total-vm:183044952kB, anon-rss:167437716kB, file-rss:19504kB, shmem-rss:0kB, UID:1000 pgtables:327868kB oom_score_adj:0
+Nov 10 08:17:21 kernel: Memory cgroup out of memory: Killed process 5028 (binsec) total-vm:167930584kB, anon-rss:167438668kB, file-rss:80kB, shmem-rss:0kB, UID:1000 pgtables:327816kB oom_score_adj:0
+Nov 10 08:47:34 kernel: Memory cgroup out of memory: Killed process 61456 (binsec) total-vm:186728040kB, anon-rss:167440112kB, file-rss:1712kB, shmem-rss:0kB, UID:1000 pgtables:327856kB oom_score_adj:0

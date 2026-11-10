@@ -1,0 +1,113 @@
+coeff_from_half_byte_eta2	secure	0	56	6/6	
+coeff_from_half_byte_eta4	secure	0	50	6/6	
+compute_t_1x1	unknown	0	25971	4440/4440	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+compute_t_44	unknown	0	192485	40152/40152	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+compute_t_65	unknown	0	328115	68618/68618	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+compute_t_87	unknown	0	568425	118847/118847	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+control_early_exit_44	insecure	0	76540	15799/15807	leak jae 0x22ae9d checkct/driver/src/extra.rs:221 driver::extra::control_early_exit_fn; leak ja 0x22af3d checkct/driver/src/extra.rs:221 driver::extra::control_early_exit_fn; leak ja 0x22afcd checkct/driver/src/extra.rs:221 driver::extra::control_early_exit_fn
+encode_sk_is_well_formed_44	secure	0	65897	17671/17671	
+encode_sk_is_well_formed_65	secure	0	82037	20744/20744	
+encode_sk_is_well_formed_87	secure	0	97298	24020/24020	
+expand_mask_44	secure	0	135717	10524/10524	
+expand_mask_65	secure	0	183591	12433/12433	
+expand_mask_87	secure	0	256817	17339/17339	
+keygen_seed_hash	secure	0	5364	224/224	
+matrix_vector_ntt_1x1	unknown	0	15301	3096/3096	cut vblendvps 0x22b593 library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+matrix_vector_ntt_44	unknown	0	159965	34022/34022	cut vblendvps 0x2063c0 library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+matrix_vector_ntt_65	unknown	0	281169	59400/59400	cut vblendvps 0x206c90 library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+matrix_vector_ntt_87	unknown	0	507044	106538/106538	cut vblendvps 0x22aa10 library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+ntt_vec_44	unknown	0	33301	6775/6775	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+poly_power2round	secure	0	8937	2227/2227	
+rej_bounded_poly_eta2	insecure	4	5470	321/323	leak jne 0x249baf src/sampling.rs:504 driver::sampling::coeff_from_half_byte; leak jne 0x249bb6 src/sampling.rs:504 driver::sampling::coeff_from_half_byte
+rej_bounded_poly_eta4	insecure	8	5582	337/339	leak jbe 0x249b0f src/sampling.rs:507 driver::sampling::coeff_from_half_byte; leak jbe 0x249b13 src/sampling.rs:507 driver::sampling::coeff_from_half_byte
+scalar_vector_ntt_inverse_1	unknown	0	15147	2963/2963	cut vblendvps 0x22e1de library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+sign_rho_pp_hash	secure	0	5813	352/352	
+sk_is_well_formed_44	secure	0	51587	12707/12707	
+sk_is_well_formed_65	secure	0	76743	18908/18908	
+sk_is_well_formed_87	secure	0	97298	24020/24020	
+vec_power2round_44	secure	0	40905	13745/13745	
+vec_power2round_87	secure	0	82344	28110/28110	
+control_prepared_branch_44	unknown	0	82051	18754/18754	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+control_prepared_index_44	unknown	0	82072	18762/18762	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+prepare_sk_1x1_44	unknown	0	40725	9774/9774	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+prepare_sk_1x1_65	unknown	1	49510	13214/13214	
+prepare_sk_44	unknown	0	82052	18754/18754	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+prepare_sk_65	unknown	0	127096	34068/34068	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+prepare_sk_87	unknown	0	164978	46256/46256	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+signing_key_44	unknown	0	82052	18754/18754	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+signing_key_65	unknown	0	127100	34069/34069	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+signing_key_87	unknown	0	164982	46257/46257	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+barrett_reduce	secure	0	92	13/13	
+bit_pack_13	secure	0	14801	2676/2676	
+bit_pack_18	secure	0	16081	2996/2996	
+bit_pack_20	secure	0	16593	3124/3124	
+bit_pack_3	secure	0	11729	2292/2292	
+bit_pack_4	secure	0	12241	2356/2356	
+ct_lt_mask	secure	0	135	21/21	
+ct_select	secure	0	97	17/17	
+decompose_44	secure	0	114	12/12	
+decompose_65_87	secure	0	114	12/12	
+field_add	secure	0	85	13/13	
+field_mont_reduce	secure	0	86	13/13	
+field_mul_mont	secure	0	95	13/13	
+field_mul_shoup	secure	0	67	9/9	
+field_neg	secure	0	63	9/9	
+field_small_reduce	secure	0	86	14/14	
+field_sub	secure	0	85	13/13	
+high_bits_44	secure	0	113	12/12	
+high_bits_65_87	secure	0	113	12/12	
+infinity_norm	secure	0	62	9/9	
+keccak_f1600	secure	0	5805	255/255	
+low_bits_44	secure	0	113	12/12	
+low_bits_65_87	secure	0	113	12/12	
+make_hint_44	secure	0	198	19/19	
+make_hint_65_87	secure	0	198	19/19	
+multiply_ntt	unknown	0	14376	2963/2963	cut vblendvps 0x24080d library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+ntt	unknown	0	11066	1614/1614	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+ntt_inverse	unknown	0	10153	1598/1598	cut vblendps 0x222619 src/ntt.rs:129 driver::ntt::ntt_inverse_layer::<4, 32>
+power2round	secure	0	70	9/9	
+sk_decode_44	secure	0	79641	20257/20257	
+sk_decode_65	secure	0	118810	29783/29783	
+sk_decode_87	secure	0	153062	38406/38406	
+sk_encode_44	secure	0	161290	32858/32858	
+sk_encode_65	secure	0	234708	46963/46963	
+sk_encode_87	secure	0	309078	62213/62213	
+vec_infinity_norm	secure	0	45729	7604/7604	
+hint_step_1_44	unknown	0	22232	4376/4376	cut vblendvps 0x21db8a library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+hint_step_1_65	unknown	0	22232	4376/4376	cut vblendvps 0x21db8a library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+hint_step_44	unknown	0	67667	15609/15609	cut vblendvps 0x207771 library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+hint_step_65	unknown	0	97619	22881/22881	cut vblendvps 0x207e31 library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+hint_step_87	unknown	0	127595	30162/30162	cut vblendvps 0x208831 library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+response_1x1_44	unknown	0	36821	7601/7601	cut vblendvps 0x21d0ab library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+response_1x1_65	unknown	0	36821	7601/7601	cut vblendvps 0x21d0ab library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+response_44	unknown	0	127938	30322/30322	cut vblendvps 0x207771 library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+response_65	unknown	0	172055	40489/40489	cut vblendvps 0x245e0f library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+response_87	unknown	0	231851	54910/54910	cut vblendvps 0x246f2f library/core/src/num/uint_macros.rs:2494 <u32>::wrapping_sub
+split_compute_t_44_2x2	unknown	0	65559	13226/13226	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_compute_t_44_col	unknown	0	72714	14761/14761	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_compute_t_44_row	unknown	0	72716	14761/14761	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_ntt_vec_into_1	unknown	0	11066	1614/1614	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_ntt_vec_into_7	unknown	0	55334	11797/11797	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_ntt_vec_into_8	unknown	0	62680	13471/13471	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_44_col	unknown	0	84515	18824/18824	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_44_row	unknown	0	51241	12840/12840	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_65_col	unknown	0	132346	29255/29255	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_65_row	unknown	0	66274	17493/17493	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_87_2x1	unknown	0	67880	17788/17788	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_87_4x1	unknown	0	99117	24080/24080	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_87_6x1	unknown	0	135284	30751/30751	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_87_7x1	unknown	0	139585	31934/31934	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_87_col	unknown	0	154339	34770/34770	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_prepare_sk_87_row	unknown	0	78606	21530/21530	cut vinsertps 0x221610 src/ntt.rs:110 driver::ntt::ntt_layer::<8, 16>
+split_vec_power2round_1	secure	0	9237	2493/2493	
+split_vec_power2round_2	secure	0	20346	6696/6696	
+split_vec_power2round_3	secure	0	30619	10222/10222	
+split_vec_power2round_5	secure	0	51188	17275/17275	
+split_vec_power2round_6	secure	0	61460	20799/20799	
+split_vec_power2round_7	secure	0	72062	24585/24585	
+split_vec_power2round_8_hi	secure	0	73650	23782/23782	
+split_vec_power2round_8_lo	secure	0	73393	23526/23526	
+split_vec_power2round_8_q0	secure	0	69090	21366/21366	
+split_vec_power2round_8_q1	secure	0	69346	21622/21622	
+split_vec_power2round_8_q2	secure	0	69346	21622/21622	
+split_vec_power2round_8_q3	secure	0	69218	21494/21494	

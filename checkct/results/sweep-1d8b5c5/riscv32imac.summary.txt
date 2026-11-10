@@ -1,0 +1,972 @@
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::extra::coeff_from_half_byte_eta2  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 506b75efca4405fc434b29d715a6f23ebaac737df1513f343b22f9170bfa3a99
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  69
+      stat: [checkct:info] 11 / 11 control flow checks pass
+      stat: [checkct:info] 11 / 11 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::coeff_from_half_byte_eta4  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 662a4cd5e1474f295cb61a2fe76893f6429bc03b193ebf53f1e58e1472dc0636
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  62
+      stat: [checkct:info] 11 / 11 control flow checks pass
+      stat: [checkct:info] 11 / 11 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_1x1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 344cc86062e3afcd5bc418f45d240698c66cac7ad4f472be3330bce8ec71f61b
+      stat: pending paths                    0
+      stat: branching points                 6951
+      stat: visited instructions (unrolled)  112364
+      stat: [checkct:info] 13147 / 13147 control flow checks pass
+      stat: [checkct:info] 20855 / 20855 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script a007a5aec2644b8ed7290ac291b413af449e760ea93d1c960127655c0b67d221
+      stat: pending paths                    0
+      stat: branching points                 64506
+      stat: visited instructions (unrolled)  776523
+      stat: [checkct:info] 114023 / 114023 control flow checks pass
+      stat: [checkct:info] 143298 / 143298 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 0fb528a1c94784927bbfabef9161f4307fa9590da3205c81c3ea4fd627ce6b3c
+      stat: pending paths                    0
+      stat: branching points                 109414
+      stat: visited instructions (unrolled)  1270948
+      stat: [checkct:info] 193967 / 193967 control flow checks pass
+      stat: [checkct:info] 230534 / 230534 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::compute_t_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script ef7f11b3675cede57a14d51998020e1d1b1009ab8fe825db09f7f28e8fdf2f9e
+      stat: pending paths                    0
+      stat: branching points                 184286
+      stat: visited instructions (unrolled)  2096969
+      stat: [checkct:info] 330659 / 330659 control flow checks pass
+      stat: [checkct:info] 372115 / 372115 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::control_early_exit_44  insecure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 849cd57eabf31bc6ea715c69612009ffa005bd7300378fdb22ae804f8e348e5a
+      0x01fbbc has control flow leak (0.052s)
+      stat: pending paths                    0
+      stat: branching points                 15020
+      stat: visited instructions (unrolled)  109829
+      stat: [checkct:info] 20167 / 20168 control flow checks pass
+      stat: [checkct:info] 38808 / 38808 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::extra::encode_sk_is_well_formed_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script cd8bf2562782f7a7165b40ff632856d1c8c84b2466a941b04fc9db53522c08f9
+      stat: pending paths                    0
+      stat: branching points                 23605
+      stat: visited instructions (unrolled)  133640
+      stat: [checkct:info] 33458 / 33458 control flow checks pass
+      stat: [checkct:info] 19344 / 19344 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::encode_sk_is_well_formed_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 59d6c87d14c3e79b47bbbe47bdead1137606ea7ca272df3ec0840866495735f8
+      stat: pending paths                    0
+      stat: branching points                 31568
+      stat: visited instructions (unrolled)  179418
+      stat: [checkct:info] 41439 / 41439 control flow checks pass
+      stat: [checkct:info] 24646 / 24646 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::encode_sk_is_well_formed_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 502eb493776f974e321b86e190f1f831d990cd76f6585f9bc1d2554c8182ef2b
+      stat: pending paths                    0
+      stat: branching points                 40129
+      stat: visited instructions (unrolled)  227725
+      stat: [checkct:info] 50027 / 50027 control flow checks pass
+      stat: [checkct:info] 33344 / 33344 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::expand_mask_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script a6cca9b831d3532927127c93952b9494dd33298d5682a9cb4964e0226d5fc94d
+      stat: pending paths                    0
+      stat: branching points                 16941
+      stat: visited instructions (unrolled)  448406
+      stat: [checkct:info] 17172 / 17172 control flow checks pass
+      stat: [checkct:info] 158421 / 158421 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::expand_mask_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 8f83f86247d2995e4df92ff28e388ef52269b55f5ecf8f6e88c60030f42f369a
+      stat: pending paths                    0
+      stat: branching points                 22339
+      stat: visited instructions (unrolled)  568648
+      stat: [checkct:info] 22590 / 22590 control flow checks pass
+      stat: [checkct:info] 198804 / 198804 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::expand_mask_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 12792574bac683aeb98690c8484b8dc66a1725faaa0b081e75979302929172d5
+      stat: pending paths                    0
+      stat: branching points                 31207
+      stat: visited instructions (unrolled)  795690
+      stat: [checkct:info] 31498 / 31498 control flow checks pass
+      stat: [checkct:info] 278170 / 278170 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::keygen_seed_hash  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 78324b0d9f06998674b163d2e816a114210eebc3170a65721641f3139560d83a
+      stat: pending paths                    0
+      stat: branching points                 286
+      stat: visited instructions (unrolled)  19397
+      stat: [checkct:info] 374 / 374 control flow checks pass
+      stat: [checkct:info] 7895 / 7895 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_1x1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 262a5a1d1aa78b60a642c6fc26798e6fcc437cb62c2c883136d82b0d8aa240fc
+      stat: pending paths                    0
+      stat: branching points                 3107
+      stat: visited instructions (unrolled)  35921
+      stat: [checkct:info] 7233 / 7233 control flow checks pass
+      stat: [checkct:info] 6177 / 6177 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script f8a782dd8d8486bdc8ea026a5945308393b1112b764fc7770f320baae1ee3cfd
+      stat: pending paths                    0
+      stat: branching points                 43677
+      stat: visited instructions (unrolled)  446022
+      stat: [checkct:info] 84875 / 84875 control flow checks pass
+      stat: [checkct:info] 75146 / 75146 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 9a0bd0734365a9e734ade0460fbb617fa1939a0a6b4d1832f2c2402956a70cec
+      stat: pending paths                    0
+      stat: branching points                 79330
+      stat: visited instructions (unrolled)  804368
+      stat: [checkct:info] 151421 / 151421 control flow checks pass
+      stat: [checkct:info] 134068 / 134068 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::matrix_vector_ntt_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 79150f30eee8204acc1ca923615fb323c482939ab494cd6af349e3c9944d8155
+      stat: pending paths                    0
+      stat: branching points                 143412
+      stat: visited instructions (unrolled)  1464052
+      stat: [checkct:info] 273169 / 273169 control flow checks pass
+      stat: [checkct:info] 241199 / 241199 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::ntt_vec_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 7c8d7be344c0fab28daed8f84c60ec2a8af2b8790392428716d72b97ce765a84
+      stat: pending paths                    0
+      stat: branching points                 10020
+      stat: visited instructions (unrolled)  169752
+      stat: [checkct:info] 18289 / 18289 control flow checks pass
+      stat: [checkct:info] 34573 / 34573 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::poly_power2round  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script dd3f0b1766a66199da2d0c7a1d1e65c93cbb971cb0c8ef7e4b3f97e839dcaff6
+      stat: pending paths                    0
+      stat: branching points                 2070
+      stat: visited instructions (unrolled)  24047
+      stat: [checkct:info] 4143 / 4143 control flow checks pass
+      stat: [checkct:info] 6693 / 6693 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::rej_bounded_poly_eta2  insecure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 72c508675451fd4fddea85dc79e77f1ded72d4627d2e770a6bda67e610b34c14
+      0x045c36 has control flow leak (110.070s)
+      0x045c3c has control flow leak (293.108s)
+      stat: pending paths                    4
+      stat: branching points                 419
+      stat: visited instructions (unrolled)  19811
+      stat: [checkct:info] 568 / 570 control flow checks pass
+      stat: [checkct:info] 8020 / 8020 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 4 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::extra::rej_bounded_poly_eta4  insecure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 83a5a955820597e60dad2fe047ce55e10ce38a656386c49d9393b1b5309b4a89
+      0x045cea has control flow leak (0.118s)
+      0x045cee has control flow leak (22.796s)
+      stat: pending paths                    9
+      stat: branching points                 451
+      stat: visited instructions (unrolled)  20020
+      stat: [checkct:info] 601 / 603 control flow checks pass
+      stat: [checkct:info] 8097 / 8097 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 9 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::extra::scalar_vector_ntt_inverse_1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 6c453243522a42b3051ebb0ac08002b661b4bc8dc6befc0b84eb510c21d16b8e
+      stat: pending paths                    0
+      stat: branching points                 3347
+      stat: visited instructions (unrolled)  61937
+      stat: [checkct:info] 7471 / 7471 control flow checks pass
+      stat: [checkct:info] 10093 / 10093 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sign_rho_pp_hash  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 5114d16a021634fe718a8bce5f126fa25c85f7f7cc9164e872d9f7b0ddca2a58
+      stat: pending paths                    0
+      stat: branching points                 291
+      stat: visited instructions (unrolled)  20010
+      stat: [checkct:info] 575 / 575 control flow checks pass
+      stat: [checkct:info] 8088 / 8088 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sk_is_well_formed_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 1c0aeac3b7939e5e51c57646070ed2d35a200a37540a57ef26d485f95c1b4909
+      stat: pending paths                    0
+      stat: branching points                 20685
+      stat: visited instructions (unrolled)  117870
+      stat: [checkct:info] 25866 / 25866 control flow checks pass
+      stat: [checkct:info] 16424 / 16424 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sk_is_well_formed_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script ec194f9d173a426036ccf9c201034b75e3729e5d8d0a75283cf23fb80ab604f7
+      stat: pending paths                    0
+      stat: branching points                 30488
+      stat: visited instructions (unrolled)  173584
+      stat: [checkct:info] 38631 / 38631 control flow checks pass
+      stat: [checkct:info] 23566 / 23566 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::sk_is_well_formed_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 907859c5b5203164424127c990410b72b15667459f135087c74045e68d4fe8d6
+      stat: pending paths                    0
+      stat: branching points                 40129
+      stat: visited instructions (unrolled)  227725
+      stat: [checkct:info] 50027 / 50027 control flow checks pass
+      stat: [checkct:info] 33344 / 33344 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::vec_power2round_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 91039284be9f964bd8f1129a52a266fdb0e183b1f07cede1669bb2022a98f50c
+      stat: pending paths                    0
+      stat: branching points                 18383
+      stat: visited instructions (unrolled)  145178
+      stat: [checkct:info] 26713 / 26713 control flow checks pass
+      stat: [checkct:info] 45917 / 45917 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::extra::vec_power2round_87  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 00d00559f7887ad5109bdb06718a406db42cd55e9d2d9cf6733e30f216c345a8
+      stat: pending paths                    1
+      stat: branching points                 19134
+      stat: visited instructions (unrolled)  179498
+      stat: [checkct:info] 35671 / 35671 control flow checks pass
+      stat: [checkct:info] 49853 / 49853 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.029)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::control_prepared_branch_44  insecure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script f70605dff1bacf7414949d7b410a3212c5f08e8fd8e40c80bf88fcba4c1dea43
+      0x0240c4 has control flow leak (0.896s)
+      stat: pending paths                    0
+      stat: branching points                 103613
+      stat: visited instructions (unrolled)  2230914
+      stat: [checkct:info] 108953 / 108954 control flow checks pass
+      stat: [checkct:info] 726111 / 726111 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::control_prepared_index_44  insecure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 34f6ae533d1894aa024a5cb26b62e96ff9dd5aefc89ef8a4226773dfecdfe623
+      0x023d9c has memory access leak (0.908s)
+      stat: pending paths                    0
+      stat: branching points                 103873
+      stat: visited instructions (unrolled)  2232207
+      stat: [checkct:info] 109216 / 109216 control flow checks pass
+      stat: [checkct:info] 726611 / 726612 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_1x1_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script aa9cccf632d0606ab53f428b57cc7d6e6bf822d4b081ae85925139249035df6f
+      stat: pending paths                    0
+      stat: branching points                 21188
+      stat: visited instructions (unrolled)  278229
+      stat: [checkct:info] 26707 / 26707 control flow checks pass
+      stat: [checkct:info] 76054 / 76054 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_1x1_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script e7754029dcc31353ce30b3d040680bc7bd4e7c9de3d95ad01b64d86f082a57a2
+      stat: pending paths                    0
+      stat: branching points                 23652
+      stat: visited instructions (unrolled)  293316
+      stat: [checkct:info] 32115 / 32115 control flow checks pass
+      stat: [checkct:info] 78694 / 78694 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_44  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script e9ef1745b5a8b1f3c6b8ca57bdd22b0c6137ee5d643f58ef1b8832a235b2e51b
+      stat: pending paths                    1
+      stat: branching points                 48887
+      stat: visited instructions (unrolled)  447444
+      stat: [checkct:info] 53928 / 53928 control flow checks pass
+      stat: [checkct:info] 79393 / 79393 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.028)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_65  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 41de515e8ad7f0251cc7f4305653293e74f1773dd60d11d37c83dae874bc02f3
+      stat: pending paths                    1
+      stat: branching points                 63563
+      stat: visited instructions (unrolled)  427074
+      stat: [checkct:info] 71526 / 71526 control flow checks pass
+      stat: [checkct:info] 71578 / 71578 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.029)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_87  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 1c53ff5b150ae8f33257110683a15727ddf099cc4a659b01b7ad7ffabaa53ca9
+      stat: pending paths                    1
+      stat: branching points                 92576
+      stat: visited instructions (unrolled)  698393
+      stat: [checkct:info] 102327 / 102327 control flow checks pass
+      stat: [checkct:info] 123471 / 123471 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.028)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::signing_key_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 95be42ded65ff90b0fb718fe4dd658ed1a8f6ee2c69d3da166a1903b01aecfca
+      stat: pending paths                    0
+      stat: branching points                 110854
+      stat: visited instructions (unrolled)  2267295
+      stat: [checkct:info] 116240 / 116240 control flow checks pass
+      stat: [checkct:info] 740493 / 740493 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::signing_key_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script b9729b77b8121628f5e393efc93efaab8241395383ad7a0279b24003882a737d
+      stat: pending paths                    0
+      stat: branching points                 189015
+      stat: visited instructions (unrolled)  4026939
+      stat: [checkct:info] 197661 / 197661 control flow checks pass
+      stat: [checkct:info] 1347859 / 1347859 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::prepared::signing_key_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 657e0ad535cb1d02d330e441c8681bc44e0b4e57318d7f8889cbbf617513b14d
+      stat: pending paths                    0
+      stat: branching points                 315387
+      stat: visited instructions (unrolled)  7130496
+      stat: [checkct:info] 326203 / 326203 control flow checks pass
+      stat: [checkct:info] 2447092 / 2447092 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::barrett_reduce  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script ec1228d418fdf17367de35513d9c2e420bad78a7765913b3418c9128e0bec497
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  137
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_13  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 13f392c6355e208ef26b1e4a33bbd6ccaf47aa4c1d98d3d3c63c3afdb50a3b68
+      stat: pending paths                    0
+      stat: branching points                 2957
+      stat: visited instructions (unrolled)  25290
+      stat: [checkct:info] 5021 / 5021 control flow checks pass
+      stat: [checkct:info] 3471 / 3471 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_18  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 70bf2d61b0cbf1416defa4b5abcf9afbc2c31d79ebffe5c5c220bfe776fb69a5
+      stat: pending paths                    0
+      stat: branching points                 3277
+      stat: visited instructions (unrolled)  26890
+      stat: [checkct:info] 5341 / 5341 control flow checks pass
+      stat: [checkct:info] 3631 / 3631 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_20  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script d48d401d3c5647b869921bd2cfd38e50b92f713ea543c254311efbf09359f2f5
+      stat: pending paths                    0
+      stat: branching points                 3405
+      stat: visited instructions (unrolled)  27530
+      stat: [checkct:info] 5469 / 5469 control flow checks pass
+      stat: [checkct:info] 3695 / 3695 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_3  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 453f3843df4d24f58d3e346453b878c71ea5359fbf5737147916127a0ca85cde
+      stat: pending paths                    0
+      stat: branching points                 2253
+      stat: visited instructions (unrolled)  20044
+      stat: [checkct:info] 4317 / 4317 control flow checks pass
+      stat: [checkct:info] 3151 / 3151 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::bit_pack_4  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script f0ab12b54cabbc5978efa7d1524b0763fef63b0bb160371ff935791b9f4acca6
+      stat: pending paths                    0
+      stat: branching points                 2381
+      stat: visited instructions (unrolled)  20876
+      stat: [checkct:info] 4445 / 4445 control flow checks pass
+      stat: [checkct:info] 3183 / 3183 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::ct_lt_mask  insecure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script e5600b5dc822e3009b5c95a1cc909ae53aa77b628766733d975d0a525c19c504
+      0x04100e has control flow leak (0.028s)
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  208
+      stat: [checkct:info] 42 / 43 control flow checks pass
+      stat: [checkct:info] 54 / 54 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::probes::ct_select  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 62ddbefc7ecc513e745e13763132486f10d4319d461f72e51b4819c4756d00b6
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  110
+      stat: [checkct:info] 33 / 33 control flow checks pass
+      stat: [checkct:info] 14 / 14 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::decompose_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 8ac2d4c04259959a2ba616e2935e9f83aa54fdc19fbe786f2845ad3491198fa1
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  190
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 42 / 42 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::decompose_65_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 39d2e50cc68db9f0a6d029d1a2ab8a092668740b6adfb74e44ecb7363497f244
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  190
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 42 / 42 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mont_reduce  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 8cb90abfcae994058200395cb41916e1aa6e60493a196c9ed8a06026e5a7567b
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  127
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mul  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script d09629cd67065a1f4f8ed32c324da12252def0d658cad04cfe6c02b709fd2bb7
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  137
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mul_mont  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script ea6ca8279e23def31441d025782135994a01da5a9826275132138f9f341fe516
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  144
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_mul_shoup  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 6112b6c1914b4c6d4b8e910d74bef8a174edcf3e1315062036865448f5dd8786
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  92
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_neg  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script aea1ae456717b3d3b4a03636ed38c120658d482f1a29d8d1acc6d4941d31b4a0
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  85
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 15 / 15 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_small_reduce  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 67a6790992651666fffe31b4119e90ae06672c0bf12a17827251c8b3c6c2134c
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  123
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::field_sub  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script db7a860eab976a9f4d01ed690edd05560e4a781d24a8b7d0425bd04ff3eb05be
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  124
+      stat: [checkct:info] 25 / 25 control flow checks pass
+      stat: [checkct:info] 22 / 22 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::high_bits_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 1f0352f7828ccf5ea0bfa80006cb60538fb5a04a181825b5b44893869cd2d917
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  189
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 41 / 41 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::high_bits_65_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script a63f0f4578719994f1fac3471b73eb9d4a002baf5db4973a9419ef0d6bf5f065
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  189
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 41 / 41 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::infinity_norm  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script d3545d15e037fd6730438afd050f266be13461dd4153770b7e338066255c67a9
+      stat: pending paths                    0
+      stat: branching points                 0
+      stat: visited instructions (unrolled)  94
+      stat: [checkct:info] 17 / 17 control flow checks pass
+      stat: [checkct:info] 20 / 20 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::keccak_f1600  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 4ce104ebeb95aba1d3bf27e3539f4a1716ee67b5cbd5f57c8e3ac1008568acc3
+      stat: pending paths                    0
+      stat: branching points                 79
+      stat: visited instructions (unrolled)  19338
+      stat: [checkct:info] 493 / 493 control flow checks pass
+      stat: [checkct:info] 7455 / 7455 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::low_bits_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script fb345b47202941360bdbfde67b685267568e95c5182e84d52a581bb89b28c3d4
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  189
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 41 / 41 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::low_bits_65_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script d9d201e5638cb5dd095dd93ffc2692e7822d034a5f6b13f87284423288e8f9b5
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  189
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 41 / 41 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::make_hint_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script c15acb48ab404f8f6dc5695bd7d794eb65056ba6bf5debf9dcad955e8e325079
+      stat: pending paths                    0
+      stat: branching points                 2
+      stat: visited instructions (unrolled)  351
+      stat: [checkct:info] 31 / 31 control flow checks pass
+      stat: [checkct:info] 76 / 76 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::make_hint_65_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script e235e5b450adc7dbae6cc1041e138d3f85f6e39a865cdfb12328cdfa222d4515
+      stat: pending paths                    0
+      stat: branching points                 2
+      stat: visited instructions (unrolled)  351
+      stat: [checkct:info] 31 / 31 control flow checks pass
+      stat: [checkct:info] 76 / 76 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::multiply_ntt  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 0937313624757b8ce6a906b95cd9be59499ccc35b80cc1a76670e12b4b14a3cc
+      stat: pending paths                    0
+      stat: branching points                 1548
+      stat: visited instructions (unrolled)  28821
+      stat: [checkct:info] 5659 / 5659 control flow checks pass
+      stat: [checkct:info] 4625 / 4625 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::ntt  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 1a262b1e37d7cf4a17cc2dc1e4dba8df9799604093d842593e49afc506e59591
+      stat: pending paths                    0
+      stat: branching points                 1790
+      stat: visited instructions (unrolled)  39258
+      stat: [checkct:info] 3857 / 3857 control flow checks pass
+      stat: [checkct:info] 7433 / 7433 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::ntt_inverse  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 10ce765ee34c9745633cee783ec269695a162d80bb16bcf1e3c3e999ea5800ec
+      stat: pending paths                    0
+      stat: branching points                 2054
+      stat: visited instructions (unrolled)  43632
+      stat: [checkct:info] 4121 / 4121 control flow checks pass
+      stat: [checkct:info] 8027 / 8027 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::power2round  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script cb5cbfe53afb5ebb0bbef6e6682da6f773de97fca1d462b6f3f982e2ede3e067
+      stat: pending paths                    0
+      stat: branching points                 1
+      stat: visited instructions (unrolled)  126
+      stat: [checkct:info] 20 / 20 control flow checks pass
+      stat: [checkct:info] 26 / 26 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_decode_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script f3b4adb929888547cfd7d54041616d612b301bb721a1e0f935d7dbce2698ae33
+      stat: pending paths                    0
+      stat: branching points                 33721
+      stat: visited instructions (unrolled)  181270
+      stat: [checkct:info] 38883 / 38883 control flow checks pass
+      stat: [checkct:info] 28151 / 28151 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_decode_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 5b95b4c88a87ac331baf5e7019c5bee1cf4e2e529892a0d5f05beff0ed2d3990
+      stat: pending paths                    0
+      stat: branching points                 49237
+      stat: visited instructions (unrolled)  267137
+      stat: [checkct:info] 57353 / 57353 control flow checks pass
+      stat: [checkct:info] 40073 / 40073 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_decode_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 75a0a3ee79bd90201a6b24a6d41a97098a87bb3dc963938055a8319d94f4b8b1
+      stat: pending paths                    0
+      stat: branching points                 63534
+      stat: visited instructions (unrolled)  346653
+      stat: [checkct:info] 73390 / 73390 control flow checks pass
+      stat: [checkct:info] 52728 / 52728 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_encode_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script c29b7ecbcea09299850104565477de3eb9dfdce242f22b5948f6130c6660fc0f
+      stat: pending paths                    0
+      stat: branching points                 38227
+      stat: visited instructions (unrolled)  305492
+      stat: [checkct:info] 63175 / 63175 control flow checks pass
+      stat: [checkct:info] 48864 / 48864 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_encode_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 176d693507ed598b391e527f26d89a9778d52a77e7fff4fd93190f5988d74061
+      stat: pending paths                    0
+      stat: branching points                 55080
+      stat: visited instructions (unrolled)  439802
+      stat: [checkct:info] 90303 / 90303 control flow checks pass
+      stat: [checkct:info] 68374 / 68374 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::sk_encode_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script e963776856116ee4036154bc0ba27bb1118c5b7512eaab80d8c56c1f0890cde1
+      stat: pending paths                    0
+      stat: branching points                 71819
+      stat: visited instructions (unrolled)  579058
+      stat: [checkct:info] 119372 / 119372 control flow checks pass
+      stat: [checkct:info] 90805 / 90805 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::probes::vec_infinity_norm  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 71b20b4d932fe2548be735d87447b7e7694b713a79040c5a78956302c2527ea1
+      stat: pending paths                    0
+      stat: branching points                 4904
+      stat: visited instructions (unrolled)  75385
+      stat: [checkct:info] 13129 / 13129 control flow checks pass
+      stat: [checkct:info] 23334 / 23334 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_1_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script d3e7f6b7ca3d8d1ebe656e82c19e8fcbae6ea2dec7152d1e92750df55c3c5a28
+      stat: pending paths                    0
+      stat: branching points                 5545
+      stat: visited instructions (unrolled)  142830
+      stat: [checkct:info] 12759 / 12759 control flow checks pass
+      stat: [checkct:info] 30307 / 30307 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_1_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 45eaa071ac214bb564a7c01a46ba630923543aa4d4d17171f8295362c2f09d7a
+      stat: pending paths                    0
+      stat: branching points                 5545
+      stat: visited instructions (unrolled)  144878
+      stat: [checkct:info] 12759 / 12759 control flow checks pass
+      stat: [checkct:info] 30307 / 30307 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script eb707ed6f7aacd494acd3f488f729a760ac4088a50a8c615b6372c10a101f3d8
+      stat: pending paths                    0
+      stat: branching points                 22122
+      stat: visited instructions (unrolled)  548915
+      stat: [checkct:info] 44753 / 44753 control flow checks pass
+      stat: [checkct:info] 120999 / 120999 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script ed256fe924dc4ff05c979e34d6aa3a154b2a62334639694bbb45ea60f4c2e549
+      stat: pending paths                    0
+      stat: branching points                 33168
+      stat: visited instructions (unrolled)  831881
+      stat: [checkct:info] 66073 / 66073 control flow checks pass
+      stat: [checkct:info] 181451 / 181451 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::hint_step_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 018f062542c8b56d4316c242a194bca7ad90840d698930c43e7be9a9a5eba2ea
+      stat: pending paths                    0
+      stat: branching points                 44739
+      stat: visited instructions (unrolled)  1109262
+      stat: [checkct:info] 87919 / 87919 control flow checks pass
+      stat: [checkct:info] 242927 / 242927 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_1x1_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script d87b3d5e62f4fb5c5729b591ecf076c8ac21d7daef4c4a4979f24f1057fa3d6d
+      stat: pending paths                    0
+      stat: branching points                 11351
+      stat: visited instructions (unrolled)  194454
+      stat: [checkct:info] 22185 / 22185 control flow checks pass
+      stat: [checkct:info] 42519 / 42519 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_1x1_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script fa5b4d7d134c0bd6852fe1d0e7aa4b055402be17ecfd06ecadd73a2137b800e0
+      stat: pending paths                    0
+      stat: branching points                 11351
+      stat: visited instructions (unrolled)  195478
+      stat: [checkct:info] 22185 / 22185 control flow checks pass
+      stat: [checkct:info] 42519 / 42519 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_44  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script b15de68b2ffc7c625ab623fe7b5b3b6d343a384d4082e04526f991a46b1bcea0
+      stat: pending paths                    0
+      stat: branching points                 47896
+      stat: visited instructions (unrolled)  764873
+      stat: [checkct:info] 84993 / 84993 control flow checks pass
+      stat: [checkct:info] 173327 / 173327 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_65  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script ebea180bce25df288132a1ae8525a699e5b2cecf5d9ee25a21e14027ec55802c
+      stat: pending paths                    0
+      stat: branching points                 68474
+      stat: visited instructions (unrolled)  1080081
+      stat: [checkct:info] 118955 / 118955 control flow checks pass
+      stat: [checkct:info] 246031 / 246031 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::signing::response_87  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script e3823351b20f824cc5bbd9d56ff77c4f29165ec685e559ba701567ba370402b7
+      stat: pending paths                    0
+      stat: branching points                 93177
+      stat: visited instructions (unrolled)  1463970
+      stat: [checkct:info] 161152 / 161152 control flow checks pass
+      stat: [checkct:info] 333899 / 333899 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_compute_t_44_2x2  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script c24568540785bb4811a78dafb5985b38314ac86d50a5db90a03d061f2d4adbfc
+      stat: pending paths                    0
+      stat: branching points                 22706
+      stat: visited instructions (unrolled)  290849
+      stat: [checkct:info] 39239 / 39239 control flow checks pass
+      stat: [checkct:info] 56031 / 56031 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_compute_t_44_col  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 1884dbbd598c8ff698d99aaa6ca69d46b37f899c4356cabf4d74b345c9f24d21
+      stat: pending paths                    0
+      stat: branching points                 28616
+      stat: visited instructions (unrolled)  356300
+      stat: [checkct:info] 47211 / 47211 control flow checks pass
+      stat: [checkct:info] 70267 / 70267 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_compute_t_44_row  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 99147bb4ae92a98785d9acb6ae87107ab7dcb754ed9c1a371d40fa4c53e8289a
+      stat: pending paths                    0
+      stat: branching points                 22684
+      stat: visited instructions (unrolled)  317656
+      stat: [checkct:info] 41269 / 41269 control flow checks pass
+      stat: [checkct:info] 60291 / 60291 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_ntt_vec_into_1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script d588c904a7d577c341c33fc70a97776ca9cda4c01a336b5531e4b132d982f664
+      stat: pending paths                    0
+      stat: branching points                 1790
+      stat: visited instructions (unrolled)  39268
+      stat: [checkct:info] 3859 / 3859 control flow checks pass
+      stat: [checkct:info] 7443 / 7443 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_ntt_vec_into_7  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script b2059997f61cb6ae9c9155e288396ee2c066bea61ece763c7cfbf64205f0696b
+      stat: pending paths                    0
+      stat: branching points                 17694
+      stat: visited instructions (unrolled)  297334
+      stat: [checkct:info] 32137 / 32137 control flow checks pass
+      stat: [checkct:info] 60677 / 60677 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_ntt_vec_into_8  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script dc4313d98bd0fbf9c86f7090728c4fa5fac993ed62e05cf3ae7af1bc467bac19
+      stat: pending paths                    0
+      stat: branching points                 20257
+      stat: visited instructions (unrolled)  339897
+      stat: [checkct:info] 36761 / 36761 control flow checks pass
+      stat: [checkct:info] 69377 / 69377 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_44_col  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script c054df9ccdaa1c25ca3a7dadbe5c1cb1d70d96b491c7aaabf77ef91dcf3209c5
+      stat: pending paths                    0
+      stat: branching points                 68552
+      stat: visited instructions (unrolled)  944988
+      stat: [checkct:info] 75759 / 75759 control flow checks pass
+      stat: [checkct:info] 277859 / 277859 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_44_row  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 1034d2accec7d7af10cf909df4d58f4a19ff91be569fb851454885b9b07941e8
+      stat: pending paths                    0
+      stat: branching points                 51736
+      stat: visited instructions (unrolled)  784644
+      stat: [checkct:info] 58884 / 58884 control flow checks pass
+      stat: [checkct:info] 245410 / 245410 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_65_col  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 42aacc523e08fcd373b265af971533ea8fcfebd5d3607f427c84f4e3d265fcca
+      stat: pending paths                    0
+      stat: branching points                 102000
+      stat: visited instructions (unrolled)  1402895
+      stat: [checkct:info] 113255 / 113255 control flow checks pass
+      stat: [checkct:info] 413130 / 413130 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_65_row  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 209fd4d14cbd99a5dbcec119e7d527a860363b949b22e9934831e8c8d96f0c81
+      stat: pending paths                    0
+      stat: branching points                 65817
+      stat: visited instructions (unrolled)  976800
+      stat: [checkct:info] 76455 / 76455 control flow checks pass
+      stat: [checkct:info] 306826 / 306826 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_2x1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 9c65e37ac1bcdc48e0f598ddfcbe36c4a7d83a0e0ec17cff9d44d7a1d11f8001
+      stat: pending paths                    0
+      stat: branching points                 38865
+      stat: visited instructions (unrolled)  515715
+      stat: [checkct:info] 49621 / 49621 control flow checks pass
+      stat: [checkct:info] 145114 / 145114 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_4x1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script db134a749a280a77069bcc52abe9e91f58b4bd25fe3f8e84e195bbd665fd39d4
+      stat: pending paths                    0
+      stat: branching points                 72056
+      stat: visited instructions (unrolled)  966602
+      stat: [checkct:info] 83935 / 83935 control flow checks pass
+      stat: [checkct:info] 281949 / 281949 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_6x1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 61a27ca274060dff371b9764794a316b8afd7d0d5d065e0e0855093cd0ef1815
+      stat: pending paths                    0
+      stat: branching points                 102400
+      stat: visited instructions (unrolled)  1405740
+      stat: [checkct:info] 115383 / 115383 control flow checks pass
+      stat: [checkct:info] 414418 / 414418 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_7x1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script cd3a12b96202387692ebd56f44b697c88f5910cbca26dd27030b167a014cc5af
+      stat: pending paths                    0
+      stat: branching points                 104998
+      stat: visited instructions (unrolled)  1510584
+      stat: [checkct:info] 114944 / 114944 control flow checks pass
+      stat: [checkct:info] 428734 / 428734 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_col  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script fff712f908159a07c6b46e78813440335d580b0558d98e8bed27a5603e195c34
+      stat: pending paths                    0
+      stat: branching points                 118368
+      stat: visited instructions (unrolled)  1713701
+      stat: [checkct:info] 128353 / 128353 control flow checks pass
+      stat: [checkct:info] 487541 / 487541 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_prepare_sk_87_row  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script a2c983fe0066b6a6cd5000b464eae7c7f3c1e901bc064b237db298e5c0fc5b6c
+      stat: pending paths                    0
+      stat: branching points                 73936
+      stat: visited instructions (unrolled)  1205672
+      stat: [checkct:info] 83796 / 83796 control flow checks pass
+      stat: [checkct:info] 369400 / 369400 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 0b7ecaff37db3ca1b24bc390707deed7fb2994cea62e7b35108ef96f02fe28c7
+      stat: pending paths                    0
+      stat: branching points                 3370
+      stat: visited instructions (unrolled)  30562
+      stat: [checkct:info] 5453 / 5453 control flow checks pass
+      stat: [checkct:info] 9243 / 9243 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_2  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 0fff962795e44757229050ffb744d6d70755de873ae2495731609a53d2ea85fd
+      stat: pending paths                    0
+      stat: branching points                 10109
+      stat: visited instructions (unrolled)  75433
+      stat: [checkct:info] 14287 / 14287 control flow checks pass
+      stat: [checkct:info] 23847 / 23847 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_3  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script d21300df1b27bc0a4bec2924839b8ab318125458d4762b6f841c1b30ba6ad136
+      stat: pending paths                    0
+      stat: branching points                 15276
+      stat: visited instructions (unrolled)  113399
+      stat: [checkct:info] 21529 / 21529 control flow checks pass
+      stat: [checkct:info] 35881 / 35881 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_4  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script d89aa9251e1c8aeb0a0b831dd2ef9edbc58d237a2835ee923bdf4eb0fefb8486
+      stat: pending paths                    0
+      stat: branching points                 20447
+      stat: visited instructions (unrolled)  151340
+      stat: [checkct:info] 28775 / 28775 control flow checks pass
+      stat: [checkct:info] 47919 / 47919 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_5  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script afdc1a7860cbf71a9b5ebb7811c39e89cd23309095ae361e7ed99f1dad5796b3
+      stat: pending paths                    1
+      stat: branching points                 18795
+      stat: visited instructions (unrolled)  153522
+      stat: [checkct:info] 29170 / 29170 control flow checks pass
+      stat: [checkct:info] 45868 / 45868 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.027)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_6  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 02faf94a4bd351c9b6ea5e217b277eb77ba43a36db7bc89a1a97ab7599824f66
+      stat: pending paths                    1
+      stat: branching points                 20284
+      stat: visited instructions (unrolled)  166370
+      stat: [checkct:info] 32712 / 32712 control flow checks pass
+      stat: [checkct:info] 48576 / 48576 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3601.205)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_7  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 7da60f08f09bbf020cdcb375db50f80d4c8415826880c7ff05540b4f3297fa31
+      stat: pending paths                    1
+      stat: branching points                 21879
+      stat: visited instructions (unrolled)  181176
+      stat: [checkct:info] 36360 / 36360 control flow checks pass
+      stat: [checkct:info] 51973 / 51973 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (3600.747)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_hi  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 4acd4211e725f3efe540c187b48e78d005181a32ac3faecbe82ab475ff979e36
+      stat: pending paths                    0
+      stat: branching points                 30723
+      stat: visited instructions (unrolled)  227344
+      stat: [checkct:info] 47263 / 47263 control flow checks pass
+      stat: [checkct:info] 68399 / 68399 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_lo  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 283af22f26255a3eef631ce3990bda02db3c6eb5a50befc24ab8b39f2eaecb3f
+      stat: pending paths                    0
+      stat: branching points                 30723
+      stat: visited instructions (unrolled)  227343
+      stat: [checkct:info] 47263 / 47263 control flow checks pass
+      stat: [checkct:info] 68399 / 68399 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_q0  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 086b6aa3f648eae959561ca3aab2637d5ee966b3cb65ac91765bb5590f2c0377
+      stat: pending paths                    0
+      stat: branching points                 25523
+      stat: visited instructions (unrolled)  189438
+      stat: [checkct:info] 42019 / 42019 control flow checks pass
+      stat: [checkct:info] 54567 / 54567 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_q1  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 0c4bc048b0370eb19162d69976693c49d908cdb08eb37b493ae3d6459d3a7116
+      stat: pending paths                    0
+      stat: branching points                 25523
+      stat: visited instructions (unrolled)  189454
+      stat: [checkct:info] 42019 / 42019 control flow checks pass
+      stat: [checkct:info] 54573 / 54573 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_q2  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script aefdace900f50568a7caaf0bb6abb259b56565841cb0e3a092e5765f78199d97
+      stat: pending paths                    0
+      stat: branching points                 25523
+      stat: visited instructions (unrolled)  189452
+      stat: [checkct:info] 42019 / 42019 control flow checks pass
+      stat: [checkct:info] 54573 / 54573 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_8_q3  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script f96d25bd911005a734744f8464ab9dc3ea786cc66e423ec8a55863b9fd82c280
+      stat: pending paths                    0
+      stat: branching points                 25523
+      stat: visited instructions (unrolled)  189454
+      stat: [checkct:info] 42019 / 42019 control flow checks pass
+      stat: [checkct:info] 54571 / 54571 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass

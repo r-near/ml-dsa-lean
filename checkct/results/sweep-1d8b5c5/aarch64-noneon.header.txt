@@ -1,0 +1,5 @@
+
+warning: `driver` (bin "driver") generated 20 warnings
+sections: .rodata, .eh_frame_hdr, .eh_frame, .text
+no symbol for field_add
+selected 116 probes

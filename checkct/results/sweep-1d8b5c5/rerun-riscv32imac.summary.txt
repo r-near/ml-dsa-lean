@@ -1,0 +1,82 @@
+Summary:
+  driver  riscv32imac-unknown-none-elf  driver::extra::vec_power2round_87  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 00d00559f7887ad5109bdb06718a406db42cd55e9d2d9cf6733e30f216c345a8
+      stat: pending paths                    1
+      stat: branching points                 24188
+      stat: visited instructions (unrolled)  214793
+      stat: [checkct:info] 40773 / 40773 control flow checks pass
+      stat: [checkct:info] 62782 / 62782 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (7200.028)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_44  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script e9ef1745b5a8b1f3c6b8ca57bdd22b0c6137ee5d643f58ef1b8832a235b2e51b
+      stat: pending paths                    1
+      stat: branching points                 48887
+      stat: visited instructions (unrolled)  447444
+      stat: [checkct:info] 53928 / 53928 control flow checks pass
+      stat: [checkct:info] 79393 / 79393 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (7200.028)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_65  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 41de515e8ad7f0251cc7f4305653293e74f1773dd60d11d37c83dae874bc02f3
+      stat: pending paths                    1
+      stat: branching points                 63563
+      stat: visited instructions (unrolled)  427074
+      stat: [checkct:info] 71526 / 71526 control flow checks pass
+      stat: [checkct:info] 71578 / 71578 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (7200.028)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::prepared::prepare_sk_87  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 1c53ff5b150ae8f33257110683a15727ddf099cc4a659b01b7ad7ffabaa53ca9
+      stat: pending paths                    1
+      stat: branching points                 92576
+      stat: visited instructions (unrolled)  698393
+      stat: [checkct:info] 102327 / 102327 control flow checks pass
+      stat: [checkct:info] 123471 / 123471 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (7200.028)
+      note: 1              failed assertions                0
+      note: 1                unknown        0
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_5  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script afdc1a7860cbf71a9b5ebb7811c39e89cd23309095ae361e7ed99f1dad5796b3
+      stat: pending paths                    0
+      stat: branching points                 25615
+      stat: visited instructions (unrolled)  189286
+      stat: [checkct:info] 36018 / 36018 control flow checks pass
+      stat: [checkct:info] 59951 / 59951 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_6  secure
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 02faf94a4bd351c9b6ea5e217b277eb77ba43a36db7bc89a1a97ab7599824f66
+      stat: pending paths                    0
+      stat: branching points                 30783
+      stat: visited instructions (unrolled)  227237
+      stat: [checkct:info] 43261 / 43261 control flow checks pass
+      stat: [checkct:info] 71983 / 71983 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+  driver  riscv32imac-unknown-none-elf  driver::split::split_vec_power2round_7  unknown
+      sha256: elf a515f514945da502270861feed924e9a1c78ed8577d9adf43685ab5158aaadc7 script 7da60f08f09bbf020cdcb375db50f80d4c8415826880c7ff05540b4f3297fa31
+      stat: pending paths                    1
+      stat: branching points                 26737
+      stat: visited instructions (unrolled)  212780
+      stat: [checkct:info] 41262 / 41262 control flow checks pass
+      stat: [checkct:info] 63587 / 63587 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1 [checkct:warning] Exploration is incomplete:
+      note: 1 [checkct:result] Program status is : unknown (7200.029)
+      note: 1              failed assertions                0
+      note: 1                unknown        0

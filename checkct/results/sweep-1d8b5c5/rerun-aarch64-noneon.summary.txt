@@ -1,0 +1,131 @@
+Summary:
+  driver  aarch64-unknown-linux-gnu  driver::census_sign_internal_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 126572
+      stat: visited instructions (unrolled)  1288155
+      stat: [checkct:info] 129433 / 129433 control flow checks pass
+      stat: [checkct:info] 268273 / 268273 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::census_sign_prepared_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 24478
+      stat: visited instructions (unrolled)  269965
+      stat: [checkct:info] 26982 / 26982 control flow checks pass
+      stat: [checkct:info] 54271 / 54271 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::compute_t_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 16689
+      stat: visited instructions (unrolled)  210075
+      stat: [checkct:info] 41328 / 41328 control flow checks pass
+      stat: [checkct:info] 26692 / 26692 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::control_prepared_branch_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 25784
+      stat: visited instructions (unrolled)  319051
+      stat: [checkct:info] 28288 / 28288 control flow checks pass
+      stat: [checkct:info] 63487 / 63487 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::control_prepared_index_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 23822
+      stat: visited instructions (unrolled)  267254
+      stat: [checkct:info] 26321 / 26321 control flow checks pass
+      stat: [checkct:info] 52983 / 52983 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::prepare_sk_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 31610
+      stat: visited instructions (unrolled)  359089
+      stat: [checkct:info] 34127 / 34127 control flow checks pass
+      stat: [checkct:info] 74518 / 74518 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::prepare_sk_65  unknown
+      stat: pending paths                    1
+      stat: branching points                 35757
+      stat: visited instructions (unrolled)  251004
+      stat: [checkct:info] 39730 / 39730 control flow checks pass
+      stat: [checkct:info] 50498 / 50498 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::prepare_sk_87  unknown
+      stat: pending paths                    1
+      stat: branching points                 44359
+      stat: visited instructions (unrolled)  231474
+      stat: [checkct:info] 49193 / 49193 control flow checks pass
+      stat: [checkct:info] 47523 / 47523 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::signing_key_44  unknown
+      stat: pending paths                    1
+      stat: branching points                 26972
+      stat: visited instructions (unrolled)  323925
+      stat: [checkct:info] 29485 / 29485 control flow checks pass
+      stat: [checkct:info] 65799 / 65799 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::signing_key_65  unknown
+      stat: pending paths                    1
+      stat: branching points                 36038
+      stat: visited instructions (unrolled)  388047
+      stat: [checkct:info] 40028 / 40028 control flow checks pass
+      stat: [checkct:info] 77156 / 77156 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::signing_key_87  unknown
+      stat: pending paths                    1
+      stat: branching points                 51506
+      stat: visited instructions (unrolled)  612765
+      stat: [checkct:info] 56390 / 56390 control flow checks pass
+      stat: [checkct:info] 124253 / 124253 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_87_7x1  unknown
+      stat: pending paths                    1
+      stat: branching points                 39080
+      stat: visited instructions (unrolled)  384050
+      stat: [checkct:info] 43942 / 43942 control flow checks pass
+      stat: [checkct:info] 81540 / 81540 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)
+  driver  aarch64-unknown-linux-gnu  driver::split_prepare_sk_87_col  unknown
+      stat: pending paths                    1
+      stat: branching points                 43726
+      stat: visited instructions (unrolled)  438589
+      stat: [checkct:info] 48593 / 48593 control flow checks pass
+      stat: [checkct:info] 93444 / 93444 memory access checks pass
+      stat: [checkct:info] 0 / 0 division checks pass
+      stat: - timeout has left (at least) 1 pending paths (-sse-timeout)
+      note: 1              completed/cut paths              0
+      note: 1                   - timeout has left (at least) 1 pending paths (-sse-timeout)

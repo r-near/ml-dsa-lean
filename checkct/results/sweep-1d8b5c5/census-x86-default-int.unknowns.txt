@@ -1,0 +1,6 @@
+
+driver::extra::census_sign_internal_44  insecure
+   leak  0x242548  jae    242566 <driver::sampling::sample_in_ball+0x246>   [src/sampling.rs:36]   in driver::sampling::sample_in_ball
+   stat: pending paths                    1
+   stat: visited instructions (unrolled)  2874206
+   stat: [checkct:info] 205381 / 205382 control flow checks pass

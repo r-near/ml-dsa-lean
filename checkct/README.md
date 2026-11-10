@@ -21,6 +21,14 @@ crate's workspace and the main `Cargo.toml` needed no `exclude`. `src/` is not e
 > 84 cells `secure`, the rest the whole-Sign census) and the smoke of eight probes on three targets (`smoke-default.log`, `verdicts.tsv`, against round 10's counts).
 > `docs/assurance.md` section 4, "Round 12", reads them.
 
+> **Round 13 (the sweep of this tree).** `src/ntt.rs` has its safe `dispatch` wrapper module again (no choice inside), and the driver of the default release profile is
+> identical to fv-p11's in every function on riscv32imac, thumbv7em and x86_64 (234, 239, 234; `compare-code.sh compare p11 p13f`). The full sweep was rerun on the tree of 1d8b5c5
+> (the `src/` of the final tree; later commits change documents only): every profile of the "Profiles" table except the removed dispatch ones, on x86_64 (`default`, `nearcore`,
+> `nearcore-novec`, `nearcore-exact`, `nearcore-exact-novec`, the `ZEROIZE=1` builds of `default` and `nearcore-exact-novec`, and the NTT probes of `avx2` and `nearcore-avx2`),
+> thumbv7em, riscv32imac and AArch64 `NONEON=1`, plus the whole-Sign censuses that finished. The per-cell files (`*.verdicts.tsv`, `*.summary.txt` with the SHA-256 of each analyzed
+> ELF and script, `*.header.txt`, `*.unknowns.txt`, `driver-sha256.txt`, the compared verdicts) are in `results/sweep-1d8b5c5/`; `docs/assurance.md` section 4, "Round 13", reads them. `sweep-compare.py`
+> compares two verdict files probe by probe and `sweep-post.sh` produces a cell's files from its log.
+
 ## Running
 
 Linux only (BINSEC), via Docker:
@@ -488,13 +496,14 @@ says what was tried. When an entry gets a verdict, move it out of this list.
 | probe | target / profile | outcome | already tried |
 |---|---|---|---|
 | `vec_power2round_87` (full size) | riscv32imac default | unknown, 1 pending path | 1 h and 2 h on the previous tree, 1 h at 15b4ce2 (190,098 instructions) and at 1a72d9e (177,574 instructions), still 1 pending path. Covered by the split windows `split_vec_power2round_8_*` (secure) |
-| `split_vec_power2round_{5,6,7}` | riscv32imac | unknown | 1 h, again 1 h at 15b4ce2 and 1a72d9e (capacity probing only; the 8-wide windows cover the loop) |
+| `split_vec_power2round_7` | riscv32imac | unknown, 1 pending path | 1 h, again 1 h at 15b4ce2 and 1a72d9e, 2 h alone at 1d8b5c5 (212,780 instructions); capacity probing only, the 8-wide windows cover the loop. `split_vec_power2round_{5,6}` are `secure` at 2 h (7200 s, 20 GB, alone, at 1d8b5c5; `unknown` at 1 h) |
 | `census_sign_internal_44` | riscv32imac default | unknown, 4 pending paths | 1 h and 2 h on the previous tree |
 | `compute_t_44`, `prepare_sk_{44,65,87}`, `signing_key_{44,65,87}`, `census_sign_internal_44`, `census_sign_prepared_44` | AArch64 `NONEON=1` | unknown: one pending path stuck in one solver query (instruction count identical at 300, 600, 3600 and 7200 s; upstream log U-42) | 1 h and 2 h on the previous tree, 1 h again at 15b4ce2 and at 1a72d9e (same probes, `control_prepared_*` too). Pieces covered by split probes, except the K = 8 glue of `prepare_sk_87` / `signing_key_87` |
 | `split_prepare_sk_87_7x1`, `split_prepare_sk_87_8x1` | AArch64 `NONEON=1` | unknown, same stall | 1 h (round 2 of `split-run.sh`), again 1 h at 15b4ce2 and 1a72d9e (`split_prepare_sk_87_col` is the `_8x1` probe) |
-| `census_sign_internal_44`, `census_sign_prepared_44` | thumbv7em default | OOM: needs more than 120 GB, no verdict | 64 GB and 120 GB caps (see "Reading `error` results" above). Don't raise the cap again; a split would be needed |
-| `census_sign_prepared_44` | riscv32imac default; x86_64 `nearcore-dispatch`; x86_64 default and `dispatch` (since 15b4ce2) | OOM: needs more than 120 GB, no verdict | 64 GB and 120 GB caps; x86_64 default also at 110 GB, `dispatch` at 120 GB (15b4ce2, killed at 125.6 GB RSS); not rerun at 1a72d9e. It was `insecure` on the previous tree for default and `dispatch` after a 120 GB run |
-| `census_sign_prepared_44` | x86_64 `nearcore-exact-novec` | OOM: needs more than 150 GB, no verdict (new at 1a72d9e; `insecure`, public leak only, at 15b4ce2 in 120 GB) | 110 GB cap, then alone at 150 GB (killed at 115.1 and 157.0 GB RSS). Don't raise the cap again |
+| `census_sign_internal_44`, `census_sign_prepared_44` | thumbv7em default | OOM: needs more than 160 GB, no verdict (a control-flow leak at `sample_in_ball`, `sampling.rs:36`, was reported after 38.8 s and 53.0 s before the kill) | 64 GB and 120 GB caps, then 160 GB alone at 1d8b5c5 (killed at `anon-rss` 167.4 GB). Don't raise the cap again; a split would be needed |
+| `census_sign_prepared_44` | riscv32imac default | OOM: needs more than 160 GB, no verdict | 64 GB and 120 GB caps, then 160 GB alone at 1d8b5c5 (killed at `anon-rss` 167.4 GB, no leak reported before the kill) |
+| `census_sign_prepared_44` | x86_64 `nearcore-dispatch`, `dispatch` (profiles removed in round 12) | OOM: needs more than 120 GB, no verdict | history; x86_64 default has a verdict at 1d8b5c5 (`insecure`, public leak only, 160 GB) |
+| `census_sign_prepared_44` | x86_64 `nearcore-exact-novec` | OOM: needs more than 160 GB, no verdict (`insecure`, public leak only, at 15b4ce2 in 120 GB) | 110 GB cap, then alone at 150 GB (killed at 115.1 and 157.0 GB RSS) at 1a72d9e, then alone at 160 GB at 1d8b5c5 (killed at `anon-rss` 167.4 GB). Don't raise the cap again |
 | `control_prepared_branch_44` | thumbv7em | `secure`: the control is invalid there (branch lowered to a select) | every run; expected |
 | `control_prepared_branch_44`, `control_prepared_index_44` | AArch64 `NONEON=1` | no verdict | 1 h and 2 h |
 | 49 probes: `ntt`, `ntt_inverse`, `multiply_ntt`, `ntt_vec_44`, `compute_t_*`, `matrix_vector_ntt_*`, `scalar_vector_ntt_inverse_1`, `prepare_sk_*`, `signing_key_*`, `prepare_sk_1x1_*`, `control_prepared_*`, `hint_step_*`, `response_*`, 16 `split_*` (list in "`nearcore-exact` and `nearcore-exact-dispatch` at 1a72d9e") | x86_64 `nearcore-exact`, `nearcore-exact-dispatch` | unknown: 48 are cut paths at VEX instructions BINSEC 0.11.3 cannot lift (`vinsertps`, `vblendvps`, `vblendps ymm`), 0 pending paths, stopped in 0.08 to 1.4 s; `prepare_sk_1x1_65` is a solver stall (1 pending path) | 600 s for all, 3600 s with `TRACE=1` for `prepare_sk_1x1_65`. A longer timeout cannot help a cut path. What helps: a build without the vectorizers (`PROFILE=nearcore-exact-novec`: 47 `secure`, the two prepared controls `insecure`) or a BINSEC that lifts VEX (U-44) |
