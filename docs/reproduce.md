@@ -122,7 +122,14 @@ repeat it. Pass module names to build less, for example
 `bash scripts/lean-check.sh Proofs.PartialAPI`. Dependencies (Mathlib and Aeneas) are fetched with `lake exe cache get`
 where possible and compiled otherwise, so the first run is much slower than later ones. `LEAN_PACKAGES_SEED` can point at a
 directory of already built Lake packages (same Aeneas revision) to seed `lean/.lake/packages`. The Lean build log is kept in
-`lean/.lake/check-build.log`.
+`lean/.lake/check-build.log`. `LEAN_BUILD_TIMEOUT` (seconds, default 7200) bounds the `lake build`; it ends a hung build and is not a gate.
+
+GitHub runs this script on every pull request and every push to `main` (`.github/workflows/ci.yml`, job `lean`, on the free `ubuntu-latest`
+runner; `ci-ok` needs it, so it is a required check). The job does what sections 2.1 and 2.2 describe, in this order: `scripts/setup-tools.sh`,
+`python3 -I scripts/extract_hash.py check`, `scripts/extract.py` into an empty directory with `diff -r` against `lean/Impl`, then
+`scripts/lean-check.sh`. It sets `LEAN_NUM_THREADS=2` and deletes preinstalled software (dotnet, Android, GHC, CodeQL, Boost) to make room
+on the 14 GB disk. A cold run took 1596 s for the build with `LEAN_NUM_THREADS=2` (peak 12.7 GB) in a container with the runner's limits
+(16 GB, 4 cores); one thread took 2048 s (9.1 GB). On a machine with less than about 16 GB of RAM set `LEAN_NUM_THREADS=1`.
 
 To read the statements the gate covers, start with the `*_exact` theorems: `lean/Proofs/PartialAPI.lean` (Verify),
 `PartialKeyGen.lean`, `PartialSign.lean` and `PkFromSk.lean` (names in assurance.md, section 1.1). The specification they refer to is
@@ -161,7 +168,7 @@ from `scripts/extract-roots.txt`) and writes into `lean/Impl` only on success. A
 digest of the extraction inputs (every file under `src/` with its name, `Cargo.toml` without `[dev-dependencies]` and with its package `version` replaced by `0.0.0`, the roots and
 the tool pins) and the SHA-256 of each file in `lean/Impl`; `bash scripts/ci.sh --only extract-hash` compares them with the
 tree (no tools needed) and rejects symlinks, so a changed input or a hand-edited or added file in `lean/Impl` without a new
-extraction fails it. Someone who edits `lean/Impl` and the report together passes that check; `.github/workflows/lean.yml`
+extraction fails it. Someone who edits `lean/Impl` and the report together passes that check; the `lean` job of `.github/workflows/ci.yml`
 extracts into a new empty directory and compares every file with `lean/Impl` (`diff -r`), which fails on that too. The commands above
 do the same by hand. Extraction runs the verified cargo-hax by absolute path (not `cargo hax`, which would pick up a
 `$CARGO_HOME/bin/cargo-hax`), on a crate staged in a fresh temporary directory, with a fixed list of environment variables and a
@@ -181,7 +188,8 @@ This builds `Proofs.TopWitnessCorrect`, which the default build does not import,
 `lean/witness-theorems.txt` for standard axioms only. The kernel evaluations are the cost: about 47 minutes cold and about 46
 GB peak memory across modules in the recorded run (about 24 GB for the largest declaration). It ends with
 `WITNESS CHECK OK: Proofs.TopWitnessCorrect`. If the kernel is killed (exit 137), the machine ran out of memory; rerun on a
-larger one.
+larger one. This script does not run on pull requests: it is manual or weekly (`.github/workflows/lean.yml`, on the runner named by the
+repository variable `LEAN_HEAVY_RUNNER`), because it needs a large runner.
 
 ### 2.4 Cross-checks of the specification
 
