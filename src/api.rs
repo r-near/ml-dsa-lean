@@ -29,15 +29,15 @@
 //! are 28,768 / 48,224 / 80,992 bytes and contain secrets: keep them in a `Box`, do not copy them. With the
 //! `zeroize` feature, dropping one wipes ŝ1, ŝ2, t̂0 and K (the `Drop` impl is not part of the Lean model).
 //!
-//! Stack, worst case below the caller's frame in a release build (`tools/stack/`, painted stack and static walk, x86_64,
+//! Stack, worst case below the caller's frame in a release build (`tools/stack/run.sh`, painted stack and static walk, x86_64;
 //! thumbv7em and riscv32imac agree within 4%; ML-DSA-44 / 65 / 87, in KB): the one-shot `verify_*` take 64 / 90 / 132
 //! (the key is built in place, `verify::prepare_vk_into_x4`, and verify always runs the 4-way ExpandA) and `verifying_key_*`
-//! 50 / 74 / 111, plus the returned key in the caller's frame (20.5 / 36.9 / 65.6); the 87 figure of `verifying_key_*` is
-//! the compiler keeping an extra copy of the key (the build-in-place figure is about 26 KB, which an older toolchain reached).
-//! `signing_key_*` 60 / 99 / 164, plus the returned key (28.8 / 48.2 / 81.0); `verify_prepared_*` and
-//! `verify_internal_prepared_*` 34 / 45 / 59; `sign_prepared_*` and `sign_internal_prepared_*` 73 / 101 / 134; `sign_*`
-//! 116 / 168 / 240. Results vary by about 5% with the toolchain and inlining, and by more for `verifying_key_*` and
-//! `verify_*` under LTO; `tools/stack/README.md` and `bench/results/2026-11-09-p12.md` have the full tables.
+//! 50 / 74 / 111, plus the returned key in the caller's frame (20.5 / 36.9 / 65.6); the 87 figure of `verifying_key_*` includes
+//! a second copy of the key that the compiler does not elide (it was 26 KB before the 4-way verify).
+//! `signing_key_*` 59 / 98 / 164, plus the returned key (28.8 / 48.2 / 81.0); `verify_prepared_*` 31 / 38 / 50 and
+//! `sign_prepared_*` 57 / 73 / 103 (their `_internal_` variants are 0.3 to 0.5 KB smaller); `sign_*` 99 / 140 / 209.
+//! Results vary by about 5% with the toolchain and inlining, and by more for `verifying_key_*` and `verify_*` under LTO;
+//! `tools/stack/README.md` and `bench/results/2026-11-09-p13.md` have the full tables.
 //!
 //! Zeroize coverage (feature `zeroize`; outside the Lean model, which has no `Drop` and no volatile writes, so the
 //! theorems are about the code without it). What it wipes: dropping a `SigningKey*`; in `keygen_*`, `sign_*`,

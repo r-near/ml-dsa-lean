@@ -196,7 +196,7 @@ fn multiply_ntt_body(a: &[u32; 256], b: &[u32; 256]) -> [u32; 256] {
 // call structure decides how rustc/LLVM inline the bodies into the callers on Sign's and KeyGen's secret-dependent path,
 // and with it the machine code that the BINSEC runs analyzed: with the module the default-build object code is identical
 // to round 11's (`checkct/compare-code.sh`); without it 185 of 233 functions on riscv32imac, 107 of 236 on thumbv7em and
-// 39 of 233 on x86_64 differed (docs/assurance.md, "Round 13").
+// 39 of 233 on x86_64 differed (docs/assurance-history.md, "Round 13").
 mod dispatch {
     use super::{multiply_ntt_body, ntt_body, ntt_body_mut, ntt_inverse_body, ntt_inverse_body_mut};
     pub fn ntt(w: &[u32; 256]) -> [u32; 256] {
