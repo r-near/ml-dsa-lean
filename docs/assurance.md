@@ -44,8 +44,11 @@ the spec; the Rust loops are unbounded. The older theorems that carry premises (
 (the standard parameter sets; kernel-checked for 44/65/87). Files: `lean/Proofs/Partial{API,KeyGen,Sign}.lean`, `PkFromSk.lean`.
 
 **1.2 Divergence.** `Proofs/Divergence.lean` (`rustM_div_iff`, `*_div_iff`): the Rust returns `div` exactly when the spec returns no
-result at any fuel, that is, when FIPS 204's unbounded ExpandA or SampleInBall would never terminate on that input. **This is not a
-termination proof**; termination is probabilistic. Sign's κ loop is bounded, so Sign diverges only through a sampler.
+result at any fuel and none of its defined rejections applies, that is, when one of FIPS 204's unbounded rejection samplers (ExpandA;
+ExpandS in KeyGen; SampleInBall) would never terminate on that input. Sign's defined rejections are |ctx| > 255 and `Exhausted`: on
+those inputs both the spec and the Rust return `none`, which is a result, not divergence (`sign_NN_div_iff`,
+`sign_internal_NN_div_iff`). **This is not a termination proof**; termination is probabilistic. Sign's κ loop is bounded, so Sign
+diverges only through a sampler.
 
 **1.3 Honest keys.** `Proofs/Correctness.lean`: `correct_44`, `correct_65`, `correct_87` (`keygen_NN`, then `sign_NN`, then
 `verify_NN` returns true), with premises `StdParams` and that KeyGen and Sign return `some` at the same fuel (`RejTerm`, the κ budget).
@@ -131,7 +134,8 @@ None of this is proof. "Differential" means two implementations agreed on the sa
 | Extracted Lean against native Rust (`scripts/impl-eval.sh`) | 345,360 cases, 100% agreement, 4 injected bugs detected (section 3, item 2) |
 | Proof mutation testing | 29 semantic mutants of `src`: each breaks the Lean build at the spec theorem of the mutated function. `cargo test` missed 5; regression tests now kill four. **The harness is not committed; this cannot be re-run** |
 | 4-way verify against the scalar functions (`tests/keccak4_long.rs`, `fast_verify*.rs`, `verify_arith.rs`) | more than 150,000 whole permutation states; ACVP sigVer, Wycheproof and random valid, corrupted and wrong-length inputs, all sets; run in the default build and with `-C target-feature=+avx2`. Tests the compilation of the proved source (section 3, item 3); not part of the proof |
-| zeroize (`tests/zeroize.rs`) | stack scans below `keygen`, `pk_from_sk`, `signing_key`, `sign`, `sign_prepared` and single Sign attempts for residue of secrets. **Optimized builds only** (Z-1) |
+| zeroize (`tests/zeroize.rs`) | stack scans below `keygen`, `pk_from_sk`, `signing_key`, `sign`, `sign_prepared` and single Sign attempts for residue of secrets. Release builds pass 28 of 28 on the recorded x86_64 Linux and aarch64 macOS machines;
+opt-level 0 and opt-level 1 do not (Z-1) |
 | Rust CI (`scripts/ci.sh`) | default, `zeroize` and AVX2-target-feature runs; thumbv7em; wasm32; MSRV 1.86; nearcore's release profile on 1.95.0; `cargo deny`; macOS arm64 default and release-zeroize suites. Last green on GitHub at `d28ede8` (2026-11-11), `lean` job included |
 
 The harnesses were not themselves reviewed; their sensitivity was checked by planting bugs, as the rows say. Performance is a
@@ -159,7 +163,8 @@ controls. Limits:
   the NTT under nearcore's exact build, or ended `error` after being killed at the 160 GB memory cap (thumbv7em, riscv32imac, one x86_64
   profile). Sign is covered by its secret-touching pieces, and the glue between steps by code reading only.
 - **`unknown` is no verdict.** Under `nearcore-exact` (nearcore's release profile for the crate in isolation, rustc 1.95.0; not nearcore's
-  binary) 49 of 113 probes are cut at AVX/VEX instructions that BINSEC 0.11.3 cannot lift (T-9), so there is no verdict for the NTT,
+  binary) 49 of 113 probes are `unknown`: 48 are cut at AVX/VEX instructions that BINSEC 0.11.3 cannot lift (T-9), and one
+(`prepare_sk_1x1_65`) is an unresolved pending-path stall with no instruction cut. So there is no verdict for the NTT,
   `hint_step` and `response` in that build, and the `-novec` result is about a different binary. In builds with AVX2 target features, and in
   AArch64 builds with NEON, the probes that contain vector code cannot be lifted (so macOS and Apple Silicon builds have no coverage). A
   few riscv32imac and AArch64 probes are solver stalls.
@@ -179,7 +184,7 @@ Three real leaks were found and fixed (CT-1, CT-2, CT-3). The sweep tables, reru
 - **That the spec returns a result.** Only the ML-DSA-44 instance of 1.6 has a witness. **Termination** is probabilistic (1.2).
 - **Crate-private internals** exposed by the `internals` feature can panic (E-1); without it the public surface is `api` only and every
   `api` function has a theorem. Cargo unifies features, so enabling `internals` anywhere in a dependency graph exposes them.
-- **The `zeroize` feature** (wiping, `Drop`) is outside the proof; stack-residue claims hold for optimized builds only (Z-1).
+- **The `zeroize` feature** (wiping, `Drop`) is outside the proof; stack-residue claims hold for the recorded release builds only, not at opt-level 0 or 1 (Z-1).
 - **Randomness** is the caller's (`keygen_NN` takes ξ, `sign_NN` takes `rnd`). **HashML-DSA and external μ** are out of scope.
 - **Constant time** for whole Sign, for verify, and for builds with AVX2 target features or NEON (4.1).
 - **No third-party audit, no FIPS or CMVP validation.**
@@ -190,7 +195,7 @@ Three real leaks were found and fixed (CT-1, CT-2, CT-3). The sweep tables, reru
 |---|---|---|
 | E-4 | open, accepted | Out-of-range secret keys are accepted: six Wycheproof sign vectors (two per set) use an expanded secret key with an s1 or s2 coefficient outside [−η, η] and expect signing to fail. This crate and the Lean spec both sign with them (FIPS 204 Algorithm 25 allows such coefficients "if input is malformed"; Section 7.2 says skDecode should run only on trusted input); RustCrypto panics. A hardening gap for callers who load untrusted expanded keys; `api::sk_is_well_formed_NN` is a separate proved check |
 | E-1 | open | `sign_internal` and `keygen_internal` panic on wrong-length slices, and `verify_internal` on a `Params` inconsistent with its `K`/`L`. Reachable only with the `internals` feature |
-| Z-1 | open | At opt-level 0, 21 of the 24 stack-residue scans in `tests/zeroize.rs` find copies of secrets in dead stack frames (`signing_key` passes for all sets); in release, 28 of 28 tests pass on the recorded x86_64 Linux and aarch64 macOS machines |
+| Z-1 | open | At opt-level 0, 21 of the 24 stack-residue scans in `tests/zeroize.rs` find copies of secrets in dead stack frames (`signing_key` passes for all sets); at dev opt-level 1, `keygen_44` and `keygen_65` fail on the recorded x86_64 Linux machine (26 of 28; 28 of 28 on aarch64 macOS); in release, 28 of 28 tests pass on the recorded x86_64 Linux and aarch64 macOS machines |
 | T-8, T-9 | tool limits | A BINSEC probe killed at the container's memory cap shows only `error` (presumed out of memory unless the kernel log shows no kill); BINSEC 0.11.3 cannot lift AVX/VEX instructions, and overflow-check guards on secret values stalled it |
 | CT-1 | fixed | riscv32imac: the mask-select idiom was turned back into branches on secret data; fixed with a RISC-V-only `black_box` barrier (identity under `cfg(miri)`) |
 | CT-2 | fixed | x86_64: LLVM turned the `diff == q − 1` select in `rounding::decompose` into a branch; fixed by `field::opaque_u32` (about 2–3% in Sign) |
@@ -212,12 +217,12 @@ Paths are relative to the repository root; [reproduce.md](reproduce.md) has the 
 | 1.7: spec against ocaml-pq | `scripts/xspec/check-axioms.sh` and `scripts/xspec/run-diff.sh all` (after `scripts/xspec/setup.sh`, `build.sh`) |
 | 3, item 1: spec against VCVio, ACVP and Wycheproof | `scripts/diff-vcvio/run.sh all` (after `setup-vcvio.sh`); in `lean/`, `lake build spec-acvp && .lake/build/bin/spec-acvp`; `python3 -I scripts/gen-lean-wycheproof.py`, then in `lean/` `lake build spec-wycheproof && .lake/build/bin/spec-wycheproof` |
 | 3, item 2: extracted Lean against native Rust | `scripts/impl-eval.sh lean`, `scripts/impl-eval.sh rs`, `scripts/impl-eval.sh compare` |
-| 4: ACVP, Wycheproof, RustCrypto and aws-lc-rs differentials; 4-way verify tests | `cargo test`; on an AVX2 machine also `RUSTFLAGS="-C target-feature=+avx2" ML_DSA_REQUIRE_AVX2=1 cargo test` |
+| 4: ACVP, Wycheproof, RustCrypto and aws-lc-rs differentials; 4-way verify tests | `cargo test --release` (a debug `cargo test` divides the bulk aws-lc-rs differential counts by 100 unless `AWSLC_DIFF_FULL=1`, so it is smoke coverage only; the full differential alone: `cargo test --release --test awslc_diff -- --nocapture`); on an AVX2 machine also `RUSTFLAGS="-C target-feature=+avx2" ML_DSA_REQUIRE_AVX2=1 cargo test` |
 | 4: libcrux and mldsa-native differentials; fuzzing | `crosscheck/README.md` ("How to run"); in `fuzz/`, `cargo +nightly fuzz run verify_diff` (also `sign_diff`, `decode_roundtrip`) |
 | 4: the whole Rust check list (MSRV, thumbv7em, wasm32, nearcore profile, 60 s fuzz smoke, `cargo deny`) | `bash scripts/ci.sh --strict --lean` (every step must pass) |
 | 4.1: constant time | `checkct/README.md`; reproduce.md section 3 (`checkct/run-select.sh` per target and profile; Linux and Docker) |
 | 5: stack | `bash tools/stack/run.sh` (`tools/stack/README.md`); `bash bench/stackquick.sh` for the verify rows |
-| 4: performance | `bash bench/compare.sh` (keygen, sign), `bash bench/fast-verify.sh` (verify) |
+| 4: performance | `bash bench/compare.sh LABEL [CPU]` (keygen, sign), `SETS=44,65,87 bash bench/fast-verify.sh LABEL [CPU]` (verify; the default is set 65 only) |
 
 ## 8. Related work, and wording
 
@@ -225,7 +230,7 @@ The related-work survey (Apple corecrypto, Microsoft SymCrypt, ocaml-pq, libcrux
 re-run since) is in history §10. Where those projects prove things this crate does not, for example object-code properties, they go
 further. Wording that stays inside the evidence (history §12 has the full text): the extracted Rust for every `api` function is proved,
 with no unproved premise, to never fail (in the Aeneas model: stack exhaustion and out-of-memory are not modeled, and the Rust can diverge
-exactly when the spec returns no result at any fuel, 1.2) and to agree with the Lean transcription of FIPS 204 whenever either returns,
+exactly when a rejection sampler of the spec never terminates, with Sign's defined rejections excepted, 1.2) and to agree with the Lean transcription of FIPS 204 whenever either returns,
 with the trusted base of section 3. **Not supported:** "formally verified" without that scope; "first" or "only"; "FIPS validated" or
 "FIPS certified"; "production-ready" or "audited"; "no assumptions"; "constant time" for whole Sign, for verify or for builds with AVX2
 target features; any statement about aws-lc equivalence beyond the differential of section 4; that the compiled AVX2 code is proved equal
