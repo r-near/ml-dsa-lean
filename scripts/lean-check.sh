@@ -13,7 +13,9 @@ if [ ! -d .lake/packages ] && [ -n "$SEED" ] && [ -d "$SEED" ]; then cp -a "$SEE
 # Best effort: a failed cache download only means the libraries are built from source; it cannot turn a failing check into a pass.
 lake exe cache get >/dev/null 2>&1 || true
 rc=0
-timeout 3000 lake build "$@" 2>&1 | tee .lake/check-build.log || rc=$?
+# LEAN_BUILD_TIMEOUT (seconds) bounds the build; the cold build on the 4-core, 16 GB runner of ci.yml takes 1455 to 2048 s,
+# and one run hit the old 3000 s limit under heavy load on a shared machine. The limit only ends a hung build; it is not a gate.
+timeout "${LEAN_BUILD_TIMEOUT:-7200}" lake build "$@" 2>&1 | tee .lake/check-build.log || rc=$?
 if [ "$rc" -ne 0 ]; then echo "LEAN CHECK FAIL: lake build exited $rc"; exit 1; fi
 if grep -nE "(^|[^a-z])error:|declaration uses 'sorry'" .lake/check-build.log; then
   echo "LEAN CHECK FAIL: errors or sorry in the build log"; exit 1
