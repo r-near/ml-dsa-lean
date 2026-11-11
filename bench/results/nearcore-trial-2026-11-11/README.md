@@ -10,12 +10,11 @@ rustc/LLVM and the Aeneas extraction are trusted, not proved. This trial does no
 
 ## Bottom line
 
-- **No technical blocker found at the function level.** The swap is one new module plus seven call-site edits in
+- **No technical blocker found at the function level.** The swap is one new module plus six call-site edits in
   `core/crypto/src/signature.rs`; no change to `src/` or `lean/` of this repository was needed. nearcore builds with its own
-  toolchain (1.95.0), release profile and target features. All 53 ML-DSA-named tests and the packages around them pass
+  toolchain (1.95.0), release profile and target features. All 51 existing ML-DSA-named tests and the packages around them pass
   (857 of 857 selected tests on the new backend, 850 of 850 on aws-lc-rs before the swap; the 7 extra are the new differential
-  tests). Keygen from a seed is byte-identical to aws-lc-rs, public keys, signatures and encodings have the same sizes and
-  bytes, and 80,219 verify verdicts on mutated inputs agreed (0 differences).
+  tests). Keygen from a seed is byte-identical to aws-lc-rs, public keys and encodings are byte-identical or the same size, signatures have the same size and cross-verify (signing is hedged, so signatures differ per call), and 80,219 verify verdicts on mutated inputs agreed (0 differences).
 - **What blocks adoption is a set of decisions, not code:**
   1. **Speed under nearcore's current flags.** One-shot verify is **1.54 times** aws-lc-rs (57.7 against 37.3 µs, best case
      of 30,000 alternating pairs on one core) because nearcore's `.cargo/config.toml` has no AVX2. With `+avx,+avx2` added it
@@ -48,7 +47,7 @@ Because the machine was shared and often loaded, timing results use **alternatin
 the **minimum and lower percentiles**, not means; the loaded-machine means and tails are kept in `raw/` but are not used for
 conclusions. Absolute µs numbers are for this machine only.
 
-## The patch (`nearcore.patch`, 679 lines, 475 added and 46 removed lines)
+## The patch (`nearcore.patch`, 679 lines, 510 lines added and 47 removed (`git apply --numstat`))
 
 Apply with `git apply nearcore.patch` at `cd5a94457` (checked on a clean checkout). `probes.patch` (stack probes and the A/B
 bench) applies on top of it; it is not part of the proposal.
@@ -57,7 +56,7 @@ bench) applies on top of it; it is not part of the proposal.
 |---|---|
 | `core/crypto/Cargo.toml` | optional `ml-dsa-lean = "0.2.0"`; feature `ml-dsa-lean`. `aws-lc-rs` stays a normal dependency and the default |
 | `core/crypto/src/ml_dsa_backend.rs` (new) | the only file that names a signature library: `verify`, `sign`, `public_key`, `secret_from_seed`, `validate_secret`, `generate_secret`, plus `ML_DSA_65_BACKEND` ("aws-lc-rs" or "ml-dsa-lean"). The aws-lc code moved here unchanged |
-| `core/crypto/src/signature.rs` | seven call sites now call the module (below); `ml_dsa_65_secret_from_keypair` removed |
+| `core/crypto/src/signature.rs` | six call sites now call the module (below); `ml_dsa_65_secret_from_keypair` removed |
 | `core/crypto/src/lib.rs` | `mod ml_dsa_backend;` and the re-export of `ML_DSA_65_BACKEND` (only so tests and benches can print which backend is linked; droppable) |
 | `core/crypto/tests/ml_dsa_backend_diff.rs` (new) | in-tree differential of both backends (only built with the feature, since it needs both) |
 | `Cargo.lock` | one package entry and one dependency line |
@@ -75,7 +74,7 @@ approval/endorsement verification (ed25519-only validator keys today, so they ne
 the estimator (`MlDsaVerifyBase`, `MlDsaVerifyByte`, which run the host function inside a contract). **No wasm/no-std
 constraint applies:** `near-crypto` is not built for wasm32 (it depends on C crates) and contracts use the host function.
 
-How each semantic choice was made (each is a finding, F-5 to F-8 below):
+How each semantic choice was made (each is a finding, F-4 to F-6 below):
 
 - **Signing randomness.** aws-lc signs hedged. `ml-dsa-lean`'s `sign_65` takes `rnd`. The patch draws 32 bytes from the
   `OsRng` that `near-crypto` already uses when its `rand` feature is on, and uses 32 zero bytes (the deterministic variant of
@@ -98,9 +97,9 @@ How each semantic choice was made (each is a finding, F-5 to F-8 below):
 | `clippy -D warnings` (`near-crypto`, all targets, both backends) and `rustfmt --check` | clean |
 | `cargo deny`, `cargo machete` | not installed on the box, not run (licenses: `ml-dsa-lean` is MIT OR Apache-2.0, which `deny.toml` allows; it adds no second version of any crate) |
 
-### Tests (nextest, `--cargo-profile dev-release --features test_features`, the flags of nearcore's own `Justfile` recipe)
+### Tests (nextest, `--cargo-profile dev-release --features test_features`, the cargo flags of nearcore's `Justfile` recipe, with the config-file rustflags; see F-13)
 
-Filter: all of `near-crypto`, `near-primitives`, `near-parameters`, `near-vm-runner`, plus any test whose name contains
+Filter (`raw/nextest.txt` has the literal expression, the summaries and the passing test names): all of `near-crypto`, `near-primitives`, `near-parameters`, `near-vm-runner`, plus any test whose name contains
 `ml_dsa`, `mldsa`, `ml-dsa`, `MLDSA`, `pq_` or `post_quantum`, `combined_transactions_size_limit`, `universal_account`
 (workspace build, so `test-loop-tests`, `node-runtime`, `near-client`, `near-mirror` and `near-rosetta-rpc` tests come along).
 Not run: the rest of the workspace, `integration-tests` beyond the name filter, pytest/nayduck.
@@ -108,11 +107,11 @@ Not run: the rest of the workspace, `integration-tests` beyond the name filter, 
 | Run | Result |
 |---|---|
 | Baseline, aws-lc-rs, unpatched checkout | 850 run, 850 passed |
-| Patched, lean backend | **857 run, 857 passed** (the 7 added are `ml_dsa_backend_diff`) |
+| Patched, lean backend, final patch | **857 run, 857 passed** (job final2; the 7 added are `ml_dsa_backend_diff`). An earlier run of the same patch before the rename of the long differential test (`slow_test_` prefix) timed out that one test at nextest's 15 s limit, 856 of 857 (job nc-lean-tests, exit 100) |
 | Patched, default backend | `near-crypto` 37 of 37 passed (same count as baseline; the new test file is compiled out) |
 | Patched, lean, plain `cargo test` dev profile (`near-crypto`) | 37 + 7 passed (the dev profile builds the dependency at opt-level 1) |
 
-The 53 ML-DSA-named tests (list in the nextest output) include the unit tests, the 9 `ml_dsa_verify` host-function logic tests,
+The 51 existing tests whose names match `ml_dsa` or `mldsa` (names in `raw/nextest.txt`; the 7 differential tests make 58) include the unit tests, the 9 `ml_dsa_verify` host-function logic tests,
 the 6 end-to-end VM tests, and the test-loop tests for access keys, gas charging and the activation boundary. The known-answer
 test `test_ml_dsa_65_known_answer` pins the public key derived from the seed `kat-seed-v1`; it passes unchanged, which is
 byte-identical KeyGen against the aws-lc-derived constant.
@@ -129,7 +128,7 @@ differential test is named accordingly.
 | DER-SPKI public keys | aws-lc's `UnparsedPublicKey` first tries to parse a DER SubjectPublicKeyInfo, then the raw key. The ML-DSA-65 SPKI is **1,974 bytes**; aws-lc accepts it, this crate does not. nearcore only has 1,952-byte arrays (`MlDsa65PublicKey::try_from` and the host function both length-check), no 1,952-byte window of the SPKI is accepted as a different key, and a header-plus-truncated-key input is rejected by both. **Unreachable through nearcore's types**, so there is no mismatch to port |
 | Context string | both empty; cross-verification above covers it |
 | Lengths | identical (pk 1952, sk 4032, signature 3309, seed 32) |
-| Raw secret-key acceptance (`SecretKey::from_str`) | aws-lc's `from_raw_private_key` accepts exactly the keys that are internally consistent (rho, tr, t0, s1, s2 recomputed from each other; K is free). On 5,743 inputs (single-bit flips of every region, 200 random keys, all-zero, all-0xff) `pk_from_sk_65(..).is_some()` agreed with aws-lc **in every case**; the cheaper `sk_is_well_formed_65` (range check only) accepted 4,845 of the 5,743 inputs that aws-lc rejects (every single-bit flip of rho, tr and t0, and most flips of s1 and s2), so it would be the wrong replacement |
+| Raw secret-key acceptance (`SecretKey::from_str`) | aws-lc's `from_raw_private_key` accepts exactly the keys that are internally consistent (rho, tr, t0, s1, s2 recomputed from each other; K is free). On 5,743 inputs (single-bit flips of every region, 200 random keys, all-zero, all-0xff) `pk_from_sk_65(..).is_some()` agreed with aws-lc **in every case**; the cheaper `sk_is_well_formed_65` (range check only) accepted 4,845 of the 5,486 inputs that aws-lc rejects (5,743 tried, 257 accepted by aws-lc) (every single-bit flip of rho, tr and t0, and most flips of s1 and s2), so it would be the wrong replacement |
 | Error behavior | `verify` returns `false` on both for every malformed input tried (no panics); the 9+6 host-function tests (invalid lengths abort the contract, bad data returns 0) pass unchanged |
 | Determinism | verify has no run-time CPU dispatch and no `unsafe` in this crate: the same compiled code gives the same verdict on every machine for one build. aws-lc's C code does not depend on Rust's target-feature flags (timings identical across the two flag sets) |
 | Signing | hedged on both when `rand` is on (signatures differ per call); with `rand` off the lean backend signs deterministically (aws-lc always hedged) |
@@ -155,7 +154,7 @@ the "tampered" worst case costs the same as a valid verify. Not on the consensus
 | Hedged sign | 53.6 | 164 / 148 | 3.06 / 2.75 |
 | KeyGen from seed (incl. raw export) | 42.9 to 43.1 | 139 / 132 | 3.24 / 3.08 |
 
-A malformed random signature (random 3,309 bytes) is rejected by this crate in 0.6 to 1.4 µs every time; aws-lc rejects the
+A malformed random signature (random 3,309 bytes) is rejected by this crate in 0.6 to 1.4 µs (minimum through p90 over three rounds); aws-lc rejects the
 fastest quarter in under 1.5 µs and has a median of about 30 µs. The cost of an attacker-chosen input is therefore bounded by the
 full-verify cost on both, which is the tampered-message row.
 
@@ -246,8 +245,8 @@ every thread nearcore uses, with these two gaps open.
 
 ## Findings
 
-1. **F-1, small surface.** One file (`core/crypto/src/signature.rs`) names the library; seven call sites. The patch's source
-   change is 100 new lines (`ml_dsa_backend.rs`) plus 13 added and 46 removed in `signature.rs`, plus a 351-line test.
+1. **F-1, small surface.** One new file (`core/crypto/src/ml_dsa_backend.rs`) names the signature library; `signature.rs` has six call sites into it. The patch's source
+   change is 119 new lines (`ml_dsa_backend.rs`) plus 13 added and 47 removed in `signature.rs`, plus a 366-line test.
 2. **F-2, feature shape.** `ml-dsa-lean` is a non-default additive feature, `aws-lc-rs` stays a normal dependency, so the
    default build is unchanged (37 of 37 tests). Cargo features unify across the workspace: building any binary with the
    feature on, anywhere, switches the backend for the whole binary. `neard` does not forward the feature (listed as a package
@@ -279,7 +278,10 @@ every thread nearcore uses, with these two gaps open.
 13. **F-13, nearcore's CI tests run without its target-feature list.** The `Justfile` runs `RUSTFLAGS="-D warnings" cargo nextest`,
     and `RUSTFLAGS` replaces the `.cargo/config.toml` flags, so tests are built for baseline x86-64 while release binaries get
     the feature list. Relevant here because the verify speed and the generated code depend on those flags; it applies equally
-    to aws-lc (whose C code ignores them). This trial ran its nextest without `RUSTFLAGS`, so with nearcore's config flags.
+    to aws-lc (whose C code ignores them). The main nextest runs here used the config-file flags (no `RUSTFLAGS`). As a cheap check of the CI-style build, `near-crypto` alone was also
+    run under `RUSTFLAGS="-D warnings"` (baseline x86-64): 38 of 38 tests on aws-lc-rs; 45 passed, 1 skipped with the lean feature,
+    and the 7 differential tests pass in a release build (`raw/nextest.txt` §5). The rest of the workspace (VM, test-loop) was not
+    run under those flags with the lean backend.
 14. **F-14, crate changes: none required.** Nice to have, not needed: exported length constants (`PK_LEN`, `SK_LEN`,
     `SIG_LEN`) so `near-crypto` need not repeat them, and a documented statement about `pk_from_sk_*` being the
     right parse-time check for stored keys.
@@ -292,6 +294,7 @@ every thread nearcore uses, with these two gaps open.
 - Frames above the host-function call in a real chunk-application thread were not measured.
 - The differential is a test (80k here, 3.2M in the crate's own suite), not a proof about aws-lc.
 - Build times are not comparable (load, `mbx` cache).
+- The lean backend was not run through the whole workspace under nearcore's CI `RUSTFLAGS` (baseline x86-64 code); only `near-crypto` was (F-13).
 
 ## Reproduce
 
@@ -302,7 +305,7 @@ every thread nearcore uses, with these two gaps open.
 cd $NC && git apply /path/to/nearcore.patch                    # the proposal
 # builds
 cargo build --release --locked -p neard -p near-crypto --features near-crypto/ml-dsa-lean
-# tests (nearcore's own recipe flags; FILTER is the expression in the Tests section)
+# tests (nearcore's recipe flags; FILTER is the literal expression in raw/nextest.txt)
 cargo nextest run --locked --workspace --cargo-profile dev-release --features test_features \
   --features near-crypto/ml-dsa-lean --no-fail-fast --ignore-default-filter -E "$FILTER"
 cargo clippy --locked -p near-crypto --all-targets --features ml-dsa-lean -- -D warnings

@@ -1,0 +1,89 @@
+# nextest runs (condensed from the job outputs; summary lines and ML-DSA-named test names only)
+# cargo nextest run --locked --workspace --cargo-profile dev-release --features test_features [--features near-crypto/ml-dsa-lean] --no-fail-fast --ignore-default-filter -E "$FILTER"
+# FILTER=(package(near-crypto) | package(near-primitives) | package(near-parameters) | package(near-vm-runner) | test(/ml_dsa|mldsa|ml-dsa|MLDSA|pq_|post_quantum/) | test(combined_transactions_size_limit) | test(universal_account)) and not test(/ultra_slow_test/)
+
+## 1. baseline, aws-lc-rs, unpatched checkout (job nc-base-tests)
+     Summary [  28.624s] 850 tests run: 850 passed (20 slow), 3150 skipped
+
+## 2. patched, lean, FIRST run (job nc-lean-tests): the differential test was still named verify_verdicts_agree_on_mutations and hit the 15 s nextest limit; the exit code 100 is this run
+     Summary [  26.958s] 857 tests run: 856 passed (15 slow), 1 timed out, 3150 skipped
+     TIMEOUT [  15.018s] (829/857) near-crypto::ml_dsa_backend_diff verify_verdicts_agree_on_mutations
+
+## 3. patched, lean, FINAL patch (job final2; the test is renamed slow_test_verify_verdicts_agree_on_mutations, as in nearcore.patch)
+     Summary [  28.570s] 857 tests run: 857 passed (19 slow), 3150 skipped
+PASS near-client pending_transaction_queue::tests::test_pending_nonce_round_trips_an_ml_dsa_handle
+PASS near-crypto signature::tests::test_ml_dsa_65_borsh_tag_and_length
+PASS near-crypto signature::tests::test_ml_dsa_65_byte_lengths
+PASS near-crypto signature::tests::test_ml_dsa_65_display_roundtrip
+PASS near-crypto signature::tests::test_ml_dsa_65_from_seed_deterministic
+PASS near-crypto signature::tests::test_ml_dsa_65_hash_prefix_not_a_key_type
+PASS near-crypto signature::tests::test_ml_dsa_65_known_answer
+PASS near-crypto signature::tests::test_ml_dsa_65_pubkey_hash_deterministic
+PASS near-crypto signature::tests::test_ml_dsa_65_tag_mismatch
+PASS near-crypto signature::tests::test_ml_dsa_65_tampered_message_rejected
+PASS near-crypto signature::tests::test_ml_dsa_65_tampered_signature_rejected
+PASS near-crypto signature::tests::test_ml_dsa_65_truncated_pubkey_rejected
+PASS near-crypto signature::tests::test_ml_dsa_65_wrong_key_rejected
+PASS near-crypto::ml_dsa_backend_diff backend_is_lean
+PASS near-crypto::ml_dsa_backend_diff cross_sign_verify
+PASS near-crypto::ml_dsa_backend_diff der_spki_is_not_reachable_with_fixed_length_keys
+PASS near-crypto::ml_dsa_backend_diff keygen_matches_aws_from_seed
+PASS near-crypto::ml_dsa_backend_diff near_crypto_public_api_roundtrip
+PASS near-crypto::ml_dsa_backend_diff secret_key_acceptance
+PASS near-crypto::ml_dsa_backend_diff slow_test_verify_verdicts_agree_on_mutations
+PASS near-mirror genesis::test::test_map_records_mldsa65_access_key
+PASS near-primitives fees::tests::ml_dsa_65_delegate_inner_verify_charged_as_burnt_gas
+PASS near-primitives fees::tests::ml_dsa_65_outer_verify_charged_as_burnt_gas
+PASS near-primitives fees::tests::ml_dsa_65_verify_compute_cost_independent_from_gas
+PASS near-primitives fees::tests::ml_dsa_65_verify_gas_zero_by_default
+PASS near-primitives transaction::tests::test_action_pq_required_ml_dsa_actions
+PASS near-primitives transaction::tests::test_check_valid_for_config_ml_dsa_in_delegate_accepted
+PASS near-primitives transaction::tests::test_check_valid_for_config_ml_dsa_signer_accepted
+PASS near-primitives transaction::tests::test_wire_size_ml_dsa_signature_is_large
+PASS near-primitives trie_key::tests::test_key_for_access_key_ml_dsa_65_hashes
+PASS near-rosetta-rpc models::tests::test_curve_type_from_ml_dsa_65
+PASS near-rosetta-rpc models::tests::test_ml_dsa_65_serde_wire_string
+PASS near-rosetta-rpc models::tests::test_signature_type_try_from_ml_dsa_65
+PASS near-runtime access_keys::tests::test_ml_dsa_65_access_key_storage_scales
+PASS near-runtime access_keys::tests::test_ml_dsa_65_trie_id_len_is_hash_size
+PASS near-vm-runner logic::tests::ml_dsa_verify::test_ml_dsa_verify_all_inputs_from_registers
+PASS near-vm-runner logic::tests::ml_dsa_verify::test_ml_dsa_verify_empty_signature_length
+PASS near-vm-runner logic::tests::ml_dsa_verify::test_ml_dsa_verify_invalid_public_key_length
+PASS near-vm-runner logic::tests::ml_dsa_verify::test_ml_dsa_verify_invalid_signature_length
+PASS near-vm-runner logic::tests::ml_dsa_verify::test_ml_dsa_verify_malformed_public_key
+PASS near-vm-runner logic::tests::ml_dsa_verify::test_ml_dsa_verify_tampered_message
+PASS near-vm-runner logic::tests::ml_dsa_verify::test_ml_dsa_verify_tampered_signature
+PASS near-vm-runner logic::tests::ml_dsa_verify::test_ml_dsa_verify_valid_signature
+PASS near-vm-runner logic::tests::ml_dsa_verify::test_ml_dsa_verify_wrong_public_key
+PASS near-vm-runner tests::ml_dsa_verify_integration::test_ml_dsa_verify_integration_feature_gate_off_fails_to_link
+PASS near-vm-runner tests::ml_dsa_verify_integration::test_ml_dsa_verify_integration_invalid_public_key_length_aborts
+PASS near-vm-runner tests::ml_dsa_verify_integration::test_ml_dsa_verify_integration_invalid_signature_length_aborts
+PASS near-vm-runner tests::ml_dsa_verify_integration::test_ml_dsa_verify_integration_tampered_message
+PASS near-vm-runner tests::ml_dsa_verify_integration::test_ml_dsa_verify_integration_valid_signature
+PASS near-vm-runner tests::ml_dsa_verify_integration::test_ml_dsa_verify_integration_wrong_public_key
+PASS test-loop-tests tests::combined_transactions_size_limit::slow_test_combined_tx_size_limit_counts_ml_dsa_signature
+PASS test-loop-tests tests::ml_dsa_access_key::test_ml_dsa_65_full_access_key
+PASS test-loop-tests tests::ml_dsa_access_key::test_ml_dsa_65_function_call_key
+PASS test-loop-tests tests::ml_dsa_verification_cost::test_ml_dsa_inner_delegate_verify_charged_as_gas
+PASS test-loop-tests tests::ml_dsa_verification_cost::test_ml_dsa_outer_tx_verify_charged_as_gas
+PASS test-loop-tests tests::ml_dsa_verify::test_ml_dsa_verify_invalid_returns_0
+PASS test-loop-tests tests::ml_dsa_verify::test_ml_dsa_verify_pre_activation_call_fails
+PASS test-loop-tests tests::ml_dsa_verify::test_ml_dsa_verify_valid_returns_1
+
+## 4. patched, DEFAULT backend (aws-lc-rs), near-crypto only (job final)
+     Summary [   0.087s] 37 tests run: 37 passed, 0 skipped
+
+## 5. nearcore-CI-style RUSTFLAGS (job nc-ci-flags): RUSTFLAGS="-D warnings" replaces the .cargo/config.toml target-feature list, so baseline x86-64 code; near-crypto only, -E all() (includes slow tests)
+### near-crypto 
+     Summary [   0.149s] 38 tests run: 38 passed, 0 skipped
+### near-crypto --features ml-dsa-lean
+     Summary [  10.910s] 45 tests run: 45 passed, 1 skipped
+### release differential, lean, same RUSTFLAGS
+test backend_is_lean ... ok
+test der_spki_is_not_reachable_with_fixed_length_keys ... ok
+test keygen_matches_aws_from_seed ... ok
+test near_crypto_public_api_roundtrip ... ok
+test secret_key_acceptance ... ok
+test cross_sign_verify ... ok
+test slow_test_verify_verdicts_agree_on_mutations ... ok
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.85s
