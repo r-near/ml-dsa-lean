@@ -1,4 +1,26 @@
-# Assurance case for reviewers
+# Assurance detail and history
+
+**Read [assurance.md](assurance.md) first.** It is the current-state document: what is proved, what is trusted, what is
+tested and how strongly, what is not covered, and the command that reproduces each claim. This file is where the
+provenance is kept. It is the former `docs/assurance.md` moved whole, so that no fact, SHA or measurement is lost:
+the round-by-round log of the fast-verify work (section 0, rounds 1 to 14, with the gate tables, the audit-finding
+tables and the dated evidence) and the detailed reference sections 1 to 12 that `assurance.md` summarizes.
+
+**Section numbers, round names and finding IDs (CT-1, E-4, Z-1, ...) are unchanged from the former `docs/assurance.md`.**
+A reference in a dated file (a CHANGELOG entry, `bench/results/`, `checkct/results/`) to "`docs/assurance.md` section 4" or
+to "Round 13" therefore means that section or round of this file. Where a sentence below says "this document", it means
+the former `docs/assurance.md` as of 2026-11-11 (tree `d28ede8`) and not the current-state document.
+
+**Passages that were already stale when this file was made.** They are kept as written; the current-state document does not
+repeat them.
+- Section 1.1, the paragraph that begins "These theorems are about the scalar functions", and section 1.4, the sentences about
+  `verify_prepared_NN` inside "a second AVX2 wrapper" and `verifying_key_NN` being "dispatched": both describe the run-time
+  AVX2 dispatch that round 12 removed. Since round 12 `api::verify_NN` and `api::verifying_key_NN` call the 4-way functions
+  directly in every build (section 1.9, "How the API reaches the 4-way code"; section 2).
+- Section 0, the bullet "Apple Silicon" (end of the CI list): it says the `macos-arm64` job fails on three
+  `stack_residue_signing_key` tests. `ci.yml` now runs only `test-default` and `test-zeroize-release` there, and section 7
+  (Z-1) says the release zeroize suite passes 28 of 28 on an aarch64 macOS machine. Whether the job passes on GitHub was not
+  checked when this file was made.
 
 What `ml-dsa-lean` establishes about its public `api`, under which assumptions, what it does not cover, and how to
 reproduce each piece of evidence. Every statement cites a Lean source, a script, a test or a checked-in result. Nothing
