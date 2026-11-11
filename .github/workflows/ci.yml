@@ -7,9 +7,13 @@ name: CI
 # extraction report, and that the axiom gate fails on a missing or empty list. A macOS arm64 job (macos-arm64) runs the
 # default and the zeroize suites on Apple Silicon, which the Linux jobs do not cover.
 #
+# The Lean proofs (job `lean`) run on every pull request and every push to main, on the free ubuntu-latest runner, and
+# ci-ok waits for them, so they are a required check through ci-ok. Since the three witness proofs were split into small
+# kernel checks (Proofs.SampleS, Proofs.SkWellFormed, Proofs.Witnesses), no module peaks above 10.6 GB.
+#
 # Heavy checks are elsewhere:
-#   - Lean proofs and the kernel witnesses, and a re-run of the extraction compared with the committed lean/Impl:
-#     .github/workflows/lean.yml (needs a large runner, never runs on pull requests).
+#   - The kernel witnesses (scripts/witness-check.sh, about 46 GB): .github/workflows/lean.yml, manual or weekly, on the
+#     large runner named by the repository variable LEAN_HEAVY_RUNNER.
 #   - The BINSEC constant-time harness (checkct/): manual, far too heavy for CI.
 #
 # This workflow uses no secrets and a read-only token, so it is safe for pull requests from forks.
@@ -195,11 +199,98 @@ jobs:
         # 60 s per target is a smoke run (ci.sh default), not a fuzzing campaign.
         run: bash scripts/ci.sh --strict --fuzz-secs 60 --only "fuzz-$TARGET"
 
-  # One required status check for branch protection: it fails if any job above failed or was skipped by a failure.
+  # The Lean proof gate on the free runner (4 vCPU, 16 GB RAM; disk below). It runs the
+  # same steps the lean-check job of lean.yml used to run, in order: scripts/setup-tools.sh, the fast check, a re-extraction
+  # of src/ into an empty directory compared with lean/Impl, then scripts/lean-check.sh (the build of the default targets, the
+  # axiom gates over the headline, keccak4 and fast-verify lists, the no-declarations scan, the reachable-declaration count,
+  # the cfg inventory, the README counts and the feature-independence gate). Every run is a cold build.
+  #
+  # It runs on every pull request and every push to main, with no path filter, so ci-ok can require it without a skip rule.
+  # It uses no secrets, so it is also safe for pull requests from forks. The workflow-level concurrency group above cancels
+  # a superseded pull request run and never cancels a push to main.
+  lean:
+    name: lean
+    runs-on: ubuntu-latest
+    # Cold build measured at 1455 to 2048 s (see LEAN_NUM_THREADS); setup adds about 5 min. 170 min leaves a wide margin
+    # under the 6 h hard limit and still ends a hung job in good time. lean-check.sh bounds `lake build` itself (7200 s).
+    timeout-minutes: 170
+    permissions:
+      contents: read # check out the repository (the job uses no secrets and writes nothing)
+    env:
+      # Parallelism of the Lean task pool, and with it the number of `lean` processes Lake runs at once. Measured on this
+      # runner's shape (container with --memory 16g --memory-swap 16g, 4 pinned cores): default 1455 s and 13.8 GB peak,
+      # 2 gives 1596 s and 12.7 GB, 1 gives 2048 s and 9.1 GB. The default leaves too little room on a runner that also runs
+      # the OS, so this job uses 2. If a run dies with exit code 137 (out of memory), set it to 1 (about 9 GB, 8 min slower).
+      LEAN_NUM_THREADS: "2"
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Mathlib and the other Lake packages are 7.8 GB, the Lean toolchain 2.8 GB, the nightly Rust toolchain 2.1 GB and the
+      # extraction tools 0.7 GB: 13.8 GB before the build output. The standard runner is documented with about 14 GB free on
+      # `/`, which would not be enough; on the first run of this job in this public repository `/` was 145 GB with 88 GB free
+      # (93 GB free at the end), so this step is margin against a smaller image, not a need. It costs about 90 s. It deletes
+      # preinstalled software this job does not use (the usual dependency-free way to make room).
+      - name: Free disk space
+        run: |
+          set -euo pipefail
+          echo "before:"; df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          echo "after:"; df -h /
+          free -g
+
+      - name: Set up Lean
+        uses: ./.github/actions/setup-lean
+
+      # Pinned, checksum-verified Charon, Aeneas and cargo-hax (scripts/setup-tools.sh; needs rustup, curl, zstd).
+      - name: Install the extraction tools
+        run: |
+          if ! command -v zstd >/dev/null; then sudo apt-get update && sudo apt-get install -y zstd; fi
+          scripts/setup-tools.sh
+
+      # Re-runs the extraction (Charon + Aeneas on src/) into a new, empty directory and fails unless every file there is
+      # byte-identical to the committed lean/Impl and there are no extra files in either, so the proofs below are about the
+      # extraction of the committed Rust. This is the check that a coordinated edit of lean/Impl and the extraction report
+      # does not pass. Extracting into the checkout instead would let a symlinked lean/Impl or an extra file hide the
+      # difference; the fast check rejects symlinks anywhere in lean/Impl.
+      - name: Fast check, then re-extract into an empty directory and compare with lean/Impl
+        run: |
+          set -euo pipefail
+          python3 -I scripts/extract_hash.py check
+          out="$RUNNER_TEMP/extracted-impl"
+          rm -rf "$out"
+          python3 scripts/extract.py --out "$out"
+          if ! diff -r lean/Impl "$out"; then
+            echo "::error::lean/Impl is not the extraction of src/: run scripts/extract.py and commit lean/Impl"
+            exit 1
+          fi
+          echo "lean/Impl is byte-identical to a fresh extraction of src/ ($(find "$out" -type f | wc -l) files)"
+
+      # Prints "LEAN CHECK OK: " only if the build and every gate pass (see scripts/lean-check.sh).
+      - name: scripts/lean-check.sh
+        run: |
+          set -euo pipefail
+          # Log memory every 30 s so a kill by the out-of-memory killer shows how close the run was.
+          ( while sleep 30; do echo "mem: $(free -m | awk '/^Mem:/ {print "used " $3 " MB, available " $7 " MB"}') | disk: $(df -h / | awk 'NR==2 {print $4 " free"}')"; done ) &
+          sampler=$!
+          trap 'kill "$sampler" 2>/dev/null || true' EXIT
+          scripts/lean-check.sh
+
+      - name: Report disk and memory at the end
+        if: always()
+        run: |
+          df -h /
+          free -g
+          du -sh lean/.lake "$HOME/.elan" "$HOME/hax-tools" 2>/dev/null || true
+
+  # One required status check for branch protection: it fails if any job above failed, was cancelled or was skipped. `lean`
+  # is in the list, so a pull request that breaks a proof (or the extraction check) cannot merge.
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [rust, repo-checks, macos-arm64, deny, fuzz]
+    needs: [rust, repo-checks, macos-arm64, deny, fuzz, lean]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:

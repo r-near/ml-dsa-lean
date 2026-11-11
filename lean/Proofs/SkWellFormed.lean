@@ -427,14 +427,53 @@ theorem skWellFormed_keygen {sp : Spec.Params} (hp : StdParams sp) (F : Spec.Fue
     dsimp only
     omega
 
+/-- A slice of the all-zero list that stays inside it is an all-zero list. -/
+theorem slice_replicate_zero (n off len : Nat) (h : off + len ≤ n) :
+    slice (List.replicate n (0 : UInt8)) off len = List.replicate len 0 := by
+  unfold slice
+  rw [List.drop_replicate, List.take_replicate]
+  congr 1
+  omega
+
+/-- One kernel evaluation of the all-zero η-block of ML-DSA-44 (96 bytes, `η = 2`): every coefficient is `+η`.
+The two witnesses below reduce to one such block each (through `SkWF_iff_blocks`) instead of evaluating `skDecode`
+on the whole 2560-byte key, which needs several times the memory. -/
+theorem zero_eta_block_ok_44 : PolyInEta 2 (BitUnpack (List.replicate 96 0) 2 2) := by
+  decide +kernel
+
 /-- Satisfiable: the all-zero ML-DSA-44 key (every field `z = 0`, i.e. coefficient `+η`) is well-formed. -/
 theorem skWellFormed_zero_44 : skWellFormed Spec.ML_DSA_44 (List.replicate 2560 0) = true := by
+  rw [skWellFormed_eq_true_iff, SkWF_iff_blocks]
+  intro j hj
+  have hl : Spec.ML_DSA_44.ℓ = 4 := rfl
+  have hk : Spec.ML_DSA_44.k = 4 := rfl
+  have hb : 32 * bitlen (2 * Spec.ML_DSA_44.η) = 96 := by decide +kernel
+  have hη : Spec.ML_DSA_44.η = 2 := rfl
+  unfold BlockOK
+  rw [hb, hη, slice_replicate_zero _ _ _ (by rw [hl, hk] at hj; omega)]
+  exact zero_eta_block_ok_44
+
+/-- The first η-block of the key of `skWellFormed_bad_44`: `[7]` followed by 95 zeros decodes to coefficient
+`2 - 7 = -5` first. -/
+theorem bad_eta_block_44 : ¬ PolyInEta 2 (BitUnpack ([7] ++ List.replicate 95 0) 2 2) := by
   decide +kernel
 
 /-- Falsifiable: setting the first `s₁` field (bits 0..2 of byte 128) to `7` gives coefficient `2 - 7 = -5`,
 outside `[−2, 2]`. -/
 theorem skWellFormed_bad_44 :
     skWellFormed Spec.ML_DSA_44 (List.replicate 128 0 ++ [7] ++ List.replicate 2431 0) = false := by
-  decide +kernel
+  have h : ¬ SkWF Spec.ML_DSA_44 (List.replicate 128 0 ++ [7] ++ List.replicate 2431 0) := by
+    rw [SkWF_iff_blocks]
+    intro hall
+    have h0 := hall 0 (by decide +kernel)
+    unfold BlockOK at h0
+    have hb : 32 * bitlen (2 * Spec.ML_DSA_44.η) = 96 := by decide +kernel
+    have hη : Spec.ML_DSA_44.η = 2 := rfl
+    have hs : slice (List.replicate 128 0 ++ [7] ++ List.replicate 2431 0) (128 + 0 * 96) 96 =
+        [7] ++ List.replicate 95 0 := by decide +kernel
+    rw [hb, hη, hs] at h0
+    exact bad_eta_block_44 h0
+  unfold skWellFormed
+  exact decide_eq_false h
 
 end Proofs

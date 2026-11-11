@@ -1,31 +1,51 @@
 name: Lean
 
-# The Lean proof gate (scripts/lean-check.sh) and the kernel witnesses (scripts/witness-check.sh).
+# The kernel witnesses (scripts/witness-check.sh). Manual or weekly, on a large runner.
 #
-# THESE JOBS NEED A LARGE RUNNER
-#   Neither job fits a standard `ubuntu-latest` runner (4 vCPU, 16 GB RAM, 14 GB disk). Measured for this workflow, cold
-#   builds of scripts/lean-check.sh in containers with a hard memory limit (the partial build output was already 7.8 GB plus
-#   2.8 GB of toolchain, so the disk is also tight):
-#     - 16 GB, 4 CPUs: killed by the out-of-memory killer (Lean exit code 137) in Proofs.SampleS, about 6 minutes in.
-#     - 40 GB, 8 CPUs: also killed (exit code 137), in Proofs.SkWellFormed, after about 34 minutes (Proofs.Witnesses alone
-#       took 28 minutes). So lean-check's peak is above 40 GB at 8 CPUs, and its true peak is not recorded anywhere.
-#   `lake` builds modules in parallel, so the peak grows with the core count and the memory needed depends on the runner.
-#   A Docker CPU limit (`--cpus`) caps CPU time but not the CPU count the build sees, so the capped runs may have built
-#   more modules at once than an 8-vCPU runner would; the true peak on an 8-vCPU runner is not measured.
-#   scripts/witness-check.sh is documented at about 47 min cold and about 46 GB peak (24 GB for the largest declaration) in
-#   its header, measured on a many-core machine.
-#   So both jobs read their runner label from the repository variable LEAN_HEAVY_RUNNER:
-#     - Set it (Settings > Secrets and variables > Actions > Variables) to the label of a large hosted runner, for example
-#       a WarpBuild or other label with 64 GB of RAM or more. 32 GB is not enough for witness-check (about 46 GB), and
-#       lean-check was above 40 GB at 8 CPUs. If a run dies with exit code 137, rerun it or pick a runner with more memory.
-#     - Unset, the weekly run is skipped; a manual dispatch falls back to `ubuntu-latest`, where the jobs fail with exit
-#       code 137 (out of memory).
+# WHERE THE LEAN PROOFS RUN
+#   The proof gate (scripts/lean-check.sh), with the extraction tools, the re-extraction compared with lean/Impl and the
+#   feature-independence gate, runs in .github/workflows/ci.yml (job `lean`) on every pull request and every push to main,
+#   on the free `ubuntu-latest` runner (4 vCPU, 16 GB RAM), and the aggregate job `ci-ok` needs it, so it is a required check. It used to be the `lean-check` job of this
+#   file, which needed a large runner that was never configured, so the proofs never ran on GitHub.
+#
+#   Why it fits the free runner now. Measured in Ubuntu 24.04 containers with `--memory 16g --memory-swap 16g`, 4 pinned
+#   cores and `--cpus 4`, each run cold (fresh elan, Rust and Lake directories; only `lake exe cache get` downloads):
+#     - Before the split of three witness proofs, three modules did not fit: with `LEAN_NUM_THREADS=1` (one `lean` process at
+#       a time, so the per-module resident sizes are clean) Proofs.SkWellFormed needed 35.5 GB, Proofs.Witnesses 33.3 GB and
+#       Proofs.SampleS about 19 GB of anonymous memory (21.0 GB cgroup peak). The default and one-thread builds were killed
+#       by the out-of-memory killer (Lean exit code 137) in Proofs.SampleS. The whole build needed at least 38.5 GB even one
+#       module at a time.
+#     - After it (the commits "check the SkWellFormed witnesses one eta-block at a time" and "check the ExpandS witness ... one
+#       RejBoundedPoly at a time"; theorem statements unchanged), every module peaks at 10.6 GB or less, and the whole
+#       lean-check job passed cold in that container:
+#         LEAN_NUM_THREADS=1: 2048 s, 9.1 GB peak.   LEAN_NUM_THREADS=2: 1596 s, 12.7 GB.   Default (up to 5 processes): 1455 s, 13.8 GB.
+#       The ci.yml job uses 2. `lake` has no `-j` option; `LEAN_NUM_THREADS` sets the size of the Lean task pool, and with it
+#       the number of `lean` processes Lake runs at once.
+#     - Disk: Mathlib and the other Lake packages are 7.8 GB, the Lean toolchain 2.8 GB, the nightly Rust toolchain 2.1 GB and
+#       the extraction tools 0.7 GB: 13.8 GB before the rest of the build output, against the documented 14 GB free on `/`. The
+#       job deletes preinstalled software it does not use (dotnet, Android, GHC, CodeQL, Boost) and prints `df -h` before and
+#       after. On the first GitHub run (2026-11-11, this public repository) `/` was 145 GB with 88 GB free before the cleanup,
+#       106 GB after and 93 GB at the end, so the cleanup was margin, not a need.
+#     - The first GitHub run (ubuntu-latest, `LEAN_NUM_THREADS=2`): the `lean` job took 36 min 47 s (the `lean-check.sh` step
+#       33 min 44 s; setup, tools and re-extraction about 3 min; the cleanup 87 s). Sampled every 30 s: at most 12.5 GB used,
+#       at least 3.4 GB available, `lean/.lake` 8.0 GB at the end.
+#
+# WHAT STILL NEEDS A LARGE RUNNER
+#   scripts/witness-check.sh builds Proofs.TopWitnessCorrect and the other `Proofs.TopWitness*` modules, which the default
+#   targets do not import, and then the default targets too, for the whole-environment
+#   scan. It is documented at about 47 min cold and about 46 GB peak across modules (24 GB for the largest declaration),
+#   measured on a many-core machine, so it cannot run on `ubuntu-latest` (it dies with exit code 137, an out-of-memory kill,
+#   not a proof failure). It reads its runner label from the repository variable LEAN_HEAVY_RUNNER:
+#     - Set it (Settings > Secrets and variables > Actions > Variables) to the label of a large hosted runner with 64 GB of
+#       RAM or more (32 GB is not enough). If a run dies with exit code 137, rerun it or pick a runner with more memory.
+#     - Unset, the weekly run is skipped; a manual dispatch falls back to `ubuntu-latest`, where the job fails with exit code 137.
 #   Every run is a cold build: nothing is cached between runs.
 #
 # TRIGGERS
 #   Only a manual dispatch and a weekly schedule. There is deliberately no pull_request trigger (a pull request must not
-#   spend large-runner minutes or run its code there) and no push trigger (a push would fail without a large runner).
-#   The workflow uses no secrets and a read-only token, and checks out the default ref of the event only.
+#   spend large-runner minutes or run its code there) and no push trigger. The witnesses are not a required check; they are run
+#   by hand before a release (docs/reproduce.md, section 2.3). The workflow uses no secrets and a read-only token, and checks
+#   out the default ref of the event only.
 
 on:
   workflow_dispatch:
@@ -42,55 +62,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  lean-check:
-    name: lean-check
-    # Needs a large runner, see the header. Peak memory is unrecorded; it exceeded 40 GB at 8 CPUs.
-    runs-on: ${{ vars.LEAN_HEAVY_RUNNER || 'ubuntu-latest' }}
-    # The weekly run is skipped until a large runner is configured; a manual dispatch always runs.
-    if: ${{ vars.LEAN_HEAVY_RUNNER != '' || github.event_name == 'workflow_dispatch' }}
-    timeout-minutes: 120
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Lean
-        uses: ./.github/actions/setup-lean
-
-      # Re-runs the extraction (Charon + Aeneas on src/) into a new, empty directory and fails unless every file there is
-      # byte-identical to the committed lean/Impl and there are no extra files in either, so the proofs below are about the
-      # extraction of the committed Rust. The tools are the pinned, checksum-verified ones from scripts/setup-tools.sh.
-      # Needs rustup, curl, zstd. Extracting into the checkout instead would let a symlinked lean/Impl or an extra file
-      # hide the difference; the fast check below rejects symlinks anywhere in lean/Impl.
-      - name: Install the extraction tools
-        run: |
-          if ! command -v zstd >/dev/null; then sudo apt-get update && sudo apt-get install -y zstd; fi
-          scripts/setup-tools.sh
-
-      - name: Re-extract into an empty directory and compare with lean/Impl
-        run: |
-          set -euo pipefail
-          python3 -I scripts/extract_hash.py check
-          out="$RUNNER_TEMP/extracted-impl"
-          rm -rf "$out"
-          python3 scripts/extract.py --out "$out"
-          if ! diff -r lean/Impl "$out"; then
-            echo "::error::lean/Impl is not the extraction of src/: run scripts/extract.py and commit lean/Impl"
-            exit 1
-          fi
-          echo "lean/Impl is byte-identical to a fresh extraction of src/ ($(find "$out" -type f | wc -l) files)"
-
-      # Builds the default targets (Impl, Spec, Proofs), fails on any `error:` or `sorry` in the log, then runs the axiom
-      # gate over lean/headline-theorems.txt and the whole-environment scan for axiom, opaque, sorry, admit, native_decide,
-      # implemented_by and extern (scripts/check-no-decls.sh, with its injected-declaration self-test), the reachable-declaration count
-      # (scripts/reachable-defs.sh), the cfg inventory of src/, and the feature-independence gate (a second extraction of src/
-      # under +avx,+avx2 target features, compared with lean/Impl; scripts/check-feature-independence.sh, which uses the tools
-      # installed above). Prints "LEAN CHECK OK"
-      # only if all pass. The script has its own 3000 s `lake build` timeout.
-      - name: scripts/lean-check.sh
-        run: scripts/lean-check.sh
-
   witness-check:
     name: witness-check
     # This job needs about 46 GB of memory and a large runner (WarpBuild or similar, 16 vCPU / 64 GB) to pass. On a
