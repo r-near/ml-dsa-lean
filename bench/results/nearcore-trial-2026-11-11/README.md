@@ -325,5 +325,5 @@ cargo test --release --locked -p near-vm-runner -p near-crypto [--features near-
 cargo test --release --locked -p near-crypto --features ml-dsa-lean --test ab_bench -- --ignored --nocapture   # run with taskset on a quiet core
 ```
 
-Files here: `nearcore.patch`, `probes.patch`, `raw/` (unedited outputs: differential, A/B bench, criterion, estimator,
+Files here: `nearcore.patch`, `probes.patch`, `raw/` (job outputs, trimmed to the relevant lines: differential, nextest, A/B bench, criterion, estimator,
 distribution benches, stack probes). Baseline test list and counts are in the Tests section.
