@@ -357,9 +357,9 @@ What ties the shipped Rust to the proved Lean (the proofs are about `lean/Impl`,
   report does not pass. Then `scripts/lean-check.sh`: the full build, the axiom gates, `check-no-decls.sh` with its environment scan, `reachable-defs.sh`, the cfg inventory, the README counts and
   the feature-independence gate. **This closes the finding of the round 14 note ("CI (open)")**: a pull request that breaks a proof (the audit of
   fv-p13 showed the gap by replacing a proof with an undefined identifier) now fails `lean` and with it `ci-ok`. The job uses `LEAN_NUM_THREADS=2`, deletes
-  preinstalled software for disk space, has a 170-minute timeout, and runs without secrets (so also for forks). It is possible only because
-  `Proofs.SampleS`, `Proofs.SkWellFormed` and `Proofs.Witnesses` were restructured (next bullet). The run on GitHub is the deciding test of the fit; the
-  numbers below are from a container with the runner's limits. A GitHub-hosted run is still no substitute for the build-box gate on a release: `scripts/ci.sh --strict --lean` remains the
+  preinstalled software for disk margin, has a 170-minute timeout, and runs without secrets (so also for forks). It is possible only because
+  `Proofs.SampleS`, `Proofs.SkWellFormed` and `Proofs.Witnesses` were restructured (next bullet). The first run on GitHub (2026-11-11, `ubuntu-latest`) passed: the `lean` job took 36 min 47 s, with at most 12.5 GB of memory used and at least 3.4 GB available
+  (sampled every 30 s) and 88 GB of disk free before the cleanup; the numbers in the next bullet are from a container with the runner's limits. A GitHub-hosted run is still no substitute for the build-box gate on a release: `scripts/ci.sh --strict --lean` remains the
   recorded gate of each round.
 - Witness restructuring (for the free runner; theorem statements, `lean/*-theorems.txt`, `lean/Spec` and `lean/Impl` unchanged): before it, `Proofs.SkWellFormed` peaked at 35.5 GB,
   `Proofs.Witnesses` at 33.3 GB and `Proofs.SampleS` at about 19 GB, so the default build needed at least 38.5 GB even one module at a time and was killed at 16 GB. Each

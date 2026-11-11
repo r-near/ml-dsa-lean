@@ -127,9 +127,8 @@ directory of already built Lake packages (same Aeneas revision) to seed `lean/.l
 GitHub runs this script on every pull request and every push to `main` (`.github/workflows/ci.yml`, job `lean`, on the free `ubuntu-latest`
 runner; `ci-ok` needs it, so it is a required check). The job does what sections 2.1 and 2.2 describe, in this order: `scripts/setup-tools.sh`,
 `python3 -I scripts/extract_hash.py check`, `scripts/extract.py` into an empty directory with `diff -r` against `lean/Impl`, then
-`scripts/lean-check.sh`. It sets `LEAN_NUM_THREADS=2` and deletes preinstalled software (dotnet, Android, GHC, CodeQL, Boost) to make room
-on the 14 GB disk. A cold run took 1596 s for the build with `LEAN_NUM_THREADS=2` (peak 12.7 GB) in a container with the runner's limits
-(16 GB, 4 cores); one thread took 2048 s (9.1 GB). On a machine with less than about 16 GB of RAM set `LEAN_NUM_THREADS=1`.
+`scripts/lean-check.sh`. It sets `LEAN_NUM_THREADS=2` and deletes preinstalled software (dotnet, Android, GHC, CodeQL, Boost) for disk margin
+(the documented runner disk is 14 GB free; the first GitHub run saw 88 GB free). In a container with the runner's limits (16 GB, 4 cores) a cold build took 1596 s with `LEAN_NUM_THREADS=2` (peak 12.7 GB) and 2048 s with one thread (9.1 GB); the first GitHub run (2026-11-11) took 36 min 47 s for the whole job, at most 12.5 GB used and at least 3.4 GB available. On a machine with less than about 16 GB of RAM set `LEAN_NUM_THREADS=1`.
 
 To read the statements the gate covers, start with the `*_exact` theorems: `lean/Proofs/PartialAPI.lean` (Verify),
 `PartialKeyGen.lean`, `PartialSign.lean` and `PkFromSk.lean` (names in assurance.md, section 1.1). The specification they refer to is

@@ -5,8 +5,7 @@ name: Lean
 # WHERE THE LEAN PROOFS RUN
 #   The proof gate (scripts/lean-check.sh), with the extraction tools, the re-extraction compared with lean/Impl and the
 #   feature-independence gate, runs in .github/workflows/ci.yml (job `lean`) on every pull request and every push to main,
-#   on the free `ubuntu-latest` runner (4 vCPU, 16 GB RAM, about 14 GB free disk before the job removes preinstalled
-#   software), and the aggregate job `ci-ok` needs it, so it is a required check. It used to be the `lean-check` job of this
+#   on the free `ubuntu-latest` runner (4 vCPU, 16 GB RAM), and the aggregate job `ci-ok` needs it, so it is a required check. It used to be the `lean-check` job of this
 #   file, which needed a large runner that was never configured, so the proofs never ran on GitHub.
 #
 #   Why it fits the free runner now. Measured in Ubuntu 24.04 containers with `--memory 16g --memory-swap 16g`, 4 pinned
@@ -23,8 +22,13 @@ name: Lean
 #       The ci.yml job uses 2. `lake` has no `-j` option; `LEAN_NUM_THREADS` sets the size of the Lean task pool, and with it
 #       the number of `lean` processes Lake runs at once.
 #     - Disk: Mathlib and the other Lake packages are 7.8 GB, the Lean toolchain 2.8 GB, the nightly Rust toolchain 2.1 GB and
-#       the extraction tools 0.7 GB: 13.8 GB before the rest of the build output, against about 14 GB free on `/`. The job
-#       deletes preinstalled software it does not use (dotnet, Android, GHC, CodeQL, Boost) and prints `df -h` before and after.
+#       the extraction tools 0.7 GB: 13.8 GB before the rest of the build output, against the documented 14 GB free on `/`. The
+#       job deletes preinstalled software it does not use (dotnet, Android, GHC, CodeQL, Boost) and prints `df -h` before and
+#       after. On the first GitHub run (2026-11-11, this public repository) `/` was 145 GB with 88 GB free before the cleanup,
+#       106 GB after and 93 GB at the end, so the cleanup was margin, not a need.
+#     - The first GitHub run (ubuntu-latest, `LEAN_NUM_THREADS=2`): the `lean` job took 36 min 47 s (the `lean-check.sh` step
+#       33 min 44 s; setup, tools and re-extraction about 3 min; the cleanup 87 s). Sampled every 30 s: at most 12.5 GB used,
+#       at least 3.4 GB available, `lean/.lake` 8.0 GB at the end.
 #
 # WHAT STILL NEEDS A LARGE RUNNER
 #   scripts/witness-check.sh builds Proofs.TopWitnessCorrect and the other `Proofs.TopWitness*` modules, which the default

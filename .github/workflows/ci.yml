@@ -199,7 +199,7 @@ jobs:
         # 60 s per target is a smoke run (ci.sh default), not a fuzzing campaign.
         run: bash scripts/ci.sh --strict --fuzz-secs 60 --only "fuzz-$TARGET"
 
-  # The Lean proof gate on the free runner (4 vCPU, 16 GB RAM, about 14 GB free disk before the cleanup below). It runs the
+  # The Lean proof gate on the free runner (4 vCPU, 16 GB RAM; disk below). It runs the
   # same steps the lean-check job of lean.yml used to run, in order: scripts/setup-tools.sh, the fast check, a re-extraction
   # of src/ into an empty directory compared with lean/Impl, then scripts/lean-check.sh (the build of the default targets, the
   # axiom gates over the headline, keccak4 and fast-verify lists, the no-declarations scan, the reachable-declaration count,
@@ -228,9 +228,11 @@ jobs:
         with:
           persist-credentials: false
 
-      # The Lean toolchain, Mathlib and the other Lake packages are 7.8 GB, the Lean toolchain 2.8 GB, the nightly Rust
-      # toolchain 2.1 GB and the extraction tools 0.7 GB: 13.8 GB before the build output, against about 14 GB free on `/`.
-      # Delete preinstalled software this job does not use (the usual dependency-free way to make room).
+      # Mathlib and the other Lake packages are 7.8 GB, the Lean toolchain 2.8 GB, the nightly Rust toolchain 2.1 GB and the
+      # extraction tools 0.7 GB: 13.8 GB before the build output. The standard runner is documented with about 14 GB free on
+      # `/`, which would not be enough; on the first run of this job in this public repository `/` was 145 GB with 88 GB free
+      # (93 GB free at the end), so this step is margin against a smaller image, not a need. It costs about 90 s. It deletes
+      # preinstalled software this job does not use (the usual dependency-free way to make room).
       - name: Free disk space
         run: |
           set -euo pipefail
