@@ -1,4 +1,4 @@
-# Fast verify (docs/assurance.md section 1.9): the 4-way Keccak theorems. Checked by
+# Fast verify (docs/assurance-history.md section 1.9): the 4-way Keccak theorems. Checked by
 #   scripts/check-axioms.sh --list keccak4-theorems.txt --no-impl
 # (the extracted keccak4 defs are covered by the default run over lean/Impl/Funs.lean).
 # The 4-way Keccak is plain Rust (no trait, no intrinsics): one scalar round on a 25-lane state, two rounds on one of the

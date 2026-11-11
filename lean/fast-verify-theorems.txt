@@ -1,4 +1,4 @@
-# Fast verify (docs/assurance.md section 1.9): the 4-way SHAKE128 sampler, the 4-way ExpandA and the 4-way verify body (all
+# Fast verify (docs/assurance-history.md section 1.9): the 4-way SHAKE128 sampler, the 4-way ExpandA and the 4-way verify body (all
 # over the plain-Rust `keccak4.keccak_f1600_x4`, proved equal to four scalar permutations in keccak4-theorems.txt). The
 # public `api.verify_NN` and `api.verifying_key_NN` call these functions directly (no run-time choice, round 12). Checked by
 #   scripts/check-axioms.sh --list fast-verify-theorems.txt --no-impl
@@ -32,7 +32,7 @@ Proofs.ReprMat.unique
 Proofs.rustM_eq_of_partial
 Proofs.expand_a_x4_eq
 Proofs.expand_a_x4_eq_std
-# tr = H(pk, 64) in the fourth lane of the first 4-way ExpandA groups (docs/assurance.md 1.9, "tr in the fourth lane"):
+# tr = H(pk, 64) in the fourth lane of the first 4-way ExpandA groups (docs/assurance-history.md 1.9, "tr in the fourth lane"):
 # the sponge schedule of SHAKE256 by blocks (HS, blkT, Wb, xor17), the lane helpers of the extracted code, the four-lane
 # group sampler with the lane-3 absorb (total and partial), the group loop, the scalar finish and the whole function.
 Proofs.HS_succ
@@ -76,7 +76,7 @@ Proofs.verify_internal_x4_87_exact
 Proofs.verify_internal_x4_44_div_iff
 Proofs.verify_internal_x4_65_div_iff
 Proofs.verify_internal_x4_87_div_iff
-# The verify-only arithmetic (docs/assurance.md 1.9, "Verify-only arithmetic"): each function that replaced a shared,
+# The verify-only arithmetic (docs/assurance-history.md 1.9, "Verify-only arithmetic"): each function that replaced a shared,
 # constant-time one on verify's path is proved equal to the specification (and so to the shared function) on the
 # inputs verify gives it.
 # Lazy-reduction NTT and NTT^-1 (Shoup multiplication, bounds 2q per forward layer, doubling per inverse layer).

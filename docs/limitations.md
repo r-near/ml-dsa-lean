@@ -29,22 +29,22 @@ input.
 - **Extraction runs with `--cfg miri`**, so the proved code is the source with its `cfg(miri)` variants: the `black_box`
   barriers (`field::opaque_u32` and the RISC-V mask barrier) are the identity there (none is on a verify path). Nothing else differs:
   the crate has no `unsafe`, no CPU detection and no `cfg` that selects code by CPU feature, and the extraction is the same under every target feature
-  ([assurance.md](assurance.md) sections 1.9 and 2).
+  ([assurance.md](assurance.md) sections 1.5 and 3).
 - **The specification is trusted.** `lean/Spec` is our transcription of FIPS 204; the standard itself is not formalized. It
   has been cross-checked against test vectors and against ocaml-pq's independent transcription (proved equal in `xspec/`,
-  with the qualifiers in [assurance.md](assurance.md) section 1.8: their Sign loop stops after 821 attempts, their key import
+  with the qualifiers in [assurance.md](assurance.md) section 1.7: their Sign loop stops after 821 attempts, their key import
   rejects inconsistent keys that FIPS 204 accepts, and some directions assume their rejection samplers terminate).
 - **The `zeroize` feature is outside the proof.**
 - **Verify runs a 4-way body in every build, and rustc/LLVM compile it.** `verify_NN`, `verify_internal_NN` and `verifying_key_NN` call a 4-way body (4-way
   Keccak-f[1600], SHAKE128 and ExpandA, with `tr = H(pk, 64)` hashed in a spare lane); the prepared-key verify runs the scalar function. Lean proves the 4-way body equal to the
   scalar verify on every input, divergence included, and the public functions call it directly
-  (`lean/fast-verify-theorems.txt`, [assurance.md](assurance.md) section 1.9). The crate has no `unsafe`, no `#[target_feature]` function and no
+  (`lean/fast-verify-theorems.txt`, [assurance.md](assurance.md) section 1.5). The crate has no `unsafe`, no `#[target_feature]` function and no
   run-time CPU detection (`#![forbid(unsafe_code)]` in every configuration); the Cargo feature `avx2` is a deprecated no-op. What is outside the proof is what is outside it for
   the rest of the crate: the compilation of the proved source by rustc and LLVM for the target features of the build. That the compiler turns the 4-way Keccak loop into 256-bit code
   with `-C target-feature=+avx2`, and aligns the stack frames, is a performance property (`scripts/check-avx2-inlining.sh`), not a premise. **The AVX2 speed needs AVX2
   target features at compile time**: under nearcore's current flags (no AVX2) the 4-way verify takes 38.6 / 57.9 / 96.2 µs for ML-DSA-44 / 65 / 87 and 26.1 / 38.4 / 60.7 µs with
   `+avx,+avx2` added, and a binary built with them runs only on a CPU with AVX2. nearcore's feature floor is not claimed to guarantee AVX2.
-  The 4-way verify uses more stack than the scalar one did (`verify_NN` 64 / 90 / 132 KB, `verifying_key_NN` 50 / 74 / 111 KB; [assurance.md](assurance.md) section 3).
+  The 4-way verify uses more stack than the scalar one did (`verify_NN` 64 / 90 / 132 KB, `verifying_key_NN` 50 / 74 / 111 KB; [assurance.md](assurance.md) section 5).
   The AVX2 NTT dispatch that 0.1.0's `avx2` feature gave Sign and KeyGen is gone: a user of that feature who builds without AVX2 target features signs 14 to 17 % and generates keys 2 to 6 % slower.
 - **HashML-DSA and external μ are not implemented.**
 - **Constant time is not proved.** It is checked on compiled code with BINSEC (next section).
@@ -58,7 +58,7 @@ found and fixed. The limits:
 
 - Verify, including the 4-way verify, handles only public data (public key, message, signature), so it has no probes and
   needs none. Sign and KeyGen do not call the 4-way body or the verify-only `poly_use_hint_pub` and `bit_unpack_pub`. The
-  full sweep was rerun on this tree in round 13 (assurance.md section 4, "Round 13 BINSEC sweep"): the default-build code of the checkct driver is identical to fv-p11's in every
+  full sweep was rerun on this tree in round 13 (assurance-history.md section 4, "Round 13 BINSEC sweep"): the default-build code of the checkct driver is identical to fv-p11's in every
   function (`ntt::dispatch` was restored; an address-masked comparison, not a verdict), and every probe of the nine cells that have a counterpart in the earlier sweep has the verdict it had
   there (`default`, `nearcore`, `nearcore-exact`, `nearcore-exact-novec`, the two `zeroize` builds, thumbv7em, riscv32imac, AArch64 without NEON; `nearcore-novec` and the
   NTT probes of `avx2` and `nearcore-avx2` are new cells). The `unknown` cells are the known ones (cut paths at VEX instructions in `nearcore-exact` and the `avx2` profiles, solver stalls on riscv32imac and
@@ -74,7 +74,7 @@ found and fixed. The limits:
 - Some probes on other targets (riscv32imac `prepare_sk_*`, AArch64 `prepare_sk_*` and `signing_key_*`) and the whole-Sign
   censuses have no verdict.
 
-Per-target counts: [assurance.md](assurance.md) section 4 and `../checkct/README.md`.
+Per-target counts: [assurance.md](assurance.md) section 4.1, the sweep tables in [assurance-history.md](assurance-history.md) section 4, and `../checkct/README.md`.
 
 ## Testing
 
@@ -90,7 +90,7 @@ Tests are evidence, not proofs.
 
 ## Known limitations
 
-The full list is [assurance.md](assurance.md) section 7.
+The full list is [assurance.md](assurance.md) section 6; the full text of each entry is in [assurance-history.md](assurance-history.md) sections 6 and 7.
 
 - **`zeroize`:** stack-residue wiping holds for optimized builds (release). The stack-residue scans fail at opt-level 0, except
   `signing_key_*`, and `keygen_44`/`keygen_65` fail at opt-level 1 on Linux (Z-1, open). Sign wipes the mask y and the other

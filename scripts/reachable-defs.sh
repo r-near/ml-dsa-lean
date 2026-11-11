@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Counts the extracted declarations reachable from the verify entry points of the public API, by walking the constants of the
 # Lean environment (scripts/lean/ReachableDefs.lean), and names any `ntt.*` function among them. Used for the audit in
-# docs/assurance.md section 3 ("every Rust line reachable from api::verify_* is in an extracted function"): the roots are
+# docs/assurance.md section 5 ("every Rust line reachable from api::verify_* is in an extracted function"): the roots are
 # api.verify_NN, api.verify_internal_NN, api.verifying_key_NN, api.verify_prepared_NN and api.verify_internal_prepared_NN for
 # NN in 44, 65, 87 (the plain names, which call the `_with` twins with the CPU-check stub).
 #

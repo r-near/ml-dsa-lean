@@ -3,7 +3,7 @@ import Proofs.TrGroup
 /-!
 # `expand_a_tr_into_x4`: the 3+1 ExpandA with `tr = H(pk, 64)` in the fourth lane
 
-The outer function of `docs/assurance.md` section 1.9. Its group loop takes three ExpandA entries per iteration through
+The outer function of `docs/assurance-history.md` section 1.9. Its group loop takes three ExpandA entries per iteration through
 `rej_ntt_poly_x3_tr` (proved in `TrGroup`), carrying the SHAKE256 sponge of `pk` as `(trs, t)`; the rest of the matrix is
 `expand_a_from_x4` (ExpandA4) and the unreached blocks of the hash are finished by `tr_finish_scalar` (TrLaneRust).
 The schedule (`g3`) is arbitrary here: correctness does not depend on it.

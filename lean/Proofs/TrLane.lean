@@ -3,7 +3,7 @@ import Proofs.ExpandA4
 /-!
 # `tr = H(pk, 64)`: the block schedule of the SHAKE256 absorb, lane by lane
 
-The pure side of `docs/assurance.md` section 1.9 ("`tr` in the fourth lane of the 4-way ExpandA"). For a message `M` (the
+The pure side of `docs/assurance-history.md` section 1.9 ("`tr` in the fourth lane of the 4-way ExpandA"). For a message `M` (the
 public key) the padded message `Pd M = pad101 136 M` has `M.length / 136 + 1` blocks of 136 bytes. `HS M t` is the sponge
 state after the first `t` blocks have been absorbed and permuted (`t = 0`: the zero state). `HS_succ` is the one
 step the extracted code takes per permutation: XOR block `t` into the state, permute. `shake256_byte` reads `SHAKE256(M, 64)`
