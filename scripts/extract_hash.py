@@ -32,7 +32,7 @@ first runs a self-test of both against manifests they must reject.
   - there is a symlink or special file anywhere in lean/Impl, or lean, lean/Impl or src is itself a symlink,
   - the roots in the report differ from scripts/extract-roots.txt.
 It needs no Lean, Charon or Aeneas. It is a consistency check of committed files (someone who edits both lean/Impl and
-the report passes it); the `lean.yml` workflow extracts into an empty directory and compares every file of the result
+the report passes it); the `lean` job of `ci.yml` extracts into an empty directory and compares every file of the result
 with lean/Impl, which catches that too.
 
 Unsupported inputs. The verified subset is a plain library crate, so extraction refuses (and `check` fails on) anything

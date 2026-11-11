@@ -32,7 +32,7 @@ echo "== axioms"
 scripts/check-axioms.sh | tee lean/.lake/axioms-summary.txt
 t3=$(date +%s)
 # The result goes to an untracked file: extract-report.json stays the deterministic record that plain extraction writes, so
-# that the lean.yml comparison with a fresh extraction passes after this pipeline.
+# that the ci.yml (job lean) comparison with a fresh extraction passes after this pipeline.
 python3 -I - <<PY
 import json
 r = {'lake_build': 'ok', 'axiom_gate': 'ok',

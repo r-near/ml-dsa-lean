@@ -29,7 +29,7 @@
 #                         under lean/Impl (recursively) or scripts/extract-roots.txt no longer match what
 #                         lean/Impl/extract-report.json recorded at the last extraction, or if there is a symlink in them
 #                         (scripts/extract_hash.py; the thorough check, re-running the extraction into an empty directory
-#                         and comparing every file, is in .github/workflows/lean.yml).
+#                         and comparing every file, is in the `lean` job of .github/workflows/ci.yml).
 #   axiom-gate-selftest   runs scripts/check-axioms.sh on a missing, an empty and a comment-only list and fails unless it
 #                         exits 1 with "AXIOM GATE FAIL", so the gate cannot silently pass on no declarations.
 #   no-decls-text         the text half of scripts/check-no-decls.sh: its self-test (each forbidden construct is found, comments

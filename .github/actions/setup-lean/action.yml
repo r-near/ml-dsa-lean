@@ -2,7 +2,7 @@ name: Set up Lean
 description: >-
   Install elan (pinned release, checksum verified) and put it on PATH. The scripts under scripts/ also put
   $HOME/.elan/bin on PATH themselves; elan then installs the toolchain named in lean/lean-toolchain on first use.
-  Run this after checking out the repository. Every run is a cold build (no cache), see .github/workflows/lean.yml.
+  Run this after checking out the repository. Every run is a cold build (no cache), see the header of .github/workflows/lean.yml.
 
 runs:
   using: composite
