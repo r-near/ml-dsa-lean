@@ -19,8 +19,9 @@ repeat them.
   directly in every build (section 1.9, "How the API reaches the 4-way code"; section 2).
 - Section 0, the bullet "Apple Silicon" (end of the CI list): it says the `macos-arm64` job fails on three
   `stack_residue_signing_key` tests. `ci.yml` now runs only `test-default` and `test-zeroize-release` there, and section 7
-  (Z-1) says the release zeroize suite passes 28 of 28 on an aarch64 macOS machine. Whether the job passes on GitHub was not
-  checked when this file was made.
+  (Z-1) says the release zeroize suite passes 28 of 28 on an aarch64 macOS machine. When this file was made, the `CI` run on
+  `main` at `d28ede8` (2026-11-11) showed `macos-arm64 test-default`, `macos-arm64 test-zeroize-release` and the `lean` job all
+  successful.
 
 What `ml-dsa-lean` establishes about its public `api`, under which assumptions, what it does not cover, and how to
 reproduce each piece of evidence. Every statement cites a Lean source, a script, a test or a checked-in result. Nothing

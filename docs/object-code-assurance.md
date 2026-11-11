@@ -306,7 +306,7 @@ sweep tables in `checkct/README.md` that name those profiles are marked as histo
 - There is no substitute static scan of vector code any more: `checkct/scan-avx2.sh` scanned the `*_avx2` functions of the dispatch driver, which no longer exist.
 
 **The 4-way verify.** Verify handles only public data, so the 4-way body (plain Rust, `src/keccak4.rs`, `src/sampling.rs`, `src/verify.rs`) and the verify-only `poly_use_hint_pub` and `bit_unpack_pub` have no BINSEC probes
-and need none. The functional evidence for them is in `docs/assurance.md` section 1.5 and the tests it lists, run in the default configuration and with AVX2 target features.
+and need none. The functional evidence for them is in `docs/assurance.md` section 1.5 and the tests in its section 4, run in the default configuration and with AVX2 target features.
 
 A reminder from the first version of the dispatch: it marked the field functions `#[inline(always)]` on every target, which made
 the riscv32imac `response_*` and `hint_step_*` probes `unknown` (one pending path after an hour) where the Shoup/Montgomery tree
@@ -523,9 +523,9 @@ the ISA models if (a) is adopted; runtime CPU feature dispatch; Charon/Aeneas an
 
 ### 5.4 Claim wording for each outcome
 
-Unchanged parts of the claim stay as in `docs/assurance.md` section 9. These are the sentences to use for the assurance axis only.
+Unchanged parts of the claim stay as in `docs/assurance.md` section 8 (the full text is in `docs/assurance-history.md` section 12). These are the sentences to use for the assurance axis only.
 
-**A. Portable path today.** The wording in `docs/assurance.md` section 9 (proved at source level, compiled code trusted, constant
+**A. Portable path today.** The wording in `docs/assurance.md` section 8 and `docs/assurance-history.md` section 12 (proved at source level, compiled code trusted, constant
 time checked by BINSEC on compiled probes for the builds and targets listed in `checkct/README.md`, not for the whole signing
 function as linked into an application, not for hardware timing).
 
