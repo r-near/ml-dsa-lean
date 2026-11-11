@@ -148,7 +148,7 @@ jobs:
 
       # A prebuilt cargo-deny, so ci.sh does not compile it with `cargo install`.
       - name: Install cargo-deny
-        uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
           tool: cargo-deny
 
@@ -175,7 +175,7 @@ jobs:
         run: rustup toolchain install "$FUZZ_NIGHTLY" --profile minimal
 
       - name: Install cargo-fuzz
-        uses: taiki-e/install-action@c509219cf42fba86913069efd0ade2458c59337b # v2.90.1
+        uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2.90.3
         with:
           tool: cargo-fuzz
 
