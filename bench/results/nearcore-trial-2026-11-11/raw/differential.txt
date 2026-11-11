@@ -1,0 +1,21 @@
+# core/crypto/tests/ml_dsa_backend_diff.rs, --release, nearcore flags, ml-dsa-lean feature (both libraries linked in one binary)
+test backend_is_lean ... ok
+cross_sign_verify: 1200 valid signatures accepted by both backends
+DER SPKI length for ML-DSA-65: 1974 bytes (raw pk is 1952); header = [30, 82, 07, b2, 30, 0b, 06, 09, 60, 86, 48, 01, 65, 03, 04, 03, 12, 03, 82, 07, a1, 00, 37, 58]
+aws-lc accepts the 1974-byte SPKI: true
+1952-byte windows of the SPKI that aws-lc accepts as a different key: 0
+test keygen_matches_aws_from_seed ... ok   (300 seeds, pk and sk byte-identical)
+corrupted s1 byte, SecretKey::from_str -> is_err = true
+secret_key_acceptance (rows: input class; columns: total, aws-lc accepts, lean well-formed (range check), lean consistent (pk_from_sk_65), aws != consistent):
+  K               256    256    256    256      0
+  all 0xff          1      0      0      0      0
+  all zero          1      0      1      0      0
+  random bytes    200      0      0      0      0
+  rho             256      0    256      0      0
+  s1              786      0    573      0      0
+  s2              878      0    651      0      0
+  t0             2852      0   2852      0      0
+  tr              512      0    512      0      0
+  valid key         1      1      1      1      0
+verify_verdicts_agree_on_mutations: 80219 comparisons, 248 accepted by aws-lc, 0 differences
+test result: ok. 7 passed; 0 failed

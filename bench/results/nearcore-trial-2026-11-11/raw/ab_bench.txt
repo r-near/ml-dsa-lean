@@ -1,0 +1,132 @@
+######## round=1 variant=nc core=10 load1=320.68 nproc_running=20/1401
+  verify, valid: median of per-pair lean/aws ratios = 1.505
+    aws   min    37.29 p10    37.67 p25    37.87 median    50.45 mean    47.99 p90    58.12 us
+    lean  min    57.73 p10    58.01 p25    58.17 median    72.20 mean    69.45 p90    80.91 us
+    ratio lean/aws: min 1.548  p10 1.540  p25 1.536  median 1.431
+  verify, wrong-message: median of per-pair lean/aws ratios = 1.514
+    aws   min    37.37 p10    37.70 p25    37.86 median    46.44 mean    47.35 p90    57.41 us
+    lean  min    57.75 p10    57.99 p25    58.14 median    68.72 mean    68.96 p90    80.41 us
+    ratio lean/aws: min 1.545  p10 1.538  p25 1.536  median 1.480
+  verify, random-bytes signature: median of per-pair lean/aws ratios = 0.034
+    aws   min     0.84 p10     1.25 p25     1.51 median    29.99 mean    21.95 p90    44.89 us
+    lean  min     0.77 p10     0.84 p25     1.05 median     1.19 mean     1.18 p90     1.35 us
+    ratio lean/aws: min 0.917  p10 0.672  p25 0.695  median 0.040
+  sign (hedged), valid key: median of per-pair lean/aws ratios = 3.077
+    aws   min    53.74 p10    75.49 p25    95.29 median   146.31 mean   199.63 p90   356.56 us
+    lean  min   164.58 p10   236.48 p25   286.15 median   441.86 mean   560.56 p90  1032.71 us
+    ratio lean/aws: min 3.063  p10 3.133  p25 3.003  median 3.020
+  keygen from seed (incl. raw export): median of per-pair lean/aws ratios = 3.346
+    aws   min    42.96 p10    43.40 p25    45.13 median    62.03 mean    58.89 p90    68.49 us
+    lean  min   139.31 p10   141.73 p25   156.62 median   208.80 mean   195.93 p90   230.59 us
+    ratio lean/aws: min 3.243  p10 3.266  p25 3.470  median 3.366
+ok
+######## round=1 variant=avx2 core=11 load1=255.47 nproc_running=27/1467
+  verify, valid: median of per-pair lean/aws ratios = 0.992
+    aws   min    37.36 p10    37.67 p25    38.04 median    52.52 mean    49.98 p90    58.06 us
+    lean  min    37.15 p10    37.38 p25    37.70 median    51.55 mean    49.16 p90    57.35 us
+    ratio lean/aws: min 0.994  p10 0.992  p25 0.991  median 0.982
+  verify, wrong-message: median of per-pair lean/aws ratios = 0.991
+    aws   min    37.32 p10    37.71 p25    37.94 median    52.00 mean    48.91 p90    57.82 us
+    lean  min    37.17 p10    37.38 p25    37.57 median    50.92 mean    48.18 p90    57.16 us
+    ratio lean/aws: min 0.996  p10 0.991  p25 0.990  median 0.979
+  verify, random-bytes signature: median of per-pair lean/aws ratios = 0.027
+    aws   min     0.82 p10     0.93 p25     0.99 median    29.94 mean    18.69 p90    43.32 us
+    lean  min     0.58 p10     0.63 p25     0.64 median     0.66 mean     0.76 p90     0.96 us
+    ratio lean/aws: min 0.707  p10 0.677  p25 0.646  median 0.022
+  sign (hedged), valid key: median of per-pair lean/aws ratios = 2.785
+    aws   min    53.63 p10    82.49 p25    99.10 median   153.85 mean   210.23 p90   377.23 us
+    lean  min   147.64 p10   245.25 p25   292.31 median   422.82 mean   528.03 p90   963.08 us
+    ratio lean/aws: min 2.753  p10 2.973  p25 2.950  median 2.748
+  keygen from seed (incl. raw export): median of per-pair lean/aws ratios = 3.141
+    aws   min    42.92 p10    43.23 p25    43.42 median    50.84 mean    54.24 p90    67.97 us
+    lean  min   132.70 p10   134.38 p25   135.32 median   159.63 mean   171.93 p90   220.20 us
+    ratio lean/aws: min 3.092  p10 3.108  p25 3.117  median 3.140
+ok
+######## round=2 variant=nc core=13 load1=205.34 nproc_running=20/1357
+  verify, valid: median of per-pair lean/aws ratios = 1.446
+    aws   min    37.47 p10    37.85 p25    39.15 median    53.63 mean    51.23 p90    59.41 us
+    lean  min    57.74 p10    58.05 p25    61.45 median    75.33 mean    73.39 p90    83.05 us
+    ratio lean/aws: min 1.541  p10 1.534  p25 1.570  median 1.405
+  verify, wrong-message: median of per-pair lean/aws ratios = 1.498
+    aws   min    37.47 p10    37.80 p25    38.00 median    50.91 mean    48.17 p90    58.43 us
+    lean  min    57.74 p10    57.99 p25    58.17 median    72.81 mean    69.61 p90    81.06 us
+    ratio lean/aws: min 1.541  p10 1.534  p25 1.531  median 1.430
+  verify, random-bytes signature: median of per-pair lean/aws ratios = 0.033
+    aws   min     0.84 p10     0.95 p25     1.01 median    30.01 mean    18.28 p90    41.64 us
+    lean  min     0.77 p10     0.81 p25     0.83 median     0.85 mean     0.97 p90     1.29 us
+    ratio lean/aws: min 0.917  p10 0.853  p25 0.822  median 0.028
+  sign (hedged), valid key: median of per-pair lean/aws ratios = 3.042
+    aws   min    53.69 p10    55.38 p25    80.08 median   123.21 mean   164.53 p90   298.26 us
+    lean  min   164.27 p10   168.94 p25   243.14 median   363.92 mean   473.42 p90   886.95 us
+    ratio lean/aws: min 3.060  p10 3.051  p25 3.036  median 2.954
+  keygen from seed (incl. raw export): median of per-pair lean/aws ratios = 3.266
+    aws   min    43.09 p10    43.43 p25    43.58 median    44.20 mean    52.72 p90    67.69 us
+    lean  min   139.41 p10   141.15 p25   141.82 median   151.39 mean   172.19 p90   223.83 us
+    ratio lean/aws: min 3.235  p10 3.250  p25 3.254  median 3.425
+ok
+######## round=2 variant=avx2 core=14 load1=166.76 nproc_running=19/1363
+  verify, valid: median of per-pair lean/aws ratios = 0.991
+    aws   min    37.32 p10    37.60 p25    37.71 median    38.24 mean    44.88 p90    57.14 us
+    lean  min    37.10 p10    37.28 p25    37.36 median    37.85 mean    44.39 p90    56.64 us
+    ratio lean/aws: min 0.994  p10 0.991  p25 0.991  median 0.990
+  verify, wrong-message: median of per-pair lean/aws ratios = 0.990
+    aws   min    37.36 p10    37.66 p25    37.81 median    49.11 mean    47.38 p90    57.40 us
+    lean  min    37.10 p10    37.30 p25    37.41 median    48.62 mean    46.57 p90    56.61 us
+    ratio lean/aws: min 0.993  p10 0.990  p25 0.989  median 0.990
+  verify, random-bytes signature: median of per-pair lean/aws ratios = 0.030
+    aws   min     0.84 p10     0.97 p25     1.42 median    29.98 mean    20.21 p90    43.47 us
+    lean  min     0.58 p10     0.63 p25     0.66 median     0.81 mean     0.87 p90     1.07 us
+    ratio lean/aws: min 0.690  p10 0.649  p25 0.465  median 0.027
+  sign (hedged), valid key: median of per-pair lean/aws ratios = 2.687
+    aws   min    53.45 p10    65.07 p25    85.11 median   133.07 mean   177.86 p90   320.18 us
+    lean  min   147.77 p10   173.06 p25   238.93 median   346.84 mean   436.43 p90   791.36 us
+    ratio lean/aws: min 2.765  p10 2.660  p25 2.807  median 2.606
+  keygen from seed (incl. raw export): median of per-pair lean/aws ratios = 3.137
+    aws   min    43.05 p10    43.38 p25    43.62 median    57.18 mean    55.11 p90    67.79 us
+    lean  min   132.56 p10   134.27 p25   135.30 median   177.99 mean   174.38 p90   219.86 us
+    ratio lean/aws: min 3.079  p10 3.095  p25 3.102  median 3.113
+ok
+######## round=3 variant=nc core=14 load1=134.46 nproc_running=24/1367
+  verify, valid: median of per-pair lean/aws ratios = 1.502
+    aws   min    37.39 p10    37.69 p25    37.87 median    50.91 mean    48.63 p90    58.84 us
+    lean  min    57.73 p10    57.99 p25    58.18 median    73.41 mean    71.07 p90    82.79 us
+    ratio lean/aws: min 1.544  p10 1.539  p25 1.536  median 1.442
+  verify, wrong-message: median of per-pair lean/aws ratios = 1.512
+    aws   min    37.46 p10    37.76 p25    37.93 median    47.51 mean    47.05 p90    57.72 us
+    lean  min    57.76 p10    58.00 p25    58.19 median    69.95 mean    68.63 p90    80.59 us
+    ratio lean/aws: min 1.542  p10 1.536  p25 1.534  median 1.472
+  verify, random-bytes signature: median of per-pair lean/aws ratios = 0.034
+    aws   min     0.85 p10     0.97 p25     1.17 median    29.95 mean    18.76 p90    39.12 us
+    lean  min     0.77 p10     0.82 p25     0.85 median     0.99 mean     1.02 p90     1.22 us
+    ratio lean/aws: min 0.906  p10 0.845  p25 0.726  median 0.033
+  sign (hedged), valid key: median of per-pair lean/aws ratios = 3.072
+    aws   min    53.69 p10    58.57 p25    83.43 median   127.18 mean   170.14 p90   304.75 us
+    lean  min   164.17 p10   180.51 p25   258.45 median   399.28 mean   490.17 p90   905.13 us
+    ratio lean/aws: min 3.058  p10 3.082  p25 3.098  median 3.139
+  keygen from seed (incl. raw export): median of per-pair lean/aws ratios = 3.305
+    aws   min    43.07 p10    43.40 p25    43.59 median    57.00 mean    54.44 p90    66.35 us
+    lean  min   139.23 p10   141.36 p25   142.33 median   190.68 mean   180.03 p90   222.65 us
+    ratio lean/aws: min 3.233  p10 3.257  p25 3.265  median 3.345
+ok
+######## round=3 variant=avx2 core=7 load1=109.10 nproc_running=17/1332
+  verify, valid: median of per-pair lean/aws ratios = 0.993
+    aws   min    37.40 p10    37.69 p25    37.82 median    38.47 mean    44.84 p90    56.48 us
+    lean  min    37.16 p10    37.45 p25    37.55 median    38.23 mean    44.33 p90    55.44 us
+    ratio lean/aws: min 0.994  p10 0.994  p25 0.993  median 0.994
+  verify, wrong-message: median of per-pair lean/aws ratios = 0.992
+    aws   min    37.41 p10    37.71 p25    37.82 median    38.29 mean    44.72 p90    56.61 us
+    lean  min    37.21 p10    37.44 p25    37.54 median    38.04 mean    44.22 p90    55.63 us
+    ratio lean/aws: min 0.995  p10 0.993  p25 0.993  median 0.993
+  verify, random-bytes signature: median of per-pair lean/aws ratios = 0.025
+    aws   min     0.84 p10     0.96 p25     1.03 median    29.96 mean    17.82 p90    40.18 us
+    lean  min     0.58 p10     0.62 p25     0.64 median     0.66 mean     0.72 p90     0.92 us
+    ratio lean/aws: min 0.690  p10 0.646  p25 0.621  median 0.022
+  sign (hedged), valid key: median of per-pair lean/aws ratios = 2.699
+    aws   min    53.55 p10    55.34 p25    79.95 median   122.37 mean   163.43 p90   287.06 us
+    lean  min   147.46 p10   151.75 p25   215.76 median   313.86 mean   404.46 p90   739.43 us
+    ratio lean/aws: min 2.754  p10 2.742  p25 2.699  median 2.565
+  keygen from seed (incl. raw export): median of per-pair lean/aws ratios = 3.111
+    aws   min    42.94 p10    43.21 p25    43.33 median    43.60 mean    49.23 p90    64.91 us
+    lean  min   132.11 p10   133.76 p25   134.39 median   136.02 mean   154.23 p90   208.14 us
+    ratio lean/aws: min 3.077  p10 3.096  p25 3.102  median 3.120
+ok

@@ -1,0 +1,679 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 568664ce8..8bc1edd40 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -4004,6 +4004,12 @@ dependencies = [
+  "windows-sys 0.61.2",
+ ]
+ 
++[[package]]
++name = "ml-dsa-lean"
++version = "0.2.0"
++source = "registry+https://github.com/rust-lang/crates.io-index"
++checksum = "c07e22b9d6764708fd5dcfdb670ab1b392d2e58a5aa65bd7bc669a219fe32003"
++
+ [[package]]
+ name = "mock-node"
+ version = "0.0.0"
+@@ -4350,6 +4356,7 @@ dependencies = [
+  "ed25519-dalek",
+  "hex",
+  "hex-literal",
++ "ml-dsa-lean",
+  "near-account-id",
+  "near-config-utils",
+  "near-schema-checker-lib",
+diff --git a/core/crypto/Cargo.toml b/core/crypto/Cargo.toml
+index e0f9aa769..7f16bb7cf 100644
+--- a/core/crypto/Cargo.toml
++++ b/core/crypto/Cargo.toml
+@@ -34,6 +34,7 @@ subtle.workspace = true
+ thiserror.workspace = true
+ near-config-utils.workspace = true
+ near-schema-checker-lib.workspace = true
++ml-dsa-lean = { version = "0.2.0", optional = true }
+ rand = { workspace = true, optional = true }
+ schemars = {workspace = true, optional = true }
+ 
+@@ -61,6 +62,8 @@ harness = false
+ default = ["rand"]
+ rand = ["secp256k1/rand", "rand/getrandom", "ed25519-dalek/rand_core"]
+ rand-std = ["secp256k1/rand-std"]
++# Use the pure-Rust `ml-dsa-lean` crate instead of `aws-lc-rs` for ML-DSA-65.
++ml-dsa-lean = ["dep:ml-dsa-lean"]
+ protocol_schema = [
+     "near-schema-checker-lib/protocol_schema",
+ ]
+diff --git a/core/crypto/src/lib.rs b/core/crypto/src/lib.rs
+index 571a5be35..ceb84cfa9 100644
+--- a/core/crypto/src/lib.rs
++++ b/core/crypto/src/lib.rs
+@@ -2,6 +2,7 @@
+ 
+ pub use errors::{ParseKeyError, ParseKeyTypeError, ParseSignatureError};
+ pub use key_file::KeyFile;
++pub use ml_dsa_backend::ML_DSA_65_BACKEND;
+ pub use signature::{
+     ED25519PublicKey, ED25519SecretKey, KeyType, ML_DSA_65_HASH_LENGTH,
+     ML_DSA_65_PUBLIC_KEY_LENGTH, ML_DSA_65_SEED_LENGTH, ML_DSA_65_SIGNATURE_LENGTH,
+@@ -21,6 +22,7 @@ mod errors;
+ pub mod hash_domain;
+ pub mod key_conversion;
+ mod key_file;
++mod ml_dsa_backend;
+ mod signature;
+ mod signer;
+ mod test_utils;
+diff --git a/core/crypto/src/ml_dsa_backend.rs b/core/crypto/src/ml_dsa_backend.rs
+new file mode 100644
+index 000000000..9b67d65be
+--- /dev/null
++++ b/core/crypto/src/ml_dsa_backend.rs
+@@ -0,0 +1,119 @@
++//! ML-DSA-65 backend: the only place that names the signature library.
++//!
++//! Default: `aws-lc-rs`. With the `ml-dsa-lean` Cargo feature: the `ml-dsa-lean` crate (pure Rust).
++//! Both take and return the raw FIPS 204 encodings (pk 1952, expanded sk 4032, signature 3309) and
++//! use the empty context string.
++
++use crate::signature::{
++    ML_DSA_65_PUBLIC_KEY_LENGTH as PK_LEN, ML_DSA_65_SECRET_KEY_LENGTH as SK_LEN,
++    ML_DSA_65_SEED_LENGTH as SEED_LEN, ML_DSA_65_SIGNATURE_LENGTH as SIG_LEN,
++};
++
++#[cfg(not(feature = "ml-dsa-lean"))]
++mod imp {
++    use super::*;
++    use aws_lc_rs::encoding::{AsRawBytes, PqdsaPrivateKeyRaw};
++    use aws_lc_rs::signature::{
++        KeyPair, ML_DSA_65, ML_DSA_65_SIGNING, PqdsaKeyPair, UnparsedPublicKey,
++    };
++
++    pub const NAME: &str = "aws-lc-rs";
++
++    pub fn verify(pk: &[u8; PK_LEN], msg: &[u8], sig: &[u8; SIG_LEN]) -> bool {
++        UnparsedPublicKey::new(&ML_DSA_65, &pk[..]).verify(msg, &sig[..]).is_ok()
++    }
++
++    pub fn sign(sk: &[u8; SK_LEN], msg: &[u8]) -> [u8; SIG_LEN] {
++        let kp = PqdsaKeyPair::from_raw_private_key(&ML_DSA_65_SIGNING, &sk[..])
++            .expect("invalid ML-DSA-65 raw private key");
++        let mut sig = [0u8; SIG_LEN];
++        let n = kp.sign(msg, &mut sig).expect("ML-DSA-65 sign failed");
++        debug_assert_eq!(n, SIG_LEN);
++        sig
++    }
++
++    pub fn public_key(sk: &[u8; SK_LEN]) -> [u8; PK_LEN] {
++        let kp = PqdsaKeyPair::from_raw_private_key(&ML_DSA_65_SIGNING, &sk[..])
++            .expect("invalid ML-DSA-65 raw private key");
++        let mut pk = [0u8; PK_LEN];
++        pk.copy_from_slice(kp.public_key().as_ref());
++        pk
++    }
++
++    pub fn secret_from_seed(seed: &[u8; SEED_LEN]) -> Result<[u8; SK_LEN], String> {
++        let kp = PqdsaKeyPair::from_seed(&ML_DSA_65_SIGNING, &seed[..])
++            .map_err(|err| err.to_string())?;
++        let raw: PqdsaPrivateKeyRaw<'static> =
++            kp.private_key().as_raw_bytes().map_err(|err| err.to_string())?;
++        <[u8; SK_LEN]>::try_from(raw.as_ref()).map_err(|err| err.to_string())
++    }
++
++    #[cfg(feature = "rand")]
++    pub fn generate_secret() -> [u8; SK_LEN] {
++        let kp = PqdsaKeyPair::generate(&ML_DSA_65_SIGNING).expect("ML-DSA-65 keygen failed");
++        let raw: PqdsaPrivateKeyRaw<'static> =
++            kp.private_key().as_raw_bytes().expect("ML-DSA-65 raw private export failed");
++        <[u8; SK_LEN]>::try_from(raw.as_ref()).expect("ML-DSA-65 raw private key length")
++    }
++
++    /// Accepts or rejects a raw private key at parse time (what `from_raw_private_key` did).
++    pub fn validate_secret(sk: &[u8; SK_LEN]) -> Result<(), String> {
++        PqdsaKeyPair::from_raw_private_key(&ML_DSA_65_SIGNING, &sk[..])
++            .map(|_| ())
++            .map_err(|err| err.to_string())
++    }
++}
++
++#[cfg(feature = "ml-dsa-lean")]
++mod imp {
++    use super::*;
++    use ml_dsa_lean::api::{keygen_65, pk_from_sk_65, sign_65, verify_65};
++
++    pub const NAME: &str = "ml-dsa-lean";
++
++    pub fn verify(pk: &[u8; PK_LEN], msg: &[u8], sig: &[u8; SIG_LEN]) -> bool {
++        verify_65(pk, msg, &[], sig)
++    }
++
++    /// Hedged (32 fresh random bytes) when the `rand` feature is on, as aws-lc signs; deterministic
++    /// (32 zero bytes) otherwise.
++    pub fn sign(sk: &[u8; SK_LEN], msg: &[u8]) -> [u8; SIG_LEN] {
++        let mut rnd = [0u8; 32];
++        #[cfg(feature = "rand")]
++        {
++            use secp256k1::rand::{RngCore, rngs::OsRng};
++            OsRng.fill_bytes(&mut rnd);
++        }
++        sign_65(sk, msg, &[], &rnd).expect("ML-DSA-65 sign failed")
++    }
++
++    pub fn public_key(sk: &[u8; SK_LEN]) -> [u8; PK_LEN] {
++        pk_from_sk_65(sk).expect("invalid ML-DSA-65 raw private key")
++    }
++
++    pub fn secret_from_seed(seed: &[u8; SEED_LEN]) -> Result<[u8; SK_LEN], String> {
++        Ok(keygen_65(seed).1)
++    }
++
++    #[cfg(feature = "rand")]
++    pub fn generate_secret() -> [u8; SK_LEN] {
++        use secp256k1::rand::{RngCore, rngs::OsRng};
++        let mut xi = [0u8; SEED_LEN];
++        OsRng.fill_bytes(&mut xi);
++        keygen_65(&xi).1
++    }
++
++    /// Accepts a raw private key iff it is internally consistent: s1 and s2 in range and (t0, tr)
++    /// match the key recomputed from (rho, s1, s2). See the trial README for how this compares with
++    /// what aws-lc accepts.
++    pub fn validate_secret(sk: &[u8; SK_LEN]) -> Result<(), String> {
++        pk_from_sk_65(sk).map(|_| ()).ok_or_else(|| "invalid ML-DSA-65 raw private key".to_string())
++    }
++}
++
++/// Name of the library behind ML-DSA-65 in this build.
++pub const ML_DSA_65_BACKEND: &str = imp::NAME;
++
++#[cfg(feature = "rand")]
++pub(crate) use imp::generate_secret;
++pub(crate) use imp::{public_key, secret_from_seed, sign, validate_secret, verify};
+diff --git a/core/crypto/src/signature.rs b/core/crypto/src/signature.rs
+index eb53f4a57..78f23632c 100644
+--- a/core/crypto/src/signature.rs
++++ b/core/crypto/src/signature.rs
+@@ -1,6 +1,6 @@
+ use crate::hash_domain::HashDomainTag;
++use crate::ml_dsa_backend;
+ use crate::util::try_fixed_array;
+-use aws_lc_rs::signature::{ML_DSA_65, ML_DSA_65_SIGNING, PqdsaKeyPair, UnparsedPublicKey};
+ use borsh::{BorshDeserialize, BorshSerialize};
+ use ed25519_dalek::ed25519::signature::{Signer, Verifier};
+ use near_schema_checker_lib::ProtocolSchema;
+@@ -758,9 +758,7 @@ impl SecretKey {
+             }
+             KeyType::SECP256K1 => SecretKey::SECP256K1(secp256k1::SecretKey::new(&mut OsRng)),
+             KeyType::MLDSA65 => {
+-                let kp =
+-                    PqdsaKeyPair::generate(&ML_DSA_65_SIGNING).expect("ML-DSA-65 keygen failed");
+-                SecretKey::MLDSA65(ml_dsa_65_secret_from_keypair(&kp))
++                SecretKey::MLDSA65(MlDsa65SecretKey(Box::new(ml_dsa_backend::generate_secret())))
+             }
+         }
+     }
+@@ -784,14 +782,9 @@ impl SecretKey {
+                 Signature::SECP256K1(Secp256K1Signature(buf))
+             }
+ 
+-            SecretKey::MLDSA65(secret_key) => {
+-                let kp = PqdsaKeyPair::from_raw_private_key(&ML_DSA_65_SIGNING, &secret_key.0[..])
+-                    .expect("invalid ML-DSA-65 raw private key");
+-                let mut sig_buf = Box::new([0u8; ML_DSA_65_SIGNATURE_LENGTH]);
+-                let n = kp.sign(data, sig_buf.as_mut()).expect("ML-DSA-65 sign failed");
+-                debug_assert_eq!(n, ML_DSA_65_SIGNATURE_LENGTH);
+-                Signature::MLDSA65(MlDsa65Signature(sig_buf))
+-            }
++            SecretKey::MLDSA65(secret_key) => Signature::MLDSA65(MlDsa65Signature(Box::new(
++                ml_dsa_backend::sign(&secret_key.0, data),
++            ))),
+         }
+     }
+ 
+@@ -807,15 +800,9 @@ impl SecretKey {
+                 public_key.0.copy_from_slice(&serialized[1..65]);
+                 PublicKey::SECP256K1(public_key)
+             }
+-            SecretKey::MLDSA65(secret_key) => {
+-                let kp = PqdsaKeyPair::from_raw_private_key(&ML_DSA_65_SIGNING, &secret_key.0[..])
+-                    .expect("invalid ML-DSA-65 raw private key");
+-                use aws_lc_rs::signature::KeyPair;
+-                let pk_bytes: &[u8] = kp.public_key().as_ref();
+-                let mut buf = Box::new([0u8; ML_DSA_65_PUBLIC_KEY_LENGTH]);
+-                buf.copy_from_slice(pk_bytes);
+-                PublicKey::MLDSA65(MlDsa65PublicKey(buf))
+-            }
++            SecretKey::MLDSA65(secret_key) => PublicKey::MLDSA65(MlDsa65PublicKey(Box::new(
++                ml_dsa_backend::public_key(&secret_key.0),
++            ))),
+         }
+     }
+ 
+@@ -827,32 +814,12 @@ impl SecretKey {
+     }
+ }
+ 
+-/// Helper: extract the 4032-byte raw private key from a freshly-generated keypair.
+-#[cfg(feature = "rand")]
+-fn ml_dsa_65_secret_from_keypair(kp: &PqdsaKeyPair) -> MlDsa65SecretKey {
+-    use aws_lc_rs::encoding::{AsRawBytes, PqdsaPrivateKeyRaw};
+-    let raw: PqdsaPrivateKeyRaw<'static> =
+-        kp.private_key().as_raw_bytes().expect("ML-DSA-65 raw private export failed");
+-    let bytes: &[u8] = raw.as_ref();
+-    debug_assert_eq!(bytes.len(), ML_DSA_65_SECRET_KEY_LENGTH);
+-    let mut buf = Box::new([0u8; ML_DSA_65_SECRET_KEY_LENGTH]);
+-    buf.copy_from_slice(bytes);
+-    MlDsa65SecretKey(buf)
+-}
+-
+ /// Helper: build an `MlDsa65SecretKey` from a 32-byte seed (deterministic).
+ fn ml_dsa_65_secret_from_seed(
+     seed: &[u8; ML_DSA_65_SEED_LENGTH],
+ ) -> Result<MlDsa65SecretKey, crate::errors::ParseKeyError> {
+-    use aws_lc_rs::encoding::{AsRawBytes, PqdsaPrivateKeyRaw};
+-    let kp = PqdsaKeyPair::from_seed(&ML_DSA_65_SIGNING, &seed[..]).map_err(|err| {
+-        crate::errors::ParseKeyError::InvalidData { error_message: err.to_string() }
+-    })?;
+-    let raw: PqdsaPrivateKeyRaw<'static> = kp.private_key().as_raw_bytes().map_err(|err| {
+-        crate::errors::ParseKeyError::InvalidData { error_message: err.to_string() }
+-    })?;
+-    let bytes: &[u8] = raw.as_ref();
+-    let arr: [u8; ML_DSA_65_SECRET_KEY_LENGTH] = try_fixed_array(bytes)?;
++    let arr = ml_dsa_backend::secret_from_seed(seed)
++        .map_err(|error_message| crate::errors::ParseKeyError::InvalidData { error_message })?;
+     Ok(MlDsa65SecretKey(Box::new(arr)))
+ }
+ 
+@@ -895,8 +862,8 @@ impl FromStr for SecretKey {
+                 // private key by handing them to the library. Catches
+                 // malformed-but-correct-length blobs at parse time
+                 // rather than blowing up later in `sign()`.
+-                PqdsaKeyPair::from_raw_private_key(&ML_DSA_65_SIGNING, &data[..])
+-                    .map_err(|err| Self::Err::InvalidData { error_message: err.to_string() })?;
++                ml_dsa_backend::validate_secret(&data)
++                    .map_err(|error_message| Self::Err::InvalidData { error_message })?;
+                 Self::MLDSA65(MlDsa65SecretKey(Box::new(data)))
+             }
+         })
+@@ -1106,8 +1073,7 @@ impl Signature {
+                 SECP256K1.verify_ecdsa(&message, &sig, &pub_key).is_ok()
+             }
+             (Signature::MLDSA65(signature), PublicKey::MLDSA65(public_key)) => {
+-                let unparsed = UnparsedPublicKey::new(&ML_DSA_65, &public_key.0[..]);
+-                unparsed.verify(data, &signature.0[..]).is_ok()
++                ml_dsa_backend::verify(&public_key.0, data, &signature.0)
+             }
+             _ => false,
+         }
+diff --git a/core/crypto/tests/ml_dsa_backend_diff.rs b/core/crypto/tests/ml_dsa_backend_diff.rs
+new file mode 100644
+index 000000000..df0e76b20
+--- /dev/null
++++ b/core/crypto/tests/ml_dsa_backend_diff.rs
+@@ -0,0 +1,366 @@
++//! Differential test of the two ML-DSA-65 backends (aws-lc-rs vs ml-dsa-lean), both linked into one
++//! test binary. Only built with the `ml-dsa-lean` feature. Run:
++//!   cargo test -p near-crypto --features ml-dsa-lean --release --test ml_dsa_backend_diff -- --nocapture
++#![cfg(feature = "ml-dsa-lean")]
++
++use aws_lc_rs::encoding::{AsDer, AsRawBytes, PqdsaPrivateKeyRaw};
++use aws_lc_rs::signature::{
++    KeyPair, ML_DSA_65, ML_DSA_65_SIGNING, PqdsaKeyPair, UnparsedPublicKey,
++};
++use ml_dsa_lean::api::{keygen_65, pk_from_sk_65, sign_65, sk_is_well_formed_65, verify_65};
++use near_crypto::{
++    KeyType, ML_DSA_65_BACKEND, MlDsa65PublicKey, MlDsa65Signature, PublicKey, SecretKey, Signature,
++};
++
++const PK: usize = 1952;
++const SK: usize = 4032;
++const SIG: usize = 3309;
++
++struct Rng(u64);
++impl Rng {
++    fn next(&mut self) -> u64 {
++        self.0 = self.0.wrapping_add(0x9E3779B97F4A7C15);
++        let mut z = self.0;
++        z = (z ^ (z >> 30)).wrapping_mul(0xBF58476D1CE4E5B9);
++        z = (z ^ (z >> 27)).wrapping_mul(0x94D049BB133111EB);
++        z ^ (z >> 31)
++    }
++    fn below(&mut self, n: usize) -> usize {
++        (self.next() % n as u64) as usize
++    }
++    fn bytes<const N: usize>(&mut self) -> [u8; N] {
++        let mut out = [0u8; N];
++        for b in &mut out {
++            *b = self.next() as u8;
++        }
++        out
++    }
++}
++
++fn aws_keypair_from_seed(seed: &[u8; 32]) -> ([u8; PK], [u8; SK]) {
++    let kp = PqdsaKeyPair::from_seed(&ML_DSA_65_SIGNING, &seed[..]).unwrap();
++    let raw: PqdsaPrivateKeyRaw<'static> = kp.private_key().as_raw_bytes().unwrap();
++    let mut pk = [0u8; PK];
++    pk.copy_from_slice(kp.public_key().as_ref());
++    (pk, <[u8; SK]>::try_from(raw.as_ref()).unwrap())
++}
++
++fn aws_sign(sk: &[u8; SK], msg: &[u8]) -> [u8; SIG] {
++    let kp = PqdsaKeyPair::from_raw_private_key(&ML_DSA_65_SIGNING, &sk[..]).unwrap();
++    let mut sig = [0u8; SIG];
++    assert_eq!(kp.sign(msg, &mut sig).unwrap(), SIG);
++    sig
++}
++
++fn aws_verify(pk: &[u8; PK], msg: &[u8], sig: &[u8; SIG]) -> bool {
++    UnparsedPublicKey::new(&ML_DSA_65, &pk[..]).verify(msg, &sig[..]).is_ok()
++}
++
++fn lean_verify(pk: &[u8; PK], msg: &[u8], sig: &[u8; SIG]) -> bool {
++    verify_65(pk, msg, &[], sig)
++}
++
++/// Verdict of the backend selected at build time, through nearcore's own `Signature::verify`.
++fn nearcore_verify(pk: &[u8; PK], msg: &[u8], sig: &[u8; SIG]) -> bool {
++    let pk = PublicKey::MLDSA65(MlDsa65PublicKey(Box::new(*pk)));
++    let sig = Signature::MLDSA65(MlDsa65Signature(Box::new(*sig)));
++    sig.verify(msg, &pk)
++}
++
++#[test]
++fn backend_is_lean() {
++    assert_eq!(ML_DSA_65_BACKEND, "ml-dsa-lean");
++}
++
++#[test]
++fn keygen_matches_aws_from_seed() {
++    let mut rng = Rng(1);
++    for i in 0..300 {
++        let seed: [u8; 32] = if i == 0 {
++            [0; 32]
++        } else if i == 1 {
++            [0xff; 32]
++        } else {
++            rng.bytes()
++        };
++        let (pk_a, sk_a) = aws_keypair_from_seed(&seed);
++        let (pk_l, sk_l) = keygen_65(&seed);
++        assert_eq!(pk_a, pk_l, "pk differs for seed {i}");
++        assert_eq!(sk_a[..], sk_l[..], "sk differs for seed {i}");
++    }
++}
++
++#[test]
++fn cross_sign_verify() {
++    let mut rng = Rng(2);
++    let lens = [0usize, 1, 31, 32, 33, 64, 255, 256, 1000, 16 * 1024];
++    let mut n = 0;
++    for i in 0..40 {
++        let seed: [u8; 32] = rng.bytes();
++        let (pk, sk) = keygen_65(&seed);
++        for &len in &lens {
++            let mut msg = vec![0u8; len];
++            for b in &mut msg {
++                *b = rng.next() as u8;
++            }
++            let rnd_zero = [0u8; 32];
++            let rnd: [u8; 32] = rng.bytes();
++            let s_lean_det = sign_65(&sk, &msg, &[], &rnd_zero).unwrap();
++            let s_lean_hedged = sign_65(&sk, &msg, &[], &rnd).unwrap();
++            let s_aws = aws_sign(&sk, &msg);
++            for (name, s) in
++                [("lean-det", &s_lean_det), ("lean-hedged", &s_lean_hedged), ("aws", &s_aws)]
++            {
++                assert!(aws_verify(&pk, &msg, s), "aws rejects {name} sig (key {i}, len {len})");
++                assert!(lean_verify(&pk, &msg, s), "lean rejects {name} sig (key {i}, len {len})");
++                assert!(nearcore_verify(&pk, &msg, s), "nearcore rejects {name} sig");
++                n += 1;
++            }
++            // Determinism: same key, message, rnd = 0 gives the same bytes; hedged differs.
++            assert_eq!(s_lean_det, sign_65(&sk, &msg, &[], &rnd_zero).unwrap());
++            assert_ne!(s_lean_det, s_lean_hedged);
++            // A wrong message must fail on both.
++            let mut bad = msg.clone();
++            bad.push(0);
++            assert!(!aws_verify(&pk, &bad, &s_lean_det));
++            assert!(!lean_verify(&pk, &bad, &s_lean_det));
++        }
++    }
++    println!("cross_sign_verify: {n} valid signatures accepted by both backends");
++}
++
++/// Verdict differential on mutated inputs. Counts the verdicts so the output shows that both
++/// accepting and rejecting inputs were covered.
++#[test]
++fn slow_test_verify_verdicts_agree_on_mutations() {
++    let mut rng = Rng(3);
++    let (mut total, mut accepted, mut diffs) = (0u64, 0u64, 0u64);
++    let mut check = |pk: &[u8; PK], msg: &[u8], sig: &[u8; SIG], what: &str| {
++        let a = aws_verify(pk, msg, sig);
++        let l = lean_verify(pk, msg, sig);
++        total += 1;
++        accepted += a as u64;
++        if a != l {
++            diffs += 1;
++            eprintln!("VERDICT DIFFERENCE ({what}): aws={a} lean={l}");
++        }
++    };
++    for k in 0..12 {
++        let seed: [u8; 32] = rng.bytes();
++        let (pk, sk) = keygen_65(&seed);
++        let msg: Vec<u8> = (0..(k * 37 % 200)).map(|i| i as u8).collect();
++        let sig = sign_65(&sk, &msg, &[], &rng.bytes()).unwrap();
++        check(&pk, &msg, &sig, "valid");
++        // Every single-bit flip in c~ (first 48 bytes) and the hint section, sampled flips elsewhere.
++        for bit in 0..(48 * 8) {
++            let mut s = sig;
++            s[bit / 8] ^= 1 << (bit % 8);
++            check(&pk, &msg, &s, "flip c~");
++        }
++        for bit in (3248 * 8)..(SIG * 8) {
++            let mut s = sig;
++            s[bit / 8] ^= 1 << (bit % 8);
++            check(&pk, &msg, &s, "flip hint");
++        }
++        for _ in 0..3000 {
++            let mut s = sig;
++            let bit = rng.below(SIG * 8);
++            s[bit / 8] ^= 1 << (bit % 8);
++            check(&pk, &msg, &s, "flip sig");
++        }
++        for _ in 0..1500 {
++            let mut p = pk;
++            let bit = rng.below(PK * 8);
++            p[bit / 8] ^= 1 << (bit % 8);
++            check(&p, &msg, &sig, "flip pk");
++        }
++        // Multi-byte and fill mutations of z.
++        for _ in 0..500 {
++            let mut s = sig;
++            let at = 48 + rng.below(3200);
++            let n = 1 + rng.below(64);
++            for j in at..(at + n).min(3248) {
++                s[j] = rng.next() as u8;
++            }
++            check(&pk, &msg, &s, "randomize z span");
++        }
++        for fill in [0x00u8, 0xff, 0x80, 0x7f] {
++            let mut s = sig;
++            for b in &mut s[48..3248] {
++                *b = fill;
++            }
++            check(&pk, &msg, &s, "fill z");
++        }
++        // Hint-encoding malformations: counts non-monotone, count > omega, nonzero padding, unsorted indices.
++        for _ in 0..800 {
++            let mut s = sig;
++            match rng.below(5) {
++                0 => s[3303 + rng.below(6)] = rng.next() as u8,
++                1 => s[3248 + rng.below(55)] = rng.next() as u8,
++                2 => {
++                    let w = s[3308] as usize;
++                    if w < 55 {
++                        s[3248 + w + rng.below(55 - w)] = 1 + (rng.next() % 255) as u8;
++                    }
++                }
++                3 => {
++                    let a = 3248 + rng.below(55);
++                    let b = 3248 + rng.below(55);
++                    s.swap(a, b);
++                }
++                _ => {
++                    s[3303 + rng.below(6)] = 56 + (rng.next() % 200) as u8;
++                }
++            }
++            check(&pk, &msg, &s, "hint malform");
++        }
++        // Random whole-signature and zero-signature, and random pk.
++        let s_rand: [u8; SIG] = rng.bytes();
++        check(&pk, &msg, &s_rand, "random sig");
++        check(&pk, &msg, &[0u8; SIG], "zero sig");
++        let p_rand: [u8; PK] = rng.bytes();
++        check(&p_rand, &msg, &sig, "random pk");
++        check(&[0u8; PK], &msg, &sig, "zero pk");
++        check(&[0xffu8; PK], &msg, &sig, "ff pk");
++        // Message changes.
++        let mut m2 = msg.clone();
++        m2.push(1);
++        check(&pk, &m2, &sig, "longer msg");
++        if !msg.is_empty() {
++            check(&pk, &msg[1..], &sig, "shorter msg");
++        }
++        // Cross-key: signature from key A, public key B.
++        let (pk_b, _) = keygen_65(&rng.bytes());
++        check(&pk_b, &msg, &sig, "wrong key");
++    }
++    println!(
++        "verify_verdicts_agree_on_mutations: {total} comparisons, {accepted} accepted by aws-lc, {diffs} differences"
++    );
++    assert_eq!(diffs, 0);
++}
++
++/// aws-lc's `UnparsedPublicKey` first tries to parse the key as a DER SubjectPublicKeyInfo. nearcore
++/// passes fixed 1952-byte arrays. A full SPKI for ML-DSA-65 is longer than 1952 bytes, so no 1952-byte
++/// input is a complete SPKI; check what aws-lc and the lean crate do with the obvious near-misses.
++#[test]
++fn der_spki_is_not_reachable_with_fixed_length_keys() {
++    let (pk, sk) = keygen_65(&[7; 32]);
++    let kp = PqdsaKeyPair::from_raw_private_key(&ML_DSA_65_SIGNING, &sk[..]).unwrap();
++    let der = kp.public_key().as_der().unwrap();
++    let der: &[u8] = der.as_ref();
++    println!(
++        "DER SPKI length for ML-DSA-65: {} bytes (raw pk is {PK}); header = {:02x?}",
++        der.len(),
++        &der[..24.min(der.len())]
++    );
++    assert!(der.len() > PK);
++    assert_eq!(&der[der.len() - PK..], &pk[..]);
++    let msg = b"der";
++    let sig = sign_65(&sk, msg, &[], &[0; 32]).unwrap();
++    // The full SPKI is accepted by aws-lc's verify entry point (a different, longer input).
++    let full_ok = UnparsedPublicKey::new(&ML_DSA_65, der).verify(msg, &sig[..]).is_ok();
++    println!("aws-lc accepts the {}-byte SPKI: {full_ok}", der.len());
++    // Every 1952-byte window of the SPKI and its truncations/paddings: none may be a different
++    // *accepting* key than the raw key for the same signature.
++    let mut accepted_other = 0;
++    for start in 0..=(der.len() - PK) {
++        let mut cand = [0u8; PK];
++        cand.copy_from_slice(&der[start..start + PK]);
++        let a = aws_verify(&cand, msg, &sig);
++        let l = lean_verify(&cand, msg, &sig);
++        assert_eq!(a, l, "window {start}");
++        if a && cand != pk {
++            accepted_other += 1;
++        }
++    }
++    // Header-prefixed truncation: header bytes then the first 1952 - header_len bytes of the key.
++    let hdr = der.len() - PK;
++    let mut trunc = [0u8; PK];
++    trunc[..hdr].copy_from_slice(&der[..hdr]);
++    trunc[hdr..].copy_from_slice(&pk[..PK - hdr]);
++    assert_eq!(aws_verify(&trunc, msg, &sig), lean_verify(&trunc, msg, &sig));
++    assert!(!aws_verify(&trunc, msg, &sig));
++    println!(
++        "1952-byte windows of the SPKI that aws-lc accepts as a different key: {accepted_other}"
++    );
++    assert_eq!(accepted_other, 0);
++}
++
++/// What each side accepts as a raw private key. aws-lc: `PqdsaKeyPair::from_raw_private_key`.
++/// lean: `sk_is_well_formed_65` (range check) and `pk_from_sk_65` (range check plus consistency).
++#[test]
++fn secret_key_acceptance() {
++    let mut rng = Rng(4);
++    let (pk0, sk0) = keygen_65(&[9; 32]);
++    let aws_ok =
++        |sk: &[u8; SK]| PqdsaKeyPair::from_raw_private_key(&ML_DSA_65_SIGNING, &sk[..]).is_ok();
++    let wf = |sk: &[u8; SK]| sk_is_well_formed_65(sk);
++    let cons = |sk: &[u8; SK]| pk_from_sk_65(sk).is_some();
++    // Layout: rho 0..32, K 32..64, tr 64..128, s1 128..768 (5*128), s2 768..1536 (6*128), t0 1536..4032 (6*416).
++    let region = |byte: usize| match byte {
++        0..32 => "rho",
++        32..64 => "K",
++        64..128 => "tr",
++        128..768 => "s1",
++        768..1536 => "s2",
++        _ => "t0",
++    };
++    use std::collections::BTreeMap;
++    let mut table: BTreeMap<&str, [u64; 5]> = BTreeMap::new(); // total, aws_ok, wf_ok, cons_ok, aws!=cons
++    let mut note = |name: &'static str, a: bool, w: bool, c: bool| {
++        let e = table.entry(name).or_default();
++        e[0] += 1;
++        e[1] += a as u64;
++        e[2] += w as u64;
++        e[3] += c as u64;
++        e[4] += (a != c) as u64;
++    };
++    note("valid key", aws_ok(&sk0), wf(&sk0), cons(&sk0));
++    for bit in 0..(SK * 8) {
++        if bit % 7 != 0 && bit / 8 >= 128 + 8 {
++            continue; // all bits of rho, K, tr and a sample of the rest
++        }
++        let mut sk = sk0;
++        sk[bit / 8] ^= 1 << (bit % 8);
++        note(region(bit / 8), aws_ok(&sk), wf(&sk), cons(&sk));
++    }
++    for _ in 0..200 {
++        let sk: [u8; SK] = rng.bytes();
++        note("random bytes", aws_ok(&sk), wf(&sk), cons(&sk));
++    }
++    for (name, sk) in [("all zero", [0u8; SK]), ("all 0xff", [0xffu8; SK])] {
++        note(name, aws_ok(&sk), wf(&sk), cons(&sk));
++    }
++    println!(
++        "secret_key_acceptance (rows: input class; columns: total, aws-lc accepts, lean well-formed, lean consistent, aws != consistent):"
++    );
++    for (k, v) in &table {
++        println!("  {k:12} {:6} {:6} {:6} {:6} {:6}", v[0], v[1], v[2], v[3], v[4]);
++    }
++    // If aws accepts a tampered key, the key it derives must match lean's pk_from_sk where lean accepts.
++    let _ = pk0;
++}
++
++#[test]
++fn near_crypto_public_api_roundtrip() {
++    let sk = SecretKey::from_random(KeyType::MLDSA65);
++    let pk = sk.public_key();
++    let msg = b"api-roundtrip";
++    let sig = sk.sign(msg);
++    assert!(sig.verify(msg, &pk));
++    assert!(!sig.verify(b"other", &pk));
++    // String round trip incl. secret key validation at parse time.
++    let parsed: SecretKey = sk.to_string().parse().unwrap();
++    assert_eq!(parsed.public_key(), pk);
++    // A corrupted secret key (a flipped bit in s1's first byte) must be rejected at parse time or
++    // report how it behaves; here only that parsing does not panic.
++    let text = sk.to_string();
++    let (_, b58) = text.split_once(':').unwrap();
++    let mut raw = bs58::decode(b58).into_vec().unwrap();
++    raw[200] ^= 0xff;
++    let s = format!("ml-dsa-65:{}", bs58::encode(raw).into_string());
++    println!(
++        "corrupted s1 byte, SecretKey::from_str -> is_err = {}",
++        s.parse::<SecretKey>().is_err()
++    );
++}

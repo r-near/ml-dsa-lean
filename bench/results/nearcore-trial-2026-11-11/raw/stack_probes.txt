@@ -1,0 +1,41 @@
+# core/crypto/tests/stack_probe.rs (probes.patch): painted stack, 8 MiB thread, worst of 5 calls. Bytes below the caller's frame (top 8 KiB not visible).
+## --release (nearcore profile: fat LTO, codegen-units=1, overflow checks, nearcore target features)
+STACK PROBE backend=aws-lc-rs
+  Signature::verify (valid)             53127 bytes (51.9 KiB)
+  Signature::verify (wrong msg)         53127 bytes (51.9 KiB)
+  SecretKey::sign                       86215 bytes (84.2 KiB)
+  SecretKey::public_key                 56487 bytes (55.2 KiB)
+  ml_dsa_65_from_seed                   60167 bytes (58.8 KiB)
+  SecretKey::from_str (validate)        66631 bytes (65.1 KiB)
+  SecretKey::from_random                55975 bytes (54.7 KiB)
+STACK PROBE backend=ml-dsa-lean
+  Signature::verify (valid)             72007 bytes (70.3 KiB)
+  Signature::verify (wrong msg)         72007 bytes (70.3 KiB)
+  SecretKey::sign                      133471 bytes (130.3 KiB)
+  SecretKey::public_key                103695 bytes (101.3 KiB)
+  ml_dsa_65_from_seed                  108239 bytes (105.7 KiB)
+  SecretKey::from_str (validate)       111967 bytes (109.3 KiB)
+  SecretKey::from_random               108255 bytes (105.7 KiB)
+## dev profile (near-crypto at opt-level 0; non-workspace dependencies at opt-level 1 via [profile.dev.package."*"])
+STACK PROBE backend=aws-lc-rs
+  Signature::verify (valid)             48279 bytes (47.1 KiB)
+  SecretKey::sign                       84983 bytes (83.0 KiB)
+  SecretKey::public_key                 57943 bytes (56.6 KiB)
+  ml_dsa_65_from_seed                   76151 bytes (74.4 KiB)
+  SecretKey::from_str (validate)        74967 bytes (73.2 KiB)
+  SecretKey::from_random                59607 bytes (58.2 KiB)
+STACK PROBE backend=ml-dsa-lean
+  Signature::verify (valid)             84271 bytes (82.3 KiB)
+  SecretKey::sign                      168863 bytes (164.9 KiB)
+  SecretKey::public_key                104431 bytes (102.0 KiB)
+  ml_dsa_65_from_seed                  128863 bytes (125.8 KiB)
+  SecretKey::from_str (validate)       123503 bytes (120.6 KiB)
+  SecretKey::from_random               108655 bytes (106.1 KiB)
+
+# near-vm-runner ml_dsa_stack_probe (probes.patch): contract recurses DEPTH wasm frames, then calls ml_dsa_verify (valid vector). Wasmtime/Winch, production VM config (max_stack_height 262144), --release.
+# Painted stack on a 256 MiB thread; bytes used below the test frame.
+## no verify call (recursion only), identical for both backends
+  depth=0 41.1 KiB, depth=100 41.1 KiB, depth=1000 93.8 KiB; depth=5000 aborted by the VM (HostError(MemoryAccessViolation)) after using 237.1 KiB
+## verify at the bottom
+backend=aws-lc-rs   depth=0 79.8 KiB   1000 142.3 KiB   1500 173.5 KiB   2000 204.8 KiB   2500+ aborted
+backend=ml-dsa-lean depth=0 102.3 KiB  1000 164.8 KiB   1500 196.0 KiB   2000 227.3 KiB   2500+ aborted

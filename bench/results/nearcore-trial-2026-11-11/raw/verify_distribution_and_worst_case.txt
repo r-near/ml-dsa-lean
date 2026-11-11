@@ -1,0 +1,224 @@
+######## verify_distribution variant=aws-nc core=11 load1=71.87
+ml-dsa-65   valid        1952   3309     51.41µs     52.25µs     62.75µs     70.52µs     74.61µs     90.97µs      7.39µs  100.00%
+ed25519     random         32     64      7.44µs      4.85µs     36.55µs     45.38µs     59.72µs     67.39µs      8.61µs    0.00%
+secp256k1   random         64     65       303ns        30ns        30ns       200ns     48.17µs     64.76µs      3.35µs    0.00%
+ml-dsa-65   random       1952   3309     30.28µs     43.45µs     50.55µs     61.63µs     82.11µs      5.82ms     67.30µs    0.00%
+ed25519     tampered       32     64     48.73µs     44.55µs     55.25µs     67.55µs      1.65ms      6.30ms    100.95µs    0.00%
+secp256k1   tampered       64     65     80.44µs     53.70µs     66.86µs     91.10µs      6.12ms     19.00ms    414.16µs    0.00%
+ml-dsa-65   tampered     1952   3309     51.17µs     53.75µs     63.34µs     72.99µs     77.22µs      4.28ms     43.28µs    0.00%
+Notes:
+  - 'valid':    keygen + sign + verify on matching pubkey.
+  - 'random':   random bytes shaped as a signature, valid pubkey, real msg.
+  - 'tampered': real signature, real pubkey, different message.
+  The 'tampered' path is the most useful proxy for cost-of-rejection on
+  honestly-shaped-but-wrong inputs: it forces the verifier through the
+  full computation before failing the final hash check.
+######## ml_dsa_worst_case variant=aws-nc core=11
+     36    246     53.78µs     57.19µs     58.06µs     71.62µs
+     37    239     54.04µs     57.27µs     58.04µs     58.10µs
+     38    278     53.41µs     57.25µs     58.06µs     58.07µs
+     39    287     53.25µs     57.15µs     58.02µs     58.29µs
+     40    250     53.66µs     57.29µs     58.05µs     58.10µs
+     41    219     53.80µs     57.22µs     58.02µs     58.07µs
+     42    204     53.78µs     57.27µs     58.01µs     58.01µs
+     43    179     53.64µs     57.22µs     58.03µs     58.04µs
+     44    158     54.91µs     57.64µs     58.08µs     58.08µs
+     45    135     53.92µs     57.23µs     58.04µs     58.05µs
+     46    132     53.40µs     57.17µs     58.03µs     58.09µs
+     47     98     52.76µs     57.17µs     58.06µs     58.06µs
+     48     81     54.80µs     57.71µs     58.03µs     58.03µs
+     49     57     54.15µs     56.43µs     71.56µs     71.56µs
+     50     41     53.62µs     57.19µs     58.03µs     58.03µs
+     51     32     52.39µs     57.68µs     58.00µs     58.00µs
+     52     18     54.62µs     57.16µs     58.11µs     58.11µs
+     53     18     52.55µs     55.39µs     57.99µs     57.99µs
+     54      9     51.72µs     54.52µs     58.07µs     58.07µs
+     55      5     52.37µs     57.64µs     57.81µs     57.81µs
+## H2: tail of tampered-signature verify time across 100000 iterations
+  pre-generating 100000 (pk, sig) pairs...
+  done.
+tail (n=100000):
+  p   50: 57.65µs
+  p   90: 60.62µs
+  p   99: 72.81µs
+  p 99.9: 76.52µs
+  p99.99: 107.96µs
+  max:    5.10ms
+  mean:   55.91µs
+Interpretation:
+  - If H1 shows a flat line across weights, `polyveck_use_hint` is
+  cheap and not exploitable.
+  - If H2's p99.99 stays close to the verify_distribution tail
+  (~600µs), the worst case is bounded and the gas constant only
+  needs a small safety multiplier. The single-sample max is noisy
+  (it swings ~0.7-1.3ms run to run) and is not a reliable bound.
+  - If either shows a meaningful tail beyond that, that's the attack
+  vector and a separate `polyveck_use_hint`-aware bound is needed.
+######## verify_distribution variant=lean-nc core=11 load1=49.42
+ml-dsa-65   valid        1952   3309     73.26µs     73.98µs     89.48µs     96.24µs    157.25µs    178.42µs     10.11µs  100.00%
+ed25519     random         32     64      8.15µs      5.54µs     42.18µs     47.40µs     63.22µs     96.38µs      9.59µs    0.00%
+secp256k1   random         64     65       292ns        30ns        30ns       200ns     38.36µs     56.44µs      3.19µs    0.00%
+ml-dsa-65   random       1952   3309      1.40µs      1.34µs      1.69µs      1.98µs     15.33µs     16.84µs       608ns    0.00%
+ed25519     tampered       32     64     38.81µs     36.85µs     47.24µs     55.47µs     64.58µs     85.69µs      4.39µs    0.00%
+secp256k1   tampered       64     65     38.55µs     36.64µs     52.48µs     58.92µs     68.90µs     74.72µs      5.41µs    0.00%
+ml-dsa-65   tampered     1952   3309     77.40µs     74.66µs     87.30µs     96.05µs    951.31µs      3.22ms     80.75µs    0.00%
+Notes:
+  - 'valid':    keygen + sign + verify on matching pubkey.
+  - 'random':   random bytes shaped as a signature, valid pubkey, real msg.
+  - 'tampered': real signature, real pubkey, different message.
+  The 'tampered' path is the most useful proxy for cost-of-rejection on
+  honestly-shaped-but-wrong inputs: it forces the verifier through the
+  full computation before failing the final hash check.
+######## ml_dsa_worst_case variant=lean-nc core=11
+     36    250     76.18µs     75.58µs     81.66µs     84.91µs
+     37    289     76.66µs     75.99µs     81.79µs     82.09µs
+     38    249     76.20µs     75.59µs     81.71µs     81.76µs
+     39    252     76.29µs     75.56µs     81.70µs    114.90µs
+     40    240     76.39µs     75.87µs     81.77µs     81.79µs
+     41    250     76.16µs     75.81µs     81.73µs     81.77µs
+     42    199     76.00µs     75.31µs     81.74µs     81.76µs
+     43    185     76.11µs     75.57µs     81.71µs     81.75µs
+     44    162     76.26µs     75.56µs     81.74µs     82.37µs
+     45    155     76.23µs     75.42µs     81.74µs     93.25µs
+     46    106     76.05µs     75.53µs     81.63µs     81.73µs
+     47     91     75.93µs     75.43µs     81.72µs     81.72µs
+     48     64     76.37µs     75.44µs     81.74µs     81.74µs
+     49     48     76.05µs     75.53µs     81.60µs     81.60µs
+     50     36     76.63µs     75.89µs     81.53µs     81.53µs
+     51     28     76.57µs     75.51µs     81.63µs     81.63µs
+     52     23     75.86µs     75.37µs     81.72µs     81.72µs
+     53     24     76.17µs     75.76µs     80.67µs     80.67µs
+     54     13     77.72µs     76.04µs     81.70µs     81.70µs
+     55     13     77.32µs     76.66µs     81.67µs     81.67µs
+## H2: tail of tampered-signature verify time across 100000 iterations
+  pre-generating 100000 (pk, sig) pairs...
+  done.
+tail (n=100000):
+  p   50: 80.67µs
+  p   90: 95.73µs
+  p   99: 282.61µs
+  p 99.9: 7.20ms
+  p99.99: 16.13ms
+  max:    22.13ms
+  mean:   114.30µs
+Interpretation:
+  - If H1 shows a flat line across weights, `polyveck_use_hint` is
+  cheap and not exploitable.
+  - If H2's p99.99 stays close to the verify_distribution tail
+  (~600µs), the worst case is bounded and the gas constant only
+  needs a small safety multiplier. The single-sample max is noisy
+  (it swings ~0.7-1.3ms run to run) and is not a reliable bound.
+  - If either shows a meaningful tail beyond that, that's the attack
+  vector and a separate `polyveck_use_hint`-aware bound is needed.
+######## verify_distribution variant=aws-avx2 core=1 load1=524.57
+ml-dsa-65   valid        1952   3309     74.49µs     56.60µs     69.26µs    285.57µs      3.46ms      4.65ms    217.69µs  100.00%
+ed25519     random         32     64      8.45µs      5.91µs     42.59µs     48.83µs     63.08µs     84.53µs      9.81µs    0.00%
+secp256k1   random         64     65       477ns        30ns        40ns       280ns     65.45µs    169.38µs      5.44µs    0.00%
+ml-dsa-65   random       1952   3309     30.25µs     45.45µs     50.18µs     59.33µs     62.43µs     86.64µs     21.64µs    0.00%
+ed25519     tampered       32     64     47.92µs     45.99µs     58.30µs    114.71µs    192.75µs    459.11µs     13.61µs    0.00%
+secp256k1   tampered       64     65     66.50µs     48.81µs     66.26µs    186.00µs      3.96ms      6.28ms    210.63µs    0.00%
+ml-dsa-65   tampered     1952   3309     63.53µs     56.02µs     62.93µs     72.26µs      3.10ms      6.11ms    197.92µs    0.00%
+Notes:
+  - 'valid':    keygen + sign + verify on matching pubkey.
+  - 'random':   random bytes shaped as a signature, valid pubkey, real msg.
+  - 'tampered': real signature, real pubkey, different message.
+  The 'tampered' path is the most useful proxy for cost-of-rejection on
+  honestly-shaped-but-wrong inputs: it forces the verifier through the
+  full computation before failing the final hash check.
+######## ml_dsa_worst_case variant=aws-avx2 core=1
+     36    266     54.87µs     60.54µs     61.25µs     61.52µs
+     37    279     55.79µs     60.58µs     61.30µs     61.43µs
+     38    255     55.30µs     60.60µs     61.31µs     61.48µs
+     39    272     54.93µs     60.58µs     61.28µs     61.60µs
+     40    259     55.09µs     60.55µs     61.36µs     61.46µs
+     41    223     53.92µs     60.50µs     61.26µs     61.33µs
+     42    221     54.56µs     60.55µs     61.24µs     61.33µs
+     43    175     54.89µs     60.58µs     61.21µs     61.30µs
+     44    169     55.36µs     60.56µs     61.31µs     61.32µs
+     45    123     57.38µs     60.61µs     61.13µs     61.15µs
+     46    118     54.73µs     60.55µs     61.22µs     61.28µs
+     47     85     54.99µs     60.61µs     61.43µs     61.43µs
+     48     78     55.34µs     60.57µs     61.26µs     61.26µs
+     49     44     55.34µs     60.63µs     61.32µs     61.32µs
+     50     42     56.26µs     60.50µs     61.15µs     61.15µs
+     51     29     52.94µs     60.47µs     61.15µs     61.15µs
+     52     21     56.98µs     60.72µs     61.24µs     61.24µs
+     53     15     52.90µs     60.41µs     60.84µs     60.84µs
+     54     14     56.12µs     60.49µs     60.86µs     60.86µs
+     55      5     56.58µs     60.30µs     60.71µs     60.71µs
+## H2: tail of tampered-signature verify time across 100000 iterations
+  pre-generating 100000 (pk, sig) pairs...
+  done.
+tail (n=100000):
+  p   50: 37.95µs
+  p   90: 53.56µs
+  p   99: 68.89µs
+  p 99.9: 75.76µs
+  p99.99: 102.10µs
+  max:    117.34µs
+  mean:   42.33µs
+Interpretation:
+  - If H1 shows a flat line across weights, `polyveck_use_hint` is
+  cheap and not exploitable.
+  - If H2's p99.99 stays close to the verify_distribution tail
+  (~600µs), the worst case is bounded and the gas constant only
+  needs a small safety multiplier. The single-sample max is noisy
+  (it swings ~0.7-1.3ms run to run) and is not a reliable bound.
+  - If either shows a meaningful tail beyond that, that's the attack
+  vector and a separate `polyveck_use_hint`-aware bound is needed.
+######## verify_distribution variant=lean-avx2 core=12 load1=112.26
+ml-dsa-65   valid        1952   3309     43.49µs     37.78µs     56.99µs     69.76µs     74.53µs     90.76µs      8.20µs  100.00%
+ed25519     random         32     64      7.22µs      4.87µs     36.69µs     41.75µs     51.96µs     57.71µs      8.18µs    0.00%
+secp256k1   random         64     65       329ns        30ns        40ns       210ns     54.84µs     68.98µs      3.65µs    0.00%
+ml-dsa-65   random       1952   3309       958ns       920ns      1.23µs      1.44µs     12.97µs     17.19µs       486ns    0.00%
+ed25519     tampered       32     64     40.66µs     37.19µs     49.58µs     61.06µs     65.44µs    386.28µs      6.38µs    0.00%
+secp256k1   tampered       64     65     45.79µs     46.45µs     59.42µs     68.56µs     75.32µs    230.81µs      8.06µs    0.00%
+ml-dsa-65   tampered     1952   3309     45.43µs     40.81µs     58.51µs     71.31µs     97.95µs    115.28µs      9.02µs    0.00%
+Notes:
+  - 'valid':    keygen + sign + verify on matching pubkey.
+  - 'random':   random bytes shaped as a signature, valid pubkey, real msg.
+  - 'tampered': real signature, real pubkey, different message.
+  The 'tampered' path is the most useful proxy for cost-of-rejection on
+  honestly-shaped-but-wrong inputs: it forces the verifier through the
+  full computation before failing the final hash check.
+######## ml_dsa_worst_case variant=lean-avx2 core=12
+     36    255     42.25µs     37.39µs     56.79µs     57.33µs
+     37    252     42.54µs     37.40µs     57.51µs     62.40µs
+     38    297     42.60µs     37.41µs     57.41µs     62.75µs
+     39    257     42.49µs     37.40µs     57.28µs     62.02µs
+     40    257     42.57µs     37.39µs     57.47µs     62.50µs
+     41    226     42.14µs     37.39µs     57.49µs     61.08µs
+     42    232     42.54µs     37.40µs     57.51µs     63.12µs
+     43    219     43.29µs     37.44µs     57.05µs     57.51µs
+     44    171     42.76µs     37.40µs     57.35µs     57.51µs
+     45    139     43.08µs     37.41µs     55.74µs     61.98µs
+     46    110     42.31µs     37.40µs     56.83µs     57.44µs
+     47     95     42.61µs     37.41µs     61.97µs     61.97µs
+     48     92     42.80µs     37.43µs     54.96µs     54.96µs
+     49     45     43.27µs     37.45µs     55.66µs     55.66µs
+     50     34     42.28µs     37.41µs     56.89µs     56.89µs
+     51     31     45.22µs     46.55µs     55.49µs     55.49µs
+     52     24     41.63µs     37.39µs     55.70µs     55.70µs
+     53     16     42.96µs     37.41µs     55.25µs     55.25µs
+     54      8     41.85µs     37.40µs     52.62µs     52.62µs
+     55     13     41.39µs     37.42µs     56.93µs     56.93µs
+## H2: tail of tampered-signature verify time across 100000 iterations
+  pre-generating 100000 (pk, sig) pairs...
+  done.
+tail (n=100000):
+  p   50: 37.81µs
+  p   90: 52.06µs
+  p   99: 62.47µs
+  p 99.9: 73.81µs
+  p99.99: 98.07µs
+  max:    113.44µs
+  mean:   40.77µs
+Interpretation:
+  - If H1 shows a flat line across weights, `polyveck_use_hint` is
+  cheap and not exploitable.
+  - If H2's p99.99 stays close to the verify_distribution tail
+  (~600µs), the worst case is bounded and the gas constant only
+  needs a small safety multiplier. The single-sample max is noisy
+  (it swings ~0.7-1.3ms run to run) and is not a reliable bound.
+  - If either shows a meaningful tail beyond that, that's the attack
+  vector and a separate `polyveck_use_hint`-aware bound is needed.
