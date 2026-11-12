@@ -184,11 +184,13 @@ bash scripts/witness-check.sh
 ```
 
 This builds `Proofs.TopWitnessCorrect`, which the default build does not import, and checks the 146 names in
-`lean/witness-theorems.txt` for standard axioms only. The kernel evaluations are the cost: about 47 minutes cold and about 46
-GB peak memory across modules in the recorded run (about 24 GB for the largest declaration). It ends with
-`WITNESS CHECK OK: Proofs.TopWitnessCorrect`. If the kernel is killed (exit 137), the machine ran out of memory; rerun on a
-larger one. This script does not run on pull requests: it is manual or weekly (`.github/workflows/lean.yml`, on the runner named by the
-repository variable `LEAN_HEAVY_RUNNER`), because it needs a large runner.
+`lean/witness-theorems.txt` for standard axioms only. The kernel evaluations are the cost, and they are checked piece by piece: measured cold in a container with a 16 GB cap and 4 cores,
+about 2 h 17 min with `LEAN_NUM_THREADS=1` (at most 10.2 GB of anonymous memory) and 2 h 00 min with 2 (12.9 GB). The largest
+single process was 13.5 GB resident, about 3.5 GB of it memory-mapped imports; the cgroup's usage reaches the 16 GB cap
+because the page cache fills it, and the kernel reclaims that cache without killing anything. It ends
+with `WITNESS CHECK OK: Proofs.TopWitnessCorrect`. If the kernel is killed (exit 137), the machine ran out of memory; rerun with
+`LEAN_NUM_THREADS=1`. This script does not run on pull requests: it is manual or weekly (`.github/workflows/lean.yml`, on the free
+`ubuntu-latest` runner), because it takes over two hours.
 
 ### 2.4 Cross-checks of the specification
 

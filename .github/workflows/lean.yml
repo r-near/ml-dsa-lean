@@ -1,6 +1,6 @@
 name: Lean
 
-# The kernel witnesses (scripts/witness-check.sh). Manual or weekly, on a large runner.
+# The kernel witnesses (scripts/witness-check.sh). Manual or weekly, on the free ubuntu-latest runner.
 #
 # WHERE THE LEAN PROOFS RUN
 #   The proof gate (scripts/lean-check.sh), with the extraction tools, the re-extraction compared with lean/Impl and the
@@ -30,22 +30,39 @@ name: Lean
 #       33 min 44 s; setup, tools and re-extraction about 3 min; the cleanup 87 s). Sampled every 30 s: at most 12.5 GB used,
 #       at least 3.4 GB available, `lean/.lake` 8.0 GB at the end.
 #
-# WHAT STILL NEEDS A LARGE RUNNER
+# THE KERNEL WITNESSES ALSO FIT THE FREE RUNNER (this workflow)
 #   scripts/witness-check.sh builds Proofs.TopWitnessCorrect and the other `Proofs.TopWitness*` modules, which the default
-#   targets do not import, and then the default targets too, for the whole-environment
-#   scan. It is documented at about 47 min cold and about 46 GB peak across modules (24 GB for the largest declaration),
-#   measured on a many-core machine, so it cannot run on `ubuntu-latest` (it dies with exit code 137, an out-of-memory kill,
-#   not a proof failure). It reads its runner label from the repository variable LEAN_HEAVY_RUNNER:
-#     - Set it (Settings > Secrets and variables > Actions > Variables) to the label of a large hosted runner with 64 GB of
-#       RAM or more (32 GB is not enough). If a run dies with exit code 137, rerun it or pick a runner with more memory.
-#     - Unset, the weekly run is skipped; a manual dispatch falls back to `ubuntu-latest`, where the job fails with exit code 137.
-#   Every run is a cold build: nothing is cached between runs.
+#   targets do not import, checks the 146 names of lean/witness-theorems.txt for standard axioms, then builds the default
+#   targets and runs the whole-environment scan. It used to need about 46 GB (about 24 GB for the largest declaration), so it
+#   needed a large runner that was never configured. The heavy kernel evaluations are now checked piece by piece
+#   (scripts/gen-witness-stages.py, Proofs/TopWitnessPieces.lean, Proofs/TopWitnessMid.lean): a forward or inverse NTT as
+#   chained groups of layers, a long SHAKE absorption as chained groups of blocks, each matrix-vector product as one check
+#   per row, and the sampler and signing witnesses as one check per call, always against a literal intermediate value that
+#   the kernel re-derives. No theorem statement changed.
+#   Measured in the container described above (16 GB cap, swap off, 4 pinned cores), cold (fresh elan, Lake and Mathlib
+#   directories; only `lake exe cache get` downloads), on a build machine that was busy with other jobs:
+#     LEAN_NUM_THREADS=1: 8195 s (2 h 17 min), 10.2 GB of anonymous memory at most. The largest `lean` process (Proofs.TopWitnessKA)
+#                         is 13.5 GB resident, which includes about 3.5 GB of memory-mapped, reclaimable imports.
+#     LEAN_NUM_THREADS=2: 7187 s (2 h 00 min), 12.9 GB of anonymous memory at most (two processes, in Proofs.Witnesses).
+#   Both runs ended with `WITNESS CHECK OK` and no out-of-memory kill; the cgroup counter sat at the 16 GB cap because the page
+#   cache fills it, and the kernel reclaims that (about 2600 reclaim events, `oom_kill 0`).
+#   The modules form an import chain (KA < KS < Misc < Nf1 < Nf2 < Ni < Nc1 < Nc2 < Nc3), so at most one heavy module is
+#   built at a time and a second thread buys 12 %. The job uses 1, which leaves about 4 GB for the runner itself.
+#   Before the split the largest module, Proofs.TopWitnessMisc, was 45.8 GB resident (43.4 GB anonymous) in a 64 GB container,
+#   and a 40 GB container killed it (exit code 137); the next ones were 27 GB (Ni, Nc3) and 24 GB (Sign).
+#   Every run is a cold build: nothing is cached between runs. Public repositories pay nothing for `ubuntu-latest`.
+#   Optional override: set the repository variable LEAN_WITNESS_RUNNER (Settings > Secrets and variables > Actions >
+#   Variables) to the label of another runner, for example a larger hosted one, and the job runs there instead.
 #
 # TRIGGERS
-#   Only a manual dispatch and a weekly schedule. There is deliberately no pull_request trigger (a pull request must not
-#   spend large-runner minutes or run its code there) and no push trigger. The witnesses are not a required check; they are run
-#   by hand before a release (docs/reproduce.md, section 2.3). The workflow uses no secrets and a read-only token, and checks
-#   out the default ref of the event only.
+#   Only a manual dispatch and a weekly schedule. The job is deliberately NOT part of `ci-ok` and has no pull_request or push
+#   trigger: in the same container it takes 4.0 times as long as lean-check.sh (8195 s against 2048 s at one thread). Scaled by
+#   the 1.27 that the first GitHub run of the `lean` job showed (2024 s against 1596 s), that is about 2.9 h on GitHub against 37
+#   min for the `lean` job of ci.yml, and a pull request would wait for it
+#   (docs/assurance.md, section 1.7, says what the witnesses add). The weekly run catches toolchain and dependency drift
+#   without any push; run it by hand (Actions > Lean > Run workflow) after a change to lean/Proofs/TopWitness*.lean,
+#   scripts/gen-witness-stages.py or lean/SpecTests/WitnessMidGen.lean, and before a release (docs/reproduce.md, section 2.3).
+#   The workflow uses no secrets and a read-only token, and checks out the default ref of the event only.
 
 on:
   workflow_dispatch:
@@ -56,30 +73,58 @@ on:
 permissions:
   contents: read
 
-# One heavy run at a time; a new run waits instead of cancelling a long one.
+# One witness run at a time; a new run waits instead of canceling a long one.
 concurrency:
-  group: lean-heavy
+  group: lean-witness
   cancel-in-progress: false
 
 jobs:
   witness-check:
     name: witness-check
-    # This job needs about 46 GB of memory and a large runner (WarpBuild or similar, 16 vCPU / 64 GB) to pass. On a
-    # standard runner it is killed with exit code 137, which is an out-of-memory kill, not a proof failure.
-    runs-on: ${{ vars.LEAN_HEAVY_RUNNER || 'ubuntu-latest' }}
-    if: ${{ vars.LEAN_HEAVY_RUNNER != '' || github.event_name == 'workflow_dispatch' }}
-    # About 47 min cold. The script's own `lake build` timeout is 10000 s (167 min).
-    timeout-minutes: 180
+    runs-on: ${{ vars.LEAN_WITNESS_RUNNER || 'ubuntu-latest' }}
+    # Cold build measured at 7187 to 8195 s (see LEAN_NUM_THREADS); setup adds about 3 min. 300 min leaves a wide margin under
+    # the 6 h hard limit and still ends a hung job in good time. The script bounds each `lake build` itself (18000 s).
+    timeout-minutes: 300
+    env:
+      # Parallelism of the Lean task pool, and with it the number of `lean` processes Lake runs at once. Measured in the
+      # 16 GB / 4 core container: 1 gives 8195 s and 10.2 GB of anonymous memory, 2 gives 7187 s and 12.9 GB. The heavy
+      # modules form an import chain, so 2 helps little; this job uses 1. If a run dies with exit code 137 (out of memory),
+      # it is a memory problem, not a proof failure: rerun it.
+      LEAN_NUM_THREADS: "1"
     steps:
       - name: Check out the repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      # Same step as the `lean` job of ci.yml: Mathlib and the other Lake packages are 7.8 GB and the Lean toolchain 2.8 GB
+      # (at the end of the measured run `lean/.lake` was 8.2 GB and the toolchain 2.8 GB), against the documented 14 GB free on `/`. Margin, not a need.
+      - name: Free disk space
+        run: |
+          set -euo pipefail
+          echo "before:"; df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          echo "after:"; df -h /
+          free -g
+
       - name: Set up Lean
         uses: ./.github/actions/setup-lean
 
       # Builds Proofs.TopWitnessCorrect (not imported by the default roots), then the axiom gate over
-      # lean/witness-theorems.txt and the no-declarations scan with every module built.
+      # lean/witness-theorems.txt and the no-declarations scan with every module built. Prints "WITNESS CHECK OK: " only if
+      # every step passes.
       - name: scripts/witness-check.sh
-        run: scripts/witness-check.sh
+        run: |
+          set -euo pipefail
+          # Log memory every 30 s so a kill by the out-of-memory killer shows how close the run was.
+          ( while sleep 30; do echo "mem: $(free -m | awk '/^Mem:/ {print "used " $3 " MB, available " $7 " MB"}') | disk: $(df -h / | awk 'NR==2 {print $4 " free"}')"; done ) &
+          sampler=$!
+          trap 'kill "$sampler" 2>/dev/null || true' EXIT
+          scripts/witness-check.sh
+
+      - name: Report disk and memory at the end
+        if: always()
+        run: |
+          df -h /
+          free -g
+          du -sh lean/.lake "$HOME/.elan" 2>/dev/null || true

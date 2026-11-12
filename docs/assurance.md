@@ -73,8 +73,10 @@ empty whitelist). That LLVM vectorizes the permutation is a performance property
 
 **1.6 Witnesses.** `Params.Std` is kernel-checked for 44/65/87. For ML-DSA-44, ξ = 0..31, rnd = 0³², M = [0], ctx = [] and the
 default fuel, the hypotheses of `correct_44` hold on a kernel-checked instance with `api.verify_44 = ok true`
-(`Proofs.TopWitnessCorrect.correct_44_nonvacuous`). **One parameter set and one input only**; `Exhausted` has no witness. The check
-needs about 46 GB and 47 minutes cold, so it runs manually or weekly (`.github/workflows/lean.yml`), not on pull requests.
+(`Proofs.TopWitnessCorrect.correct_44_nonvacuous`). **One parameter set and one input only**; `Exhausted` has no witness. The kernel
+checks each heavy evaluation piece by piece, so the check fits GitHub's free runner: cold, in a 16 GB, 4-core container, it takes
+about 2 h 17 min and at most 10.2 GB of anonymous memory at `LEAN_NUM_THREADS=1`. Because of that time it runs weekly and on manual
+dispatch on `ubuntu-latest` (`.github/workflows/lean.yml`), not on pull requests, and it is not part of `ci-ok`.
 
 **1.7 The spec against an independent transcription.** `xspec/` vendors `lean/Spec` byte-identically and proves it equal to
 ocaml-pq's Lean transcription (142 equivalence theorems and 2 kernel known-answer tests; standard axioms only). Qualifiers: their Sign
@@ -211,7 +213,7 @@ Paths are relative to the repository root; [reproduce.md](reproduce.md) has the 
 | Claim | Command |
 |---|---|
 | 1.1–1.5: all headline, keccak4 and fast-verify theorems on standard axioms; no declared `axiom`/`opaque`/`sorry`/`native_decide`; reachability; feature independence | `bash scripts/lean-check.sh` (ends with `LEAN CHECK OK`) |
-| 1.6: the witnesses (about 46 GB) | `bash scripts/witness-check.sh` |
+| 1.6: the witnesses (about 2 h 17 min, 10.2 GB) | `bash scripts/witness-check.sh` |
 | 1.8: `lean/Impl` is the extraction of `src/` | `python3 -I scripts/extract_hash.py check`; `python3 scripts/extract.py --out DIR` on an empty `DIR`, then `diff -r lean/Impl DIR` |
 | 1.5: the extraction is the same under AVX2 target features; the 4-way permutation is 256-bit code with them (performance only) | `bash scripts/check-feature-independence.sh`; `bash scripts/check-avx2-inlining.sh` |
 | 1.7: spec against ocaml-pq | `scripts/xspec/check-axioms.sh` and `scripts/xspec/run-diff.sh all` (after `scripts/xspec/setup.sh`, `build.sh`) |
