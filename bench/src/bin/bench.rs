@@ -1,6 +1,6 @@
 //! Timing of keygen, sign (deterministic and hedged) and verify for ML-DSA-44/65/87:
 //! this crate (public `api` only), RustCrypto `ml-dsa`, libcrux-ml-dsa (portable, AVX2) and mldsa-native
-//! (C portable, AVX2) and aws-lc-rs (hedged sign only). Run it pinned (`taskset -c N`) on an otherwise idle machine; see bench/compare.sh and the benchmark table in docs/assurance.md.
+//! (C portable, AVX2) and aws-lc-rs (hedged sign only). Run it pinned (`taskset -c N`) on an otherwise idle machine; see bench/compare.sh and the benchmark tables in docs/assurance-history.md (section 5, Benchmarks).
 //!
 //! Every implementation gets the same inputs. The crosscheck harness has shown that all of them produce
 //! byte-identical keys and signatures, so the rejection loop runs the same number of attempts everywhere and

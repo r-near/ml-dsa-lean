@@ -2,7 +2,7 @@
 
 A separate Lean project that proves `lean/Spec` (our transcription of FIPS 204 and FIPS 202) equal to the independent Lean
 transcription in [ocaml-pq](https://github.com/thevilledev/ocaml-pq). It restates what the equivalence covers and what it does not;
-`docs/assurance.md` section 1.8 gives the summary.
+`docs/assurance.md` section 1.7 gives the summary; the full list of qualifiers is in `docs/assurance-history.md` section 1.8.
 
 ## How to run
 

@@ -19,14 +19,14 @@ crate's workspace and the main `Cargo.toml` needed no `exclude`. `src/` is not e
 > `nearcore-dispatch`, which no longer exist. Removing the NTT dispatch changed the compiled NTT callers of Sign and KeyGen in the default build
 > (`results/smoke-p12/compare-code.txt`), so the verdicts of this tree are in `results/smoke-p12/`: the NTT probes (`select-ntt-default.log`: 81 of
 > 84 cells `secure`, the rest the whole-Sign census) and the smoke of eight probes on three targets (`smoke-default.log`, `verdicts.tsv`, against round 10's counts).
-> `docs/assurance.md` section 4, "Round 12", reads them.
+> `docs/assurance-history.md` section 4, "Round 12", reads them.
 
 > **Round 13 (the sweep of this tree).** `src/ntt.rs` has its safe `dispatch` wrapper module again (no choice inside), and the driver of the default release profile is
 > identical to fv-p11's in every function on riscv32imac, thumbv7em and x86_64 (234, 239, 234; `compare-code.sh compare p11 p13f`). The full sweep was rerun on the tree of 1d8b5c5
 > (the `src/` of the final tree; later commits change documents only): every profile of the "Profiles" table except the removed dispatch ones, on x86_64 (`default`, `nearcore`,
 > `nearcore-novec`, `nearcore-exact`, `nearcore-exact-novec`, the `ZEROIZE=1` builds of `default` and `nearcore-exact-novec`, and the NTT probes of `avx2` and `nearcore-avx2`),
 > thumbv7em, riscv32imac and AArch64 `NONEON=1`, plus the whole-Sign censuses that finished. The per-cell files (`*.verdicts.tsv`, `*.summary.txt` with the SHA-256 of each analyzed
-> ELF and script, `*.header.txt`, `*.unknowns.txt`, `driver-sha256.txt`, the compared verdicts) are in `results/sweep-1d8b5c5/`; `docs/assurance.md` section 4, "Round 13", reads them. `sweep-compare.py`
+> ELF and script, `*.header.txt`, `*.unknowns.txt`, `driver-sha256.txt`, the compared verdicts) are in `results/sweep-1d8b5c5/`; `docs/assurance-history.md` section 4, "Round 13", reads them. `sweep-compare.py`
 > compares two verdict files probe by probe and `sweep-post.sh` produces a cell's files from its log.
 
 ## Running
