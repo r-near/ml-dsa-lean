@@ -3,13 +3,16 @@ import Proofs.TopWitnessNf2
 import Proofs.TopWitnessNc1
 import Proofs.TopWitnessNc2
 import Proofs.TopWitnessNc3
+import Proofs.TopWitnessPieces
+import Proofs.TopWitnessMid
 
 /-!
 # `Spec.Sign` returns `some` on the witness key (ML-DSA-44, `ξ = 0, 1, ..., 31`, `rnd = 0^32`, `M = [0]`, `ctx = []`)
 
 By `Sign.sign_isSome_iff` the spec returns `some` iff `ExpandA` succeeds and some attempt `a` is accepted with
 attempts `0..a-1` rejected. Here `a = 0`: the first attempt is accepted. Its value is chained through the kernel
-stage lemmas (`Nf2`, `Nc1`-`Nc3`, `Misc`), each `spec piece literal = literal`, by rewriting.
+stage lemmas (`Nf2`, `Nc1`-`Nc3`, `Misc`), each `spec piece literal = literal`, by rewriting. The four tests of `respond`
+are checked one polynomial of the vectors at a time (`hA_p*`, `hB_p*`, `hD_p*`).
 -/
 
 open Spec
@@ -156,18 +159,82 @@ theorem ct0_lit : Spec.NTTInvVec (Spec.ScalarVectorNTT Chat T0hv) = CT0v := by
   · exact nttI_ct0_2
   · exact nttI_ct0_3
 
-/-- **The first attempt is accepted**: `respond` returns `some`. The four tests are checked one declaration-step
-at a time (they are cheap separately and much more expensive when `decide` sees the whole `respond` term). -/
+/-! ### The four tests of `respond`, one polynomial at a time -/
+
+theorem hA_p0 : ‖Pl Data.y_0 + Pl Data.cs1_0‖∞ < Spec.ML_DSA_44.γ₁ - Spec.ML_DSA_44.β := by decide +kernel
+theorem hA_p1 : ‖Pl Data.y_1 + Pl Data.cs1_1‖∞ < Spec.ML_DSA_44.γ₁ - Spec.ML_DSA_44.β := by decide +kernel
+theorem hA_p2 : ‖Pl Data.y_2 + Pl Data.cs1_2‖∞ < Spec.ML_DSA_44.γ₁ - Spec.ML_DSA_44.β := by decide +kernel
+theorem hA_p3 : ‖Pl Data.y_3 + Pl Data.cs1_3‖∞ < Spec.ML_DSA_44.γ₁ - Spec.ML_DSA_44.β := by decide +kernel
+
+/-- `‖z‖∞ < γ₁ - β` for `z = y + cs₁`. -/
+theorem hA_lit : ¬ (Spec.ML_DSA_44.γ₁ - Spec.ML_DSA_44.β ≤ ‖Yv + CS1v‖∞) := by
+  have e : Yv + CS1v = v4 (Pl Data.y_0 + Pl Data.cs1_0) (Pl Data.y_1 + Pl Data.cs1_1) (Pl Data.y_2 + Pl Data.cs1_2)
+      (Pl Data.y_3 + Pl Data.cs1_3) := v4_add _ _ _ _ _ _ _ _
+  rw [e]
+  exact not_le_norm_v4 _ _ _ _ _ hA_p0 hA_p1 hA_p2 hA_p3
+
+theorem hB_p0 : ‖(Pl Data.w_0 - Pl Data.cs2_0).map (LowBits Spec.ML_DSA_44)‖∞ < Spec.ML_DSA_44.γ₂ - Spec.ML_DSA_44.β := by
+  decide +kernel
+theorem hB_p1 : ‖(Pl Data.w_1 - Pl Data.cs2_1).map (LowBits Spec.ML_DSA_44)‖∞ < Spec.ML_DSA_44.γ₂ - Spec.ML_DSA_44.β := by
+  decide +kernel
+theorem hB_p2 : ‖(Pl Data.w_2 - Pl Data.cs2_2).map (LowBits Spec.ML_DSA_44)‖∞ < Spec.ML_DSA_44.γ₂ - Spec.ML_DSA_44.β := by
+  decide +kernel
+theorem hB_p3 : ‖(Pl Data.w_3 - Pl Data.cs2_3).map (LowBits Spec.ML_DSA_44)‖∞ < Spec.ML_DSA_44.γ₂ - Spec.ML_DSA_44.β := by
+  decide +kernel
+
+/-- `‖r₀‖∞ < γ₂ - β` for `r₀ = LowBits(w - cs₂)`. -/
+theorem hB_lit : ¬ (Spec.ML_DSA_44.γ₂ - Spec.ML_DSA_44.β ≤ ‖LowBitsVec Spec.ML_DSA_44 (Wv - CS2v)‖∞) := by
+  have e : Wv - CS2v = v4 (Pl Data.w_0 - Pl Data.cs2_0) (Pl Data.w_1 - Pl Data.cs2_1) (Pl Data.w_2 - Pl Data.cs2_2)
+      (Pl Data.w_3 - Pl Data.cs2_3) := v4_sub _ _ _ _ _ _ _ _
+  have h : LowBitsVec Spec.ML_DSA_44 (Wv - CS2v) = v4 ((Pl Data.w_0 - Pl Data.cs2_0).map (LowBits Spec.ML_DSA_44))
+      ((Pl Data.w_1 - Pl Data.cs2_1).map (LowBits Spec.ML_DSA_44))
+      ((Pl Data.w_2 - Pl Data.cs2_2).map (LowBits Spec.ML_DSA_44))
+      ((Pl Data.w_3 - Pl Data.cs2_3).map (LowBits Spec.ML_DSA_44)) := by
+    rw [e]
+    exact LowBitsVec_v4 _ _ _ _ _
+  rw [h]
+  exact not_le_norm_v4 _ _ _ _ _ hB_p0 hB_p1 hB_p2 hB_p3
+
+theorem hD_p0 : (Vector.zipWith (MakeHint Spec.ML_DSA_44) (-(Pl Data.ct0_0)) (Pl Data.w_0 - Pl Data.cs2_0 + Pl Data.ct0_0)).countP
+    (fun x => x) = Mid.hint_n_0 := by decide +kernel
+theorem hD_p1 : (Vector.zipWith (MakeHint Spec.ML_DSA_44) (-(Pl Data.ct0_1)) (Pl Data.w_1 - Pl Data.cs2_1 + Pl Data.ct0_1)).countP
+    (fun x => x) = Mid.hint_n_1 := by decide +kernel
+theorem hD_p2 : (Vector.zipWith (MakeHint Spec.ML_DSA_44) (-(Pl Data.ct0_2)) (Pl Data.w_2 - Pl Data.cs2_2 + Pl Data.ct0_2)).countP
+    (fun x => x) = Mid.hint_n_2 := by decide +kernel
+theorem hD_p3 : (Vector.zipWith (MakeHint Spec.ML_DSA_44) (-(Pl Data.ct0_3)) (Pl Data.w_3 - Pl Data.cs2_3 + Pl Data.ct0_3)).countP
+    (fun x => x) = Mid.hint_n_3 := by decide +kernel
+
+/-- The hint has weight `hint_n_0 + ... + hint_n_3 ≤ ω`. -/
+theorem hD_lit : ¬ (Spec.ML_DSA_44.ω < HintWeight (MakeHintVec Spec.ML_DSA_44 (-CT0v) (Wv - CS2v + CT0v))) := by
+  have e1 : -CT0v = v4 (-Pl Data.ct0_0) (-Pl Data.ct0_1) (-Pl Data.ct0_2) (-Pl Data.ct0_3) := v4_neg _ _ _ _
+  have e2 : Wv - CS2v + CT0v = v4 (Pl Data.w_0 - Pl Data.cs2_0 + Pl Data.ct0_0) (Pl Data.w_1 - Pl Data.cs2_1 + Pl Data.ct0_1)
+      (Pl Data.w_2 - Pl Data.cs2_2 + Pl Data.ct0_2) (Pl Data.w_3 - Pl Data.cs2_3 + Pl Data.ct0_3) := by
+    have a : Wv - CS2v = v4 (Pl Data.w_0 - Pl Data.cs2_0) (Pl Data.w_1 - Pl Data.cs2_1) (Pl Data.w_2 - Pl Data.cs2_2)
+        (Pl Data.w_3 - Pl Data.cs2_3) := v4_sub _ _ _ _ _ _ _ _
+    rw [a]
+    exact v4_add _ _ _ _ _ _ _ _
+  have h : MakeHintVec Spec.ML_DSA_44 (-CT0v) (Wv - CS2v + CT0v) =
+      v4 (Vector.zipWith (MakeHint Spec.ML_DSA_44) (-(Pl Data.ct0_0)) (Pl Data.w_0 - Pl Data.cs2_0 + Pl Data.ct0_0))
+        (Vector.zipWith (MakeHint Spec.ML_DSA_44) (-(Pl Data.ct0_1)) (Pl Data.w_1 - Pl Data.cs2_1 + Pl Data.ct0_1))
+        (Vector.zipWith (MakeHint Spec.ML_DSA_44) (-(Pl Data.ct0_2)) (Pl Data.w_2 - Pl Data.cs2_2 + Pl Data.ct0_2))
+        (Vector.zipWith (MakeHint Spec.ML_DSA_44) (-(Pl Data.ct0_3)) (Pl Data.w_3 - Pl Data.cs2_3 + Pl Data.ct0_3)) := by
+    rw [e1, e2]
+    exact MakeHintVec_v4 _ _ _ _ _ _ _ _ _
+  rw [h]
+  exact not_lt.mpr (HintWeight_v4_le _ _ _ _ _ _ _ _ _ hD_p0 hD_p1 hD_p2 hD_p3 (by decide +kernel))
+
+/-- **The first attempt is accepted**: `respond` returns `some`. The four tests are checked one at a time
+(`hA_lit`, `hB_lit`, `hC`, `hD_lit`; they are cheap separately and much more expensive when `decide` sees the whole `respond`
+term), the first, second and fourth one polynomial at a time. -/
 theorem respond_lit : (Sign.respond Spec.ML_DSA_44 P0 Yv Wv Cp).isSome = true := by
   have e1 : NTT (RPoly.toZq Cp) = Chat := nttF_c
   have hs1 : P0.ŝ₁ = S1hv := ntt_s1_lit
   have hs2 : P0.ŝ₂ = S2hv := ntt_s2_lit
   have ht0 : P0.t₀hat = T0hv := ntt_t0_lit
-  have hA : ¬ (Spec.ML_DSA_44.γ₁ - Spec.ML_DSA_44.β ≤ ‖Yv + CS1v‖∞) := by decide +kernel
-  have hB : ¬ (Spec.ML_DSA_44.γ₂ - Spec.ML_DSA_44.β ≤ ‖LowBitsVec Spec.ML_DSA_44 (Wv - CS2v)‖∞) := by decide +kernel
+  have hA := hA_lit
+  have hB := hB_lit
   have hC : ¬ (Spec.ML_DSA_44.γ₂ ≤ ‖CT0v‖∞) := by decide +kernel
-  have hD : ¬ (Spec.ML_DSA_44.ω < HintWeight (MakeHintVec Spec.ML_DSA_44 (-CT0v) (Wv - CS2v + CT0v))) := by
-    decide +kernel
+  have hD := hD_lit
   rw [Sign.respond_eq, e1, hs1, hs2, ht0, cs1_lit, cs2_lit, ct0_lit, if_neg (not_or.2 ⟨hA, hB⟩),
     if_neg (not_or.2 ⟨hC, hD⟩)]
   rfl

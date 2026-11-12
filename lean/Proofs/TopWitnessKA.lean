@@ -2,11 +2,12 @@
 -- Verify with `python3 -I ../scripts/gen-witness-stages.py --check`, which scripts/witness-check.sh runs.
 import Proofs.TopWitnessLit
 import Proofs.SampleA
+import Proofs.TopWitnessPieces
 
 /-!
 # `RejNTTPoly` on the 16 seeds of `ExpandA` (ML-DSA-44, `ρ = rhoS`), with the sampled polynomials named
 
-One kernel evaluation each (measured 10 GB, 40 s). `Data.a_r_s` are native candidates; the kernel checks them.
+One kernel evaluation each (the floor of the witnesses: about 10 GB). `Data.a_r_s` are native candidates; the kernel checks them.
 -/
 
 open Spec
@@ -16,99 +17,99 @@ namespace TopWitness
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(0, 0)` of `Â`. -/
+/-- Entry `(0, 0)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_0_0 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 0) = some (Pl Data.a_0_0) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 0) = some (Pl Data.a_0_0) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(0, 1)` of `Â`. -/
+/-- Entry `(0, 1)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_0_1 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 1) = some (Pl Data.a_0_1) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 1) = some (Pl Data.a_0_1) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(0, 2)` of `Â`. -/
+/-- Entry `(0, 2)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_0_2 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 2) = some (Pl Data.a_0_2) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 2) = some (Pl Data.a_0_2) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(0, 3)` of `Â`. -/
+/-- Entry `(0, 3)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_0_3 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 3) = some (Pl Data.a_0_3) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 3) = some (Pl Data.a_0_3) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(1, 0)` of `Â`. -/
+/-- Entry `(1, 0)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_1_0 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 0) = some (Pl Data.a_1_0) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 0) = some (Pl Data.a_1_0) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(1, 1)` of `Â`. -/
+/-- Entry `(1, 1)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_1_1 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 1) = some (Pl Data.a_1_1) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 1) = some (Pl Data.a_1_1) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(1, 2)` of `Â`. -/
+/-- Entry `(1, 2)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_1_2 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 2) = some (Pl Data.a_1_2) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 2) = some (Pl Data.a_1_2) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(1, 3)` of `Â`. -/
+/-- Entry `(1, 3)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_1_3 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 3) = some (Pl Data.a_1_3) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 3) = some (Pl Data.a_1_3) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(2, 0)` of `Â`. -/
+/-- Entry `(2, 0)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_2_0 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 0) = some (Pl Data.a_2_0) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 0) = some (Pl Data.a_2_0) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(2, 1)` of `Â`. -/
+/-- Entry `(2, 1)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_2_1 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 1) = some (Pl Data.a_2_1) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 1) = some (Pl Data.a_2_1) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(2, 2)` of `Â`. -/
+/-- Entry `(2, 2)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_2_2 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 2) = some (Pl Data.a_2_2) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 2) = some (Pl Data.a_2_2) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(2, 3)` of `Â`. -/
+/-- Entry `(2, 3)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_2_3 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 3) = some (Pl Data.a_2_3) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 3) = some (Pl Data.a_2_3) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(3, 0)` of `Â`. -/
+/-- Entry `(3, 0)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_3_0 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 0) = some (Pl Data.a_3_0) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 0) = some (Pl Data.a_3_0) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(3, 1)` of `Â`. -/
+/-- Entry `(3, 1)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_3_1 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 1) = some (Pl Data.a_3_1) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 1) = some (Pl Data.a_3_1) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(3, 2)` of `Â`. -/
+/-- Entry `(3, 2)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_3_2 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 2) = some (Pl Data.a_3_2) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 2) = some (Pl Data.a_3_2) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 4000000 in
-/-- Entry `(3, 3)` of `Â`. -/
+/-- Entry `(3, 3)` of `Â`. The kernel compares the coefficients as natural numbers (`opt_eq_Pl_of_vals`). -/
 theorem rejA_3_3 :
-    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 3) = some (Pl Data.a_3_3) := by decide +kernel
+    Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 3) = some (Pl Data.a_3_3) := opt_eq_Pl_of_vals _ _ (by decide +kernel) (by decide +kernel)
 
 end TopWitness
 end Proofs

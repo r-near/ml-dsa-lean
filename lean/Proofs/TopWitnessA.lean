@@ -1,11 +1,12 @@
-import Proofs.TopWitnessSeed
+import Proofs.TopWitnessKA
 import Proofs.SampleA
 
 /-!
 # `ExpandA` succeeds on the `ρ` derived from `ξ` (ML-DSA-44)
 
 `Spec.ExpandA` on `ρ = rhoS` at fuel 512. A single kernel evaluation of all 16 `RejNTTPoly` calls needs about 160 GB
-(measured: 19 min), so each entry is its own declaration (about 10 GB, 40 s each), assembled through the
+(measured: 19 min), so each entry is its own kernel check (about 10 GB, 40 s each): the 16 declarations `rejA_r_s` of
+`TopWitnessKA`, which also name the sampled polynomials. Here each gives `isSome`, and the 16 are assembled through the
 `expandA_eq` characterization of `SampleA`.
 -/
 
@@ -15,85 +16,53 @@ set_option maxRecDepth 8192
 namespace Proofs
 namespace TopWitness
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(0, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_0_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 0)).isSome = true := by decide +kernel
+/-- Entry `(0, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_0_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 0)).isSome = true := (congrArg Option.isSome rejA_0_0).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(0, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_0_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 1)).isSome = true := by decide +kernel
+/-- Entry `(0, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_0_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 1)).isSome = true := (congrArg Option.isSome rejA_0_1).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(0, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_0_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 2)).isSome = true := by decide +kernel
+/-- Entry `(0, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_0_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 2)).isSome = true := (congrArg Option.isSome rejA_0_2).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(0, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_0_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 3)).isSome = true := by decide +kernel
+/-- Entry `(0, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_0_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 0 3)).isSome = true := (congrArg Option.isSome rejA_0_3).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(1, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_1_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 0)).isSome = true := by decide +kernel
+/-- Entry `(1, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_1_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 0)).isSome = true := (congrArg Option.isSome rejA_1_0).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(1, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_1_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 1)).isSome = true := by decide +kernel
+/-- Entry `(1, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_1_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 1)).isSome = true := (congrArg Option.isSome rejA_1_1).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(1, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_1_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 2)).isSome = true := by decide +kernel
+/-- Entry `(1, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_1_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 2)).isSome = true := (congrArg Option.isSome rejA_1_2).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(1, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_1_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 3)).isSome = true := by decide +kernel
+/-- Entry `(1, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_1_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 1 3)).isSome = true := (congrArg Option.isSome rejA_1_3).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(2, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_2_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 0)).isSome = true := by decide +kernel
+/-- Entry `(2, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_2_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 0)).isSome = true := (congrArg Option.isSome rejA_2_0).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(2, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_2_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 1)).isSome = true := by decide +kernel
+/-- Entry `(2, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_2_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 1)).isSome = true := (congrArg Option.isSome rejA_2_1).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(2, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_2_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 2)).isSome = true := by decide +kernel
+/-- Entry `(2, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_2_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 2)).isSome = true := (congrArg Option.isSome rejA_2_2).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(2, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_2_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 3)).isSome = true := by decide +kernel
+/-- Entry `(2, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_2_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 2 3)).isSome = true := (congrArg Option.isSome rejA_2_3).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(3, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_3_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 0)).isSome = true := by decide +kernel
+/-- Entry `(3, 0)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_3_0 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 0)).isSome = true := (congrArg Option.isSome rejA_3_0).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(3, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_3_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 1)).isSome = true := by decide +kernel
+/-- Entry `(3, 1)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_3_1 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 1)).isSome = true := (congrArg Option.isSome rejA_3_1).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(3, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_3_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 2)).isSome = true := by decide +kernel
+/-- Entry `(3, 2)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_3_2 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 2)).isSome = true := (congrArg Option.isSome rejA_3_2).trans rfl
 
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 4000000 in
-/-- Entry `(3, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512. -/
-theorem rej_a_3_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 3)).isSome = true := by decide +kernel
+/-- Entry `(3, 3)` of `ExpandA` for `ρ`: `RejNTTPoly` succeeds at fuel 512 (from `rejA_*`). -/
+theorem rej_a_3_3 : (Spec.RejNTTPoly 512 (SampleA.pSeed rhoS 3 3)).isSome = true := (congrArg Option.isSome rejA_3_3).trans rfl
 
 /-- The 16 entries, assembled. -/
 theorem rej_a_all :
