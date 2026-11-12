@@ -9,15 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1](https://github.com/r-near/ml-dsa-lean/compare/v0.2.0...v0.2.1) - 2026-11-12
 
-### Other
-
-- point untrusted secret-key validation at pk_from_sk_NN; re-extract ([#7](https://github.com/r-near/ml-dsa-lean/pull/7))
-- current-state assurance.md, history moved to assurance-history.md; current stack figures in the API docs ([#4](https://github.com/r-near/ml-dsa-lean/pull/4))
+No change to the code, the public API or any theorem statement. The changes under `src/` are doc comments.
 
 ### Changed
 
-- CI: the Lean proofs (`scripts/lean-check.sh`, after the re-extraction compared with `lean/Impl`) run as the `lean` job of `ci.yml` on every pull request and every push to `main`, on the free `ubuntu-latest` runner, and `ci-ok` needs it, so they are a required check. `lean.yml` keeps only `witness-check`, manual or weekly, on the free `ubuntu-latest` runner. `scripts/lean-check.sh` takes its `lake build` timeout from `LEAN_BUILD_TIMEOUT` (default 7200 s, was 3000 s).
-- Lean proofs: `Proofs.SampleS`, `Proofs.SkWellFormed` and `Proofs.Witnesses` check each `decide +kernel` witness one `RejBoundedPoly` call or one η-block at a time (`ExpandS_isSome`, `SkWF_iff_blocks`), so no module peaks above 10.6 GB (it was 35.5 GB). Theorem statements are unchanged.
+- API docs: `pk_from_sk_NN`, not `sk_is_well_formed_NN`, is the check to run on secret keys loaded from untrusted storage.
+  `sk_is_well_formed_NN` checks the s₁ and s₂ ranges only, so a key with a corrupted ρ, tr or t₀ passes it; `pk_from_sk_NN`
+  recomputes the public key and rejects inconsistent keys. The README says the same.
+- API docs: the stack figures in `src/api.rs` are measured on this release (`tools/stack/run.sh`, x86_64 release): `verify_NN`
+  64 / 90 / 132 KB, `verifying_key_NN` 50 / 74 / 111 KB, `sign_NN` 99 / 140 / 209 KB for ML-DSA-44 / 65 / 87.
+- Docs: `docs/assurance.md` is a current-state document (what is proved, the trusted base, what is tested, what is not covered,
+  and a command for each claim). The round-by-round history moved unchanged to `docs/assurance-history.md`.
+- CI: the Lean proofs (`scripts/lean-check.sh`, after the re-extraction compared with `lean/Impl`) run as the `lean` job of
+  `ci.yml` on every pull request and every push to `main`, on the free `ubuntu-latest` runner, and `ci-ok` needs it, so they
+  are a required check. `scripts/lean-check.sh` takes its `lake build` timeout from `LEAN_BUILD_TIMEOUT` (default 7200 s, was 3000 s).
+- CI: the non-vacuity witnesses (`scripts/witness-check.sh`) run weekly and on manual dispatch on `ubuntu-latest`
+  (`lean.yml`). They are not a required check.
+- Lean proofs: the heavy kernel evaluations are checked piece by piece, with theorem statements unchanged. In the default build,
+  `Proofs.SampleS`, `Proofs.SkWellFormed` and `Proofs.Witnesses` check one `RejBoundedPoly` call or one η-block at a time, so
+  no module peaks above 10.6 GB (it was 35.5 GB). In the witness modules, NTTs, long SHAKE absorptions, matrix rows and rounding
+  steps are chained through intermediate values that the kernel re-derives, so the witness check fits in 16 GB (it needed
+  about 46 GB).
 
 ## [0.2.0](https://github.com/r-near/ml-dsa-lean/compare/v0.1.0...v0.2.0) - 2026-11-10
 
