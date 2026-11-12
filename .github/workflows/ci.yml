@@ -12,8 +12,8 @@ name: CI
 # kernel checks (Proofs.SampleS, Proofs.SkWellFormed, Proofs.Witnesses), no module peaks above 10.6 GB.
 #
 # Heavy checks are elsewhere:
-#   - The kernel witnesses (scripts/witness-check.sh, about 46 GB): .github/workflows/lean.yml, manual or weekly, on the
-#     large runner named by the repository variable LEAN_HEAVY_RUNNER.
+#   - The kernel witnesses (scripts/witness-check.sh, about 2.3 h in a 16 GB container, an estimated 2.9 h on GitHub, 10 GB): .github/workflows/lean.yml, manual or
+#     weekly, also on ubuntu-latest; too slow for every pull request, so not part of ci-ok.
 #   - The BINSEC constant-time harness (checkct/): manual, far too heavy for CI.
 #
 # This workflow uses no secrets and a read-only token, so it is safe for pull requests from forks.
