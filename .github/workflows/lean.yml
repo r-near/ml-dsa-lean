@@ -73,7 +73,7 @@ on:
 permissions:
   contents: read
 
-# One witness run at a time; a new run waits instead of cancelling a long one.
+# One witness run at a time; a new run waits instead of canceling a long one.
 concurrency:
   group: lean-witness
   cancel-in-progress: false
