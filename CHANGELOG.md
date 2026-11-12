@@ -15,13 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.2.0](https://github.com/r-near/ml-dsa-lean/compare/v0.1.0...v0.2.0) - 2026-11-10
 
 This section is the net change since 0.1.0. The branch went through a run-time AVX2 dispatch for verify on the way (rounds 1 to 11 of
-`docs/assurance.md`, section 0); the last round removed it, so none of it ships.
+`docs/assurance-history.md`, section 0); the last round removed it, so none of it ships.
 
 ### Added
 
 - `verify_NN`, `verify_internal_NN` and `verifying_key_NN` run a 4-way body (4-way Keccak-f[1600], SHAKE128 and ExpandA, with `tr = H(pk, 64)` in the spare
   fourth lane of the first groups) in every build. It is plain Rust, proved equal to the scalar verify on every input, divergence included, in Lean
-  (`docs/assurance.md` section 1.9, `lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`); nothing selects it at run time and nothing is
+  (`docs/assurance-history.md` section 1.9, `lean/keccak4-theorems.txt`, `lean/fast-verify-theorems.txt`); nothing selects it at run time and nothing is
   `cfg`'d: the public functions call it directly. One-shot verify for ML-DSA-44 / 65 / 87 takes 38.6 / 57.9 / 96.2 µs under nearcore's current flags (no AVX2) against
   52.5 / 88.4 / 152.6 µs for the scalar functions, and 26.1 / 38.4 / 60.7 µs with `-C target-feature=+avx,+avx2` added (AMD EPYC 9B14, rustc 1.99.1;
   `bench/results/2026-11-09-p12.md`). **The AVX2 numbers need AVX2 target features at compile time**; a binary built that way runs only on a CPU with AVX2.

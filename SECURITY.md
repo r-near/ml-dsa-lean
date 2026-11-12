@@ -34,7 +34,7 @@ Only the latest release and `main`. There are no backports.
   `unsafe` AVX2 dispatch (feature `avx2`).
 - **Secret handling**: secret-dependent timing or branches in the compiled code that the documentation says are not
   there, and secret material left behind that the `zeroize` documentation says is wiped. The constant-time evidence
-  and its limits are in `docs/assurance.md` section 4 and `checkct/README.md`; the wipe claims are in the `api` module documentation.
+  and its limits are in `docs/assurance.md` section 4.1 and `checkct/README.md`; the wipe claims are in the `api` module documentation.
 - **The proofs' claimed scope**: a Lean theorem listed in `lean/headline-theorems.txt` that is wrong about what it
   says, a use of `sorry` or a non-standard axiom that the axiom gate (`scripts/check-axioms.sh`) misses, or a mismatch
   between the Lean specification (`lean/Spec`) and FIPS 204 that makes a documented claim false. The claims, their
@@ -51,7 +51,7 @@ Only the latest release and `main`. There are no backports.
   problem reaches the library or its proofs.
 - Properties the project does not claim: for example the theorems are about the source semantics, not the compiled
   object code, the Lean model does not cover stack exhaustion or out-of-memory, and constant-time evidence is for the
-  targets and builds listed in `docs/assurance.md` section 4 and `checkct/README.md`.
+  targets and builds listed in `docs/assurance.md` section 4.1 and `checkct/README.md`.
 - Side channels that need physical access, fault injection or a hostile co-resident process beyond the documented model.
 - Denial of service from resource exhaustion through intended, documented behavior.
 

@@ -1,6 +1,6 @@
 # Kernel OOM kills on the build box during the sweep at 1d8b5c5 (journalctl -k -g 'Killed process', November 9 22:00 UTC to the end of the
 # census runs, both boots), host name removed. Every one is a whole-Sign census container at its 160 GB cap (`CT_MEMORY=160g`); each matches
-# exactly one `error` cell of the census table in docs/assurance.md, section 4, and nothing else in the sweep was killed:
+# exactly one `error` cell of the census table in docs/assurance-history.md, section 4, and nothing else in the sweep was killed:
 #   06:59:27  thumbv7em census_sign_internal_44      (container ct-cs-thumb-int)
 #   07:15:53  thumbv7em census_sign_prepared_44      (container ct-cs-thumb-prep)
 #   08:17:21  riscv32imac census_sign_prepared_44    (container ct-cs-riscv-prep)

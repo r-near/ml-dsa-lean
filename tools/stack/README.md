@@ -58,7 +58,7 @@ column is x86_64 painted at opt-level 0 with debug assertions (`cargo test` with
 Re-measured on the final tree of the fast-verify branch (round 14; `src/` is the tree of round 13), with `nightly-2026-10-06`
 and `bash tools/stack/run.sh`. **The verify and key-construction rows changed in round 12 and are larger than in every table
 before it:** the always-4-way verify keeps its chain `#[inline(always)]`, in one 32-byte-aligned frame per public function
-(`docs/assurance.md`, rounds 12 and 13), so `verify_44` / `65` / `87` are now 64.2 / 89.8 / 131.8 KB (x86_64 static; they were 49.6 /
+(`docs/assurance-history.md`, rounds 12 and 13), so `verify_44` / `65` / `87` are now 64.2 / 89.8 / 131.8 KB (x86_64 static; they were 49.6 /
 75.7 / 115.1 KB) and `verifying_key_44` / `65` / `87` are 49.7 / 74.3 / 111.0 KB (were 31.1 / 51.6 / 26.0 KB; the ML-DSA-87 figure
 includes a second copy of the key that the compiler does not elide, `bench/results/2026-11-09-p13.md` section 2). The prepared calls
 got smaller (`verify_prepared_87` 49.6 KB, was 58.8). The `sign_*` rows are also lower than the table of 2026-11-01 (`sign_87` 209 KB,

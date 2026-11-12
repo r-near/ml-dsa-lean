@@ -3,13 +3,13 @@
 Nearly everything claimed in the [README](../README.md) and [assurance.md](assurance.md) can be re-run from this repository.
 This page gives the commands. What cannot be re-run from here:
 
-- The proof mutation testing (29 mutants of `src`, assurance.md section 5): the harness that generated and ran the mutants is
+- The proof mutation testing (29 mutants of `src`, assurance.md section 4): the harness that generated and ran the mutants is
   not committed. Only the regression tests it led to (`tests/mutants.rs`, the `prefix_eq` unit test in `src/verify.rs`) are.
-- The notes of the third internal review of `lean/Spec` against the FIPS PDFs (assurance.md, section 1.8): they are not committed.
+- The notes of the third internal review of `lean/Spec` against the FIPS PDFs (assurance.md, section 3, item 1): they are not committed.
   The Lean tests, the VCVio differential and the other cross-checks it relied on can be re-run (section 2.4).
 - Earlier logs and notes. The raw results of the latest constant-time sweep (`checkct/results/sweep-1a72d9e/`), of the one before it
   (`sweep-15b4ce2/`, the baseline of the comparison in `checkct/README.md`) and the
-  `nearcore-exact` stage logs that assurance.md cites are kept. The raw logs of older sweeps (for example e9a1c74, whose results
+  `nearcore-exact` stage logs that assurance-history.md cites are kept. The raw logs of older sweeps (for example e9a1c74, whose results
   fill the cells marked "not rerun"), the progress trackers, the benchmark baseline notes and the experiment directories
   were deleted before release, so statements that only they supported can be re-measured but not re-read.
 - Machine-dependent figures: benchmark numbers, stack-use measurements and BINSEC memory use depend on the machine.
@@ -64,7 +64,7 @@ script, against the justified whitelist `scripts/cfg-inventory.txt`; a new or ch
 does a scan that finds no site), `readme-counts` (`scripts/check-readme-counts.py`: the theorem counts the README
 states against `lean/*-theorems.txt`) and `ci-selftest` (`scripts/ci-selftest.sh`: the `--only lean` path of `ci.sh` and `lean-check.sh`
 against stub gates, so the feature-independence check cannot be skipped silently; and `checkct/compare_code.py --self-test`). With `--lean` it also runs `feature-independence` (`scripts/check-feature-independence.sh`, section 2.2).
-Last recorded result: see assurance.md, section 0.
+Last recorded result: see assurance-history.md, section 0 (the Round 13 and Round 14 entries).
 
 The longer differentials, fuzzing and benchmarks:
 
@@ -73,9 +73,9 @@ The longer differentials, fuzzing and benchmarks:
 - `bench/` (Linux x86_64; `run.sh` and `compare.sh` pin with `taskset`, and the numbers are only comparable on an otherwise idle
   machine): `bash bench/build.sh OUTDIR` builds the variants; `bash bench/run.sh OUTDIR CPU RESULTDIR [variant ...]` runs them
   pinned to one CPU (the first argument is the directory `build.sh` wrote to); `bash bench/compare.sh LABEL [CPU]` builds and
-  runs the default / `avx2` (the no-op feature) / `x86-64-v3` comparison of Sign and KeyGen behind the older table in assurance.md section 5 (output under
+  runs the default / `avx2` (the no-op feature) / `x86-64-v3` comparison of Sign and KeyGen behind the older table in assurance-history.md section 5 (output under
   `$ML_DSA_SCRATCH/ntt-bench-LABEL`, which defaults to `${XDG_CACHE_HOME:-~/.cache}/ml-dsa-lean/scratch`). See the header of each script.
-  `bash bench/fast-verify.sh LABEL [CPU]` is the verify benchmark behind the verify table in assurance.md section 5 and
+  `bash bench/fast-verify.sh LABEL [CPU]` is the verify benchmark behind the verify table in assurance-history.md section 5 and
   `bench/results/2026-11-07-p3.md`: it builds three variants (labeled `scalar`, `avx2`, `v3`; nearcore's flags, plus `+avx,+avx2`, and `-C target-cpu=x86-64-v3`) under nearcore's profile and target
   features (`SETS=44,65,87` for all sets; `TOOLCHAIN=1.95.0` for nearcore's compiler; `ROUNDS`, `HT_OFFSET` and
   `ML_DSA_SCRATCH` as described in its header) and runs them next to aws-lc-rs and mldsa-native AVX2, pinned to an idle core.
@@ -115,9 +115,9 @@ on a nonzero Lake exit, on any `error:` or `declaration uses 'sorry'` in the ful
 `scripts/check-axioms.sh`. The axiom check prints the axioms of every extracted definition and of every name in
 `lean/headline-theorems.txt` and fails if any is not one of `propext`, `Classical.choice`, `Quot.sound`. `lean-check.sh` then runs
 the same gate over `lean/keccak4-theorems.txt` and `lean/fast-verify-theorems.txt` (the 4-way Keccak, sampler, ExpandA and verify
-theorems, assurance.md section 1.9; `scripts/check-axioms.sh --list FILE --no-impl` runs one list). A `sorry` would
+theorems, assurance.md section 1.5; `scripts/check-axioms.sh --list FILE --no-impl` runs one list). A `sorry` would
 show up as `sorryAx` and `native_decide` as an extra axiom, so both fail the check. That gate looks only at the dependencies of the names it is given, so `lean-check.sh` also runs `scripts/check-no-decls.sh`, which fails on any `axiom`, `opaque`, `sorry`, `admit`, `native_decide`, `implemented_by` or `extern` declared anywhere in `lean/Impl`, `lean/Spec` or `lean/Proofs` (a scan of the source text and a walk over the Lean environment's constants of those modules), and `scripts/check-no-decls.sh --self-test`, which injects each of them into an `Impl` module and requires the scan to report it. `witness-check.sh` repeats the scan with the `TopWitness` modules built (`--all-built`). The axiom gate prints the declaration count
-on its `defs/theorems to check:` and `checked:` lines (the count depends on the tree; assurance.md section 0 has the recorded one); success ends with `LEAN CHECK OK` and does not
+on its `defs/theorems to check:` and `checked:` lines (the count depends on the tree; assurance-history.md section 0 has the recorded one); success ends with `LEAN CHECK OK` and does not
 repeat it. Pass module names to build less, for example
 `bash scripts/lean-check.sh Proofs.PartialAPI`. Dependencies (Mathlib and Aeneas) are fetched with `lake exe cache get`
 where possible and compiled otherwise, so the first run is much slower than later ones. `LEAN_PACKAGES_SEED` can point at a
@@ -210,7 +210,7 @@ with `WITNESS CHECK OK: Proofs.TopWitnessCorrect`. If the kernel is killed (exit
 
 ## 3. Constant-time checks (BINSEC)
 
-These need Linux and Docker. The sweep of round 13 (`checkct/results/sweep-1d8b5c5/`, assurance.md section 4, "Round 13 BINSEC sweep") is the current one. The
+These need Linux and Docker. The sweep of round 13 (`checkct/results/sweep-1d8b5c5/`, assurance-history.md section 4, "Round 13 BINSEC sweep") is the current one. The
 harness (`checkct/driver`, which includes the `src/` files by `#[path]`) builds on this tree. `bash checkct/compare-code.sh build NAME` and `compare A B` compare the driver's machine code between two checkouts; `checkct/sweep-post.sh CELL` and `checkct/sweep-compare.py OLD NEW` turn a cell's log into its files and compare two cells. The image builds BINSEC and the Rust toolchains (about 10 minutes):
 
 ```sh
@@ -251,7 +251,7 @@ probes that contain vector code; the old static scan of the dispatched AVX2 NTT 
 
 ## 5. What a pass means
 
-A passing `lean-check.sh` establishes the theorems in assurance.md, section 1, under the trusted base in section 2 (the Lean
+A passing `lean-check.sh` establishes the theorems in assurance.md, section 1, under the trusted base in section 3 (the Lean
 transcription of FIPS 204, the Charon/Aeneas translation, rustc and LLVM, the Lean kernel). A clean `extract.py` diff says
 the Lean code is the extraction of the committed Rust. The tests, differentials, fuzzers and BINSEC runs are evidence of a
 different kind (no counterexample found), and assurance.md says for each what it covers. None of this is a third-party audit

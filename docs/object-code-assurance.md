@@ -61,7 +61,7 @@ Not in the HOL Light set, going by the README's list (the proofs directory was n
 than `polyz_unpack`, the sponge (only the permutation is proved), rounding Power2Round, and every algorithm above the
 polynomial level (ExpandA, KeyGen, Sign, Verify). These are C, covered by CBMC for undefined-behavior freedom only
 (root README, https://github.com/pq-code-package/mldsa-native, "Formal Verification"; and
-the related-work survey in `docs/assurance.md` section 10, which found no FIPS-level theorem for the whole algorithm).
+the related-work survey in `docs/assurance-history.md` section 10, which found no FIPS-level theorem for the whole algorithm).
 
 ### 2.2 Shape of the functional-correctness statement
 
@@ -182,9 +182,9 @@ No. Three separate facts:
    `mld_poly_ntt` in `poly.h` likewise ensures only `array_abs_bound(..., MLD_NTT_BOUND)`; "Implements FIPS 204 Algorithm 41" is a
    doc comment (`@spec`). So the functional claim "this is the NTT" never reaches the C layer, even informally in a
    machine-readable form. The same holds up the stack: no theorem relates ExpandA, KeyGen, Sign or Verify to FIPS 204
-   (`docs/assurance.md` section 10).
+   (`docs/assurance-history.md` section 10).
 
-AWS-LC's ML-DSA imports only the C-only variant of mldsa-native (`docs/assurance.md` section 10), so it inherits the CBMC proofs but not
+AWS-LC's ML-DSA imports only the C-only variant of mldsa-native (`docs/assurance-history.md` section 10), so it inherits the CBMC proofs but not
 the assembly proofs.
 
 ## 3. Part 2: what our BINSEC checks establish
@@ -259,7 +259,7 @@ and pointwise product, Keccak-f and the SHAKE paths with secret input, ExpandS, 
 two whole-Sign censuses and positive controls. The whole KeyGen, Sign and `pk_from_sk` functions have no verdict, and the
 glue between steps is covered by code reading only. The probes ran on x86_64-unknown-linux-gnu (several profiles), thumbv7em-none-eabihf, riscv32imac-unknown-none-elf and AArch64 built
 without NEON. The counts per target and profile, the unknowns and the out-of-memory ledger are in `checkct/README.md` and
-`docs/assurance.md` section 4; they change when the code or the tools change, so they are not repeated here.
+`docs/assurance.md` section 4.1; they change when the code or the tools change, so they are not repeated here.
 
 What the runs cannot cover:
 
@@ -290,13 +290,13 @@ BINSEC's instruction lifting, solver and plugin; "all instructions take operand-
 Until round 12 the opt-in `avx2` cargo feature compiled the NTT bodies twice on x86_64 and picked one at run time (a CPUID check, a cache static and `#[target_feature]` copies), and
 dispatched `verify` to a 4-way body the same way. That dispatch, its `unsafe` and `src/cpu.rs` are gone: the crate has one compilation of every function per build, `#![forbid(unsafe_code)]` holds
 in every configuration, and the Cargo feature `avx2` is a deprecated no-op. A build that wants AVX2 code compiles with `-C target-feature=+avx2` (or `-C target-cpu=x86-64-v3`), which changes what
-LLVM emits for the same Rust text and nothing else (the extraction is identical under both, `scripts/check-feature-independence.sh`; `docs/assurance.md` section 0, Round 12). What this section used to record
+LLVM emits for the same Rust text and nothing else (the extraction is identical under both, `scripts/check-feature-independence.sh`; `docs/assurance-history.md` section 0, Round 12). What this section used to record
 (the dispatch builds `dispatch` and `nearcore-dispatch`, the dispatch cache pre-set, `scan-avx2.sh` on the four `*_avx2` functions) describes trees up to fv-p11 and is not repeated; the
 sweep tables in `checkct/README.md` that name those profiles are marked as history there.
 
 **What BINSEC covers.**
 - The default build, the `nearcore` build (opt-level 3, fat LTO, one codegen unit; no AVX2) and `nearcore-novec` are the builds with verdicts in the sweep of 1a72d9e (section 3.2 and `checkct/README.md`).
-  **On the final tree the full sweep was rerun in round 13** (tree 1d8b5c5, whose `src/` is the final tree's; `checkct/results/sweep-1d8b5c5/`, `docs/assurance.md` section 4, "Round 13 BINSEC sweep"): every profile except the removed dispatch ones, on x86_64,
+  **On the final tree the full sweep was rerun in round 13** (tree 1d8b5c5, whose `src/` is the final tree's; `checkct/results/sweep-1d8b5c5/`, `docs/assurance-history.md` section 4, "Round 13 BINSEC sweep"): every profile except the removed dispatch ones, on x86_64,
   thumbv7em, riscv32imac and AArch64 without NEON. The default-build code of the driver is identical to fv-p11's in every function on all three targets (`checkct/compare-code.sh`, an address-masked comparison, not a verdict; `ntt::dispatch` was restored in round 13),
   and 1,018 of the 1,024 probes of the nine cells that have a counterpart in the sweep of 1a72d9e are equal in verdict and counts, the other six being listed, with the reruns, in that section. The `avx2` and `nearcore-avx2` profiles ran only their 26 NTT probes.
   The smaller rerun of round 12 and the 39 of 233 differing x86_64 functions that came with it describe the tree before the wrapper module was restored; they are superseded.
@@ -306,7 +306,7 @@ sweep tables in `checkct/README.md` that name those profiles are marked as histo
 - There is no substitute static scan of vector code any more: `checkct/scan-avx2.sh` scanned the `*_avx2` functions of the dispatch driver, which no longer exist.
 
 **The 4-way verify.** Verify handles only public data, so the 4-way body (plain Rust, `src/keccak4.rs`, `src/sampling.rs`, `src/verify.rs`) and the verify-only `poly_use_hint_pub` and `bit_unpack_pub` have no BINSEC probes
-and need none. The functional evidence for them is in `docs/assurance.md` section 1.9 and the tests it lists, run in the default configuration and with AVX2 target features.
+and need none. The functional evidence for them is in `docs/assurance.md` section 1.5 and the tests in its section 4, run in the default configuration and with AVX2 target features.
 
 A reminder from the first version of the dispatch: it marked the field functions `#[inline(always)]` on every target, which made
 the riscv32imac `response_*` and `hint_step_*` probes `unknown` (one pending path after an hour) where the Shoup/Montgomery tree
@@ -314,7 +314,7 @@ without it finishes them in about ten minutes. BINSEC completion depends on code
 
 ## 4. Part 3: options for object-code functional correctness of our crate
 
-Framing. Our theorem is about the Rust source; rustc/LLVM output is trusted (`docs/assurance.md` section 2). An object-code
+Framing. Our theorem is about the Rust source; rustc/LLVM output is trusted (`docs/assurance.md` section 3). An object-code
 functional-correctness claim needs, for each hot function, a machine-checked or tool-checked link between the *bytes that
 run* and a spec that is (or is connected to) our Lean spec. For nearcore, "the bytes that run" is what rustc emits when
 nearcore builds the crate from source, with nearcore's toolchain and flags, unless we ship precompiled objects. That fact
@@ -345,7 +345,7 @@ timing under s2n-bignum's TCB (section 2.4), with the Rust or Lean side stating 
 3. *Runtime feature dispatch.* mldsa-native guards each call with `mld_sys_check_capability` and falls back to C. Ours must
    fall back to the portable, fully proved Rust, and the dispatch itself is outside every proof.
 4. *Extraction.* An FFI function is external to Aeneas, which emits an opaque declaration. That breaks our extraction gate
-   ("no referenced external axiom", `docs/assurance.md` section 0). The honest design is the SymCrypt pattern: a `cfg`-gated backend,
+   ("no referenced external axiom", `docs/assurance-history.md` section 0). The honest design is the SymCrypt pattern: a `cfg`-gated backend,
    with the kernel represented in Lean by an axiom that states the transcribed postcondition (SymCrypt's `#[verify::opaque]`
    shims paired with Lean `[step]` axioms; `INTRINSICS.md` P3/P4). The headline theorem for that build becomes *conditional on
    N named axioms*; the portable build's theorem stays unconditional. A Verify-focused kernel set is roughly NTT, inverse NTT,
@@ -420,7 +420,7 @@ specification language:
 | seL4-style translation validation | decompile a gcc binary and prove refinement to the C semantics ([Sewell, Myreen, Klein, PLDI 2013](https://www.cl.cam.ac.uk/~mom22/pldi13.pdf)) | built around C and one compiler version; no Rust analogue known |
 | s2n-bignum `equiv.ml` / relational Hoare logic | binary versus binary equivalence (e.g. optimized versus reference assembly) | would prove two *binaries* equal; the reference binary still needs a functional proof |
 
-Our own `impl-eval` differential (`docs/assurance.md` section 2: 345,360 cases, 100% agreement, 4 injected bugs detected) checks that the extracted
+Our own `impl-eval` differential (`docs/assurance.md` section 3, item 2: 345,360 cases, 100% agreement, 4 injected bugs detected) checks that the extracted
 model and the native build agree on sampled inputs. It is testing, but it is the realistic form of (c) today: it exercises
 rustc's actual output and the Lean model together, and it can be rerun against nearcore's exact toolchain and flags. A cheap
 strengthening is to run the same corpus (plus ACVP and Wycheproof, already in `tests/`) through every backend and optimization
@@ -468,7 +468,7 @@ Primary sources: arXiv 2609.15648 and `README-VERIFIEDCRYPTO.md` / `INTRINSICS.m
 Rust source is extracted by hax to F*; the maintainers say Rust is "directly verified for runtime safety and functional
 correctness using the hax toolchain" for verified modules, that "the verification guarantees for libcrux code only extends to
 the verified modules", and that executables "are not verified to be side-channel resistant" (libcrux README;
-https://cryspen.com/post/strengths-and-limitations/). The ML-DSA proof set (per the survey behind `docs/assurance.md` section 10) is
+https://cryspen.com/post/strengths-and-limitations/). The ML-DSA proof set (per the survey behind `docs/assurance-history.md` section 10) is
 leaf modules of the portable and AVX2 SIMD layers; the top-level Sign, Verify and KeyGen modules are admitted. AVX2 intrinsics
 are specified by F* `val` lemmas in `Spec.Intrinsics.fsti`, i.e. axioms. A third-party report (Symbolic Software, 17 Feb
 2026, https://symbolic.software/blog/2026-02-17-cryspen-mldsa/) says one of those specs (`i16_mul_32extended`) computed
@@ -500,7 +500,7 @@ argument quietly stops being one.
 2. **Keep the consensus view explicit.** For a consensus system, differential agreement of Verify across architectures and
    backends is the safety property. When a second backend exists, every test and fuzz target should run both and compare bytes.
 3. **Open constant-time gaps:** the vectorized x86_64 NTT under `+fma`, AArch64 with NEON and the whole-Sign censuses (see
-   section 3.3 and `docs/assurance.md` section 7).
+   section 3.3 and `docs/assurance.md` sections 4.1 and 6).
 
 ### 5.2 If performance work continues
 
@@ -523,9 +523,9 @@ the ISA models if (a) is adopted; runtime CPU feature dispatch; Charon/Aeneas an
 
 ### 5.4 Claim wording for each outcome
 
-Unchanged parts of the claim stay as in `docs/assurance.md` section 12. These are the sentences to use for the assurance axis only.
+Unchanged parts of the claim stay as in `docs/assurance.md` section 8 (the full text is in `docs/assurance-history.md` section 12). These are the sentences to use for the assurance axis only.
 
-**A. Portable path today.** The wording in `docs/assurance.md` section 12 (proved at source level, compiled code trusted, constant
+**A. Portable path today.** The wording in `docs/assurance.md` section 8 and `docs/assurance-history.md` section 12 (proved at source level, compiled code trusted, constant
 time checked by BINSEC on compiled probes for the builds and targets listed in `checkct/README.md`, not for the whole signing
 function as linked into an application, not for hardware timing).
 

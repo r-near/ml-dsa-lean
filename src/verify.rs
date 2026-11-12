@@ -150,7 +150,7 @@ pub fn prepare_vk_into<const K: usize, const L: usize>(pk: &[u8], out: &mut Prep
 ///
 /// Both scalar `prepare_vk*` functions are `#[inline(never)]`, so that the scalar reference keeps its own frame (its
 /// temporaries: t1, the scaled copy, the NTT result, and for `prepare_vk` the 57 KB Â temporary). The 4-way chain that
-/// `api` runs is the opposite: one frame, `#[inline(always)]` (docs/assurance.md, Round 13).
+/// `api` runs is the opposite: one frame, `#[inline(always)]` (docs/assurance-history.md, Round 13).
 #[inline(never)]
 #[allow(dead_code)]
 pub fn prepare_vk<const K: usize, const L: usize>(pk: &[u8]) -> PreparedVk<K, L> {
