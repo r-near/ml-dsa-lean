@@ -43,7 +43,8 @@ The API is plain functions on byte arrays, one set per parameter set (`_44`, `_6
 | ML-DSA-87 | 2592 | 4896 | 4627 |
 
 To sign or verify many times with one key, `signing_key_NN`/`sign_prepared_NN` and `verifying_key_NN`/`verify_prepared_NN`
-cache the per-key work. `sk_is_well_formed_NN` checks secret keys loaded from untrusted storage. The docs in `src/api.rs`
+cache the per-key work. `pk_from_sk_NN` validates secret keys loaded from untrusted storage (it recomputes the public key and rejects
+inconsistent keys); `sk_is_well_formed_NN` is a cheaper range check only. The docs in `src/api.rs`
 cover the rest.
 
 Optional features:
