@@ -255,7 +255,8 @@ pub fn sign_internal_prepared_44(ssk: &SigningKey44, m_prime: &[u8], rnd: &[u8; 
 ///
 /// FIPS 204 Algorithm 25 notes that s₁ and s₂ "may lie outside [−η, η] if input is malformed" and leaves
 /// Sign's behavior there undefined. `sign_44` does not call this and follows the algorithm literally (it signs
-/// with such a key); callers that load untrusted keys can call this first. Keys from `keygen_44` pass.
+/// with such a key). This checks ranges only: a key with a corrupted ρ, tr or t₀ passes. To validate a key
+/// loaded from untrusted storage, use `pk_from_sk_44`, which also rechecks t₀ and tr. Keys from `keygen_44` pass.
 ///
 /// Constant time: no branch depends on a coefficient. Each one contributes a mask bit, the bits are OR-ed, and
 /// the result is compared with zero once (`encode::sk_is_well_formed`), with wrapping arithmetic, so the same holds
@@ -442,7 +443,8 @@ pub fn sign_internal_prepared_65(ssk: &SigningKey65, m_prime: &[u8], rnd: &[u8; 
 ///
 /// FIPS 204 Algorithm 25 notes that s₁ and s₂ "may lie outside [−η, η] if input is malformed" and leaves
 /// Sign's behavior there undefined. `sign_65` does not call this and follows the algorithm literally (it signs
-/// with such a key); callers that load untrusted keys can call this first. Keys from `keygen_65` pass.
+/// with such a key). This checks ranges only: a key with a corrupted ρ, tr or t₀ passes. To validate a key
+/// loaded from untrusted storage, use `pk_from_sk_65`, which also rechecks t₀ and tr. Keys from `keygen_65` pass.
 ///
 /// Constant time: no branch depends on a coefficient. Each one contributes a mask bit, the bits are OR-ed, and
 /// the result is compared with zero once (`encode::sk_is_well_formed`), with wrapping arithmetic, so the same holds
@@ -629,7 +631,8 @@ pub fn sign_internal_prepared_87(ssk: &SigningKey87, m_prime: &[u8], rnd: &[u8; 
 ///
 /// FIPS 204 Algorithm 25 notes that s₁ and s₂ "may lie outside [−η, η] if input is malformed" and leaves
 /// Sign's behavior there undefined. `sign_87` does not call this and follows the algorithm literally (it signs
-/// with such a key); callers that load untrusted keys can call this first. Keys from `keygen_87` pass.
+/// with such a key). This checks ranges only: a key with a corrupted ρ, tr or t₀ passes. To validate a key
+/// loaded from untrusted storage, use `pk_from_sk_87`, which also rechecks t₀ and tr. Keys from `keygen_87` pass.
 ///
 /// Constant time: no branch depends on a coefficient. Each one contributes a mask bit, the bits are OR-ed, and
 /// the result is compared with zero once (`encode::sk_is_well_formed`), with wrapping arithmetic, so the same holds
