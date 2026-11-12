@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1](https://github.com/r-near/ml-dsa-lean/compare/v0.2.0...v0.2.1) - 2026-11-12
+
+### Other
+
+- point untrusted secret-key validation at pk_from_sk_NN; re-extract ([#7](https://github.com/r-near/ml-dsa-lean/pull/7))
+- current-state assurance.md, history moved to assurance-history.md; current stack figures in the API docs ([#4](https://github.com/r-near/ml-dsa-lean/pull/4))
+
 ### Changed
 
 - CI: the Lean proofs (`scripts/lean-check.sh`, after the re-extraction compared with `lean/Impl`) run as the `lean` job of `ci.yml` on every pull request and every push to `main`, on the free `ubuntu-latest` runner, and `ci-ok` needs it, so they are a required check. `lean.yml` keeps only `witness-check`, manual or weekly, on the free `ubuntu-latest` runner. `scripts/lean-check.sh` takes its `lake build` timeout from `LEAN_BUILD_TIMEOUT` (default 7200 s, was 3000 s).
