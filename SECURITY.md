@@ -30,8 +30,8 @@ Only the latest release and `main`. There are no backports.
 
 - **The crate's cryptography**: KeyGen, Sign and Verify (FIPS 204 ML-DSA-44, -65 and -87) in `src/`. Examples: a
   signature that verifies when it should not, a valid signature rejected, a panic, hang or out-of-bounds access on
-  attacker-chosen input, a disagreement with FIPS 204 or with a known-answer vector, and memory-safety problems in the
-  `unsafe` AVX2 dispatch (feature `avx2`).
+  attacker-chosen input, and a disagreement with FIPS 204 or with a known-answer vector. The crate has no `unsafe` code
+  (`#![forbid(unsafe_code)]`), but a memory-safety problem is still in scope.
 - **Secret handling**: secret-dependent timing or branches in the compiled code that the documentation says are not
   there, and secret material left behind that the `zeroize` documentation says is wiped. The constant-time evidence
   and its limits are in `docs/assurance.md` section 4.1 and `checkct/README.md`; the wipe claims are in the `api` module documentation.
