@@ -1,4 +1,7 @@
-"""Shared tables for the Cryptol differential: parameter sets and small codecs (stdlib only)."""
+"""Shared tables for the Cryptol differential: parameter sets, small codecs and output stamps (stdlib only)."""
+import hashlib
+import json
+import os
 
 Q = 8380417
 
@@ -39,3 +42,56 @@ def rows_str(rows):
 
 def parse_rows(s):
     return [[] if f == "-" else [int(x) for x in f.split(",")] for f in s.split(" ")]
+
+
+# ----------------------------------------------------------------------------- output stamps
+# Every output file `<name>.out` of either side has a `<name>.stamp` next to it: a JSON object with the sha256 of the
+# vector file the output was computed from (`vec`) and a digest of the program that computed it (`tool`).  A side
+# reuses an output only if its stamp matches the current vector file and program, and `compare.py` refuses an output
+# whose stamp does not match its vector file, so an output from an earlier seed or an earlier build is never compared.
+
+
+def sha256_file(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for blk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(blk)
+    return h.hexdigest()
+
+
+def digest_parts(parts):
+    """sha256 over a list of strings (each length-prefixed, so the split is unambiguous)."""
+    h = hashlib.sha256()
+    for p in parts:
+        b = p.encode()
+        h.update(len(b).to_bytes(8, "big") + b)
+    return h.hexdigest()
+
+
+def stamp_path(out):
+    return (out[:-4] if out.endswith(".out") else out) + ".stamp"
+
+
+def write_stamp(out, vec, tool):
+    sp = stamp_path(out)
+    with open(sp + ".tmp", "w") as fh:
+        json.dump({"vec": sha256_file(vec), "tool": tool}, fh)
+    os.replace(sp + ".tmp", sp)
+
+
+def read_stamp(out):
+    try:
+        with open(stamp_path(out)) as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return None
+
+
+def stamp_ok(out, vec, tool=None):
+    """True iff `out` exists and its stamp binds it to the current `vec` (and to `tool`, when given)."""
+    if not os.path.isfile(out):
+        return False
+    st = read_stamp(out)
+    if not isinstance(st, dict) or st.get("vec") != sha256_file(vec):
+        return False
+    return tool is None or st.get("tool") == tool

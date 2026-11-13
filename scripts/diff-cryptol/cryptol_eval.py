@@ -282,11 +282,16 @@ def main():
         env = dict(os.environ)
         env["CRYPTOLPATH"] = os.path.join(TOOLS, "src/cryptol-specs") + ":" + os.path.join(HERE, "cry")
         env["PATH"] = os.path.join(TOOLS, "cryptol/bin") + ":" + env.get("PATH", "")
+        status = 0
         try:
             r = subprocess.run([os.path.join(TOOLS, "cryptol/bin/cryptol"), "-b", sp], env=env, capture_output=True,
                                text=True, timeout=TIMEOUT)
             text = r.stdout + "\n--- stderr ---\n" + r.stderr
+            if r.returncode != 0:
+                status = 2
+                text += f"\nEXIT {r.returncode}"
         except subprocess.TimeoutExpired as e:
+            status = 3
             text = (e.stdout or b"").decode() if isinstance(e.stdout, bytes) else (e.stdout or "")
             text += "\nTIMEOUT"
     res = {}
@@ -294,7 +299,7 @@ def main():
         m = re.fullmatch(r"0x([0-9a-f]{8})([0-9a-f]*)", ln.strip())
         if m:
             res[int(m.group(1), 16)] = m.group(2)
-    with open(out, "w") as fh:
+    with open(out + ".tmp", "w") as fh:
         for i, f in enumerate(fields):
             idx = first + i
             if idx in res:
@@ -306,9 +311,15 @@ def main():
                 fh.write("CRYPTOL-ERROR\n")
     if err:
         keep = [ln for ln in text.splitlines()
-                if not ln.startswith("Loading") and not re.fullmatch(r"0x[0-9a-f]+", ln.strip())]
+                if status != 0 or (not ln.startswith("Loading") and not re.fullmatch(r"0x[0-9a-f]+", ln.strip()))]
         with open(err, "w") as fh:
             fh.write("\n".join(keep) + "\n")
+    if status == 0:
+        os.replace(out + ".tmp", out)
+    else:
+        os.remove(out + ".tmp")
+        print(f"cryptol_eval: {'timeout' if status == 3 else 'Cryptol exited nonzero'} on {chunk}", file=sys.stderr)
+    sys.exit(status)
 
 
 if __name__ == "__main__":

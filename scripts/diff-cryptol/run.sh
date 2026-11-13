@@ -8,6 +8,8 @@
 # Work directory: $DIFF_RUN (default $ML_DSA_SCRATCH/cryptol-diff/run); Cryptol tools: $CRYPTOL_TOOLS (see setup.sh).
 # Knobs: DIFF_SCALE (multiplies the random-case counts, default 1), DIFF_JOBS (parallel Cryptol processes, default 40),
 # DIFF_SEED, DIFF_OURS_EXE (a prebuilt spec-diff-cryptol, used instead of building one: see inject.sh).
+# Outputs are bound to the vector file and program that produced them (`<name>.stamp`, see stamp.py): changing DIFF_SEED, the
+# generator or a side recomputes the affected outputs, and `compare.py` refuses an output whose stamp does not match.
 set -euo pipefail
 export PATH="$HOME/.elan/bin:$PATH"
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -16,6 +18,8 @@ SCRATCH="${ML_DSA_SCRATCH:-${XDG_CACHE_HOME:-$HOME/.cache}/ml-dsa-lean/scratch}"
 run="${DIFF_RUN:-$SCRATCH/cryptol-diff/run}"
 step="${1:-all}"
 seed="${DIFF_SEED:-204}"
+# shellcheck source=lib.sh
+. "$here/lib.sh"
 
 build_ours() {
   if [ -n "${DIFF_OURS_EXE:-}" ]; then ours_exe="$DIFF_OURS_EXE"; return; fi
@@ -24,17 +28,9 @@ build_ours() {
   ours_exe="$root/lean/.lake/build/bin/spec-diff-cryptol"
 }
 
-ours() { # run our side on every vector file that has no output yet (one process per file, in parallel)
+ours() { # our side on every vector file whose output is missing or not bound to the current vector file and build
   build_ours
-  mkdir -p "$run/ours"
-  local name chunk rest todo=()
-  while read -r name chunk rest; do
-    [ -n "$name" ] || continue
-    [ -f "$run/ours/$name.out" ] || todo+=("$name")
-  done < "$run/vec/manifest.txt"
-  [ ${#todo[@]} -eq 0 ] || printf '%s\n' "${todo[@]}" | xargs -P "${DIFF_JOBS:-40}" -I{} sh -c \
-    "ulimit -s unlimited; '$ours_exe' '$run/vec/{}.txt' '$run/ours/{}.out' 2>>'$run/ours/stderr.log' || rm -f '$run/ours/{}.out'"
-  for name in "${todo[@]}"; do [ -f "$run/ours/$name.out" ] || { echo "our side failed on $name"; return 1; }; done
+  ours_run "$run/vec" "$run/ours" "$ours_exe" "$run/ours/stderr.log" || return 1
   if grep -l ERR "$run"/ours/*.out >/dev/null 2>&1; then echo "ERR lines in our output:"; grep -c ERR "$run"/ours/*.out | grep -v ':0'; return 1; fi
 }
 

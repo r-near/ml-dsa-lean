@@ -16,7 +16,7 @@ import random
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from common import PARAMS, Q, hx, unhx, ints, rows_str, parse_rows  # noqa: E402
+from common import PARAMS, Q, hx, unhx, ints, rows_str, parse_rows, stamp_ok  # noqa: E402
 
 SCALE = float(os.environ.get("DIFF_SCALE", "1.0"))
 FF = b"\xff"
@@ -149,7 +149,7 @@ def stage0(o, rng):
             outs = {out_lens[rng.randrange(len(out_lens))] for _ in range(3)} | {32, 136 if tag == "H256" else 168}
             for ol in sorted(outs):
                 lines.append(f"{tag} {ol} {hx(rb(rng, L))}")
-        # a few long outputs from short inputs and the same input at neighbouring output lengths
+        # a few long outputs from short inputs and the same input at neighboring output lengths
         base = rb(rng, 33)
         for ol in (167, 168, 169, 335, 336, 337, 500):
             lines.append(f"{tag} {ol} {hx(base)}")
@@ -410,9 +410,17 @@ def stage0(o, rng):
 
 # --------------------------------------------------------------------------- stage 1 and 2 (need ours' outputs)
 
+def ours_lines(d, name):
+    """The lines of our side's output for vector file `name`, only if that output is bound to the current vector file."""
+    out = os.path.join(d, "ours", name + ".out")
+    if not stamp_ok(out, os.path.join(d, "vec", name + ".txt")):
+        sys.exit(f"gen_vectors: {out} is missing or was computed from another {name}.txt (stale); run the earlier stage again")
+    return [ln for ln in open(out).read().split("\n") if ln]
+
+
 def read_kg(d, s):
     vec = [ln.split(" ") for ln in open(os.path.join(d, "vec", f"kg_{s}.txt")).read().split("\n") if ln]
-    outs = [ln for ln in open(os.path.join(d, "ours", f"kg_{s}.out")).read().split("\n") if ln]
+    outs = ours_lines(d, f"kg_{s}")
     res = []
     for f, ln in zip(vec, outs):
         pk, sk = ln.split(" ; ")
@@ -461,7 +469,7 @@ def stage2(o, rng, d):
     for s, P in PARAMS.items():
         keys = read_kg(d, s)
         vec = [ln.split(" ") for ln in open(os.path.join(d, "vec", f"sgn_{s}.txt")).read().split("\n") if ln]
-        outs = [ln for ln in open(os.path.join(d, "ours", f"sgn_{s}.out")).read().split("\n") if ln]
+        outs = ours_lines(d, f"sgn_{s}")
         skmap = {sk: (pk, xi) for (xi, pk, sk) in keys}
         cases = []
         for f, ln in zip(vec, outs):
@@ -550,7 +558,7 @@ def stage2(o, rng, d):
         fp = os.path.join(d, "vec", f"sgf_{s}.txt")
         if os.path.exists(fp):
             fvec = [ln.split(" ") for ln in open(fp).read().split("\n") if ln]
-            fouts = [ln for ln in open(os.path.join(d, "ours", f"sgf_{s}.out")).read().split("\n") if ln]
+            fouts = ours_lines(d, f"sgf_{s}")
             for f, ln in zip(fvec, fouts):
                 if ln == "none":
                     print(f"warning: no forged signature for {f[0:2]} {f[-1]}", file=sys.stderr)

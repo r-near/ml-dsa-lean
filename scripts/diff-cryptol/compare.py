@@ -12,7 +12,8 @@ classified:
                    out of fuel, or the bounded signing loop giving up) is deliberately not a deviation: it is reported
                    as a mismatch to be classified by hand.  It has not occurred.
   mismatch         anything else (a finding until classified by hand)
-  harness-error    Cryptol printed no result for the line (`CRYPTOL-ERROR`), or the line counts differ
+  harness-error    Cryptol printed no result for the line (`CRYPTOL-ERROR`), the line counts differ, or an output file is missing
+                   or not bound to its vector file (no `<name>.stamp`, or one of another vector file: stale output)
 Writes RUN/report.txt, RUN/mismatches.txt (input line, ours, theirs; long fields cut) and prints the summary table.
 Exit code 0 iff there is no mismatch and no harness error.
 """
@@ -20,6 +21,9 @@ import os
 import re
 import sys
 from collections import defaultdict
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from common import stamp_ok  # noqa: E402
 
 run = sys.argv[1]
 man = []
@@ -42,6 +46,11 @@ for name, _, expect in man:
     if not (os.path.exists(op) and os.path.exists(tp)):
         stats[name]["missing"] += 1
         harness.append((name, 0, "missing output file", "", ""))
+        continue
+    stale = [side for side, p in (("ours", op), ("theirs", tp)) if not stamp_ok(p, vp)]
+    if stale:
+        stats[name]["harness"] += 1
+        harness.append((name, 0, f"output not bound to this vector file (stale or unstamped): {', '.join(stale)}", "", ""))
         continue
     vec = [x for x in open(vp).read().split("\n") if x.strip()]
     ours = open(op).read().split("\n")[:-1]
