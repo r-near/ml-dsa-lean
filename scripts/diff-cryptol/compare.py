@@ -8,8 +8,9 @@ classified:
   match            identical canonical output
   deviation        a difference explained by a documented deviation of lean/Spec from the FIPS 204 pseudocode:
                    `erratum-alg3` (Verify with a context of more than 255 bytes is `false` here, `None` in Cryptol, which
-                   has the pre-erratum `⊥`), or `fuel` (our sampler gave `none` because its
-                   fuel ran out and Cryptol's unbounded loop gave a value)
+                   has the pre-erratum `⊥`).  A `none` from our side against a value from Cryptol (a sampler running
+                   out of fuel, or the bounded signing loop giving up) is deliberately not a deviation: it is reported
+                   as a mismatch to be classified by hand.  It has not occurred.
   mismatch         anything else (a finding until classified by hand)
   harness-error    Cryptol printed no result for the line (`CRYPTOL-ERROR`), or the line counts differ
 Writes RUN/report.txt, RUN/mismatches.txt (input line, ours, theirs; long fields cut) and prints the summary table.
@@ -60,9 +61,6 @@ for name, _, expect in man:
         elif tag == "VER" and len(v.split(" ")[5]) > 510 and a == "false" and b == "none":
             st["deviation"] += 1
             devs.append((name, i, "erratum-alg3", v, a, b))
-        elif a == "none" and tag in ("SIB", "RNTT", "RBP", "EXA", "EXS", "KG", "KGO", "KGT", "SGN", "SGI"):
-            st["deviation"] += 1
-            devs.append((name, i, "fuel", v, a, b))
         else:
             st["mismatch"] += 1
             mism.append((name, i, v, a, b))
@@ -73,8 +71,8 @@ for name, st in stats.items():
     sfx = re.search(r"(44|65|87)$", name)
     for k, v in st.items():
         tags[key][k] += v
-        if sfx:
-            tags[key][f"set{sfx.group(1)}"] += st.get("match", 0) + st.get("deviation", 0) + st.get("mismatch", 0)
+    if sfx:
+        tags[key][f"set{sfx.group(1)}"] += st.get("match", 0) + st.get("deviation", 0) + st.get("mismatch", 0)
 out = []
 out.append(f"{'component':<12}{'lines':>8}{'match':>8}{'deviation':>11}{'mismatch':>10}{'harness':>9}   per set (44/65/87)")
 tot = defaultdict(int)

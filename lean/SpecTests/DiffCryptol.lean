@@ -137,10 +137,10 @@ def signLoop (p : Params) (sk M' rnd : List UInt8) (target : Option Nat) : Optio
     let r₀ := LowBitsVec p (w - cs₂)
     let ct₀ := NTTInvVec (ScalarVectorNTT ĉ t₀hat)
     let h := MakeHintVec p (-ct₀) (w - cs₂ + ct₀)
-    let zOk := match target with
-      | none => ‖z‖∞ < p.γ₁ - p.β
-      | some t => ‖z‖∞ = t
-    if zOk ∧ ‖r₀‖∞ < p.γ₂ - p.β ∧ ‖ct₀‖∞ < p.γ₂ ∧ HintWeight h ≤ p.ω then
+    let zOk : Bool := match target with
+      | none => decide (‖z‖∞ < p.γ₁ - p.β)
+      | some t => decide (‖z‖∞ = t)
+    if zOk && decide (‖r₀‖∞ < p.γ₂ - p.β ∧ ‖ct₀‖∞ < p.γ₂ ∧ HintWeight h ≤ p.ω) then
       return some (sigEncode p c_tilde (z.map Poly.modPM) h, a + 1)
     κ := κ + p.ℓ
     if 2 ^ 16 < κ + p.ℓ then return none

@@ -2,6 +2,7 @@
 # Sensitivity check of the Cryptol differential: inject bugs into a scratch copy of lean/Spec, rebuild our side, re-run it on the
 # vectors of a finished run, and compare with the saved Cryptol outputs.  Never touches the committed lean/Spec.
 #   bash scripts/diff-cryptol/inject.sh [NAME ...]      (default: all injections of inject.py; `inject.py list` shows them)
+#   bash scripts/diff-cryptol/inject.sh --summarize     (recompute the table from the saved outputs of the last injection run)
 # Needs a finished `run.sh all` in $DIFF_RUN (the vec/ and theirs/ directories).  Scratch project: $INJECT_DIR (default
 # $ML_DSA_SCRATCH/cryptol-diff/inject-lean), seeded from lean/ and $LEAN_PACKAGES_SEED (built lake packages).  One build at a time.
 # Prints, per injected bug, whether the harness reports a mismatch and the first files that show it.
@@ -15,16 +16,30 @@ proj="${INJECT_DIR:-$SCRATCH/cryptol-diff/inject-lean}"
 names=("$@")
 [ ${#names[@]} -gt 0 ] || mapfile -t names < <(python3 -I "$here/inject.py" list | cut -f1)
 
-mkdir -p "$proj"
-rsync -a --delete --exclude .lake "$root/lean/" "$proj/"
-mkdir -p "$proj/.lake"
-if [ ! -d "$proj/.lake/packages" ]; then
-  [ -n "${LEAN_PACKAGES_SEED:-}" ] && [ -d "$LEAN_PACKAGES_SEED" ] || { echo "set LEAN_PACKAGES_SEED to a directory of built lake packages"; exit 1; }
-  cp -a "$LEAN_PACKAGES_SEED" "$proj/.lake/packages"
+if [ "${names[0]}" != "--summarize" ]; then
+  mkdir -p "$proj"
+  rsync -a --delete --exclude .lake "$root/lean/" "$proj/"
+  mkdir -p "$proj/.lake"
+  if [ ! -d "$proj/.lake/packages" ]; then
+    [ -n "${LEAN_PACKAGES_SEED:-}" ] && [ -d "$LEAN_PACKAGES_SEED" ] || { echo "set LEAN_PACKAGES_SEED to a directory of built lake packages"; exit 1; }
+    cp -a "$LEAN_PACKAGES_SEED" "$proj/.lake/packages"
+  fi
 fi
 summary="$run/inject-summary.txt"
 : > "$summary"
-printf '%-24s %-9s %-9s %s\n' injection detected mismatches "first files" | tee -a "$summary"
+printf '%-24s %-9s %-9s %s\n' injection detected mismatches "files with mismatches (lines)" | tee -a "$summary"
+report() { # NAME: compare the saved outputs of an injected build with the Cryptol outputs
+  local d="$run/inject/$1" nm files det
+  python3 -I "$here/compare.py" "$d" > "$d/compare.log" 2>&1 || true
+  nm=$(grep -c '^MISMATCH' "$d/mismatches.txt" || true)
+  files=$(grep '^MISMATCH' "$d/mismatches.txt" | awk '{print $2}' | sort | uniq -c | sort -rn | awk '{printf "%s(%s) ", $2, $1}')
+  det=no; [ "$nm" -gt 0 ] && det=YES
+  printf '%-24s %-9s %-9s %s\n' "$1" "$det" "$nm" "$files" | tee -a "$summary"
+}
+if [ "${names[0]}" = "--summarize" ]; then   # recompute the table from the saved outputs of the last injection run
+  for d in "$run"/inject/*/; do report "$(basename "$d")"; done
+  exit 0
+fi
 for name in "${names[@]}"; do
   rsync -a "$root/lean/Spec/" "$proj/Spec/"          # pristine Spec
   python3 -I "$here/inject.py" apply "$name" "$proj" > "$run/inject-$name.log"
@@ -35,10 +50,5 @@ for name in "${names[@]}"; do
   ln -s "$run/vec" "$d/vec"; ln -s "$run/theirs" "$d/theirs"
   # our side on every compared vector file, in parallel (the `oursonly` files only feed the generator)
   awk '$3 != "oursonly" {print $1}' "$run/vec/manifest.txt" | xargs -P "${DIFF_JOBS:-40}" -I{} sh -c "ulimit -s unlimited; '$exe' '$run/vec/{}.txt' '$d/ours/{}.out' 2>/dev/null"
-  rc=0
-  python3 -I "$here/compare.py" "$d" > "$d/compare.log" 2>&1 || rc=$?
-  nm=$(grep -c '^MISMATCH' "$d/mismatches.txt" || true)
-  files=$(grep '^MISMATCH' "$d/mismatches.txt" | awk '{print $2}' | sort | uniq -c | sort -rn | head -4 | awk '{printf "%s(%s) ", $2, $1}')
-  det=no; [ "$nm" -gt 0 ] && det=YES
-  printf '%-24s %-9s %-9s %s\n' "$name" "$det" "$nm" "$files" | tee -a "$summary"
+  report "$name"
 done
