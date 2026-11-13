@@ -225,8 +225,8 @@ already on the stack when verification starts. For `ml_dsa_verify` those include
 ## 5. Public API and semver
 
 `src/lib.rs` makes only `pub mod api` public; the other modules are public only under the `internals` feature, which is for
-tests and fuzzing and is turned on by the crate's self dev-dependency (`Cargo.toml:29–37`). `Cargo.toml` has
-`version = "0.1.0"` and `license = "MIT OR Apache-2.0"`.
+tests and fuzzing and is turned on by the crate's self dev-dependency (`Cargo.toml:29–37`). The crate is
+published on crates.io as `ml-dsa-lean` (0.2.1 at the time of writing), `license = "MIT OR Apache-2.0"`.
 
 Public surface of `api` (39 functions and 6 types, the same per set NN ∈ {44, 65, 87}; `src/api.rs`):
 
@@ -244,8 +244,8 @@ Cargo features: `zeroize` (optional dependency), `avx2` (a deprecated no-op), `i
 
 What would need to stabilize, as options rather than recommendations:
 
-1. **Version and metadata.** `0.1.0` promises nothing. Vendoring as a path or git dependency avoids publishing; publishing
-   needs the `repository` field (a TODO placeholder in `Cargo.toml`) and a decision on the crate name.
+1. **Version.** A 0.x version promises little across minor versions (Cargo treats 0.2 and 0.3 as incompatible). nearcore could
+   pin an exact version or vendor the crate as a path or git dependency.
 2. **Naming and types.** The API is 3 × 13 free functions with literal array sizes in signatures and no exported length
    constants; options are to export `PK_LEN`/`SK_LEN`/`SIG_LEN` per set, to add newtypes, or to keep the arrays
    (they let near-crypto pass its `Box<[u8; N]>` contents by reference).

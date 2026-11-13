@@ -7,8 +7,8 @@ This page gives the commands. What cannot be re-run from here:
   not committed. Only the regression tests it led to (`tests/mutants.rs`, the `prefix_eq` unit test in `src/verify.rs`) are.
 - The notes of the third internal review of `lean/Spec` against the FIPS PDFs (assurance.md, section 3, item 1): they are not committed.
   The Lean tests, the VCVio differential and the other cross-checks it relied on can be re-run (section 2.4).
-- Earlier logs and notes. The raw results of the latest constant-time sweep (`checkct/results/sweep-1a72d9e/`), of the one before it
-  (`sweep-15b4ce2/`, the baseline of the comparison in `checkct/README.md`) and the
+- Earlier logs and notes. The raw results of the latest constant-time sweep (`checkct/results/sweep-1d8b5c5/`), of the two before it
+  (`sweep-1a72d9e/`, and `sweep-15b4ce2/`, the baseline of the comparison in `checkct/README.md`) and the
   `nearcore-exact` stage logs that assurance-history.md cites are kept. The raw logs of older sweeps (for example e9a1c74, whose results
   fill the cells marked "not rerun"), the progress trackers, the benchmark baseline notes and the experiment directories
   were deleted before release, so statements that only they supported can be re-measured but not re-read.
