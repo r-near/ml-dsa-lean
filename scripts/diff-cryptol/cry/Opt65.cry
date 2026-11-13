@@ -1,0 +1,13 @@
+// ML-DSA-65: cryptol-specs OptimizedSpecification.cry (the module that ML_DSA.cry, the public API, is built on),
+// instantiated with the parameters of FIPS 204 Table 1 (the same values as Instantiations/ML_DSA_65.cry).
+module Opt65 = Primitive::Asymmetric::Signature::ML_DSA::OptimizedSpecification where
+
+        type q = 8380417
+        type τ = 49
+        type λ = 192
+        type γ1 = 2 ^^ 19
+        type γ2 = (q - 1) / 32
+        type k = 6
+        type ell = 5
+        type η = 4
+        type ω = 55

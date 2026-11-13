@@ -1,0 +1,13 @@
+// ML-DSA-87: the readable transcription of FIPS 204 in cryptol-specs (Specification.cry), instantiated with the
+// parameters of FIPS 204 Table 1 (the same values as Instantiations/ML_DSA_87.cry).
+module Spec87 = Primitive::Asymmetric::Signature::ML_DSA::Specification where
+
+        type q = 8380417
+        type τ = 60
+        type λ = 256
+        type γ1 = 2 ^^ 19
+        type γ2 = (q - 1) / 32
+        type k = 8
+        type ell = 7
+        type η = 2
+        type ω = 75

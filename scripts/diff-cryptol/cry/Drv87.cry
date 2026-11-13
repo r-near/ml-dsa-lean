@@ -1,0 +1,12 @@
+// Scope for the differential evaluator (scripts/diff-cryptol/cryptol_eval.py), ML-DSA-87:
+//   S::   Specification.cry, the readable transcription (components, KeyGen_internal, Sign_internal, Verify_internal)
+//   O::   OptimizedSpecification.cry (KeyGen_internal and the packers it uses are re-implemented there)
+//   D::   Instantiations/ML_DSA_87.cry, the public API of ML_DSA.cry: KeyGen, Sign and Verify (Algorithms 1-3, with ctx)
+//   T::   its TestAPI submodule: KeyGen_internal, Sign_internal, Verify_internal as ML_DSA.cry exposes them
+module Drv87 where
+
+import Spec87 as S
+import Opt87 as O
+import Primitive::Asymmetric::Signature::ML_DSA::Instantiations::ML_DSA_87 as D
+import submodule D::TestAPI as T
+import DiffDrv
