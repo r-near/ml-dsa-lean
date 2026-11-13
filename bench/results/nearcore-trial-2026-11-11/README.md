@@ -151,8 +151,13 @@ the "tampered" worst case costs the same as a valid verify. Not on the consensus
 
 | | aws-lc-rs, µs (min) | ml-dsa-lean, µs (min), nearcore flags / +avx2 | ratio |
 |---|---|---|---|
-| Hedged sign | 53.6 | 164 / 148 | 3.06 / 2.75 |
+| Hedged sign (aws-lc key imported once, outside the loop; see the note below) | 53.6 | 164 / 148 | 3.06 / 2.75 |
 | KeyGen from seed (incl. raw export) | 42.9 to 43.1 | 139 / 132 | 3.24 / 3.08 |
+
+The signing row is not the two nearcore paths. The A/B bench (`probes.patch`) imports the aws-lc key pair once, outside
+the timed loop, while `ml_dsa_backend::sign` in `nearcore.patch` imports the raw key on every call, for both backends, and
+`sign_65` decodes the raw secret key on every call. So the row compares cached aws-lc signing with uncached lean signing, and
+overstates the gap on nearcore's path. B below times the actual nearcore path, raw-key import included, on both backends.
 
 A malformed random signature (random 3,309 bytes) is rejected by this crate in 0.6 to 1.4 µs (minimum through p90 over three rounds); aws-lc rejects the
 fastest quarter in under 1.5 µs and has a median of about 30 µs. The cost of an attacker-chosen input is therefore bounded by the
@@ -161,7 +166,7 @@ full-verify cost on both, which is the tampered-message row.
 **B. nearcore's `signatures` criterion bench** (`cargo bench -p near-crypto --bench signatures -- ml-dsa-65`, the bench
 profile, seven interleaved passes per variant on the least busy core; box load 10 to 110 during these, so only the minimum is
 meaningful; `raw/criterion_signatures.txt`): verify min **43.1** (aws, nearcore flags), **60.3** (lean), **38.2** (aws +avx2),
-**39.4** (lean +avx2) µs; sign min 184 / 498 / 187 / 392 µs; keygen min 47 / 148 / 48 / 151 µs. The same ordering as A with
+**39.4** (lean +avx2) µs; sign min 184 / 498 / 187 / 392 µs (the nearcore path, raw-key import included on both: 2.7× and 2.1×); keygen min 47 / 148 / 48 / 151 µs. The same ordering as A with
 more noise (A shows 37.3 for the quiet-case aws figure).
 
 **C. nearcore's estimator, in the VM** (`runtime-params-estimator --features required`, `--metric time --costs MlDsaVerifyBase`,
