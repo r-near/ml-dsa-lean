@@ -20,7 +20,10 @@ readings agree on those inputs. It is not a required check and has no CI job.
 | Lean | the repository's pin (`lean/lean-toolchain`). |
 
 `setup.sh` installs both under `$CRYPTOL_TOOLS` (default `~/rx/scratch/cryptol-tools` on the build box), touches a `.keep` file there
-so that the box's scratch cleanup leaves it alone, and is idempotent. It does not change anything else.
+so that the box's scratch cleanup leaves it alone, and is idempotent. It does not change anything else. It never trusts an earlier
+install: each run extracts the verified archive again, checks every binary in it against `cryptol-3.6.0.bin.sha256` (committed here,
+computed from that archive) and replaces the installed tree; `run_theirs.py` checks the installed binaries against the same file before
+it starts Cryptol. Do not run `setup.sh` while a differential is running.
 
 ## How to run
 
@@ -49,9 +52,16 @@ processes, one per chunk of cases; a Cryptol start-up is about one second, a sig
 `DIFF_RUN` (work directory, default `$ML_DSA_SCRATCH/cryptol-diff/run`). Output: `$DIFF_RUN/report.txt` (counts per component),
 `$DIFF_RUN/mismatches.txt` (every mismatch, deviation and harness error with its input), `$DIFF_RUN/theirs/timing.log`.
 
+Outputs are bound to their inputs. Next to every `ours/<name>.out` and `theirs/<name>.out` is a `<name>.stamp` (sha256 of the vector
+file it was computed from, and a digest of the program: our executable, or the Cryptol evaluator, binaries and specification commit).
+A side reuses an output only if the stamp matches, so a changed `DIFF_SEED`, generator, build or Cryptol install recomputes it; the
+generator's later stages and `compare.py` refuse an output without a matching stamp. Chunk and merged outputs are renamed into place
+only on success. A Cryptol worker that exits nonzero (even after printing some results) or times out (`CRYPTOL_TIMEOUT`, default 7200 s)
+fails its file: `run_theirs.py` writes no output for it, lists it, and exits 1.
+
 `compare.py` classifies each line as `match`, `deviation` (a difference explained by a documented deviation of `lean/Spec`, listed
 below and always printed, never silently accepted), `mismatch` (a finding until a person has classified it) or `harness-error`
-(Cryptol printed no result: the run fails closed). The exit code is 0 iff there is no mismatch and no harness error.
+(Cryptol printed no result for the line, or an output is missing or stale: the run fails closed). The exit code is 0 iff there is no mismatch and no harness error.
 
 ## What is compared with what
 
@@ -143,10 +153,23 @@ One case per line, fields separated by single spaces; byte strings are lower-cas
 rebuilds `spec-diff-cryptol`, runs it on the vectors of the last run and compares with the saved Cryptol outputs. The edits: UseHint's
 `r₀ > 0` as `r₀ ≥ 0`; `CoeffFromHalfByte` accepting 9 for η = 4; c̃ hashed as `w1Encode ‖ μ` in Sign and Verify; `HintBitUnpack` without
 the strictly-increasing check; `HintBitUnpack` without the zero-padding check; Verify's `‖z‖∞ < γ₁-β` as `≤`; Algorithms 2 and 3 refusing
-255-byte contexts. `results/` has the outcome.
+255-byte contexts (it affects `Sign` cases with a 255-byte context as well as `Verify` cases: the table in `results/` has both).
+Every injection gets one row: `YES` (at least one mismatching line), `no` (the bug survived) or `ERROR` (the edit, the build or a run
+failed, the injected executable is byte-identical to the pristine one, or the comparison had harness errors). The exit status is
+nonzero unless every row is `YES`.
+
+`$INJECT_DIR` (the scratch project, default `$ML_DSA_SCRATCH/cryptol-diff/inject-lean`) is validated before anything is written, and
+`rsync --delete` runs in it: it must be absent, empty or created by an earlier `inject.sh` (`.inject-scratch` marker), must not be a
+symbolic link, `/`, `$HOME` or an ancestor of it, and must not equal, contain or lie inside the repository, a git work tree of it or the
+run directory.
+
+`bash scripts/diff-cryptol/selftest.sh` checks the harness against the failures it must not hide (no Lean, no real Cryptol, seconds): a
+worker exiting 1 or timing out fails the run and leaves no output, stale outputs are recomputed and refused by `compare.py`, a changed
+binary fails the digest check, unsafe `INJECT_DIR` values are refused, a surviving injection is a `no` row and a nonzero exit.
 
 ## Files
 
-`setup.sh`, `run.sh`, `inject.sh`; `gen_vectors.py` (cases), `cryptol_eval.py` (vector line to Cryptol expression, result word to canonical
+`setup.sh`, `run.sh`, `inject.sh`, `selftest.sh`, `lib.sh` (shared shell functions), `cryptol-3.6.0.bin.sha256` (digests of the Cryptol
+binaries); `stamp.py` (output stamps); `gen_vectors.py` (cases), `cryptol_eval.py` (vector line to Cryptol expression, result word to canonical
 text), `run_theirs.py` (parallel driver), `compare.py`, `inject.py`, `common.py`; `cry/` (instantiations and encoders);
 `../../lean/SpecTests/DiffCryptol.lean` (our side); `results/` (dated results).
