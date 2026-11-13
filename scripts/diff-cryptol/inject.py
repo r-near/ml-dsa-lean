@@ -2,7 +2,13 @@
 """The injected bugs of the sensitivity check (see inject.sh): each is a textual edit of a file of a scratch copy of lean/Spec.
 
     inject.py list
-    inject.py apply NAME LEANDIR      # edit LEANDIR/Spec/<file> (a scratch copy; refuses a path under a git work tree)
+    inject.py check-dest DEST ROOT RUN   # validate the scratch project DEST before inject.sh writes anything to it; prints
+                                         # its resolved path.  Refuses an empty path, `/`, the home directory or one of its
+                                         # ancestors, a symbolic link, anything that equals, contains or lies inside ROOT (the
+                                         # repository), RUN (the run directory) or a git work tree, and a non-empty directory
+                                         # that this script did not create (no `.inject-scratch` marker): `rsync --delete`
+                                         # runs there.
+    inject.py apply NAME LEANDIR         # edit LEANDIR/Spec/<file> (a scratch copy; refuses a path under a git work tree)
 
 Every edit must match exactly `count` times in the pristine file, so a change of the specification that moves the
 code makes this script fail loudly instead of injecting nothing.
@@ -39,7 +45,59 @@ INJECTIONS = {
 }
 
 
+MARKER = ".inject-scratch"
+
+
+def overlaps(a, b):
+    """True iff the (resolved) paths a and b are equal or one contains the other."""
+    a, b = a.rstrip(os.sep) + os.sep, b.rstrip(os.sep) + os.sep
+    return a.startswith(b) or b.startswith(a)
+
+
+def check_dest(raw, root, run):
+    """Return the resolved destination, or exit with the reason it is refused.  Writes nothing."""
+    if not raw or not raw.strip():
+        sys.exit("inject: INJECT_DIR is empty")
+    if os.path.islink(raw.rstrip(os.sep) or os.sep):
+        sys.exit(f"inject: refusing INJECT_DIR {raw!r}: it is a symbolic link")
+    dest = os.path.realpath(raw)
+    if dest == os.sep:
+        sys.exit("inject: refusing INJECT_DIR /")
+    home = os.path.realpath(os.path.expanduser("~"))
+    if dest == home or (home + os.sep).startswith(dest.rstrip(os.sep) + os.sep):
+        sys.exit(f"inject: refusing INJECT_DIR {dest}: it is the home directory or one of its ancestors")
+    protected = {"the repository": os.path.realpath(root), "the run directory": os.path.realpath(run)}
+    try:
+        wt = subprocess.run(["git", "-C", root, "worktree", "list", "--porcelain"], capture_output=True, text=True)
+        for ln in wt.stdout.splitlines() if wt.returncode == 0 else []:
+            if ln.startswith("worktree "):
+                protected[f"the git work tree {ln[9:]!r}"] = os.path.realpath(ln[9:])
+    except OSError:
+        pass   # no git: the realpath comparisons above and below still apply
+    for what, path in protected.items():
+        if overlaps(dest, path):
+            sys.exit(f"inject: refusing INJECT_DIR {dest}: it overlaps {what} ({path})")
+    probe = dest
+    while not os.path.exists(probe):
+        probe = os.path.dirname(probe)
+    try:
+        top = subprocess.run(["git", "-C", probe, "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    except OSError:
+        top = None   # no git on this machine
+    if top is not None and top.returncode == 0:
+        sys.exit(f"inject: refusing INJECT_DIR {dest}: it is inside the git work tree {top.stdout.strip()}")
+    if os.path.exists(dest):
+        if not os.path.isdir(dest):
+            sys.exit(f"inject: INJECT_DIR {dest} is not a directory")
+        if os.listdir(dest) and not os.path.exists(os.path.join(dest, MARKER)):
+            sys.exit(f"inject: refusing INJECT_DIR {dest}: it is not empty and has no {MARKER} marker (not created by inject.sh)")
+    return dest
+
+
 def main():
+    if sys.argv[1] == "check-dest":
+        print(check_dest(sys.argv[2], sys.argv[3], sys.argv[4]))
+        return
     if sys.argv[1] == "list":
         for n, (d, f, _) in INJECTIONS.items():
             print(f"{n}\t{f}\t{d}")
@@ -48,8 +106,11 @@ def main():
     name, leandir = sys.argv[2], sys.argv[3]
     desc, fname, edits = INJECTIONS[name]
     path = os.path.join(leandir, "Spec", fname)
-    top = subprocess.run(["git", "-C", leandir, "rev-parse", "--show-toplevel"], capture_output=True, text=True)
-    if top.returncode == 0:
+    try:
+        top = subprocess.run(["git", "-C", leandir, "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    except OSError:
+        top = None
+    if top is not None and top.returncode == 0:
         sys.exit(f"refusing to edit {path}: inside a git work tree ({top.stdout.strip()}); use a scratch copy")
     s = open(path).read()
     for old, new, count in edits:
