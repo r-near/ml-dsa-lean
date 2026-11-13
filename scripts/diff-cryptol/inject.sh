@@ -33,8 +33,8 @@ for name in "${names[@]}"; do
   d="$run/inject/$name"
   rm -rf "$d"; mkdir -p "$d/ours"
   ln -s "$run/vec" "$d/vec"; ln -s "$run/theirs" "$d/theirs"
-  # our side on every vector file, in parallel
-  awk '{print $1}' "$run/vec/manifest.txt" | xargs -P "${DIFF_JOBS:-40}" -I{} sh -c "ulimit -s unlimited; '$exe' '$run/vec/{}.txt' '$d/ours/{}.out' 2>/dev/null"
+  # our side on every compared vector file, in parallel (the `oursonly` files only feed the generator)
+  awk '$3 != "oursonly" {print $1}' "$run/vec/manifest.txt" | xargs -P "${DIFF_JOBS:-40}" -I{} sh -c "ulimit -s unlimited; '$exe' '$run/vec/{}.txt' '$d/ours/{}.out' 2>/dev/null"
   rc=0
   python3 -I "$here/compare.py" "$d" > "$d/compare.log" 2>&1 || rc=$?
   nm=$(grep -c '^MISMATCH' "$d/mismatches.txt" || true)
