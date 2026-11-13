@@ -59,7 +59,7 @@ MOCK_MODE=ok check "healthy workers pass" 0 theirs
 
 # ---- compare.py: stamps. ours = theirs = "none" on every line
 for n in ver_44 ver_65; do
-  yes none | head -n "$(grep -c . "$R/vec/$n.txt")" > "$R/ours/$n.out"
+  awk '{print "none"}' "$R/vec/$n.txt" > "$R/ours/$n.out"
   python3 -I "$here/stamp.py" write "$R/ours/$n.out" "$R/vec/$n.txt" selftest
 done
 check "compare accepts bound outputs" 0 python3 -I "$here/compare.py" "$R"
@@ -67,10 +67,11 @@ check "compare accepts bound outputs" 0 python3 -I "$here/compare.py" "$R"
 printf 'VER 44 aa - bb -\nVER 44 cc - 11 -\nVER 44 ee - ff -\n' > "$R/vec/ver_44.txt"
 check "compare refuses outputs computed from another vector file of the same length" 1 python3 -I "$here/compare.py" "$R"
 MOCK_MODE=ok check "run_theirs recomputes the stale output" 0 theirs
-grep -q 'ver_44' "$R/theirs/timing.log" && python3 -I -c "
+if grep -q 'ver_44' "$R/theirs/timing.log" && python3 -I -c "
 import sys; sys.path.insert(0, '$here')
 from common import stamp_ok
-sys.exit(0 if stamp_ok('$R/theirs/ver_44.out', '$R/vec/ver_44.txt') else 1)" && echo "ok    ... and its stamp now matches the new vector file" || { echo "FAIL  stamp not refreshed"; fails=$((fails + 1)); }
+sys.exit(0 if stamp_ok('$R/theirs/ver_44.out', '$R/vec/ver_44.txt') else 1)"; then echo "ok    ... and its stamp now matches the new vector file"
+else echo "FAIL  stamp not refreshed"; fails=$((fails + 1)); fi
 check "our side's output is still stale, compare still refuses" 1 python3 -I "$here/compare.py" "$R"
 # a changed evaluator also invalidates (the digests file stands for the binaries)
 echo "tampered" > "$T/cryptol/bin/z3"
@@ -93,8 +94,8 @@ refuse "$(dirname "$root")" "a directory containing the repository"
 refuse "$W/link" "a symbolic link"
 refuse "$W/full" "a non-empty directory without the marker"
 refuse "$DIFF_RUN" "the run directory"
-[ ! -e "$W/empty-target/.inject-scratch" ] && [ ! -e "$root/lean/.inject-scratch" ] && echo "ok    ... and nothing was written to a refused destination" \
-  || { echo "FAIL  a refused destination was written to"; fails=$((fails + 1)); }
+if [ ! -e "$W/empty-target/.inject-scratch" ] && [ ! -e "$root/lean/.inject-scratch" ]; then echo "ok    ... and nothing was written to a refused destination"
+else echo "FAIL  a refused destination was written to"; fails=$((fails + 1)); fi
 INJECT_DIR="$W/p" check "inject.sh refuses an unknown injection name" 1 bash "$here/inject.sh" no-such-injection
 
 # ---- inject.sh --summarize on a synthetic run: ours == theirs means the injection survived

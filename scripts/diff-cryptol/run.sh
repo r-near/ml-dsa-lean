@@ -18,7 +18,7 @@ SCRATCH="${ML_DSA_SCRATCH:-${XDG_CACHE_HOME:-$HOME/.cache}/ml-dsa-lean/scratch}"
 run="${DIFF_RUN:-$SCRATCH/cryptol-diff/run}"
 step="${1:-all}"
 seed="${DIFF_SEED:-204}"
-# shellcheck source=lib.sh
+# shellcheck source=lib.sh source-path=SCRIPTDIR
 . "$here/lib.sh"
 
 build_ours() {

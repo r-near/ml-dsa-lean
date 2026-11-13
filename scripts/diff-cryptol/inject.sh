@@ -16,7 +16,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 here="$root/scripts/diff-cryptol"
 SCRATCH="${ML_DSA_SCRATCH:-${XDG_CACHE_HOME:-$HOME/.cache}/ml-dsa-lean/scratch}"
 run="${DIFF_RUN:-$SCRATCH/cryptol-diff/run}"
-# shellcheck source=lib.sh
+# shellcheck source=lib.sh source-path=SCRIPTDIR
 . "$here/lib.sh"
 summarize=0
 [ "${1:-}" = "--summarize" ] && summarize=1
