@@ -202,9 +202,10 @@ with `WITNESS CHECK OK: Proofs.TopWitnessCorrect`. If the kernel is killed (exit
   `bash scripts/diff-vcvio/run.sh all`: executable differential against VCVio's `MLDSA.Concrete`. Read the header of each script.
 - `bash scripts/diff-cryptol/setup.sh` once (installs Cryptol 3.6.0 and a pinned `GaloisInc/cryptol-specs` under `~/rx/scratch/cryptol-tools`
   on the build box), then `DIFF_SCALE=2 DIFF_JOBS=50 bash scripts/diff-cryptol/run.sh all`: executable differential against Galois's
-  Cryptol specification of FIPS 204 (7,106 cases; a differential on those cases, not an equivalence proof; it takes about 80 minutes on a
+  Cryptol specification of FIPS 204 (7,106 cases; a finite differential against one independent, itself unverified specification, not an equivalence proof; it takes about 80 minutes on a
   60-thread box, nearly all of it Cryptol's interpreter). `bash scripts/diff-cryptol/inject.sh` afterwards injects seven bugs into a scratch
-  copy of `lean/Spec` and checks that each one is reported (about 8 minutes). The recorded run is
+  copy of `lean/Spec` and checks that each one is reported (about 7 minutes; nonzero exit if one survives). `bash scripts/diff-cryptol/selftest.sh` (seconds) checks that
+  the harness itself fails closed. The recorded run is
   `scripts/diff-cryptol/results/2026-11-13.md`; read `scripts/diff-cryptol/README.md` first.
 - `scripts/impl-eval.sh lean`, `scripts/impl-eval.sh rs`, `scripts/impl-eval.sh compare`: run the extracted Lean and the
   native Rust on the same inputs and compare.

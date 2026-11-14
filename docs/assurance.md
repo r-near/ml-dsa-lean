@@ -109,8 +109,8 @@ Every proved result assumes items 1 to 4, and the hardware that runs the binary.
    ocaml-pq's transcription (1.7), and a differential against Galois's independent Cryptol specification of FIPS 204
    (`scripts/diff-cryptol/`; 7,106 cases of components, key generation, signing and verification over the three parameter sets:
    7,100 equal, 6 differ only by NIST's erratum to Algorithm 3, no other difference; seven injected bugs in `lean/Spec` all detected;
-   results in `scripts/diff-cryptol/results/2026-11-13.md`; a differential on those cases, not an equivalence proof, and not a
-   required check). None of it proves that the spec is the standard.
+   results in `scripts/diff-cryptol/results/2026-11-13.md`; a finite differential against one independent specification that is itself
+   unverified, not an equivalence proof, and not a required check). None of it proves that the spec is the standard.
 2. **Charon/Aeneas**, with the pins of section 2. Extraction runs with `--cfg miri`, so the proved code is the source with its
    `cfg(miri)` variants: `field::opaque_u32` and the RISC-V `black_box` barriers are the identity there (CT-1, CT-2; none is on a verify
    path). Nothing else differs: no `unsafe`, no CPU detection, no `cfg` that selects code by CPU feature. Evidence: the extracted code,
