@@ -105,8 +105,12 @@ code-shape rules the extraction imposes, and §9 the map from each module to the
 Every proved result assumes items 1 to 4, and the hardware that runs the binary.
 
 1. **Spec fidelity**: `lean/Spec` against FIPS 204/202. Evidence: three internal reviews against the FIPS PDFs (the notes of the third
-   are not committed), ACVP and Wycheproof, a component differential against VCVio (1,345,635 in-precondition cases, 0 mismatches) and
-   1.7. None of it proves that the spec is the standard.
+   are not committed), ACVP and Wycheproof, a component differential against VCVio (1,345,635 in-precondition cases, 0 mismatches), the proof that `lean/Spec` equals
+   ocaml-pq's transcription (1.7), and a differential against Galois's independent Cryptol specification of FIPS 204
+   (`scripts/diff-cryptol/`; 7,106 cases of components, key generation, signing and verification over the three parameter sets:
+   7,100 equal, 6 differ only by NIST's erratum to Algorithm 3, no other difference; seven injected bugs in `lean/Spec` all detected;
+   results in `scripts/diff-cryptol/results/2026-11-13.md`; a finite differential against one independent specification that is itself
+   unverified, not an equivalence proof, and not a required check). None of it proves that the spec is the standard.
 2. **Charon/Aeneas**, with the pins of section 2. Extraction runs with `--cfg miri`, so the proved code is the source with its
    `cfg(miri)` variants: `field::opaque_u32` and the RISC-V `black_box` barriers are the identity there (CT-1, CT-2; none is on a verify
    path). Nothing else differs: no `unsafe`, no CPU detection, no `cfg` that selects code by CPU feature. Evidence: the extracted code,
@@ -217,7 +221,7 @@ Paths are relative to the repository root; [reproduce.md](reproduce.md) has the 
 | 1.8: `lean/Impl` is the extraction of `src/` | `python3 -I scripts/extract_hash.py check`; `python3 scripts/extract.py --out DIR` on an empty `DIR`, then `diff -r lean/Impl DIR` |
 | 1.5: the extraction is the same under AVX2 target features; the 4-way permutation is 256-bit code with them (performance only) | `bash scripts/check-feature-independence.sh`; `bash scripts/check-avx2-inlining.sh` |
 | 1.7: spec against ocaml-pq | `scripts/xspec/check-axioms.sh` and `scripts/xspec/run-diff.sh all` (after `scripts/xspec/setup.sh`, `build.sh`) |
-| 3, item 1: spec against VCVio, ACVP and Wycheproof | `scripts/diff-vcvio/run.sh all` (after `setup-vcvio.sh`); in `lean/`, `lake build spec-acvp && .lake/build/bin/spec-acvp`; `python3 -I scripts/gen-lean-wycheproof.py`, then in `lean/` `lake build spec-wycheproof && .lake/build/bin/spec-wycheproof` |
+| 3, item 1: spec against VCVio, the Cryptol specification, ACVP and Wycheproof | `scripts/diff-vcvio/run.sh all` (after `setup-vcvio.sh`); `bash scripts/diff-cryptol/setup.sh`, then `DIFF_SCALE=2 bash scripts/diff-cryptol/run.sh all` and `bash scripts/diff-cryptol/inject.sh` (about 90 minutes on a 60-thread box; `scripts/diff-cryptol/README.md`); in `lean/`, `lake build spec-acvp && .lake/build/bin/spec-acvp`; `python3 -I scripts/gen-lean-wycheproof.py`, then in `lean/` `lake build spec-wycheproof && .lake/build/bin/spec-wycheproof` |
 | 3, item 2: extracted Lean against native Rust | `scripts/impl-eval.sh lean`, `scripts/impl-eval.sh rs`, `scripts/impl-eval.sh compare` |
 | 4: ACVP, Wycheproof, RustCrypto and aws-lc-rs differentials; 4-way verify tests | `cargo test --release` (a debug `cargo test` divides the bulk aws-lc-rs differential counts by 100 unless `AWSLC_DIFF_FULL=1`, so it is smoke coverage only; the full differential alone: `cargo test --release --test awslc_diff -- --nocapture`); on an AVX2 machine also `RUSTFLAGS="-C target-feature=+avx2" ML_DSA_REQUIRE_AVX2=1 cargo test` |
 | 4: libcrux and mldsa-native differentials; fuzzing | `crosscheck/README.md` ("How to run"); in `fuzz/`, `cargo +nightly fuzz run verify_diff` (also `sign_diff`, `decode_roundtrip`) |

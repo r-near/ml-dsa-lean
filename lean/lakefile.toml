@@ -41,6 +41,12 @@ root = "SpecTests.ImplEval"
 name = "spec-diff-vcvio"
 root = "SpecTests.DiffVCVio"
 
+# Differential check against Galois's Cryptol specification (not a default target): `lake build spec-diff-cryptol`,
+# driven by scripts/diff-cryptol.
+[[lean_exe]]
+name = "spec-diff-cryptol"
+root = "SpecTests.DiffCryptol"
+
 # Wycheproof cross-check of the specification: `lake build spec-wycheproof && .lake/build/bin/spec-wycheproof`.
 [[lean_exe]]
 name = "spec-wycheproof"

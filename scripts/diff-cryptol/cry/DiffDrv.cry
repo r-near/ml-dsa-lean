@@ -1,0 +1,31 @@
+// Flat encoders for the differential evaluator: every result is printed as ONE hexadecimal word, so the output
+// needs no parsing of Cryptol's pretty printer and cannot be wrapped.  Integers are 32-bit two's complement
+// words, `Z q` elements are 32-bit words in [0, q), bit strings keep their element order (element 0 is the most
+// significant bit), and an option is a status byte followed by the payload (zero-filled for None).
+module DiffDrv where
+
+zi : Integer -> [32]
+zi x = fromInteger x
+
+zq : Z 8380417 -> [32]
+zq x = fromInteger (fromZ x)
+
+/** A list of integers (a polynomial, or several flattened with `join`). */
+vI : {n} (fin n) => [n]Integer -> [n * 32]
+vI xs = join (map zi xs)
+
+/** A list of elements of Z q. */
+vZ : {n} (fin n) => [n](Z 8380417) -> [n * 32]
+vZ xs = join (map zq xs)
+
+/** Option of a flat bit string: status 1 and the payload, or status 0 and zeros. */
+optW : {n} (fin n) => Option [n] -> [8 + n]
+optW o = case o of
+    Some x -> (1 : [8]) # x
+    None -> (0 : [8]) # zero
+
+/** Option Bool: 0 = None, 1 = Some False, 2 = Some True. */
+optBool : Option Bool -> [8]
+optBool o = case o of
+    None -> 0
+    Some b -> if b then 2 else 1
