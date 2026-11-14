@@ -66,6 +66,24 @@ def evaluator_identity(digests):
     specs = os.path.join(TOOLS, "src", "cryptol-specs")
     r = subprocess.run(["git", "-C", specs, "rev-parse", "HEAD"], capture_output=True, text=True)
     parts.append(r.stdout.strip() if r.returncode == 0 else "no-git")
+    parts.append(tree_digest(specs))
+    return digest_parts(parts)
+
+
+def tree_digest(root):
+    """Digest of every file under root except .git, so a local edit to the specification checkout
+    (which leaves HEAD unchanged) also invalidates stamped outputs."""
+    if not os.path.isdir(root):
+        sys.exit(f"run_theirs: {root} is missing; re-run setup.sh")
+    parts = []
+    for d, dirs, files in os.walk(root):
+        dirs[:] = sorted(x for x in dirs if x != ".git")
+        for f in sorted(files):
+            p = os.path.join(d, f)
+            if os.path.islink(p) or not os.path.isfile(p):
+                parts.append(os.path.relpath(p, root) + ":special")
+                continue
+            parts.append(os.path.relpath(p, root) + ":" + sha256_file(p))
     return digest_parts(parts)
 
 

@@ -53,7 +53,8 @@ processes, one per chunk of cases; a Cryptol start-up is about one second, a sig
 `$DIFF_RUN/mismatches.txt` (every mismatch, deviation and harness error with its input), `$DIFF_RUN/theirs/timing.log`.
 
 Outputs are bound to their inputs. Next to every `ours/<name>.out` and `theirs/<name>.out` is a `<name>.stamp` (sha256 of the vector
-file it was computed from, and a digest of the program: our executable, or the Cryptol evaluator, binaries and specification commit).
+file it was computed from, and a digest of the program: our executable, or the Cryptol evaluator, binaries, specification commit
+and the contents of the specification checkout, so a local edit there also invalidates).
 A side reuses an output only if the stamp matches, so a changed `DIFF_SEED`, generator, build or Cryptol install recomputes it; the
 generator's later stages and `compare.py` refuse an output without a matching stamp. Chunk and merged outputs are renamed into place
 only on success. A Cryptol worker that exits nonzero (even after printing some results) or times out (`CRYPTOL_TIMEOUT`, default 7200 s)

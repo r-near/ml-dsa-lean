@@ -2,7 +2,8 @@
 # Negative self-tests of the harness itself (no Lean, no real Cryptol): each check feeds the harness a failure that it must not
 # turn into a pass.  Run on Linux (bash 4+):  bash scripts/diff-cryptol/selftest.sh   -> "SELFTEST OK" and exit 0.
 #   1. a Cryptol worker that exits 1 after printing results, or times out, fails the run and leaves no output
-#   2. outputs bound to an old vector file or evaluator are recomputed (run_theirs.py), and compare.py refuses them
+#   2. outputs bound to an old vector file, evaluator or specification checkout are recomputed (run_theirs.py), and compare.py
+#      refuses them
 #   3. inject.sh's destination validation refuses unsafe INJECT_DIR values before writing anything
 #   4. a surviving injection is a row `no` and makes inject.sh exit nonzero; a detected one exits 0
 #   5. a changed or missing binary fails the digest check
@@ -77,6 +78,14 @@ check "our side's output is still stale, compare still refuses" 1 python3 -I "$h
 echo "tampered" > "$T/cryptol/bin/z3"
 MOCK_MODE=ok check "a changed binary fails the digest check" 1 theirs
 (cd "$T/cryptol" && sha256sum bin/cryptol bin/z3 > "$W/digests.sha256")
+# a local edit to the specification checkout (HEAD unchanged) also invalidates: ver_65 is recomputed
+MOCK_MODE=ok check "healthy run before the specification edit" 0 theirs
+n65() { grep -c 'ver_65' "$R/theirs/timing.log"; }
+before=$(n65)
+echo "edited" > "$T/src/cryptol-specs/edited.cry"
+MOCK_MODE=ok check "run_theirs after a specification edit" 0 theirs
+if [ "$(n65)" -gt "$before" ]; then echo "ok    ... and an output computed from the old specification was recomputed"
+else echo "FAIL  specification edit did not invalidate the stamped output"; fails=$((fails + 1)); fi
 
 # ---- inject.sh destination validation: every one must refuse, and nothing may be created
 home_real="$(cd "$HOME" && pwd -P)"
