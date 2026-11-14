@@ -32,8 +32,8 @@ On the Linux build box, from the repository root:
 ```sh
 bash scripts/diff-cryptol/setup.sh          # once
 export ML_DSA_SCRATCH=$HOME/rx/scratch LEAN_PACKAGES_SEED=<a directory of built lake packages, as for scripts/diff-vcvio>
-DIFF_SCALE=2 DIFF_JOBS=50 bash scripts/diff-cryptol/run.sh all     # 82 minutes in the recorded run (results/)
-bash scripts/diff-cryptol/inject.sh                                # the sensitivity check, 8 minutes in the recorded run, after `run.sh all`
+DIFF_SCALE=2 DIFF_JOBS=50 bash scripts/diff-cryptol/run.sh all     # 78 minutes in the recorded run (results/)
+bash scripts/diff-cryptol/inject.sh                                # the sensitivity check, 7 minutes in the recorded run, after `run.sh all`
 bash scripts/diff-cryptol/inject.sh --summarize                    # recompute its table from the saved outputs
 ```
 
